@@ -91,26 +91,27 @@ class Renderer:
         try:
             # Title
             self.stdscr.addstr(0, panel_x + 2, "=== DUNGEON ===")
+            self.stdscr.addstr(1, panel_x + 2, f"Level: {dungeon.level}")
 
             # Player stats
-            self.stdscr.addstr(2, panel_x + 2, "PLAYER")
+            self.stdscr.addstr(3, panel_x + 2, "PLAYER")
 
             health_str = f"HP: {player.health}/{player.max_health}"
             if curses.has_colors():
-                self.stdscr.addstr(3, panel_x + 2, health_str, curses.color_pair(4))
+                self.stdscr.addstr(4, panel_x + 2, health_str, curses.color_pair(4))
             else:
-                self.stdscr.addstr(3, panel_x + 2, health_str)
+                self.stdscr.addstr(4, panel_x + 2, health_str)
 
-            self.stdscr.addstr(4, panel_x + 2, f"ATK: {player.attack_damage}")
-            self.stdscr.addstr(5, panel_x + 2, f"Kills: {player.kills}")
+            self.stdscr.addstr(5, panel_x + 2, f"ATK: {player.attack_damage}")
+            self.stdscr.addstr(6, panel_x + 2, f"Kills: {player.kills}")
 
             # Position (for debugging/exploration feel)
-            self.stdscr.addstr(7, panel_x + 2, f"Pos: ({player.x},{player.y})")
+            self.stdscr.addstr(8, panel_x + 2, f"Pos: ({player.x},{player.y})")
 
             # Message log
-            self.stdscr.addstr(10, panel_x + 2, "MESSAGES")
+            self.stdscr.addstr(11, panel_x + 2, "MESSAGES")
             for i, message in enumerate(messages[-MESSAGE_LOG_SIZE:]):
-                msg_y = 11 + i
+                msg_y = 12 + i
                 if msg_y < max_y:
                     # Truncate message if too long
                     display_msg = message[:STATS_PANEL_WIDTH - 4]
