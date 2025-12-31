@@ -131,11 +131,15 @@ class BSPNode:
 class Dungeon:
     """Represents the game dungeon with procedural generation."""
 
-    def __init__(self, width: int = DUNGEON_WIDTH, height: int = DUNGEON_HEIGHT, seed: int = None):
+    def __init__(self, width: int = DUNGEON_WIDTH, height: int = DUNGEON_HEIGHT, seed: int = None, level: int = 1, has_stairs_up: bool = False):
         self.width = width
         self.height = height
+        self.level = level
         self.tiles = [[TileType.WALL for _ in range(width)] for _ in range(height)]
         self.rooms = []
+        self.stairs_up_pos = None
+        self.stairs_down_pos = None
+        self.has_stairs_up = has_stairs_up
 
         if seed is not None:
             random.seed(seed)
@@ -162,6 +166,9 @@ class Dungeon:
 
         # Connect rooms with corridors
         self._create_corridors(root)
+
+        # Place stairs
+        self._place_stairs()
 
     def _split_node(self, node: BSPNode):
         """Recursively split a BSP node."""
@@ -227,11 +234,30 @@ class Dungeon:
             if 0 <= x < self.width and 0 <= y < self.height:
                 self.tiles[y][x] = TileType.FLOOR
 
+    def _place_stairs(self):
+        """Place stairs up and down in the dungeon."""
+        if len(self.rooms) < 2:
+            return
+
+        # Place stairs up in first room (if not on first level)
+        if self.has_stairs_up:
+            first_room = self.rooms[0]
+            center = first_room.center()
+            self.stairs_up_pos = center
+            self.tiles[center[1]][center[0]] = TileType.STAIRS_UP
+
+        # Place stairs down in last room
+        last_room = self.rooms[-1]
+        center = last_room.center()
+        self.stairs_down_pos = center
+        self.tiles[center[1]][center[0]] = TileType.STAIRS_DOWN
+
     def is_walkable(self, x: int, y: int) -> bool:
         """Check if a position is walkable."""
         if not (0 <= x < self.width and 0 <= y < self.height):
             return False
-        return self.tiles[y][x] == TileType.FLOOR
+        tile = self.tiles[y][x]
+        return tile in (TileType.FLOOR, TileType.STAIRS_DOWN, TileType.STAIRS_UP)
 
     def get_random_floor_position(self) -> Tuple[int, int]:
         """Return a random walkable floor position."""
