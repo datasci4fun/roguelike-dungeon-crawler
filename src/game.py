@@ -3,7 +3,7 @@ import curses
 import random
 from typing import List, Optional
 
-from .constants import GameState
+from .constants import GameState, MAX_DUNGEON_LEVELS
 from .dungeon import Dungeon
 from .entities import Player, Enemy
 from .renderer import Renderer
@@ -18,13 +18,15 @@ class Game:
         self.state = GameState.PLAYING
         self.renderer = Renderer(stdscr)
         self.messages: List[str] = []
+        self.current_level = 1
 
         # Set up non-blocking input with timeout
         self.stdscr.timeout(100)
 
-        # Generate dungeon
-        self.dungeon = Dungeon()
+        # Generate first dungeon
+        self.dungeon = Dungeon(level=self.current_level, has_stairs_up=False)
         self.add_message("Welcome to the dungeon!")
+        self.add_message("Find the stairs (>) to descend deeper")
 
         # Spawn player
         player_pos = self.dungeon.get_random_floor_position()
@@ -130,6 +132,10 @@ class Game:
         # Check if position is walkable
         if self.dungeon.is_walkable(new_x, new_y):
             self.player.move(dx, dy)
+
+            # Check if player stepped on stairs
+            self._check_stairs()
+
             return True
 
         return False
@@ -173,6 +179,42 @@ class Game:
             if enemy.is_alive() and enemy.x == x and enemy.y == y:
                 return enemy
         return None
+
+    def _check_stairs(self):
+        """Check if player is on stairs and handle level transition."""
+        from .constants import TileType
+
+        tile = self.dungeon.tiles[self.player.y][self.player.x]
+
+        if tile == TileType.STAIRS_DOWN:
+            if self.current_level >= MAX_DUNGEON_LEVELS:
+                self.add_message("You've reached the deepest level!")
+                self.add_message("Congratulations! You win!")
+                self.state = GameState.QUIT
+            else:
+                self._descend_level()
+
+    def _descend_level(self):
+        """Descend to the next dungeon level."""
+        self.current_level += 1
+        self.add_message(f"You descend to level {self.current_level}...")
+
+        # Generate new dungeon
+        has_up = self.current_level > 1
+        self.dungeon = Dungeon(level=self.current_level, has_stairs_up=has_up)
+
+        # Place player at stairs up if they exist, otherwise random position
+        if self.dungeon.stairs_up_pos:
+            self.player.x, self.player.y = self.dungeon.stairs_up_pos
+        else:
+            player_pos = self.dungeon.get_random_floor_position()
+            self.player.x, self.player.y = player_pos
+
+        # Clear old enemies and spawn new ones
+        self.enemies.clear()
+        self._spawn_enemies()
+
+        self.add_message("The air grows colder...")
 
     def _game_over_loop(self):
         """Game over state loop."""
