@@ -154,6 +154,9 @@ class Game:
             # Check if player stepped on stairs
             self._check_stairs()
 
+            # Check if player stepped on an item
+            self._check_item_pickup()
+
             return True
 
         return False
@@ -211,6 +214,17 @@ class Game:
                 self.state = GameState.QUIT
             else:
                 self._descend_level()
+
+    def _check_item_pickup(self):
+        """Check if player is standing on an item and pick it up."""
+        for item in self.items[:]:  # Use slice to iterate over copy
+            if item.x == self.player.x and item.y == self.player.y:
+                if self.player.inventory.add_item(item):
+                    self.items.remove(item)
+                    self.add_message(f"Picked up {item.name}")
+                else:
+                    self.add_message("Inventory full!")
+                break
 
     def _descend_level(self):
         """Descend to the next dungeon level."""
