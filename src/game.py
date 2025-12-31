@@ -114,6 +114,10 @@ class Game:
             dx = -1
         elif key in (curses.KEY_RIGHT, ord('d'), ord('D')):
             dx = 1
+        elif key in (ord('1'), ord('2'), ord('3')):
+            # Use item from inventory
+            item_index = int(chr(key)) - 1
+            return self._use_item(item_index)
         elif key in (ord('q'), ord('Q')):
             self.state = GameState.QUIT
             return False
@@ -225,6 +229,37 @@ class Game:
                 else:
                     self.add_message("Inventory full!")
                 break
+
+    def _use_item(self, item_index: int) -> bool:
+        """
+        Use an item from the inventory.
+
+        Returns:
+            True if item was used, False otherwise
+        """
+        from .items import ItemType, ScrollTeleport
+
+        if item_index < 0 or item_index >= len(self.player.inventory.items):
+            return False
+
+        item = self.player.inventory.get_item(item_index)
+        if not item:
+            return False
+
+        # Use the item
+        message = item.use(self.player)
+        self.add_message(message)
+
+        # Handle special item effects
+        if isinstance(item, ScrollTeleport):
+            # Teleport player to random location
+            new_pos = self.dungeon.get_random_floor_position()
+            self.player.x, self.player.y = new_pos
+
+        # Remove item from inventory
+        self.player.inventory.remove_item(item_index)
+
+        return True
 
     def _descend_level(self):
         """Descend to the next dungeon level."""
