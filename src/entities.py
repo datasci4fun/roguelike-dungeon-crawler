@@ -7,6 +7,7 @@ from .constants import (
     PLAYER_SYMBOL, PLAYER_MAX_HEALTH, PLAYER_ATTACK_DAMAGE,
     ENEMY_SYMBOL, ENEMY_MAX_HEALTH, ENEMY_ATTACK_DAMAGE, ENEMY_CHASE_RANGE
 )
+from .items import Inventory
 
 
 @dataclass
@@ -47,6 +48,7 @@ class Player(Entity):
             attack_damage=PLAYER_ATTACK_DAMAGE
         )
         self.kills = 0
+        self.inventory = Inventory(max_size=10)
 
     def move(self, dx: int, dy: int):
         """Move the player by the given offset."""
