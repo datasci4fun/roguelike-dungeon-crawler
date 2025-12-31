@@ -8,6 +8,7 @@ from .dungeon import Dungeon
 from .entities import Player, Enemy
 from .renderer import Renderer
 from .combat import attack, get_combat_message
+from .items import Item, ItemType, create_item
 
 
 class Game:
@@ -37,6 +38,10 @@ class Game:
         self.enemies: List[Enemy] = []
         self._spawn_enemies()
 
+        # Spawn items
+        self.items: List[Item] = []
+        self._spawn_items()
+
     def _spawn_enemies(self):
         """Spawn enemies in random rooms."""
         num_enemies = min(len(self.dungeon.rooms) * 2, 15)  # 2 enemies per room, max 15
@@ -47,6 +52,19 @@ class Game:
             if abs(pos[0] - self.player.x) > 5 or abs(pos[1] - self.player.y) > 5:
                 enemy = Enemy(pos[0], pos[1])
                 self.enemies.append(enemy)
+
+    def _spawn_items(self):
+        """Spawn items in random locations."""
+        num_items = random.randint(2, 5)  # 2-5 items per level
+
+        for _ in range(num_items):
+            pos = self.dungeon.get_random_floor_position()
+            # Make sure not on player or stairs
+            if (pos[0] != self.player.x or pos[1] != self.player.y):
+                # Random item type
+                item_type = random.choice(list(ItemType))
+                item = create_item(item_type, pos[0], pos[1])
+                self.items.append(item)
 
     def add_message(self, message: str):
         """Add a message to the message log."""
@@ -63,7 +81,7 @@ class Game:
     def _game_loop(self):
         """Main playing state loop."""
         # Render
-        self.renderer.render(self.dungeon, self.player, self.enemies, self.messages)
+        self.renderer.render(self.dungeon, self.player, self.enemies, self.items, self.messages)
 
         # Handle input
         key = self.stdscr.getch()
@@ -96,6 +114,10 @@ class Game:
             dx = -1
         elif key in (curses.KEY_RIGHT, ord('d'), ord('D')):
             dx = 1
+        elif key in (ord('1'), ord('2'), ord('3')):
+            # Use item from inventory
+            item_index = int(chr(key)) - 1
+            return self._use_item(item_index)
         elif key in (ord('q'), ord('Q')):
             self.state = GameState.QUIT
             return False
@@ -135,6 +157,9 @@ class Game:
 
             # Check if player stepped on stairs
             self._check_stairs()
+
+            # Check if player stepped on an item
+            self._check_item_pickup()
 
             return True
 
@@ -194,6 +219,48 @@ class Game:
             else:
                 self._descend_level()
 
+    def _check_item_pickup(self):
+        """Check if player is standing on an item and pick it up."""
+        for item in self.items[:]:  # Use slice to iterate over copy
+            if item.x == self.player.x and item.y == self.player.y:
+                if self.player.inventory.add_item(item):
+                    self.items.remove(item)
+                    self.add_message(f"Picked up {item.name}")
+                else:
+                    self.add_message("Inventory full!")
+                break
+
+    def _use_item(self, item_index: int) -> bool:
+        """
+        Use an item from the inventory.
+
+        Returns:
+            True if item was used, False otherwise
+        """
+        from .items import ItemType, ScrollTeleport
+
+        if item_index < 0 or item_index >= len(self.player.inventory.items):
+            return False
+
+        item = self.player.inventory.get_item(item_index)
+        if not item:
+            return False
+
+        # Use the item
+        message = item.use(self.player)
+        self.add_message(message)
+
+        # Handle special item effects
+        if isinstance(item, ScrollTeleport):
+            # Teleport player to random location
+            new_pos = self.dungeon.get_random_floor_position()
+            self.player.x, self.player.y = new_pos
+
+        # Remove item from inventory
+        self.player.inventory.remove_item(item_index)
+
+        return True
+
     def _descend_level(self):
         """Descend to the next dungeon level."""
         self.current_level += 1
@@ -213,6 +280,10 @@ class Game:
         # Clear old enemies and spawn new ones
         self.enemies.clear()
         self._spawn_enemies()
+
+        # Clear old items and spawn new ones
+        self.items.clear()
+        self._spawn_items()
 
         self.add_message("The air grows colder...")
 
