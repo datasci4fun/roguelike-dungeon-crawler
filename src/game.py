@@ -81,7 +81,7 @@ class Game:
     def _game_loop(self):
         """Main playing state loop."""
         # Render
-        self.renderer.render(self.dungeon, self.player, self.enemies, self.messages)
+        self.renderer.render(self.dungeon, self.player, self.enemies, self.items, self.messages)
 
         # Handle input
         key = self.stdscr.getch()
