@@ -5,7 +5,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 ## Features
 
 - **Procedural Generation**: Each dungeon is randomly generated using Binary Space Partitioning (BSP)
-- **Exploration**: Navigate through rooms and corridors in a large dungeon
+- **Multiple Levels**: Descend through 5 dungeon levels, each with unique layouts
+- **Exploration**: Navigate through rooms and corridors with stairs connecting levels
 - **Combat**: Bump-to-attack combat system with enemies that chase you
 - **ASCII Graphics**: Classic roguelike terminal rendering
 
@@ -31,16 +32,19 @@ python main.py
 ### Gameplay
 
 - Explore the procedurally generated dungeon
+- Find the stairs down (>) to descend to deeper levels
 - Enemies (E) will chase you when you get close
 - Walk into enemies to attack them
-- Survive as long as you can and defeat as many enemies as possible
+- Reach level 5 to win the game!
 - The game ends when your health reaches 0
 
 ### Stats
 
+- **Level**: Current dungeon level (1-5)
 - **HP**: Your current health
 - **ATK**: Your attack damage
 - **Kills**: Number of enemies defeated
+- **Pos**: Your current position (for exploration tracking)
 
 ## Technical Details
 

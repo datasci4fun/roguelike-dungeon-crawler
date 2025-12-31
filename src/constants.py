@@ -7,6 +7,8 @@ class TileType(Enum):
     WALL = '#'
     FLOOR = '.'
     EMPTY = ' '
+    STAIRS_DOWN = '>'
+    STAIRS_UP = '<'
 
 
 class GameState(Enum):
@@ -22,6 +24,7 @@ DUNGEON_HEIGHT = 40
 MIN_ROOM_SIZE = 4
 MAX_ROOM_SIZE = 10
 MAX_BSP_DEPTH = 4
+MAX_DUNGEON_LEVELS = 5
 
 # Entity symbols
 PLAYER_SYMBOL = '@'
