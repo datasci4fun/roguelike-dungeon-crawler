@@ -8,6 +8,7 @@ from .dungeon import Dungeon
 from .entities import Player, Enemy
 from .renderer import Renderer
 from .combat import attack, get_combat_message
+from .items import Item, ItemType, create_item
 
 
 class Game:
@@ -37,6 +38,10 @@ class Game:
         self.enemies: List[Enemy] = []
         self._spawn_enemies()
 
+        # Spawn items
+        self.items: List[Item] = []
+        self._spawn_items()
+
     def _spawn_enemies(self):
         """Spawn enemies in random rooms."""
         num_enemies = min(len(self.dungeon.rooms) * 2, 15)  # 2 enemies per room, max 15
@@ -47,6 +52,19 @@ class Game:
             if abs(pos[0] - self.player.x) > 5 or abs(pos[1] - self.player.y) > 5:
                 enemy = Enemy(pos[0], pos[1])
                 self.enemies.append(enemy)
+
+    def _spawn_items(self):
+        """Spawn items in random locations."""
+        num_items = random.randint(2, 5)  # 2-5 items per level
+
+        for _ in range(num_items):
+            pos = self.dungeon.get_random_floor_position()
+            # Make sure not on player or stairs
+            if (pos[0] != self.player.x or pos[1] != self.player.y):
+                # Random item type
+                item_type = random.choice(list(ItemType))
+                item = create_item(item_type, pos[0], pos[1])
+                self.items.append(item)
 
     def add_message(self, message: str):
         """Add a message to the message log."""
@@ -213,6 +231,10 @@ class Game:
         # Clear old enemies and spawn new ones
         self.enemies.clear()
         self._spawn_enemies()
+
+        # Clear old items and spawn new ones
+        self.items.clear()
+        self._spawn_items()
 
         self.add_message("The air grows colder...")
 
