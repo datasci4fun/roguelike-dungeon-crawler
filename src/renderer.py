@@ -1,6 +1,7 @@
 """Terminal rendering using curses."""
 import curses
-from typing import List, Tuple
+import time
+from typing import List, Tuple, Dict, Any
 
 from .constants import (
     STATS_PANEL_WIDTH, MESSAGE_LOG_SIZE, BAR_WIDTH,
@@ -21,6 +22,12 @@ class Renderer:
         curses.curs_set(0)  # Hide cursor
         self.stdscr.clear()
 
+        # Animation tracking
+        self.animations: List[Dict[str, Any]] = []  # Entity hit animations
+        self.damage_numbers: List[Dict[str, Any]] = []  # Floating damage numbers
+        self.direction_indicators: List[Dict[str, Any]] = []  # Attack direction arrows
+        self.corpses: List[Dict[str, Any]] = []  # Temporary corpse animations (flash on death)
+
         # Initialize color pairs if available
         if curses.has_colors():
             curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Default
@@ -37,6 +44,9 @@ class Renderer:
 
     def render(self, dungeon: Dungeon, player: Player, enemies: List[Enemy], items: List[Item], messages: List[str]):
         """Render the entire game state."""
+        # Clean up expired animations
+        self._cleanup_animations()
+
         self.stdscr.clear()
 
         # Render dungeon
@@ -57,10 +67,133 @@ class Renderer:
         # Render player (always on top)
         self._render_player(player)
 
+        # Render damage numbers (above entities)
+        self._render_damage_numbers(dungeon)
+
+        # Render attack direction indicators
+        self._render_direction_indicators(dungeon)
+
         # Render UI panel
         self._render_ui_panel(player, dungeon, enemies, items, messages)
 
         self.stdscr.refresh()
+
+    # Public animation methods (called by game.py)
+
+    def add_hit_animation(self, entity: Any, duration: float = 0.15):
+        """
+        Add a hit flash animation to an entity.
+
+        Args:
+            entity: The entity that was hit (Player or Enemy)
+            duration: How long the flash lasts (seconds)
+        """
+        self.animations.append({
+            'entity': entity,
+            'effect': 'hit',
+            'start_time': time.time(),
+            'duration': duration
+        })
+
+    def add_damage_number(self, x: int, y: int, damage: int, duration: float = 0.5):
+        """
+        Add a floating damage number above a position.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            damage: Amount of damage to display
+            duration: How long the number floats (seconds)
+        """
+        self.damage_numbers.append({
+            'x': x,
+            'y': y - 1,  # Display above the entity
+            'text': f"-{damage}",
+            'start_time': time.time(),
+            'duration': duration
+        })
+
+    def add_direction_indicator(self, from_x: int, from_y: int, to_x: int, to_y: int, duration: float = 0.1):
+        """
+        Add an attack direction arrow from attacker to target.
+
+        Args:
+            from_x, from_y: Attacker position
+            to_x, to_y: Target position
+            duration: How long the arrow shows (seconds)
+        """
+        # Calculate direction
+        dx = to_x - from_x
+        dy = to_y - from_y
+
+        # Determine arrow character
+        if dx == 0 and dy < 0:
+            arrow = '↑'
+        elif dx == 0 and dy > 0:
+            arrow = '↓'
+        elif dx < 0 and dy == 0:
+            arrow = '←'
+        elif dx > 0 and dy == 0:
+            arrow = '→'
+        elif dx > 0 and dy < 0:
+            arrow = '↗'
+        elif dx > 0 and dy > 0:
+            arrow = '↘'
+        elif dx < 0 and dy > 0:
+            arrow = '↙'
+        elif dx < 0 and dy < 0:
+            arrow = '↖'
+        else:
+            arrow = '·'  # Fallback for same position
+
+        # Place arrow between attacker and target
+        arrow_x = from_x + (1 if dx > 0 else -1 if dx < 0 else 0)
+        arrow_y = from_y + (1 if dy > 0 else -1 if dy < 0 else 0)
+
+        self.direction_indicators.append({
+            'x': arrow_x,
+            'y': arrow_y,
+            'char': arrow,
+            'start_time': time.time(),
+            'duration': duration
+        })
+
+    def add_death_flash(self, x: int, y: int, duration: float = 0.2):
+        """
+        Add a brief death flash where an enemy died (will be replaced by corpse).
+
+        Args:
+            x, y: Position where entity died
+            duration: How long the flash lasts (seconds)
+        """
+        self.corpses.append({
+            'x': x,
+            'y': y,
+            'char': '%',
+            'start_time': time.time(),
+            'duration': duration,
+            'phase': 'flash'  # 'flash' = bright, will transition to permanent corpse in dungeon
+        })
+
+    def _cleanup_animations(self):
+        """Remove expired animations."""
+        current_time = time.time()
+
+        # Remove expired hit animations
+        self.animations = [anim for anim in self.animations
+                          if current_time - anim['start_time'] < anim['duration']]
+
+        # Remove expired damage numbers
+        self.damage_numbers = [num for num in self.damage_numbers
+                              if current_time - num['start_time'] < num['duration']]
+
+        # Remove expired direction indicators
+        self.direction_indicators = [ind for ind in self.direction_indicators
+                                    if current_time - ind['start_time'] < ind['duration']]
+
+        # Remove expired corpse flashes
+        self.corpses = [corpse for corpse in self.corpses
+                       if current_time - corpse['start_time'] < corpse['duration']]
 
     def _render_dungeon(self, dungeon: Dungeon):
         """Render the dungeon tiles."""
@@ -182,14 +315,24 @@ class Renderer:
                 if not dungeon.visible[enemy.y][enemy.x]:
                     continue
                 try:
+                    # Check if enemy has active hit animation
+                    is_animated = any(anim['entity'] == enemy for anim in self.animations)
+
                     if curses.has_colors():
                         # Elites render in magenta, regular enemies in red
                         color = curses.color_pair(6) if enemy.is_elite else curses.color_pair(3)
+
+                        # Apply hit animation: flash with reverse video and bold
+                        if is_animated:
+                            color = color | curses.A_REVERSE | curses.A_BOLD
+
                         self.stdscr.addch(enemy.y, enemy.x, enemy.symbol, color)
                     else:
                         # No color: use '*' for elite, 'E' for regular
                         symbol = '*' if enemy.is_elite else enemy.symbol
-                        self.stdscr.addch(enemy.y, enemy.x, symbol)
+                        # Flash with reverse video
+                        attr = curses.A_REVERSE if is_animated else curses.A_NORMAL
+                        self.stdscr.addch(enemy.y, enemy.x, symbol, attr)
                 except curses.error:
                     pass
 
@@ -199,12 +342,69 @@ class Renderer:
 
         if 0 <= player.y < max_y and 0 <= player.x < max_x - STATS_PANEL_WIDTH:
             try:
+                # Check if player has active hit animation
+                is_animated = any(anim['entity'] == player for anim in self.animations)
+
                 if curses.has_colors():
-                    self.stdscr.addch(player.y, player.x, player.symbol, curses.color_pair(2))
+                    color = curses.color_pair(2)  # Yellow for player
+
+                    # Apply hit animation: flash with reverse video and bold
+                    if is_animated:
+                        color = color | curses.A_REVERSE | curses.A_BOLD
+
+                    self.stdscr.addch(player.y, player.x, player.symbol, color)
                 else:
-                    self.stdscr.addch(player.y, player.x, player.symbol)
+                    # Flash with reverse video
+                    attr = curses.A_REVERSE if is_animated else curses.A_NORMAL
+                    self.stdscr.addch(player.y, player.x, player.symbol, attr)
             except curses.error:
                 pass
+
+    def _render_damage_numbers(self, dungeon: Dungeon):
+        """Render floating damage numbers above entities."""
+        max_y, max_x = self.stdscr.getmaxyx()
+
+        for dmg_num in self.damage_numbers:
+            x, y = dmg_num['x'], dmg_num['y']
+
+            # Only render if position is visible and in bounds
+            if 0 <= y < dungeon.height and 0 <= x < dungeon.width:
+                if not dungeon.visible[y][x]:
+                    continue
+
+                if 0 <= y < max_y and 0 <= x < max_x - STATS_PANEL_WIDTH:
+                    try:
+                        text = dmg_num['text']
+                        # Render damage numbers in red
+                        if curses.has_colors():
+                            self.stdscr.addstr(y, x, text, curses.color_pair(3) | curses.A_BOLD)
+                        else:
+                            self.stdscr.addstr(y, x, text, curses.A_BOLD)
+                    except curses.error:
+                        pass
+
+    def _render_direction_indicators(self, dungeon: Dungeon):
+        """Render attack direction arrows."""
+        max_y, max_x = self.stdscr.getmaxyx()
+
+        for indicator in self.direction_indicators:
+            x, y = indicator['x'], indicator['y']
+
+            # Only render if position is visible and in bounds
+            if 0 <= y < dungeon.height and 0 <= x < dungeon.width:
+                if not dungeon.visible[y][x]:
+                    continue
+
+                if 0 <= y < max_y and 0 <= x < max_x - STATS_PANEL_WIDTH:
+                    try:
+                        char = indicator['char']
+                        # Render arrow in yellow (bright)
+                        if curses.has_colors():
+                            self.stdscr.addch(y, x, char, curses.color_pair(2) | curses.A_BOLD)
+                        else:
+                            self.stdscr.addch(y, x, char, curses.A_BOLD)
+                    except curses.error:
+                        pass
 
     def _render_bar(self, current: int, max_val: int, width: int) -> str:
         """

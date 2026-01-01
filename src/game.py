@@ -166,8 +166,16 @@ class Game:
             message = get_combat_message("You", "enemy", damage, enemy_died)
             self.add_message(message)
 
+            # Combat feedback animations
+            self.renderer.add_direction_indicator(self.player.x, self.player.y, enemy.x, enemy.y)
+            self.renderer.add_damage_number(enemy.x, enemy.y, damage)
+
             if enemy_died:
                 self.player.kills += 1
+
+                # Death animations
+                self.renderer.add_death_flash(enemy.x, enemy.y)
+                self.dungeon.add_blood_stain(enemy.x, enemy.y)
 
                 # Award XP (2x for elites) and check for level up
                 from .constants import XP_PER_KILL, ELITE_XP_MULTIPLIER
@@ -177,6 +185,9 @@ class Game:
                 if leveled_up:
                     self.add_message(f"LEVEL UP! You are now level {self.player.level}!")
                     self.add_message(f"HP: {self.player.max_health}, ATK: {self.player.attack_damage}")
+            else:
+                # Hit animation for surviving enemy
+                self.renderer.add_hit_animation(enemy)
 
             return True
 
@@ -223,8 +234,15 @@ class Game:
                 message = get_combat_message("Enemy", "you", damage, player_died)
                 self.add_message(message)
 
+                # Combat feedback animations
+                self.renderer.add_direction_indicator(enemy.x, enemy.y, self.player.x, self.player.y)
+                self.renderer.add_damage_number(self.player.x, self.player.y, damage)
+
                 if player_died:
                     self.state = GameState.DEAD
+                else:
+                    # Hit animation for surviving player
+                    self.renderer.add_hit_animation(self.player)
             else:
                 # Check if another enemy is at target position
                 if not self._get_enemy_at(new_x, new_y):
