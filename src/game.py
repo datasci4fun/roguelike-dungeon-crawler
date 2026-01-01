@@ -34,6 +34,9 @@ class Game:
         self.player = Player(player_pos[0], player_pos[1])
         self.add_message("Use arrow keys or WASD to move")
 
+        # Initialize FOV
+        self.dungeon.update_fov(self.player.x, self.player.y)
+
         # Spawn enemies
         self.enemies: List[Enemy] = []
         self._spawn_enemies()
@@ -44,13 +47,17 @@ class Game:
 
     def _spawn_enemies(self):
         """Spawn enemies in random rooms."""
+        from .constants import ELITE_SPAWN_RATE
+
         num_enemies = min(len(self.dungeon.rooms) * 2, 15)  # 2 enemies per room, max 15
 
         for _ in range(num_enemies):
             pos = self.dungeon.get_random_floor_position()
             # Make sure not too close to player
             if abs(pos[0] - self.player.x) > 5 or abs(pos[1] - self.player.y) > 5:
-                enemy = Enemy(pos[0], pos[1])
+                # 20% chance to spawn elite enemy
+                is_elite = random.random() < ELITE_SPAWN_RATE
+                enemy = Enemy(pos[0], pos[1], is_elite=is_elite)
                 self.enemies.append(enemy)
 
     def _spawn_items(self):
@@ -101,6 +108,9 @@ class Game:
 
             # Check if player died
             if not self.player.is_alive():
+                # Permadeath: delete save on death
+                from .save_load import delete_save
+                delete_save()
                 self.state = GameState.DEAD
 
     def _handle_input(self, key: int) -> bool:
@@ -126,6 +136,9 @@ class Game:
             item_index = int(chr(key)) - 1
             return self._use_item(item_index)
         elif key in (ord('q'), ord('Q')):
+            # Save game on quit
+            if self.save_game_state():
+                self.add_message("Game saved!")
             self.state = GameState.QUIT
             return False
 
@@ -156,9 +169,10 @@ class Game:
             if enemy_died:
                 self.player.kills += 1
 
-                # Award XP and check for level up
-                from .constants import XP_PER_KILL
-                leveled_up = self.player.gain_xp(XP_PER_KILL)
+                # Award XP (2x for elites) and check for level up
+                from .constants import XP_PER_KILL, ELITE_XP_MULTIPLIER
+                xp_award = XP_PER_KILL * ELITE_XP_MULTIPLIER if enemy.is_elite else XP_PER_KILL
+                leveled_up = self.player.gain_xp(xp_award)
 
                 if leveled_up:
                     self.add_message(f"LEVEL UP! You are now level {self.player.level}!")
@@ -169,6 +183,9 @@ class Game:
         # Check if position is walkable
         if self.dungeon.is_walkable(new_x, new_y):
             self.player.move(dx, dy)
+
+            # Update FOV after movement
+            self.dungeon.update_fov(self.player.x, self.player.y)
 
             # Check if player stepped on stairs
             self._check_stairs()
@@ -228,6 +245,9 @@ class Game:
 
         if tile == TileType.STAIRS_DOWN:
             if self.current_level >= MAX_DUNGEON_LEVELS:
+                # Permadeath: delete save on win
+                from .save_load import delete_save
+                delete_save()
                 self.add_message("You've reached the deepest level!")
                 self.add_message("Congratulations! You win!")
                 self.state = GameState.QUIT
@@ -270,6 +290,8 @@ class Game:
             # Teleport player to random location
             new_pos = self.dungeon.get_random_floor_position()
             self.player.x, self.player.y = new_pos
+            # Update FOV after teleport
+            self.dungeon.update_fov(self.player.x, self.player.y)
 
         # Remove item from inventory
         self.player.inventory.remove_item(item_index)
@@ -292,6 +314,9 @@ class Game:
             player_pos = self.dungeon.get_random_floor_position()
             self.player.x, self.player.y = player_pos
 
+        # Update FOV for new level
+        self.dungeon.update_fov(self.player.x, self.player.y)
+
         # Clear old enemies and spawn new ones
         self.enemies.clear()
         self._spawn_enemies()
@@ -301,6 +326,176 @@ class Game:
         self._spawn_items()
 
         self.add_message("The air grows colder...")
+
+    def save_game_state(self) -> bool:
+        """
+        Save the current game state to disk.
+
+        Returns:
+            True if save succeeded, False otherwise
+        """
+        from .save_load import save_game
+
+        game_state = {
+            'current_level': self.current_level,
+            'messages': self.messages,
+            'player': self._serialize_player(self.player),
+            'enemies': [self._serialize_enemy(e) for e in self.enemies],
+            'items': [self._serialize_item(i) for i in self.items],
+            'dungeon': self._serialize_dungeon(self.dungeon)
+        }
+
+        return save_game(game_state)
+
+    def load_game_state(self, game_state: dict) -> bool:
+        """
+        Load game state from a dictionary.
+
+        Args:
+            game_state: Dictionary containing serialized game state
+
+        Returns:
+            True if load succeeded, False otherwise
+        """
+        try:
+            self.current_level = game_state['current_level']
+            self.messages = game_state['messages']
+            self.player = self._deserialize_player(game_state['player'])
+            self.enemies = [self._deserialize_enemy(e) for e in game_state['enemies']]
+            self.items = [self._deserialize_item(i) for i in game_state['items']]
+            self.dungeon = self._deserialize_dungeon(game_state['dungeon'])
+
+            # Update FOV after loading
+            self.dungeon.update_fov(self.player.x, self.player.y)
+
+            return True
+        except Exception as e:
+            print(f"Error loading game state: {e}")
+            return False
+
+    def _serialize_player(self, player: Player) -> dict:
+        """Serialize player to dictionary."""
+        return {
+            'x': player.x,
+            'y': player.y,
+            'health': player.health,
+            'max_health': player.max_health,
+            'attack_damage': player.attack_damage,
+            'level': player.level,
+            'xp': player.xp,
+            'xp_to_next_level': player.xp_to_next_level,
+            'kills': player.kills,
+            'inventory': [self._serialize_item(item) for item in player.inventory.items]
+        }
+
+    def _deserialize_player(self, data: dict) -> Player:
+        """Deserialize player from dictionary."""
+        player = Player(data['x'], data['y'])
+        player.health = data['health']
+        player.max_health = data['max_health']
+        player.attack_damage = data['attack_damage']
+        player.level = data['level']
+        player.xp = data['xp']
+        player.xp_to_next_level = data['xp_to_next_level']
+        player.kills = data['kills']
+
+        # Restore inventory
+        player.inventory.items = [self._deserialize_item(item_data) for item_data in data['inventory']]
+
+        return player
+
+    def _serialize_enemy(self, enemy: Enemy) -> dict:
+        """Serialize enemy to dictionary."""
+        return {
+            'x': enemy.x,
+            'y': enemy.y,
+            'health': enemy.health,
+            'max_health': enemy.max_health,
+            'attack_damage': enemy.attack_damage,
+            'is_elite': enemy.is_elite
+        }
+
+    def _deserialize_enemy(self, data: dict) -> Enemy:
+        """Deserialize enemy from dictionary."""
+        enemy = Enemy(data['x'], data['y'], is_elite=data['is_elite'])
+        enemy.health = data['health']
+        enemy.max_health = data['max_health']
+        enemy.attack_damage = data['attack_damage']
+        return enemy
+
+    def _serialize_item(self, item: Item) -> dict:
+        """Serialize item to dictionary."""
+        from .items import ItemType
+
+        # Get the item type name
+        item_type_name = None
+        for item_type in ItemType:
+            if item.name == create_item(item_type, 0, 0).name:
+                item_type_name = item_type.name
+                break
+
+        return {
+            'x': item.x,
+            'y': item.y,
+            'item_type': item_type_name,
+            'name': item.name,
+            'symbol': item.symbol
+        }
+
+    def _deserialize_item(self, data: dict) -> Item:
+        """Deserialize item from dictionary."""
+        from .items import ItemType
+
+        # Recreate item from type
+        item_type = ItemType[data['item_type']]
+        return create_item(item_type, data['x'], data['y'])
+
+    def _serialize_dungeon(self, dungeon: Dungeon) -> dict:
+        """Serialize dungeon to dictionary."""
+        from .constants import TileType
+
+        # Convert TileType enum values to strings for serialization
+        tiles = [[tile.value for tile in row] for row in dungeon.tiles]
+
+        return {
+            'width': dungeon.width,
+            'height': dungeon.height,
+            'level': dungeon.level,
+            'tiles': tiles,
+            'explored': dungeon.explored,
+            'visible': dungeon.visible,
+            'stairs_up_pos': dungeon.stairs_up_pos,
+            'stairs_down_pos': dungeon.stairs_down_pos,
+            'has_stairs_up': dungeon.has_stairs_up
+        }
+
+    def _deserialize_dungeon(self, data: dict) -> Dungeon:
+        """Deserialize dungeon from dictionary."""
+        from .constants import TileType
+
+        # Create empty dungeon (will override its generated content)
+        dungeon = Dungeon(width=data['width'], height=data['height'], level=data['level'], has_stairs_up=data['has_stairs_up'])
+
+        # Restore tiles by converting chars back to TileType enums
+        dungeon.tiles = []
+        for row in data['tiles']:
+            tile_row = []
+            for tile_char in row:
+                # Find matching TileType for this character
+                for tile_type in TileType:
+                    if tile_type.value == tile_char:
+                        tile_row.append(tile_type)
+                        break
+            dungeon.tiles.append(tile_row)
+
+        dungeon.explored = data['explored']
+        dungeon.visible = data['visible']
+        dungeon.stairs_up_pos = data['stairs_up_pos']
+        dungeon.stairs_down_pos = data['stairs_down_pos']
+
+        # Note: We don't restore rooms list as it's not needed for gameplay after generation
+
+        return dungeon
 
     def _game_over_loop(self):
         """Game over state loop."""
