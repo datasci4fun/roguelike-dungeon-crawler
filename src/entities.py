@@ -96,24 +96,44 @@ class Player(Entity):
 class Enemy(Entity):
     """An enemy entity."""
 
-    def __init__(self, x: int, y: int, is_elite: bool = False):
+    def __init__(self, x: int, y: int, enemy_type=None, is_elite: bool = False):
         from .constants import (
-            ELITE_HP_MULTIPLIER, ELITE_DAMAGE_MULTIPLIER, ELITE_SYMBOL
+            ELITE_HP_MULTIPLIER, ELITE_DAMAGE_MULTIPLIER,
+            ENEMY_STATS, EnemyType
         )
 
-        # Calculate elite stats
-        hp = ENEMY_MAX_HEALTH * ELITE_HP_MULTIPLIER if is_elite else ENEMY_MAX_HEALTH
-        damage = ENEMY_ATTACK_DAMAGE * ELITE_DAMAGE_MULTIPLIER if is_elite else ENEMY_ATTACK_DAMAGE
+        # Default to SKELETON if no type specified (for backward compatibility)
+        if enemy_type is None:
+            enemy_type = EnemyType.SKELETON
+
+        # Get base stats from enemy type
+        stats = ENEMY_STATS[enemy_type]
+        base_hp = stats['hp']
+        base_damage = stats['damage']
+        base_symbol = stats['symbol']
+
+        # Apply elite multipliers
+        hp = base_hp * ELITE_HP_MULTIPLIER if is_elite else base_hp
+        damage = base_damage * ELITE_DAMAGE_MULTIPLIER if is_elite else base_damage
+
+        # Elite enemies use uppercase symbols
+        if is_elite:
+            symbol = base_symbol.upper()
+        else:
+            symbol = base_symbol
 
         super().__init__(
             x=x,
             y=y,
-            symbol=ELITE_SYMBOL if is_elite else ENEMY_SYMBOL,
+            symbol=symbol,
             max_health=hp,
             health=hp,
             attack_damage=damage
         )
         self.is_elite = is_elite
+        self.enemy_type = enemy_type
+        self.xp_reward = stats['xp']  # Base XP reward (elite multiplier applied at kill time)
+        self.name = stats['name']  # Enemy name for messages
 
     def get_move_toward_player(self, player_x: int, player_y: int, is_walkable_func) -> Tuple[int, int]:
         """

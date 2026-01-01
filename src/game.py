@@ -46,18 +46,26 @@ class Game:
         self._spawn_items()
 
     def _spawn_enemies(self):
-        """Spawn enemies in random rooms."""
-        from .constants import ELITE_SPAWN_RATE
+        """Spawn enemies in random rooms with weighted type selection."""
+        from .constants import ELITE_SPAWN_RATE, ENEMY_STATS, EnemyType
 
         num_enemies = min(len(self.dungeon.rooms) * 2, 15)  # 2 enemies per room, max 15
+
+        # Get weighted list of enemy types
+        enemy_types = list(ENEMY_STATS.keys())
+        weights = [ENEMY_STATS[t]['weight'] for t in enemy_types]
 
         for _ in range(num_enemies):
             pos = self.dungeon.get_random_floor_position()
             # Make sure not too close to player
             if abs(pos[0] - self.player.x) > 5 or abs(pos[1] - self.player.y) > 5:
+                # Select enemy type using weighted random selection
+                enemy_type = random.choices(enemy_types, weights=weights)[0]
+
                 # 20% chance to spawn elite enemy
                 is_elite = random.random() < ELITE_SPAWN_RATE
-                enemy = Enemy(pos[0], pos[1], is_elite=is_elite)
+
+                enemy = Enemy(pos[0], pos[1], enemy_type=enemy_type, is_elite=is_elite)
                 self.enemies.append(enemy)
 
     def _spawn_items(self):
@@ -163,7 +171,9 @@ class Game:
         if enemy:
             # Attack the enemy
             damage, enemy_died = attack(self.player, enemy)
-            message = get_combat_message("You", "enemy", damage, enemy_died)
+            # Use enemy name (with "Elite" prefix for elites)
+            enemy_name = f"Elite {enemy.name}" if enemy.is_elite else enemy.name
+            message = get_combat_message("You", enemy_name, damage, enemy_died)
             self.add_message(message)
 
             # Combat feedback animations
@@ -178,8 +188,8 @@ class Game:
                 self.dungeon.add_blood_stain(enemy.x, enemy.y)
 
                 # Award XP (2x for elites) and check for level up
-                from .constants import XP_PER_KILL, ELITE_XP_MULTIPLIER
-                xp_award = XP_PER_KILL * ELITE_XP_MULTIPLIER if enemy.is_elite else XP_PER_KILL
+                from .constants import ELITE_XP_MULTIPLIER
+                xp_award = enemy.xp_reward * ELITE_XP_MULTIPLIER if enemy.is_elite else enemy.xp_reward
                 leveled_up = self.player.gain_xp(xp_award)
 
                 if leveled_up:
@@ -231,7 +241,9 @@ class Game:
             if new_x == self.player.x and new_y == self.player.y:
                 # Attack player
                 damage, player_died = attack(enemy, self.player)
-                message = get_combat_message("Enemy", "you", damage, player_died)
+                # Use enemy name (with "Elite" prefix for elites)
+                enemy_name = f"Elite {enemy.name}" if enemy.is_elite else enemy.name
+                message = get_combat_message(enemy_name, "you", damage, player_died)
                 self.add_message(message)
 
                 # Combat feedback animations
@@ -424,18 +436,25 @@ class Game:
 
     def _serialize_enemy(self, enemy: Enemy) -> dict:
         """Serialize enemy to dictionary."""
+        from .constants import EnemyType
         return {
             'x': enemy.x,
             'y': enemy.y,
             'health': enemy.health,
             'max_health': enemy.max_health,
             'attack_damage': enemy.attack_damage,
-            'is_elite': enemy.is_elite
+            'is_elite': enemy.is_elite,
+            'enemy_type': enemy.enemy_type.name  # Serialize enum as string
         }
 
     def _deserialize_enemy(self, data: dict) -> Enemy:
         """Deserialize enemy from dictionary."""
-        enemy = Enemy(data['x'], data['y'], is_elite=data['is_elite'])
+        from .constants import EnemyType
+
+        # Convert string back to enum
+        enemy_type = EnemyType[data['enemy_type']]
+
+        enemy = Enemy(data['x'], data['y'], enemy_type=enemy_type, is_elite=data['is_elite'])
         enemy.health = data['health']
         enemy.max_health = data['max_health']
         enemy.attack_damage = data['attack_damage']

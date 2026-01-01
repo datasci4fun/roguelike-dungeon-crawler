@@ -34,13 +34,14 @@ class Renderer:
             curses.init_pair(2, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # Player
             curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)     # Enemy
             curses.init_pair(4, curses.COLOR_GREEN, curses.COLOR_BLACK)   # Health
-            curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_BLACK)    # Items
-            curses.init_pair(6, curses.COLOR_MAGENTA, curses.COLOR_BLACK) # Elite Enemy
+            curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_BLACK)    # Items (uncommon)
+            curses.init_pair(6, curses.COLOR_MAGENTA, curses.COLOR_BLACK) # Elite Enemy / Epic items
             curses.init_pair(7, 8, curses.COLOR_BLACK)                    # Dim (dark gray)
             # Bright colors for messages (will use BOLD attribute for brightness)
             curses.init_pair(8, curses.COLOR_RED, curses.COLOR_BLACK)     # Bright red (combat kill)
             curses.init_pair(9, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # Bright yellow (level up)
             curses.init_pair(10, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Bright green (healing)
+            curses.init_pair(11, curses.COLOR_BLUE, curses.COLOR_BLACK)   # Blue (rare items)
 
     def render(self, dungeon: Dungeon, player: Player, enemies: List[Enemy], items: List[Item], messages: List[str]):
         """Render the entire game state."""
@@ -289,6 +290,7 @@ class Renderer:
 
     def _render_items(self, items: List[Item], dungeon: Dungeon):
         """Render all items on the ground (only if visible)."""
+        from .constants import ITEM_RARITY_COLORS
         max_y, max_x = self.stdscr.getmaxyx()
 
         for item in items:
@@ -299,7 +301,12 @@ class Renderer:
 
                 try:
                     if curses.has_colors():
-                        self.stdscr.addch(item.y, item.x, item.symbol, curses.color_pair(5))
+                        # Use rarity color if available, default to cyan (5)
+                        if item.rarity:
+                            color_pair = ITEM_RARITY_COLORS[item.rarity]
+                        else:
+                            color_pair = 5  # Default to cyan
+                        self.stdscr.addch(item.y, item.x, item.symbol, curses.color_pair(color_pair))
                     else:
                         self.stdscr.addch(item.y, item.x, item.symbol)
                 except curses.error:

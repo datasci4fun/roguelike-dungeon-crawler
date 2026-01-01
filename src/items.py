@@ -23,6 +23,7 @@ class Item:
     name: str
     symbol: str
     description: str
+    rarity: 'ItemRarity' = None  # Item rarity for color coding
 
     def use(self, player: 'Player') -> str:
         """
@@ -36,13 +37,15 @@ class HealthPotion(Item):
     """Health potion that restores HP."""
 
     def __init__(self, x: int, y: int):
+        from .constants import ItemRarity
         super().__init__(
             x=x,
             y=y,
             item_type=ItemType.HEALTH_POTION,
             name="Health Potion",
             symbol='!',
-            description="Restores 10 HP"
+            description="Restores 10 HP",
+            rarity=ItemRarity.COMMON
         )
         self.heal_amount = 10
 
@@ -62,13 +65,15 @@ class StrengthPotion(Item):
     """Potion that permanently increases attack damage."""
 
     def __init__(self, x: int, y: int):
+        from .constants import ItemRarity
         super().__init__(
             x=x,
             y=y,
             item_type=ItemType.STRENGTH_POTION,
             name="Strength Potion",
             symbol='!',
-            description="Increases ATK by 1"
+            description="Increases ATK by 1",
+            rarity=ItemRarity.UNCOMMON
         )
 
     def use(self, player: 'Player') -> str:
@@ -81,13 +86,15 @@ class ScrollTeleport(Item):
     """Scroll that teleports player to a random location."""
 
     def __init__(self, x: int, y: int):
+        from .constants import ItemRarity
         super().__init__(
             x=x,
             y=y,
             item_type=ItemType.SCROLL_TELEPORT,
             name="Scroll of Teleport",
             symbol='?',
-            description="Teleports to random location"
+            description="Teleports to random location",
+            rarity=ItemRarity.UNCOMMON
         )
 
     def use(self, player: 'Player') -> str:
