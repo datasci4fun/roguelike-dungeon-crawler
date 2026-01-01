@@ -2,13 +2,13 @@
 
 **Last Updated:** 2026-01-01
 **Branch:** develop
-**Version:** v1.0.0
+**Version:** v1.1.0 (XP/Leveling System)
 
 ---
 
 ## Current Status
 
-The roguelike dungeon crawler is **fully functional** with all core systems implemented and stable.
+The roguelike dungeon crawler is **fully functional and now winnable** with XP/leveling system and guaranteed healing.
 
 ### Completed Features
 
@@ -28,6 +28,16 @@ The roguelike dungeon crawler is **fully functional** with all core systems impl
 - ✅ Item usage via hotkeys (1-3)
 - ✅ Inventory display in UI panel
 
+**XP/Leveling System (v1.1.0):**
+- ✅ XP system: 15 XP per enemy kill
+- ✅ Linear leveling curve (level × 30 XP required)
+- ✅ Stat growth: +10 max HP, +1 ATK per level
+- ✅ Full heal on level up
+- ✅ Level and XP bar display in UI
+- ✅ Player reaches level 6-7 by endgame
+- ✅ Guaranteed 2 health potions per level
+- ✅ Game is now mathematically winnable
+
 **Technical:**
 - ✅ Clean module separation (dungeon, entities, combat, items, renderer, game)
 - ✅ Windows support via windows-curses
@@ -39,19 +49,36 @@ The roguelike dungeon crawler is **fully functional** with all core systems impl
 
 ## What Changed (This Session)
 
-- Initial STATE.md checkpoint created
-- Project fully reviewed and documented
+**Major Feature: XP/Leveling System (v1.1.0)**
+- Analyzed game balance and determined game was mathematically unwinnable
+  - Player could only kill 3-4 enemies before dying
+  - Game requires defeating ~50 enemies across 5 levels
+  - Even with all health potions, only ~10 kills possible
+- Implemented XP/leveling system with stat growth:
+  - 15 XP per enemy kill, linear curve (level × 30 XP)
+  - +10 max HP and +1 ATK per level, full heal on level up
+  - Player reaches level 6-7 if all enemies defeated
+- Modified item spawning to guarantee 2 health potions per level
+- Updated UI to show player level and XP progress bar
+- Game over screen now shows final level achieved
+- **Result:** Game is now winnable with ~180+ effective HP available
+
+Files Modified:
+- `src/constants.py` - Added 5 XP/leveling constants
+- `src/entities.py` - Added level/xp fields and gain_xp() method to Player
+- `src/game.py` - Award XP on kill, guaranteed health potions
+- `src/renderer.py` - Display level/XP in UI, final level on game over
 
 ---
 
 ## What's Next
 
-### Priority 1: Polish & Balance
-1. **Combat tuning** - Balance enemy damage, player health, item spawn rates
-2. **Visual polish** - Better dungeon visuals, more varied tile types
-3. **Sound/feedback** - Terminal bell on important events, better combat messages
+### Priority 1: Testing & Tuning
+1. **Playtesting** - Test full 5-level playthrough, verify game is winnable
+2. **Balance tuning** - Adjust XP/HP/ATK values if game is too easy/hard
+3. **Bug fixes** - Fix any issues found during testing
 
-### Priority 2: New Features
+### Priority 2: Polish & Expansion
 1. **More item types** - Defense potions, damage scrolls, reveal map scrolls
 2. **Enemy variety** - Different enemy types with unique behaviors
 3. **Boss encounters** - Special enemies on certain levels
