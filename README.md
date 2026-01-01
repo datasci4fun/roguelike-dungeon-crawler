@@ -1,15 +1,38 @@
 # Roguelike Dungeon Crawler
 
-A terminal-based roguelike game with procedural dungeon generation, exploration, and combat.
+A terminal-based roguelike game with procedural dungeon generation, exploration, and combat. Features rich visual variety with themed dungeons, diverse enemies, animated combat, and enhanced UI.
 
 ## Features
 
+### Core Gameplay
 - **Procedural Generation**: Each dungeon is randomly generated using Binary Space Partitioning (BSP)
-- **Multiple Levels**: Descend through 5 dungeon levels, each with unique layouts
-- **Inventory System**: Collect and use items like health potions, strength potions, and teleport scrolls
-- **Exploration**: Navigate through rooms and corridors with stairs connecting levels
-- **Combat**: Bump-to-attack combat system with enemies that chase you
-- **ASCII Graphics**: Classic roguelike terminal rendering
+- **5 Themed Dungeon Levels**: Stone Dungeon, Cave, Crypt, Library, Treasury - each with unique visuals
+- **Inventory System**: 10-slot inventory with automatic pickup for health potions, strength potions, and teleport scrolls
+- **Exploration**: Field of view system with fog of war - discover rooms, corridors, and secrets
+- **Combat**: Bump-to-attack combat with animated feedback (hit flashes, damage numbers, direction indicators)
+- **XP & Leveling**: Gain experience from defeating enemies, level up to increase HP and ATK
+
+### Visual Variety (v2.0.0)
+- **6 Enemy Types**: Goblins (g), Skeletons (s), Orcs (o), Wraiths (W), Trolls (T), Dragons (D)
+- **Elite Enemies**: Uppercase symbols (G, S, O) with 2x HP, damage, and XP rewards
+- **Weighted Spawning**: Common enemies frequent, rare enemies (Dragons) scarce
+- **Dungeon Decorations**: Pillars, statues, furniture, braziers - varies by theme
+- **Terrain Features**: Water, grass, blood stains (persist where enemies die)
+- **Item Rarity Colors**: Common (white), Uncommon (cyan), Rare (blue), Epic (magenta)
+
+### Enhanced UI
+- **Visual Bars**: Health and XP displayed as progress bars with dynamic colors
+- **Panel Borders**: Box-drawing characters for clean UI layout
+- **Color-Coded Messages**: Combat (red), healing (green), level-ups (yellow)
+- **Status Indicators**: [WOUNDED], [CRITICAL], [STRONG] based on player state
+- **Real-Time Minimap**: 5x5 dungeon overview with room/enemy/item counts
+- **Combat Animations**: Hit flashes, floating damage numbers, attack direction arrows, death animations
+
+### Technical Features
+- **Save/Load System**: Full game state persistence with permadeath option
+- **11 Color Pairs**: Rich color palette for diverse visuals
+- **FOV Integration**: All visual elements respect field of view
+- **Clean Architecture**: Rendering separated from game logic
 
 ## Installation
 
@@ -33,29 +56,44 @@ python main.py
 
 ### Gameplay
 
-- Explore the procedurally generated dungeon
+- Explore procedurally generated themed dungeons with unique visuals per level
 - Find the stairs down (>) to descend to deeper levels
-- Collect items (! for potions, ? for scrolls) to help you survive
-  - **Health Potions**: Restore 10 HP
-  - **Strength Potions**: Permanently increase attack damage
-  - **Teleport Scrolls**: Instantly move to a random location
-- Enemies (E) will chase you when you get close
-- Walk into enemies to attack them
+- Collect color-coded items to help you survive:
+  - **Health Potions** (!): Restore 10 HP (Common - white)
+  - **Strength Potions** (!): Permanently increase attack damage (Uncommon - cyan)
+  - **Teleport Scrolls** (?): Instantly move to a random location (Uncommon - cyan)
+- Face 6 enemy types with varying difficulty:
+  - **Goblins** (g): Weak but common (6 HP, 1 DMG, 10 XP)
+  - **Skeletons** (s): Basic undead (8 HP, 2 DMG, 15 XP)
+  - **Orcs** (o): Tough warriors (12 HP, 3 DMG, 20 XP)
+  - **Wraiths** (W): Dangerous spirits (10 HP, 4 DMG, 25 XP)
+  - **Trolls** (T): Powerful brutes (20 HP, 5 DMG, 35 XP)
+  - **Dragons** (D): Rare bosses (50 HP, 10 DMG, 100 XP)
+- Elite enemies (uppercase symbols) have double stats and rewards
+- Combat features visual feedback: hit flashes, damage numbers, direction arrows
+- Blood stains mark where enemies fell
+- Level up by defeating enemies to gain +10 max HP and +1 ATK
 - Reach level 5 to win the game!
-- The game ends when your health reaches 0
+- Manage your health carefully - death is permanent
 
-### Stats
+### Stats & UI
 
-- **Level**: Current dungeon level (1-5)
-- **HP**: Your current health
-- **ATK**: Your attack damage
+- **Level**: Current dungeon level (1-5) with unique theme per level
+- **HP**: Visual progress bar with dynamic colors (green/yellow/red)
+- **XP**: Visual progress bar showing experience to next level
+- **ATK**: Your attack damage (increases with level and strength potions)
 - **Kills**: Number of enemies defeated
-- **Inventory**: Shows up to 3 items (capacity: 10)
-- **Pos**: Your current position (for exploration tracking)
+- **Inventory**: Shows up to 3 items (capacity: 10) with rarity colors
+- **Minimap**: 5x5 real-time dungeon overview
+- **Status**: Active effects like [WOUNDED], [CRITICAL], [STRONG]
+- **Messages**: Color-coded combat log (recent 5 messages)
 
 ## Technical Details
 
-- **Language**: Python 3.7+
-- **UI**: curses library for terminal rendering
-- **Generation Algorithm**: Binary Space Partitioning for guaranteed connected dungeons
+- **Language**: Python 3.9+
+- **UI**: curses library with 11 color pairs for rich terminal rendering
+- **Generation Algorithm**: Binary Space Partitioning (BSP) for guaranteed connected dungeons
+- **FOV System**: Raycasting-based field of view with fog of war
+- **Animation System**: Time-based animations with automatic cleanup
 - **Architecture**: Clean separation between game logic, rendering, and entities
+- **Save System**: JSON-based full state serialization with permadeath
