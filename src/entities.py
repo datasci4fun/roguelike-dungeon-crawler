@@ -50,6 +50,43 @@ class Player(Entity):
         self.kills = 0
         self.inventory = Inventory(max_size=10)
 
+        # XP and leveling
+        self.level = 1
+        self.xp = 0
+        self.xp_to_next_level = self._calculate_xp_for_next_level()
+
+    def _calculate_xp_for_next_level(self) -> int:
+        """Calculate XP required to reach next level."""
+        from .constants import XP_BASE_REQUIREMENT
+        return self.level * XP_BASE_REQUIREMENT
+
+    def gain_xp(self, amount: int) -> bool:
+        """
+        Gain XP and check for level up.
+
+        Returns:
+            True if player leveled up, False otherwise
+        """
+        from .constants import MAX_PLAYER_LEVEL, HP_GAIN_PER_LEVEL, ATK_GAIN_PER_LEVEL
+
+        self.xp += amount
+
+        # Check for level up
+        if self.xp >= self.xp_to_next_level and self.level < MAX_PLAYER_LEVEL:
+            self.level += 1
+
+            # Increase stats and heal to full
+            self.max_health += HP_GAIN_PER_LEVEL
+            self.health = self.max_health  # Full heal on level up
+            self.attack_damage += ATK_GAIN_PER_LEVEL
+
+            # Calculate next level requirement
+            self.xp_to_next_level = self._calculate_xp_for_next_level()
+
+            return True
+
+        return False
+
     def move(self, dx: int, dy: int):
         """Move the player by the given offset."""
         self.x += dx

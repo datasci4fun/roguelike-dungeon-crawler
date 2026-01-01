@@ -113,7 +113,7 @@ class Renderer:
             self.stdscr.addstr(1, panel_x + 2, f"Level: {dungeon.level}")
 
             # Player stats
-            self.stdscr.addstr(3, panel_x + 2, "PLAYER")
+            self.stdscr.addstr(3, panel_x + 2, f"PLAYER (Level {player.level})")
 
             health_str = f"HP: {player.health}/{player.max_health}"
             if curses.has_colors():
@@ -124,21 +124,27 @@ class Renderer:
             self.stdscr.addstr(5, panel_x + 2, f"ATK: {player.attack_damage}")
             self.stdscr.addstr(6, panel_x + 2, f"Kills: {player.kills}")
 
+            # XP bar
+            xp_in_level = player.xp - (player.xp_to_next_level - player.level * 30)
+            xp_needed = player.level * 30
+            xp_str = f"XP: {xp_in_level}/{xp_needed}"
+            self.stdscr.addstr(7, panel_x + 2, xp_str)
+
             # Position (for debugging/exploration feel)
-            self.stdscr.addstr(8, panel_x + 2, f"Pos: ({player.x},{player.y})")
+            self.stdscr.addstr(9, panel_x + 2, f"Pos: ({player.x},{player.y})")
 
             # Inventory
-            self.stdscr.addstr(10, panel_x + 2, f"INVENTORY ({len(player.inventory.items)}/10)")
+            self.stdscr.addstr(11, panel_x + 2, f"INVENTORY ({len(player.inventory.items)}/10)")
             for i, item in enumerate(player.inventory.items[:3]):  # Show first 3 items
-                item_y = 11 + i
+                item_y = 12 + i
                 if item_y < max_y:
                     item_str = f"{i+1}. {item.name[:15]}"
                     self.stdscr.addstr(item_y, panel_x + 2, item_str)
 
             # Message log
-            self.stdscr.addstr(15, panel_x + 2, "MESSAGES")
+            self.stdscr.addstr(16, panel_x + 2, "MESSAGES")
             for i, message in enumerate(messages[-MESSAGE_LOG_SIZE:]):
-                msg_y = 16 + i
+                msg_y = 17 + i
                 if msg_y < max_y:
                     # Truncate message if too long
                     display_msg = message[:STATS_PANEL_WIDTH - 4]
@@ -164,7 +170,8 @@ class Renderer:
         messages = [
             "YOU DIED",
             "",
-            f"You defeated {player.kills} enemies",
+            f"Final Level: {player.level}",
+            f"Enemies Defeated: {player.kills}",
             "",
             "Press any key to exit..."
         ]

@@ -55,13 +55,20 @@ class Game:
 
     def _spawn_items(self):
         """Spawn items in random locations."""
-        num_items = random.randint(2, 5)  # 2-5 items per level
-
-        for _ in range(num_items):
+        # GUARANTEED: 2 health potions per level for survivability
+        for _ in range(2):
             pos = self.dungeon.get_random_floor_position()
             # Make sure not on player or stairs
             if (pos[0] != self.player.x or pos[1] != self.player.y):
-                # Random item type
+                item = create_item(ItemType.HEALTH_POTION, pos[0], pos[1])
+                self.items.append(item)
+
+        # RANDOM: 0-3 additional random items (can be any type)
+        num_random_items = random.randint(0, 3)
+        for _ in range(num_random_items):
+            pos = self.dungeon.get_random_floor_position()
+            # Make sure not on player or stairs
+            if (pos[0] != self.player.x or pos[1] != self.player.y):
                 item_type = random.choice(list(ItemType))
                 item = create_item(item_type, pos[0], pos[1])
                 self.items.append(item)
@@ -148,6 +155,14 @@ class Game:
 
             if enemy_died:
                 self.player.kills += 1
+
+                # Award XP and check for level up
+                from .constants import XP_PER_KILL
+                leveled_up = self.player.gain_xp(XP_PER_KILL)
+
+                if leveled_up:
+                    self.add_message(f"LEVEL UP! You are now level {self.player.level}!")
+                    self.add_message(f"HP: {self.player.max_health}, ATK: {self.player.attack_damage}")
 
             return True
 

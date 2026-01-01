@@ -38,6 +38,15 @@ ENEMY_MAX_HEALTH = 8
 ENEMY_ATTACK_DAMAGE = 2
 ENEMY_CHASE_RANGE = 8
 
+# XP and Leveling configuration
+XP_PER_KILL = 15                # XP awarded per enemy kill
+XP_BASE_REQUIREMENT = 30        # Level 1→2 requires 30 XP (formula: level × 30)
+MAX_PLAYER_LEVEL = 10           # Maximum player level
+
+# Stat growth per level
+HP_GAIN_PER_LEVEL = 10         # Max HP increase per level
+ATK_GAIN_PER_LEVEL = 1         # Attack damage increase per level
+
 # UI configuration
 MESSAGE_LOG_SIZE = 5
 STATS_PANEL_WIDTH = 25
