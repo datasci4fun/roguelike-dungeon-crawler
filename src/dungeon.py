@@ -141,6 +141,10 @@ class Dungeon:
         self.stairs_down_pos = None
         self.has_stairs_up = has_stairs_up
 
+        # FOV tracking arrays
+        self.explored = [[False for _ in range(width)] for _ in range(height)]
+        self.visible = [[False for _ in range(width)] for _ in range(height)]
+
         if seed is not None:
             random.seed(seed)
 
@@ -266,3 +270,35 @@ class Dungeon:
             y = random.randint(0, self.height - 1)
             if self.is_walkable(x, y):
                 return (x, y)
+
+    def is_blocking_sight(self, x: int, y: int) -> bool:
+        """Check if a tile blocks line of sight (walls block, floors don't)."""
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return True
+        return self.tiles[y][x] == TileType.WALL
+
+    def update_fov(self, center_x: int, center_y: int):
+        """
+        Update the visible array based on player position.
+        Also marks visible tiles as explored.
+        """
+        from .fov import calculate_fov
+        from .constants import FOV_RADIUS
+
+        # Clear previous visibility
+        for y in range(self.height):
+            for x in range(self.width):
+                self.visible[y][x] = False
+
+        # Calculate new FOV
+        visible_tiles = calculate_fov(
+            center_x, center_y, FOV_RADIUS,
+            self.is_blocking_sight,
+            self.width, self.height
+        )
+
+        # Update visible and explored arrays
+        for x, y in visible_tiles:
+            if 0 <= x < self.width and 0 <= y < self.height:
+                self.visible[y][x] = True
+                self.explored[y][x] = True

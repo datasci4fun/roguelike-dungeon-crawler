@@ -23,6 +23,8 @@ class Renderer:
             curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)     # Enemy
             curses.init_pair(4, curses.COLOR_GREEN, curses.COLOR_BLACK)   # Health
             curses.init_pair(5, curses.COLOR_CYAN, curses.COLOR_BLACK)    # Items
+            curses.init_pair(6, curses.COLOR_MAGENTA, curses.COLOR_BLACK) # Elite Enemy
+            curses.init_pair(7, 8, curses.COLOR_BLACK)                    # Dim (dark gray)
 
     def render(self, dungeon: Dungeon, player: Player, enemies: List[Enemy], items: List[Item], messages: List[str]):
         """Render the entire game state."""
@@ -31,11 +33,11 @@ class Renderer:
         # Render dungeon
         self._render_dungeon(dungeon)
 
-        # Render items (before enemies and player)
-        self._render_items(items)
+        # Render items (before enemies and player) - only visible
+        self._render_items(items, dungeon)
 
-        # Render enemies
-        self._render_enemies(enemies)
+        # Render enemies - only visible
+        self._render_enemies(enemies, dungeon)
 
         # Render player (always on top)
         self._render_player(player)
@@ -53,17 +55,34 @@ class Renderer:
             for x in range(min(dungeon.width, max_x - STATS_PANEL_WIDTH)):
                 try:
                     tile = dungeon.tiles[y][x]
-                    self.stdscr.addch(y, x, tile.value)
+
+                    # Only render explored tiles
+                    if not dungeon.explored[y][x]:
+                        continue  # Unexplored tiles are not rendered (remain black)
+
+                    # Visible tiles render normally, explored-but-not-visible render dim
+                    if dungeon.visible[y][x]:
+                        self.stdscr.addch(y, x, tile.value)
+                    else:
+                        # Dim rendering for explored but not visible
+                        if curses.has_colors():
+                            self.stdscr.addch(y, x, tile.value, curses.color_pair(7))
+                        else:
+                            self.stdscr.addch(y, x, tile.value)
                 except curses.error:
                     # Ignore errors from trying to write to bottom-right corner
                     pass
 
-    def _render_items(self, items: List[Item]):
-        """Render all items on the ground."""
+    def _render_items(self, items: List[Item], dungeon: Dungeon):
+        """Render all items on the ground (only if visible)."""
         max_y, max_x = self.stdscr.getmaxyx()
 
         for item in items:
             if 0 <= item.y < max_y and 0 <= item.x < max_x - STATS_PANEL_WIDTH:
+                # Only render items in visible tiles
+                if not dungeon.visible[item.y][item.x]:
+                    continue
+
                 try:
                     if curses.has_colors():
                         self.stdscr.addch(item.y, item.x, item.symbol, curses.color_pair(5))
@@ -72,17 +91,24 @@ class Renderer:
                 except curses.error:
                     pass
 
-    def _render_enemies(self, enemies: List[Enemy]):
-        """Render all living enemies."""
+    def _render_enemies(self, enemies: List[Enemy], dungeon: Dungeon):
+        """Render all living enemies (only if visible)."""
         max_y, max_x = self.stdscr.getmaxyx()
 
         for enemy in enemies:
             if enemy.is_alive() and 0 <= enemy.y < max_y and 0 <= enemy.x < max_x - STATS_PANEL_WIDTH:
+                # Only render enemies in visible tiles
+                if not dungeon.visible[enemy.y][enemy.x]:
+                    continue
                 try:
                     if curses.has_colors():
-                        self.stdscr.addch(enemy.y, enemy.x, enemy.symbol, curses.color_pair(3))
+                        # Elites render in magenta, regular enemies in red
+                        color = curses.color_pair(6) if enemy.is_elite else curses.color_pair(3)
+                        self.stdscr.addch(enemy.y, enemy.x, enemy.symbol, color)
                     else:
-                        self.stdscr.addch(enemy.y, enemy.x, enemy.symbol)
+                        # No color: use '*' for elite, 'E' for regular
+                        symbol = '*' if enemy.is_elite else enemy.symbol
+                        self.stdscr.addch(enemy.y, enemy.x, symbol)
                 except curses.error:
                     pass
 

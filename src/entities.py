@@ -96,15 +96,24 @@ class Player(Entity):
 class Enemy(Entity):
     """An enemy entity."""
 
-    def __init__(self, x: int, y: int):
+    def __init__(self, x: int, y: int, is_elite: bool = False):
+        from .constants import (
+            ELITE_HP_MULTIPLIER, ELITE_DAMAGE_MULTIPLIER, ELITE_SYMBOL
+        )
+
+        # Calculate elite stats
+        hp = ENEMY_MAX_HEALTH * ELITE_HP_MULTIPLIER if is_elite else ENEMY_MAX_HEALTH
+        damage = ENEMY_ATTACK_DAMAGE * ELITE_DAMAGE_MULTIPLIER if is_elite else ENEMY_ATTACK_DAMAGE
+
         super().__init__(
             x=x,
             y=y,
-            symbol=ENEMY_SYMBOL,
-            max_health=ENEMY_MAX_HEALTH,
-            health=ENEMY_MAX_HEALTH,
-            attack_damage=ENEMY_ATTACK_DAMAGE
+            symbol=ELITE_SYMBOL if is_elite else ENEMY_SYMBOL,
+            max_health=hp,
+            health=hp,
+            attack_damage=damage
         )
+        self.is_elite = is_elite
 
     def get_move_toward_player(self, player_x: int, player_y: int, is_walkable_func) -> Tuple[int, int]:
         """

@@ -1,14 +1,14 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-01
-**Branch:** develop
-**Version:** v1.1.0 (XP/Leveling System)
+**Branch:** feature/add-fov-save-elites
+**Version:** v1.2.0 (Elite Enemies + FOV + Save/Load)
 
 ---
 
 ## Current Status
 
-The roguelike dungeon crawler is **fully functional and now winnable** with XP/leveling system and guaranteed healing.
+The roguelike dungeon crawler is **fully functional** with XP/leveling, elite enemies, field of view (fog of war), and save/load with permadeath.
 
 ### Completed Features
 
@@ -38,6 +38,27 @@ The roguelike dungeon crawler is **fully functional and now winnable** with XP/l
 - ✅ Guaranteed 2 health potions per level
 - ✅ Game is now mathematically winnable
 
+**Elite Enemies (v1.2.0):**
+- ✅ 20% elite enemy spawn rate
+- ✅ Elites have 2x HP (16) and 2x damage (4)
+- ✅ Award 2x XP (30) on kill for faster progression
+- ✅ Render in magenta color to distinguish from regular enemies
+
+**Field of View System (v1.2.0):**
+- ✅ 8-tile visibility radius using raycasting algorithm
+- ✅ Walls block line of sight (fog of war)
+- ✅ Unexplored areas remain hidden (black)
+- ✅ Explored-but-not-visible areas shown dim (dark gray)
+- ✅ Enemies and items only visible within FOV
+- ✅ FOV updates automatically after movement/teleport
+
+**Save/Load System (v1.2.0):**
+- ✅ Auto-save on quit (Q key)
+- ✅ Load prompt on startup if save exists
+- ✅ Permadeath: save deleted on death or victory
+- ✅ Full game state serialization using pickle
+- ✅ Serializes: player stats, inventory, enemies, items, dungeon tiles, FOV data
+
 **Technical:**
 - ✅ Clean module separation (dungeon, entities, combat, items, renderer, game)
 - ✅ Windows support via windows-curses
@@ -49,34 +70,55 @@ The roguelike dungeon crawler is **fully functional and now winnable** with XP/l
 
 ## What Changed (This Session)
 
-**Major Feature: XP/Leveling System (v1.1.0)**
-- Analyzed game balance and determined game was mathematically unwinnable
-  - Player could only kill 3-4 enemies before dying
-  - Game requires defeating ~50 enemies across 5 levels
-  - Even with all health potions, only ~10 kills possible
-- Implemented XP/leveling system with stat growth:
-  - 15 XP per enemy kill, linear curve (level × 30 XP)
-  - +10 max HP and +1 ATK per level, full heal on level up
-  - Player reaches level 6-7 if all enemies defeated
-- Modified item spawning to guarantee 2 health potions per level
-- Updated UI to show player level and XP progress bar
-- Game over screen now shows final level achieved
-- **Result:** Game is now winnable with ~180+ effective HP available
+**Three Major Roguelike Features (v1.2.0)**
+
+Implemented elite enemies, field of view (fog of war), and save/load with permadeath to add core roguelike mechanics and increase challenge.
+
+**1. Elite Enemies:**
+- Added 20% spawn rate for elite enemy variants
+- Elites have 2x HP (16), 2x damage (4), award 2x XP (30)
+- Render in magenta color for clear visual distinction
+- Makes combat more varied and rewards skilled play with faster leveling
+
+**2. Field of View (FOV):**
+- Implemented 8-tile visibility radius using raycasting algorithm
+- Walls block line of sight (fog of war mechanic)
+- Unexplored areas remain hidden (black), explored areas shown dim (dark gray)
+- Enemies and items only visible within FOV for classic roguelike feel
+- FOV updates automatically after movement, teleport, and level transitions
+
+**3. Save/Load System:**
+- Auto-saves game state on quit (Q key)
+- Prompts to load or start new game on startup if save exists
+- Permadeath: save automatically deleted on death or victory
+- Full pickle-based serialization of all game state:
+  - Player: position, stats, inventory, level, XP, kills
+  - Enemies: position, health, elite status
+  - Items: position, type
+  - Dungeon: tiles, explored/visible arrays, stairs positions
+- All state correctly restored including FOV data
+
+Files Created:
+- `src/fov.py` - Raycasting FOV calculation algorithm
+- `src/save_load.py` - Pickle serialization utilities
 
 Files Modified:
-- `src/constants.py` - Added 5 XP/leveling constants
-- `src/entities.py` - Added level/xp fields and gain_xp() method to Player
-- `src/game.py` - Award XP on kill, guaranteed health potions
-- `src/renderer.py` - Display level/XP in UI, final level on game over
+- `src/constants.py` - Elite and FOV configuration constants
+- `src/entities.py` - Added is_elite flag to Enemy class
+- `src/game.py` - Elite spawning, FOV updates, full serialization methods
+- `src/renderer.py` - Elite colors (magenta), FOV-aware rendering
+- `src/dungeon.py` - FOV arrays (explored/visible) and update methods
+- `main.py` - Load prompt on startup
 
 ---
 
 ## What's Next
 
-### Priority 1: Testing & Tuning
-1. **Playtesting** - Test full 5-level playthrough, verify game is winnable
-2. **Balance tuning** - Adjust XP/HP/ATK values if game is too easy/hard
-3. **Bug fixes** - Fix any issues found during testing
+### Priority 1: Merge and Test
+1. **Merge to develop** - Merge feature/add-fov-save-elites to develop branch
+2. **Full playtesting** - Test all three new features together
+3. **Balance tuning** - Adjust elite spawn rate, FOV radius if needed
+4. **Bug fixes** - Fix any issues found during testing
 
 ### Priority 2: Polish & Expansion
 1. **More item types** - Defense potions, damage scrolls, reveal map scrolls
@@ -84,10 +126,10 @@ Files Modified:
 3. **Boss encounters** - Special enemies on certain levels
 4. **Equipment system** - Weapons and armor that can be found/equipped
 
-### Priority 3: Advanced Systems
-1. **Field of view (FOV)** - Hide unexplored areas
+### Priority 3: Advanced Systems (Partially Complete)
+1. ~~**Field of view (FOV)**~~ - ✅ Completed in v1.2.0
 2. **Persistent levels** - Return to previous levels with state preserved
-3. **Save/load system** - Save game progress
+3. ~~**Save/load system**~~ - ✅ Completed in v1.2.0 (with permadeath)
 4. **Hunger/food system** - Classic roguelike mechanic
 
 ### Priority 4: Quality of Life
@@ -124,12 +166,14 @@ When testing changes, verify:
 ## Architecture Notes
 
 ### Module Responsibilities
-- `dungeon.py` - Generation, walkability, room/corridor management
-- `entities.py` - Player/Enemy classes, movement, pathfinding
+- `dungeon.py` - Generation, walkability, room/corridor management, FOV arrays
+- `entities.py` - Player/Enemy classes, movement, pathfinding, elite variants
 - `combat.py` - Attack mechanics, damage calculation, combat messages
 - `items.py` - Item classes, inventory system
+- `fov.py` - Field of view calculation using raycasting
+- `save_load.py` - Game state serialization/deserialization with pickle
 - `renderer.py` - Terminal rendering, UI panels, colors (NO game logic)
-- `game.py` - Game loop, state machine, turn management, orchestration
+- `game.py` - Game loop, state machine, turn management, serialization, orchestration
 - `constants.py` - All configuration values and enums
 
 ### Key Design Patterns
