@@ -18,6 +18,24 @@ class GameState(Enum):
     QUIT = auto()
 
 
+class DungeonTheme(Enum):
+    """Visual themes for dungeon levels."""
+    STONE = auto()    # Classic stone dungeon
+    CAVE = auto()     # Natural cave
+    CRYPT = auto()    # Undead tomb
+    LIBRARY = auto()  # Ancient library
+    TREASURY = auto() # Treasure vault
+
+
+class RoomType(Enum):
+    """Types of rooms with different characteristics."""
+    NORMAL = auto()      # Standard room
+    LARGE_HALL = auto()  # 2x size room with pillars
+    TREASURY = auto()    # Filled with loot
+    SHRINE = auto()      # Center statue, guaranteed item
+    BOSS_ROOM = auto()   # Largest room, special decorations
+
+
 # Dungeon configuration
 DUNGEON_WIDTH = 80
 DUNGEON_HEIGHT = 40
@@ -61,3 +79,106 @@ FOV_LIGHT_WALLS = True          # Whether walls block light
 # UI configuration
 MESSAGE_LOG_SIZE = 5
 STATS_PANEL_WIDTH = 25
+BAR_WIDTH = 12  # Width of visual health/XP bars
+
+# Box-drawing characters for panel borders
+BOX_TL = '╔'  # Top-left corner
+BOX_TR = '╗'  # Top-right corner
+BOX_BL = '╚'  # Bottom-left corner
+BOX_BR = '╝'  # Bottom-right corner
+BOX_H = '═'   # Horizontal line
+BOX_V = '║'   # Vertical line
+BOX_LEFT = '╠'  # Left T-junction
+BOX_RIGHT = '╣'  # Right T-junction
+
+# ASCII fallbacks for terminals without Unicode support
+BOX_TL_ASCII = '+'
+BOX_TR_ASCII = '+'
+BOX_BL_ASCII = '+'
+BOX_BR_ASCII = '+'
+BOX_H_ASCII = '-'
+BOX_V_ASCII = '|'
+BOX_LEFT_ASCII = '+'
+BOX_RIGHT_ASCII = '+'
+
+# Dungeon theme visual tiles
+THEME_TILES = {
+    DungeonTheme.STONE: {
+        'wall': '#',
+        'floor': '.',
+        'description': 'Stone Dungeon'
+    },
+    DungeonTheme.CAVE: {
+        'wall': '█',
+        'floor': '·',
+        'description': 'Natural Cave'
+    },
+    DungeonTheme.CRYPT: {
+        'wall': '▓',
+        'floor': ',',
+        'description': 'Ancient Crypt'
+    },
+    DungeonTheme.LIBRARY: {
+        'wall': '║',
+        'floor': '_',
+        'description': 'Forgotten Library'
+    },
+    DungeonTheme.TREASURY: {
+        'wall': '╬',
+        'floor': '·',
+        'description': 'Treasure Vault'
+    },
+}
+
+# ASCII fallbacks for theme tiles (when Unicode not supported)
+THEME_TILES_ASCII = {
+    DungeonTheme.STONE: {'wall': '#', 'floor': '.'},
+    DungeonTheme.CAVE: {'wall': '#', 'floor': '.'},
+    DungeonTheme.CRYPT: {'wall': '#', 'floor': ','},
+    DungeonTheme.LIBRARY: {'wall': '|', 'floor': '_'},
+    DungeonTheme.TREASURY: {'wall': '+', 'floor': '.'},
+}
+
+# Map dungeon levels to themes
+LEVEL_THEMES = {
+    1: DungeonTheme.STONE,
+    2: DungeonTheme.CAVE,
+    3: DungeonTheme.CRYPT,
+    4: DungeonTheme.LIBRARY,
+    5: DungeonTheme.TREASURY,
+}
+
+# Decoration characters for each theme
+THEME_DECORATIONS = {
+    DungeonTheme.STONE: ['Θ', '♪'],  # Pillars, braziers
+    DungeonTheme.CAVE: ['*', '"'],    # Rubble, moss
+    DungeonTheme.CRYPT: ['†', 'Ω'],   # Tombstones, statues
+    DungeonTheme.LIBRARY: ['╤', '║'], # Tables, shelves
+    DungeonTheme.TREASURY: ['ß', 'Ω'], # Barrels, statues
+}
+
+# ASCII fallbacks for decorations
+THEME_DECORATIONS_ASCII = {
+    DungeonTheme.STONE: ['O', '^'],   # Pillars, braziers
+    DungeonTheme.CAVE: ['*', '"'],    # Rubble, moss
+    DungeonTheme.CRYPT: ['+', 'O'],   # Tombstones, statues
+    DungeonTheme.LIBRARY: ['=', '|'], # Tables, shelves
+    DungeonTheme.TREASURY: ['$', 'O'], # Barrels, statues
+}
+
+# Terrain features (walkable floor variations)
+TERRAIN_WATER = '≈'
+TERRAIN_WATER_ASCII = '~'
+TERRAIN_BLOOD = 'ꕤ'
+TERRAIN_BLOOD_ASCII = '%'
+TERRAIN_GRASS = '"'
+TERRAIN_MOSS = ':'
+
+# Theme-specific terrain features
+THEME_TERRAIN = {
+    DungeonTheme.STONE: [],  # No special terrain
+    DungeonTheme.CAVE: [TERRAIN_WATER, TERRAIN_GRASS],  # Water pools, moss
+    DungeonTheme.CRYPT: [],  # Blood added dynamically when enemies die
+    DungeonTheme.LIBRARY: [],  # No special terrain
+    DungeonTheme.TREASURY: [TERRAIN_WATER],  # Water features
+}

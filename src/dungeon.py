@@ -4,8 +4,12 @@ from dataclasses import dataclass
 from typing import List, Tuple
 
 from .constants import (
-    TileType, DUNGEON_WIDTH, DUNGEON_HEIGHT,
-    MIN_ROOM_SIZE, MAX_ROOM_SIZE, MAX_BSP_DEPTH
+    TileType, DungeonTheme, RoomType,
+    DUNGEON_WIDTH, DUNGEON_HEIGHT,
+    MIN_ROOM_SIZE, MAX_ROOM_SIZE, MAX_BSP_DEPTH,
+    LEVEL_THEMES, THEME_TILES, THEME_TILES_ASCII,
+    THEME_DECORATIONS, THEME_DECORATIONS_ASCII,
+    THEME_TERRAIN, TERRAIN_BLOOD
 )
 
 
@@ -16,10 +20,15 @@ class Room:
     y: int
     width: int
     height: int
+    room_type: RoomType = RoomType.NORMAL
 
     def center(self) -> Tuple[int, int]:
         """Return the center coordinates of the room."""
         return (self.x + self.width // 2, self.y + self.height // 2)
+
+    def area(self) -> int:
+        """Return the area of the room."""
+        return self.width * self.height
 
     def intersects(self, other: 'Room') -> bool:
         """Check if this room intersects with another room."""
@@ -141,6 +150,11 @@ class Dungeon:
         self.stairs_down_pos = None
         self.has_stairs_up = has_stairs_up
 
+        # Visual variety
+        self.theme = LEVEL_THEMES.get(level, DungeonTheme.STONE)
+        self.decorations = []  # List of (x, y, char, color_pair) tuples
+        self.terrain_features = []  # List of (x, y, char, color_pair) for water, blood, etc.
+
         # FOV tracking arrays
         self.explored = [[False for _ in range(width)] for _ in range(height)]
         self.visible = [[False for _ in range(width)] for _ in range(height)]
@@ -171,8 +185,17 @@ class Dungeon:
         # Connect rooms with corridors
         self._create_corridors(root)
 
+        # Classify room types
+        self._classify_rooms()
+
         # Place stairs
         self._place_stairs()
+
+        # Place decorations
+        self._place_decorations()
+
+        # Place terrain features
+        self._place_terrain()
 
     def _split_node(self, node: BSPNode):
         """Recursively split a BSP node."""
@@ -238,6 +261,44 @@ class Dungeon:
             if 0 <= x < self.width and 0 <= y < self.height:
                 self.tiles[y][x] = TileType.FLOOR
 
+    def _classify_rooms(self):
+        """Classify rooms into different types based on size and position."""
+        if not self.rooms:
+            return
+
+        # Sort rooms by area to find largest
+        sorted_rooms = sorted(self.rooms, key=lambda r: r.area(), reverse=True)
+
+        # Classify largest room
+        largest = sorted_rooms[0]
+        if largest.area() >= 80:
+            # Very large room
+            if self.level == 5:
+                largest.room_type = RoomType.BOSS_ROOM
+            else:
+                largest.room_type = RoomType.LARGE_HALL
+
+        # Classify other rooms
+        for i, room in enumerate(self.rooms):
+            if room.room_type != RoomType.NORMAL:
+                continue  # Already classified
+
+            area = room.area()
+
+            # Large hall (second largest or significantly big)
+            if area >= 70:
+                room.room_type = RoomType.LARGE_HALL
+
+            # Small to medium rooms get special types
+            elif area >= 30:
+                # 20% chance for special room types
+                rand = random.random()
+                if rand < 0.1:
+                    room.room_type = RoomType.SHRINE
+                elif rand < 0.2:
+                    room.room_type = RoomType.TREASURY
+                # else: remains NORMAL
+
     def _place_stairs(self):
         """Place stairs up and down in the dungeon."""
         if len(self.rooms) < 2:
@@ -256,12 +317,157 @@ class Dungeon:
         self.stairs_down_pos = center
         self.tiles[center[1]][center[0]] = TileType.STAIRS_DOWN
 
+    def _place_decorations(self):
+        """Place decorative objects in rooms based on theme."""
+        if not self.rooms:
+            return
+
+        # Get theme-specific decorations
+        decorations_chars = THEME_DECORATIONS.get(self.theme, [])
+        if not decorations_chars:
+            return
+
+        for room in self.rooms:
+            room_area = room.area()
+
+            # Special handling for room types
+            if room.room_type == RoomType.SHRINE:
+                # Shrine: center statue
+                center_x, center_y = room.center()
+                if self.tiles[center_y][center_x] == TileType.FLOOR:
+                    statue_char = decorations_chars[-1] if len(decorations_chars) > 1 else decorations_chars[0]
+                    self.decorations.append((center_x, center_y, statue_char, 1))
+                num_decorations = 2  # Plus a few around the edges
+            elif room.room_type == RoomType.TREASURY:
+                # Treasury: lots of loot-themed decorations
+                num_decorations = random.randint(6, 10)
+            elif room.room_type == RoomType.BOSS_ROOM:
+                # Boss room: elaborate decorations + corner pillars
+                num_decorations = random.randint(8, 12)
+            elif room.room_type == RoomType.LARGE_HALL:
+                # Large hall: medium decorations + corner pillars
+                num_decorations = random.randint(4, 6)
+            else:
+                # Normal room: based on size
+                if room_area < 30:
+                    num_decorations = random.randint(1, 2)
+                elif room_area < 60:
+                    num_decorations = random.randint(2, 4)
+                else:
+                    num_decorations = random.randint(4, 6)
+
+            # Add corner pillars for large rooms, large halls, and boss rooms
+            if room.room_type in (RoomType.LARGE_HALL, RoomType.BOSS_ROOM) or room_area >= 60:
+                if room.width >= 8 and room.height >= 6:
+                    pillar_char = decorations_chars[0]  # First decoration is usually pillar/statue
+                    # Top-left corner (inner)
+                    self.decorations.append((room.x + 1, room.y + 1, pillar_char, 1))
+                    # Top-right corner (inner)
+                    self.decorations.append((room.x + room.width - 2, room.y + 1, pillar_char, 1))
+                    # Bottom-left corner (inner)
+                    self.decorations.append((room.x + 1, room.y + room.height - 2, pillar_char, 1))
+                    # Bottom-right corner (inner)
+                    self.decorations.append((room.x + room.width - 2, room.y + room.height - 2, pillar_char, 1))
+
+            # Place random decorations
+            for _ in range(num_decorations):
+                # Try to find a good spot
+                for attempt in range(10):
+                    x = random.randint(room.x + 1, room.x + room.width - 2)
+                    y = random.randint(room.y + 1, room.y + room.height - 2)
+
+                    # Check if position is valid
+                    if self.tiles[y][x] == TileType.FLOOR:
+                        # For shrines, allow center decorations
+                        # For others, avoid center
+                        center_x, center_y = room.center()
+                        if room.room_type == RoomType.SHRINE or abs(x - center_x) > 1 or abs(y - center_y) > 1:
+                            # Choose random decoration character
+                            deco_char = random.choice(decorations_chars)
+                            self.decorations.append((x, y, deco_char, 1))  # color_pair 1 = white
+                            break
+
+    def _place_terrain(self):
+        """Place terrain features (water, grass, etc.) based on theme."""
+        terrain_chars = THEME_TERRAIN.get(self.theme, [])
+        if not terrain_chars:
+            return
+
+        # Place terrain in some rooms
+        num_rooms_with_terrain = max(1, len(self.rooms) // 3)  # ~33% of rooms
+        rooms_to_decorate = random.sample(self.rooms, min(num_rooms_with_terrain, len(self.rooms)))
+
+        for room in rooms_to_decorate:
+            # Number of terrain features based on room size
+            room_area = room.area()
+            max_features = max(2, min(8, room_area // 10))  # Ensure at least 2
+            num_features = random.randint(2, max_features)
+
+            for _ in range(num_features):
+                for attempt in range(10):
+                    x = random.randint(room.x + 1, room.x + room.width - 2)
+                    y = random.randint(room.y + 1, room.y + room.height - 2)
+
+                    # Check if valid floor tile
+                    if self.tiles[y][x] == TileType.FLOOR:
+                        # Check not on stairs or decoration
+                        if (x, y) != self.stairs_up_pos and (x, y) != self.stairs_down_pos:
+                            # Check no decoration at this spot
+                            if not any(dx == x and dy == y for dx, dy, _, _ in self.decorations):
+                                terrain_char = random.choice(terrain_chars)
+                                # Color_pair 5 = cyan (good for water/features)
+                                self.terrain_features.append((x, y, terrain_char, 5))
+                                break
+
+    def add_blood_stain(self, x: int, y: int):
+        """Add a blood stain at the specified location (for when enemies die)."""
+        if 0 <= x < self.width and 0 <= y < self.height:
+            if self.tiles[y][x] == TileType.FLOOR:
+                # Color_pair 3 = red
+                self.terrain_features.append((x, y, TERRAIN_BLOOD, 3))
+
     def is_walkable(self, x: int, y: int) -> bool:
         """Check if a position is walkable."""
         if not (0 <= x < self.width and 0 <= y < self.height):
             return False
         tile = self.tiles[y][x]
         return tile in (TileType.FLOOR, TileType.STAIRS_DOWN, TileType.STAIRS_UP)
+
+    def get_visual_char(self, x: int, y: int, use_unicode: bool = True) -> str:
+        """
+        Get the visual character for a tile based on the dungeon theme.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            use_unicode: Whether to use Unicode characters (fallback to ASCII if False)
+
+        Returns:
+            The character to display for this tile
+        """
+        if not (0 <= x < self.width and 0 <= y < self.height):
+            return ' '
+
+        tile = self.tiles[y][x]
+
+        # Handle special tiles that don't change with theme
+        if tile == TileType.STAIRS_DOWN:
+            return '>'
+        elif tile == TileType.STAIRS_UP:
+            return '<'
+        elif tile == TileType.EMPTY:
+            return ' '
+
+        # Get theme-appropriate tiles
+        theme_tiles = THEME_TILES if use_unicode else THEME_TILES_ASCII
+
+        if tile == TileType.WALL:
+            return theme_tiles[self.theme]['wall']
+        elif tile == TileType.FLOOR:
+            return theme_tiles[self.theme]['floor']
+
+        # Fallback to tile's default value
+        return tile.value
 
     def get_random_floor_position(self) -> Tuple[int, int]:
         """Return a random walkable floor position."""
