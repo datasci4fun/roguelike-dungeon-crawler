@@ -24,7 +24,7 @@ class Game:
         # Set up non-blocking input with timeout
         self.stdscr.timeout(100)
 
-        # Generate first dungeon
+        # Generate first dungeon (camera will follow player)
         self.dungeon = Dungeon(level=self.current_level, has_stairs_up=False)
         self.add_message("Welcome to the dungeon!")
         self.add_message("Find the stairs (>) to descend deeper")
@@ -333,7 +333,7 @@ class Game:
         self.current_level += 1
         self.add_message(f"You descend to level {self.current_level}...")
 
-        # Generate new dungeon
+        # Generate new dungeon (camera will follow player)
         has_up = self.current_level > 1
         self.dungeon = Dungeon(level=self.current_level, has_stairs_up=has_up)
 
