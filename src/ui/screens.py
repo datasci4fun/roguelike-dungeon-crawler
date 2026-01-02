@@ -512,3 +512,94 @@ def render_intro_screen(stdscr, page: int = 0, use_unicode: bool = False):
 
     # Return total number of pages for navigation
     return len(prologue_pages)
+
+
+def render_reading_screen(stdscr, title: str, content: list, use_unicode: bool = False):
+    """
+    Render a full-screen reading view for lore items.
+
+    Args:
+        stdscr: The curses screen
+        title: Title of the lore item
+        content: List of paragraphs/lines to display
+        use_unicode: Whether to use Unicode box drawing characters
+    """
+    stdscr.clear()
+    max_y, max_x = stdscr.getmaxyx()
+
+    try:
+        # Draw border
+        draw_screen_border(stdscr, use_unicode)
+
+        # Title
+        display_title = f"~ {title} ~"
+        title_x = max(2, (max_x - len(display_title)) // 2)
+        if curses.has_colors():
+            stdscr.addstr(2, title_x, display_title, curses.color_pair(2) | curses.A_BOLD)
+        else:
+            stdscr.addstr(2, title_x, display_title, curses.A_BOLD)
+
+        # Decorative line under title
+        line_width = min(len(display_title) + 4, max_x - 6)
+        line_x = max(2, (max_x - line_width) // 2)
+        line_char = '-' * line_width
+        if 3 < max_y - 4:
+            if curses.has_colors():
+                stdscr.addstr(3, line_x, line_char, curses.color_pair(7))
+            else:
+                stdscr.addstr(3, line_x, line_char)
+
+        # Content area
+        content_start_y = 5
+        content_width = max_x - 8  # Leave margin on sides
+
+        # Word-wrap and display content
+        wrapped_lines = []
+        for paragraph in content:
+            if not paragraph:  # Empty line (paragraph break)
+                wrapped_lines.append("")
+            else:
+                # Simple word wrap
+                words = paragraph.split()
+                current_line = ""
+                for word in words:
+                    if len(current_line) + len(word) + 1 <= content_width:
+                        if current_line:
+                            current_line += " " + word
+                        else:
+                            current_line = word
+                    else:
+                        if current_line:
+                            wrapped_lines.append(current_line)
+                        current_line = word
+                if current_line:
+                    wrapped_lines.append(current_line)
+
+        # Display wrapped content
+        for i, line in enumerate(wrapped_lines):
+            y = content_start_y + i
+            if y >= max_y - 4:
+                # Show "more" indicator if content is cut off
+                if curses.has_colors():
+                    stdscr.addstr(max_y - 5, max_x - 12, "[...]", curses.color_pair(7))
+                break
+            x = max(4, (max_x - len(line)) // 2)
+            if curses.has_colors():
+                stdscr.addstr(y, x, line, curses.color_pair(1))
+            else:
+                stdscr.addstr(y, x, line)
+
+        # Controls hint at bottom
+        hint = "Press any key to close"
+        hint_x = max(2, (max_x - len(hint)) // 2)
+        hint_y = max_y - 3
+        if hint_y > 0:
+            if curses.has_colors():
+                stdscr.addstr(hint_y, hint_x, hint, curses.color_pair(7))
+            else:
+                stdscr.addstr(hint_y, hint_x, hint)
+
+    except curses.error:
+        pass
+
+    stdscr.refresh()

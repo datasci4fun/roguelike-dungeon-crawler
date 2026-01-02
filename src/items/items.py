@@ -21,6 +21,9 @@ class ItemType(Enum):
     ARMOR_LEATHER = auto()
     ARMOR_CHAIN = auto()
     ARMOR_PLATE = auto()
+    # Story/Lore items
+    SCROLL_LORE = auto()
+    BOOK = auto()
 
 
 @dataclass
@@ -250,6 +253,75 @@ class PlateArmor(Armor):
             defense_bonus=5,
             rarity=ItemRarity.RARE
         )
+
+
+class LoreScroll(Item):
+    """A scroll containing lore text that can be read."""
+
+    def __init__(self, x: int, y: int, lore_id: str, title: str, content: list):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.SCROLL_LORE,
+            name=title,
+            symbol='?',
+            description="A weathered scroll",
+            rarity=ItemRarity.UNCOMMON
+        )
+        self.lore_id = lore_id
+        self.title = title
+        self.content = content  # List of paragraphs
+
+    def use(self, player: 'Player') -> str:
+        """Reading is handled by the game - this returns a prompt."""
+        return f"You read the {self.name}..."
+
+    def get_text(self) -> tuple:
+        """Return the title and content for display."""
+        return self.title, self.content
+
+
+class LoreBook(Item):
+    """A book containing lore text that can be read."""
+
+    def __init__(self, x: int, y: int, lore_id: str, title: str, content: list):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.BOOK,
+            name=title,
+            symbol='+',
+            description="An ancient tome",
+            rarity=ItemRarity.RARE
+        )
+        self.lore_id = lore_id
+        self.title = title
+        self.content = content  # List of paragraphs
+
+    def use(self, player: 'Player') -> str:
+        """Reading is handled by the game - this returns a prompt."""
+        return f"You open {self.name}..."
+
+    def get_text(self) -> tuple:
+        """Return the title and content for display."""
+        return self.title, self.content
+
+
+def create_lore_item(lore_id: str, x: int, y: int) -> Item:
+    """Create a lore item (scroll or book) from story data."""
+    from ..story import get_lore_entry
+    entry = get_lore_entry(lore_id)
+    if not entry:
+        raise ValueError(f"Unknown lore entry: {lore_id}")
+
+    item_type = entry.get('item_type', 'scroll')
+    title = entry['title']
+    content = entry['content']
+
+    if item_type == 'book':
+        return LoreBook(x, y, lore_id, title, content)
+    else:
+        return LoreScroll(x, y, lore_id, title, content)
 
 
 def create_item(item_type: ItemType, x: int, y: int) -> Item:

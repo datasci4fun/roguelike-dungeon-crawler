@@ -42,7 +42,8 @@ class EntityManager:
 
     def spawn_items(self, dungeon: 'Dungeon', player: Player):
         """Spawn items in random locations."""
-        from ..items import CONSUMABLE_TYPES, EQUIPMENT_TYPES
+        from ..items import CONSUMABLE_TYPES, EQUIPMENT_TYPES, create_lore_item
+        from ..story.story_data import get_lore_entries_for_level
 
         self.items.clear()
 
@@ -72,6 +73,19 @@ class EntityManager:
                 item_type = random.choices(EQUIPMENT_TYPES, weights=equipment_weights)[0]
                 item = create_item(item_type, pos[0], pos[1])
                 self.items.append(item)
+
+        # LORE: Spawn level-appropriate lore items (scrolls/books)
+        lore_entries = get_lore_entries_for_level(dungeon.level)
+        for lore_id, entry in lore_entries:
+            # 70% chance to spawn each lore item on its appropriate level
+            if random.random() < 0.7:
+                pos = dungeon.get_random_floor_position()
+                if pos[0] != player.x or pos[1] != player.y:
+                    try:
+                        lore_item = create_lore_item(lore_id, pos[0], pos[1])
+                        self.items.append(lore_item)
+                    except ValueError:
+                        pass  # Skip if lore entry not found
 
     def get_enemy_at(self, x: int, y: int) -> Optional[Enemy]:
         """Get the living enemy at the given position, or None."""
