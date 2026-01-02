@@ -43,6 +43,37 @@ class Renderer:
             curses.init_pair(10, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Bright green (healing)
             curses.init_pair(11, curses.COLOR_BLUE, curses.COLOR_BLACK)   # Blue (rare items)
 
+    def _smart_truncate(self, text: str, max_length: int) -> str:
+        """
+        Truncate text intelligently, respecting word boundaries.
+
+        Args:
+            text: The text to truncate
+            max_length: Maximum length of output
+
+        Returns:
+            Truncated text with ellipsis if needed
+        """
+        if len(text) <= max_length:
+            return text
+
+        # If we need to truncate, try to break at a word boundary
+        if max_length <= 3:
+            return text[:max_length]
+
+        # Reserve 3 chars for "..."
+        truncate_at = max_length - 3
+
+        # Find the last space before the truncation point
+        last_space = text[:truncate_at].rfind(' ')
+
+        if last_space > 0 and last_space > truncate_at // 2:
+            # Found a good break point (not too early)
+            return text[:last_space] + "..."
+        else:
+            # No good break point, just hard truncate
+            return text[:truncate_at] + "..."
+
     def render(self, dungeon: Dungeon, player: Player, enemies: List[Enemy], items: List[Item], messages: List[str]):
         """Render the entire game state."""
         # Clean up expired animations
@@ -201,8 +232,9 @@ class Renderer:
         max_y, max_x = self.stdscr.getmaxyx()
         use_unicode = curses.has_colors()  # Proxy for Unicode support
 
-        for y in range(min(dungeon.height, max_y)):
-            for x in range(min(dungeon.width, max_x - STATS_PANEL_WIDTH)):
+        # Leave bottom line clear to avoid curses errors (can't write to last cell)
+        for y in range(min(dungeon.height, max_y - 1)):
+            for x in range(min(dungeon.width, max_x - STATS_PANEL_WIDTH - 1)):
                 try:
                     # Only render explored tiles
                     if not dungeon.explored[y][x]:
@@ -236,8 +268,8 @@ class Renderer:
             if not dungeon.explored[y][x]:
                 continue
 
-            # Only render if within screen bounds
-            if not (0 <= y < max_y and 0 <= x < max_x - STATS_PANEL_WIDTH):
+            # Only render if within screen bounds (leave bottom/right edge clear)
+            if not (0 <= y < max_y - 1 and 0 <= x < max_x - STATS_PANEL_WIDTH - 1):
                 continue
 
             try:
@@ -268,8 +300,8 @@ class Renderer:
             if not dungeon.explored[y][x]:
                 continue
 
-            # Only render if within screen bounds
-            if not (0 <= y < max_y and 0 <= x < max_x - STATS_PANEL_WIDTH):
+            # Only render if within screen bounds (leave bottom/right edge clear)
+            if not (0 <= y < max_y - 1 and 0 <= x < max_x - STATS_PANEL_WIDTH - 1):
                 continue
 
             try:
@@ -488,11 +520,23 @@ class Renderer:
                 # Render minimap cells
                 for mx in range(minimap_size):
                     # Scale minimap coordinates to dungeon coordinates
-                    dungeon_x = int((mx / minimap_size) * dungeon.width)
-                    dungeon_y = int((my / minimap_size) * dungeon.height)
+                    # Check a region of the dungeon for this minimap cell
+                    region_x_start = int((mx / minimap_size) * dungeon.width)
+                    region_x_end = int(((mx + 1) / minimap_size) * dungeon.width)
+                    region_y_start = int((my / minimap_size) * dungeon.height)
+                    region_y_end = int(((my + 1) / minimap_size) * dungeon.height)
+
+                    # Check if any part of this region has been explored
+                    explored_count = 0
+                    total_tiles = 0
+                    for dy in range(region_y_start, min(region_y_end, dungeon.height)):
+                        for dx in range(region_x_start, min(region_x_end, dungeon.width)):
+                            total_tiles += 1
+                            if dungeon.explored[dy][dx]:
+                                explored_count += 1
 
                     # Determine what to show in this cell
-                    cell_char = ' '
+                    cell_char = ' '  # Unexplored = blank
 
                     # Check if player is in this cell
                     player_cell_x = int((player.x / dungeon.width) * minimap_size)
@@ -500,25 +544,16 @@ class Renderer:
 
                     if mx == player_cell_x and my == player_cell_y:
                         cell_char = '@'
-                    else:
-                        # Check for enemies in this cell
-                        enemy_found = False
-                        for enemy in enemies:
-                            if not enemy.is_alive():
-                                continue
-                            enemy_cell_x = int((enemy.x / dungeon.width) * minimap_size)
-                            enemy_cell_y = int((enemy.y / dungeon.height) * minimap_size)
-                            if mx == enemy_cell_x and my == enemy_cell_y:
-                                cell_char = 'E'
-                                enemy_found = True
-                                break
-
-                        # Check if this is a room or wall
-                        if not enemy_found:
-                            if dungeon.is_walkable(dungeon_x, dungeon_y):
-                                cell_char = '·'  # Floor
-                            else:
-                                cell_char = '█'  # Wall
+                    elif explored_count > 0:
+                        # Show explored areas as filled blocks
+                        # Density of exploration determines the character
+                        explore_ratio = explored_count / total_tiles if total_tiles > 0 else 0
+                        if explore_ratio > 0.7:
+                            cell_char = '█'  # Heavily explored
+                        elif explore_ratio > 0.3:
+                            cell_char = '▓'  # Partially explored
+                        else:
+                            cell_char = '░'  # Lightly explored
 
                     self.stdscr.addstr(y_start + my + 1, x_start + 1 + mx, cell_char)
 
@@ -717,7 +752,10 @@ class Renderer:
             for i, item in enumerate(player.inventory.items[:3]):  # Show first 3 items
                 item_y = 21 + i
                 if item_y < max_y:
-                    item_str = f"{i+1}. {item.name[:15]}"
+                    # Smart truncate item name to fit panel (reserve 3 chars for "N. ")
+                    max_item_name_len = STATS_PANEL_WIDTH - 7  # -4 for borders/padding, -3 for "N. "
+                    truncated_name = self._smart_truncate(item.name, max_item_name_len)
+                    item_str = f"{i+1}. {truncated_name}"
                     self.stdscr.addstr(item_y, panel_x + 2, item_str)
 
             # Section divider before messages
@@ -728,8 +766,9 @@ class Renderer:
             for i, message in enumerate(messages[-MESSAGE_LOG_SIZE:]):
                 msg_y = 26 + i
                 if msg_y < max_y:
-                    # Truncate message if too long
-                    display_msg = message[:STATS_PANEL_WIDTH - 4]
+                    # Smart truncate message to fit panel
+                    max_msg_len = STATS_PANEL_WIDTH - 4  # -4 for borders/padding
+                    display_msg = self._smart_truncate(message, max_msg_len)
                     # Apply color coding based on message content
                     color = self._get_message_color(message)
                     self.stdscr.addstr(msg_y, panel_x + 2, display_msg, color)
