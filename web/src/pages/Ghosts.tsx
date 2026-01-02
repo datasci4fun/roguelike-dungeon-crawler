@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ghostApi } from '../services/api';
-import type { GhostSummary } from '../types';
+import { GhostReplayViewer } from '../components/GhostReplayViewer';
+import type { GhostSummary, GhostDetail } from '../types';
 import './Ghosts.css';
 
 export function Ghosts() {
@@ -9,6 +10,10 @@ export function Ghosts() {
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Replay viewer state
+  const [selectedGhost, setSelectedGhost] = useState<GhostDetail | null>(null);
+  const [loadingReplay, setLoadingReplay] = useState<number | null>(null);
 
   const pageSize = 10;
 
@@ -34,6 +39,24 @@ export function Ghosts() {
     }
   };
 
+  const watchReplay = useCallback(async (gameId: number) => {
+    setLoadingReplay(gameId);
+    setError('');
+    try {
+      const data = await ghostApi.getByGameId(gameId) as GhostDetail;
+      setSelectedGhost(data);
+    } catch (err) {
+      setError('Failed to load replay data');
+      console.error(err);
+    } finally {
+      setLoadingReplay(null);
+    }
+  }, []);
+
+  const closeReplay = useCallback(() => {
+    setSelectedGhost(null);
+  }, []);
+
   const formatDuration = (started: string, ended: string) => {
     const start = new Date(started).getTime();
     const end = new Date(ended).getTime();
@@ -49,7 +72,7 @@ export function Ghosts() {
     <div className="ghosts">
       <h1>Ghost Replays</h1>
       <p className="description">
-        Watch recordings of past dungeon runs. Ghosts show the paths players
+        Watch recordings of past dungeon runs. See the paths players
         took and how they met their fate.
       </p>
 
@@ -93,8 +116,17 @@ export function Ghosts() {
                     Killed by: <span>{ghost.killed_by}</span>
                   </div>
                 )}
-                <div className="ghost-date">
-                  {new Date(ghost.ended_at).toLocaleDateString()}
+                <div className="ghost-footer">
+                  <span className="ghost-date">
+                    {new Date(ghost.ended_at).toLocaleDateString()}
+                  </span>
+                  <button
+                    className="watch-btn"
+                    onClick={() => watchReplay(ghost.game_id)}
+                    disabled={loadingReplay === ghost.game_id}
+                  >
+                    {loadingReplay === ghost.game_id ? 'Loading...' : '▶ Watch Replay'}
+                  </button>
                 </div>
               </div>
             ))}
@@ -125,6 +157,10 @@ export function Ghosts() {
             </div>
           )}
         </>
+      )}
+
+      {selectedGhost && (
+        <GhostReplayViewer ghost={selectedGhost} onClose={closeReplay} />
       )}
     </div>
   );

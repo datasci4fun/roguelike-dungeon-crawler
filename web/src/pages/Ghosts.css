@@ -85,10 +85,38 @@
   color: #ef4444;
 }
 
+.ghost-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #2a2a3e;
+}
+
 .ghost-date {
   color: #666;
   font-size: 0.8rem;
-  text-align: right;
+}
+
+.watch-btn {
+  background: #6272a4;
+  border: none;
+  color: #fff;
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.watch-btn:hover:not(:disabled) {
+  background: #7283b5;
+}
+
+.watch-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .loading {
