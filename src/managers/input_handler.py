@@ -13,6 +13,9 @@ class InputHandler:
 
     def __init__(self, game: 'Game'):
         self.game = game
+        # Pending drop state for confirmation dialogs
+        self._pending_drop_item = None
+        self._pending_drop_index = None
 
     def handle_game_input(self, key: int) -> bool:
         """
@@ -50,10 +53,12 @@ class InputHandler:
             self.game.ui_mode = UIMode.HELP
             return False
         elif key in (ord('q'), ord('Q')):
-            # Save and quit
-            if self.game.save_manager.save_game():
-                self.game.add_message("Game saved!")
-            self.game.state = GameState.QUIT
+            # Show quit confirmation dialog
+            self.game.show_dialog(
+                "Quit Game",
+                "Save and quit?",
+                self._handle_quit_confirm
+            )
             return False
 
         # Try to move if direction was selected
@@ -107,6 +112,28 @@ class InputHandler:
         if key != -1:
             self.game.ui_mode = UIMode.GAME
 
+    def handle_dialog_input(self, key: int) -> bool:
+        """
+        Handle input while a dialog is displayed.
+
+        Returns:
+            True if confirmed (Y), False if cancelled (N/ESC)
+        """
+        if key == -1:
+            return None  # No input yet
+
+        # Y for yes/confirm
+        if key in (ord('y'), ord('Y')):
+            self.game.ui_mode = UIMode.GAME
+            return True
+
+        # N or ESC for no/cancel
+        if key in (ord('n'), ord('N'), 27):
+            self.game.ui_mode = UIMode.GAME
+            return False
+
+        return None  # Invalid key, keep dialog open
+
     def _use_or_equip_selected_item(self):
         """Use or equip the currently selected inventory item."""
         inventory = self.game.player.inventory
@@ -133,14 +160,31 @@ class InputHandler:
 
     def _drop_selected_item(self):
         """Drop the currently selected inventory item."""
+        from ..core.constants import ItemRarity
         inventory = self.game.player.inventory
         if 0 <= self.game.selected_item_index < len(inventory.items):
-            item = inventory.remove_item(self.game.selected_item_index)
-            item.x = self.game.player.x
-            item.y = self.game.player.y
-            self.game.items.append(item)
-            self.game.add_message(f"Dropped {item.name}")
-            self._adjust_selection_after_removal()
+            item = inventory.get_item(self.game.selected_item_index)
+            if not item:
+                return
+
+            # Check if item is rare or epic - show confirmation
+            if item.rarity in (ItemRarity.RARE, ItemRarity.EPIC):
+                self._pending_drop_item = item
+                self._pending_drop_index = self.game.selected_item_index
+                rarity_name = "rare" if item.rarity == ItemRarity.RARE else "epic"
+                self.game.show_dialog(
+                    "Drop Item",
+                    f"Drop {item.name}? It's {rarity_name}!",
+                    self._handle_drop_confirm
+                )
+            else:
+                # Common/uncommon items drop immediately
+                item = inventory.remove_item(self.game.selected_item_index)
+                item.x = self.game.player.x
+                item.y = self.game.player.y
+                self.game.items.append(item)
+                self.game.add_message(f"Dropped {item.name}")
+                self._adjust_selection_after_removal()
 
     def _read_selected_item(self):
         """Read the currently selected item if it's a lore item."""
@@ -163,6 +207,26 @@ class InputHandler:
         inventory = self.game.player.inventory
         if self.game.selected_item_index >= len(inventory.items):
             self.game.selected_item_index = max(0, len(inventory.items) - 1)
+
+    def _handle_quit_confirm(self, confirmed: bool):
+        """Handle quit confirmation dialog result."""
+        if confirmed:
+            if self.game.save_manager.save_game():
+                self.game.add_message("Game saved!")
+            self.game.state = GameState.QUIT
+
+    def _handle_drop_confirm(self, confirmed: bool):
+        """Handle drop rare item confirmation dialog result."""
+        if confirmed and self._pending_drop_item is not None:
+            inventory = self.game.player.inventory
+            item = inventory.remove_item(self._pending_drop_index)
+            item.x = self.game.player.x
+            item.y = self.game.player.y
+            self.game.items.append(item)
+            self.game.add_message(f"Dropped {item.name}")
+            self._adjust_selection_after_removal()
+        self._pending_drop_item = None
+        self._pending_drop_index = None
 
     def handle_title_input(self, key: int, has_save: bool) -> Optional[str]:
         """
