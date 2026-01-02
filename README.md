@@ -1,6 +1,6 @@
 # Roguelike Dungeon Crawler
 
-A terminal-based roguelike game with procedural dungeon generation, exploration, and combat. Features rich visual variety with themed dungeons, diverse enemies, animated combat, and enhanced UI.
+A terminal-based roguelike game with procedural dungeon generation, exploration, and combat. Features rich visual variety with themed dungeons, diverse enemies, animated combat, equipment system, and enhanced UI.
 
 ## Features
 
@@ -8,9 +8,11 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Procedural Generation**: Each dungeon is randomly generated using Binary Space Partitioning (BSP)
 - **5 Themed Dungeon Levels**: Stone Dungeon, Cave, Crypt, Library, Treasury - each with unique visuals
 - **Inventory System**: 10-slot inventory with automatic pickup for health potions, strength potions, and teleport scrolls
+- **Equipment System**: Find and equip weapons (+ATK) and armor (+DEF) with rarity-based stats
 - **Exploration**: Field of view system with fog of war - discover rooms, corridors, and secrets
 - **Combat**: Bump-to-attack combat with animated feedback (hit flashes, damage numbers, direction indicators)
 - **XP & Leveling**: Gain experience from defeating enemies, level up to increase HP and ATK
+- **Camera System**: Viewport follows player through large dungeons
 
 ### Visual Variety (v2.0.0)
 - **6 Enemy Types**: Goblins (g), Skeletons (s), Orcs (o), Wraiths (W), Trolls (T), Dragons (D)
@@ -20,9 +22,12 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Terrain Features**: Water, grass, blood stains (persist where enemies die)
 - **Item Rarity Colors**: Common (white), Uncommon (cyan), Rare (blue), Epic (magenta)
 
-### Enhanced UI
+### Enhanced UI (v2.1.0)
+- **Full-Screen Inventory**: Dedicated inventory management screen with equipment display
+- **Character Screen**: View detailed stats, equipment, and progress
+- **Help Screen**: In-game controls reference
 - **Visual Bars**: Health and XP displayed as progress bars with dynamic colors
-- **Panel Borders**: Box-drawing characters for clean UI layout
+- **Panel Borders**: Box-drawing characters for clean UI layout (ASCII fallback for cmd.exe)
 - **Color-Coded Messages**: Combat (red), healing (green), level-ups (yellow)
 - **Status Indicators**: [WOUNDED], [CRITICAL], [STRONG] based on player state
 - **Real-Time Minimap**: 5x5 dungeon overview with room/enemy/item counts
@@ -32,7 +37,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Save/Load System**: Full game state persistence with permadeath option
 - **11 Color Pairs**: Rich color palette for diverse visuals
 - **FOV Integration**: All visual elements respect field of view
-- **Clean Architecture**: Rendering separated from game logic
+- **Modular Architecture**: Clean separation with manager classes and organized folder structure
+- **Windows Compatible**: Proper Unicode detection with ASCII fallbacks for cmd.exe
 
 ## Installation
 
@@ -51,8 +57,18 @@ python main.py
 ### Controls
 
 - **Arrow Keys** or **WASD**: Move your character (@)
-- **1-3**: Use items from inventory
-- **Q**: Quit game
+- **I**: Open full-screen inventory (equip/use/drop items)
+- **C**: Open character stats screen
+- **?**: Open help screen
+- **1-3**: Quick-use items from sidebar
+- **>**: Descend stairs (when standing on >)
+- **Q**: Save and quit game
+
+### Inventory Controls (when open)
+- **Arrow Keys**: Navigate items
+- **E** or **Enter**: Equip/use selected item
+- **D**: Drop selected item
+- **I**, **Q**, or **ESC**: Close inventory
 
 ### Gameplay
 
@@ -95,5 +111,33 @@ python main.py
 - **Generation Algorithm**: Binary Space Partitioning (BSP) for guaranteed connected dungeons
 - **FOV System**: Raycasting-based field of view with fog of war
 - **Animation System**: Time-based animations with automatic cleanup
-- **Architecture**: Clean separation between game logic, rendering, and entities
-- **Save System**: JSON-based full state serialization with permadeath
+- **Save System**: Pickle-based full state serialization with permadeath
+
+### Project Structure
+
+```
+src/
+├── core/           # Game loop and constants
+│   ├── game.py     # Main game orchestration
+│   └── constants.py
+├── managers/       # System managers
+│   ├── input_handler.py
+│   ├── entity_manager.py
+│   ├── combat_manager.py
+│   ├── level_manager.py
+│   └── serialization.py
+├── entities/       # Game entities
+│   ├── entities.py # Player, Enemy classes
+│   └── combat.py   # Combat calculations
+├── world/          # World generation
+│   ├── dungeon.py  # BSP dungeon generation
+│   └── fov.py      # Field of view
+├── items/          # Item system
+│   └── items.py    # Items, inventory, equipment
+├── ui/             # Rendering
+│   ├── renderer.py # Main game rendering
+│   ├── screens.py  # Full-screen UIs
+│   └── ui_utils.py # Shared UI utilities
+└── data/           # Persistence
+    └── save_load.py
+```
