@@ -6,7 +6,7 @@ from .constants import GameState, UIMode
 from ..world import Dungeon
 from ..entities import Player
 from ..ui import Renderer
-from ..ui.screens import render_title_screen, render_intro_screen, render_reading_screen
+from ..ui.screens import render_title_screen, render_intro_screen, render_reading_screen, render_dialog
 from ..items import Item, ItemType, ScrollTeleport
 from ..data import save_exists
 from ..story import StoryManager
@@ -39,6 +39,11 @@ class Game:
         # Reading screen state
         self.reading_title = ""
         self.reading_content = []
+
+        # Dialog state
+        self.dialog_title = ""
+        self.dialog_message = ""
+        self.dialog_callback = None  # Function to call with dialog result
 
         # Set up non-blocking input with timeout
         self.stdscr.timeout(100)
@@ -159,6 +164,9 @@ class Game:
         elif self.ui_mode == UIMode.READING:
             self._reading_loop()
             return
+        elif self.ui_mode == UIMode.DIALOG:
+            self._dialog_loop()
+            return
 
         # Normal game rendering
         self.renderer.render(
@@ -221,6 +229,48 @@ class Game:
 
         key = self.stdscr.getch()
         self.input_handler.handle_reading_input(key)
+
+    def _dialog_loop(self):
+        """Handle the confirmation dialog UI."""
+        use_unicode = self.renderer.use_unicode
+
+        # Render the game behind the dialog first
+        self.renderer.render(
+            self.dungeon,
+            self.player,
+            self.entity_manager.enemies,
+            self.entity_manager.items,
+            self.messages
+        )
+
+        # Render dialog on top
+        render_dialog(
+            self.stdscr,
+            self.dialog_title,
+            self.dialog_message,
+            use_unicode=use_unicode
+        )
+
+        key = self.stdscr.getch()
+        result = self.input_handler.handle_dialog_input(key)
+
+        if result is not None and self.dialog_callback:
+            self.dialog_callback(result)
+            self.dialog_callback = None
+
+    def show_dialog(self, title: str, message: str, callback):
+        """
+        Show a confirmation dialog.
+
+        Args:
+            title: Dialog title
+            message: Dialog message/question
+            callback: Function to call with True (confirmed) or False (cancelled)
+        """
+        self.dialog_title = title
+        self.dialog_message = message
+        self.dialog_callback = callback
+        self.ui_mode = UIMode.DIALOG
 
     def _game_over_loop(self):
         """Game over state loop."""

@@ -603,3 +603,106 @@ def render_reading_screen(stdscr, title: str, content: list, use_unicode: bool =
         pass
 
     stdscr.refresh()
+
+
+def render_dialog(stdscr, title: str, message: str, options: list = None,
+                  use_unicode: bool = False):
+    """
+    Render a centered confirmation dialog box.
+
+    Args:
+        stdscr: The curses screen
+        title: Dialog title (e.g., "Confirm")
+        message: The question/message to display
+        options: List of option tuples [(key, label), ...] e.g., [('Y', 'Yes'), ('N', 'No')]
+                 Defaults to Yes/No if not provided
+        use_unicode: Whether to use Unicode box drawing characters
+    """
+    if options is None:
+        options = [('Y', 'Yes'), ('N', 'No')]
+
+    max_y, max_x = stdscr.getmaxyx()
+
+    # Calculate dialog dimensions
+    min_width = 30
+    content_width = max(len(title) + 4, len(message) + 4, min_width)
+    options_text = "  ".join([f"[{key}] {label}" for key, label in options])
+    content_width = max(content_width, len(options_text) + 4)
+    dialog_width = min(content_width, max_x - 4)
+    dialog_height = 7  # Border + title + blank + message + blank + options + border
+
+    # Center the dialog
+    start_x = (max_x - dialog_width) // 2
+    start_y = (max_y - dialog_height) // 2
+
+    # Get box drawing characters
+    h_char, v_char, tl, tr, bl, br = get_box_chars(use_unicode)
+
+    try:
+        # Draw dialog box
+        # Top border
+        stdscr.addstr(start_y, start_x, tl + h_char * (dialog_width - 2) + tr)
+
+        # Middle rows (fill with spaces)
+        for row in range(1, dialog_height - 1):
+            stdscr.addstr(start_y + row, start_x, v_char + ' ' * (dialog_width - 2) + v_char)
+
+        # Bottom border
+        stdscr.addstr(start_y + dialog_height - 1, start_x, bl + h_char * (dialog_width - 2) + br)
+
+        # Title (centered, bold)
+        title_x = start_x + (dialog_width - len(title)) // 2
+        if curses.has_colors():
+            stdscr.addstr(start_y + 1, title_x, title, curses.color_pair(2) | curses.A_BOLD)
+        else:
+            stdscr.addstr(start_y + 1, title_x, title, curses.A_BOLD)
+
+        # Message (centered)
+        # Word wrap if needed
+        inner_width = dialog_width - 4
+        if len(message) <= inner_width:
+            msg_lines = [message]
+        else:
+            # Simple word wrap
+            words = message.split()
+            msg_lines = []
+            current_line = ""
+            for word in words:
+                if len(current_line) + len(word) + 1 <= inner_width:
+                    current_line = current_line + " " + word if current_line else word
+                else:
+                    if current_line:
+                        msg_lines.append(current_line)
+                    current_line = word
+            if current_line:
+                msg_lines.append(current_line)
+
+        msg_start_y = start_y + 3
+        for i, line in enumerate(msg_lines):
+            if msg_start_y + i < start_y + dialog_height - 2:
+                msg_x = start_x + (dialog_width - len(line)) // 2
+                if curses.has_colors():
+                    stdscr.addstr(msg_start_y + i, msg_x, line, curses.color_pair(1))
+                else:
+                    stdscr.addstr(msg_start_y + i, msg_x, line)
+
+        # Options (centered at bottom)
+        options_y = start_y + dialog_height - 2
+        options_x = start_x + (dialog_width - len(options_text)) // 2
+
+        # Draw each option with highlighted key
+        current_x = options_x
+        for key, label in options:
+            key_text = f"[{key}]"
+            if curses.has_colors():
+                stdscr.addstr(options_y, current_x, key_text, curses.color_pair(2) | curses.A_BOLD)
+                stdscr.addstr(options_y, current_x + len(key_text), f" {label}", curses.color_pair(1))
+            else:
+                stdscr.addstr(options_y, current_x, key_text, curses.A_BOLD)
+                stdscr.addstr(options_y, current_x + len(key_text), f" {label}")
+            current_x += len(key_text) + len(label) + 3  # +3 for space and separator
+
+    except curses.error:
+        pass
+
+    stdscr.refresh()
