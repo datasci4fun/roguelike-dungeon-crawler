@@ -151,6 +151,26 @@ LORE_ENTRIES: Dict[str, Dict] = {
 }
 
 
+# Tutorial hints - contextual tips shown on first occurrence of an action
+# Key: hint_id, Value: hint message text
+TUTORIAL_HINTS: Dict[str, str] = {
+    "first_move": "Tip: Use WASD or Arrow keys to move around.",
+    "first_enemy_seen": "Tip: Walk into enemies to attack them.",
+    "first_item": "Tip: Walk over items to pick them up automatically.",
+    "first_combat": "Tip: Watch your HP! Use potions (I key) to heal.",
+    "first_level_up": "Tip: Leveling up increases your max HP and attack damage.",
+    "first_stairs": "Tip: Step on stairs (>) and move to descend deeper.",
+    "inventory_hint": "Tip: Press I for inventory, C for character stats, M for message log.",
+    "first_elite": "Tip: Elite enemies (bright red) are tougher but give more XP!",
+    "first_lore": "Tip: Lore items reveal the story. Read them from your inventory.",
+}
+
+
+def get_tutorial_hint(hint_id: str) -> Optional[str]:
+    """Get a tutorial hint message by ID."""
+    return TUTORIAL_HINTS.get(hint_id)
+
+
 def get_level_intro(level: int) -> Optional[str]:
     """Get the intro message for a dungeon level."""
     return LEVEL_INTRO_MESSAGES.get(level)

@@ -40,7 +40,15 @@ class CombatManager:
 
             # Check for level transitions and item pickups
             self.game.level_manager.check_stairs()
-            self.game.entity_manager.check_item_pickup(player, self.game.add_message)
+            picked_item = self.game.entity_manager.check_item_pickup(player, self.game.add_message)
+
+            # Show tutorial hints for item pickup
+            if picked_item:
+                self.game.show_hint("first_item")
+                self.game.show_hint("inventory_hint")
+                # Check if it's a lore item
+                if hasattr(picked_item, 'lore_id'):
+                    self.game.show_hint("first_lore")
 
             return True
 
@@ -50,6 +58,13 @@ class CombatManager:
         """Handle player attacking an enemy."""
         player = self.game.player
         renderer = self.game.renderer
+
+        # Show combat hint on first attack
+        self.game.show_hint("first_combat")
+
+        # Show elite hint on first elite encounter
+        if enemy.is_elite:
+            self.game.show_hint("first_elite")
 
         damage, enemy_died = attack(player, enemy)
 
@@ -76,6 +91,7 @@ class CombatManager:
             if leveled_up:
                 self.game.add_message(f"LEVEL UP! You are now level {player.level}!")
                 self.game.add_message(f"HP: {player.max_health}, ATK: {player.attack_damage}")
+                self.game.show_hint("first_level_up")
         else:
             # Hit animation for surviving enemy
             renderer.add_hit_animation(enemy)

@@ -114,13 +114,20 @@ class EntityManager:
         """Add an item to the world."""
         self.items.append(item)
 
-    def check_item_pickup(self, player: Player, add_message_func):
-        """Check if player is standing on an item and pick it up."""
+    def check_item_pickup(self, player: Player, add_message_func) -> Optional[Item]:
+        """
+        Check if player is standing on an item and pick it up.
+
+        Returns:
+            The picked up item, or None if no item was picked up
+        """
         for item in self.items[:]:  # Use slice to iterate over copy
             if item.x == player.x and item.y == player.y:
                 if player.inventory.add_item(item):
                     self.items.remove(item)
                     add_message_func(f"Picked up {item.name}")
+                    return item
                 else:
                     add_message_func("Inventory full!")
-                break
+                    return None
+        return None

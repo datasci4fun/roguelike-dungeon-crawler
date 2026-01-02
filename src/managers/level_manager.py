@@ -20,6 +20,9 @@ class LevelManager:
         tile = self.game.dungeon.tiles[player.y][player.x]
 
         if tile == TileType.STAIRS_DOWN:
+            # Show stairs hint on first encounter
+            self.game.show_hint("first_stairs")
+
             if self.game.current_level >= MAX_DUNGEON_LEVELS:
                 self._handle_victory()
             else:

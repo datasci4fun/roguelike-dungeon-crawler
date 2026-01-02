@@ -14,6 +14,7 @@ from ..ui.screens import (
 from ..items import Item, ItemType, ScrollTeleport
 from ..data import save_exists
 from ..story import StoryManager
+from ..story.story_data import get_tutorial_hint
 
 # Import managers
 from ..managers import (
@@ -99,6 +100,23 @@ class Game:
                     importance: MessageImportance = MessageImportance.NORMAL):
         """Add a message to the message log."""
         self.message_log.add(message, category, importance)
+
+    def show_hint(self, hint_id: str) -> bool:
+        """
+        Show a tutorial hint if it hasn't been shown before.
+
+        Args:
+            hint_id: The ID of the hint to show
+
+        Returns:
+            True if hint was shown, False if already shown
+        """
+        if self.story_manager.show_hint(hint_id):
+            hint_text = get_tutorial_hint(hint_id)
+            if hint_text:
+                self.add_message(hint_text, MessageCategory.SYSTEM, MessageImportance.IMPORTANT)
+                return True
+        return False
 
     @property
     def messages(self) -> List[str]:
