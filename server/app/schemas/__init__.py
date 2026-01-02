@@ -20,6 +20,16 @@ from .ghost import (
     GhostLevelFrames,
     MultiGhostResponse,
 )
+from .chat import (
+    ChatMessageCreate,
+    ChatMessageResponse,
+    ChatHistoryResponse,
+    WhisperConversation,
+    WhisperConversationsResponse,
+    OnlineUser,
+    OnlineUsersResponse,
+    ChatStatus,
+)
 
 __all__ = [
     "UserCreate",
@@ -42,4 +52,12 @@ __all__ = [
     "GhostListResponse",
     "GhostLevelFrames",
     "MultiGhostResponse",
+    "ChatMessageCreate",
+    "ChatMessageResponse",
+    "ChatHistoryResponse",
+    "WhisperConversation",
+    "WhisperConversationsResponse",
+    "OnlineUser",
+    "OnlineUsersResponse",
+    "ChatStatus",
 ]
