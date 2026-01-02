@@ -78,18 +78,19 @@ def draw_screen_border(stdscr, use_unicode: bool = True):
     h_char, v_char, tl, tr, bl, br = get_box_chars(use_unicode)
 
     try:
-        stdscr.addch(0, 0, tl)
-        stdscr.addch(0, max_x - 2, tr)
-        stdscr.addch(max_y - 2, 0, bl)
-        stdscr.addch(max_y - 2, max_x - 2, br)
+        # Use addstr instead of addch for Unicode compatibility on Windows
+        stdscr.addstr(0, 0, tl)
+        stdscr.addstr(0, max_x - 2, tr)
+        stdscr.addstr(max_y - 2, 0, bl)
+        stdscr.addstr(max_y - 2, max_x - 2, br)
 
         for x in range(1, max_x - 2):
-            stdscr.addch(0, x, h_char)
-            stdscr.addch(max_y - 2, x, h_char)
+            stdscr.addstr(0, x, h_char)
+            stdscr.addstr(max_y - 2, x, h_char)
 
         for y in range(1, max_y - 2):
-            stdscr.addch(y, 0, v_char)
-            stdscr.addch(y, max_x - 2, v_char)
+            stdscr.addstr(y, 0, v_char)
+            stdscr.addstr(y, max_x - 2, v_char)
     except curses.error:
         pass
 

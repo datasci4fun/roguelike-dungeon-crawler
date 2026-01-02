@@ -1,5 +1,7 @@
 """Terminal rendering using curses."""
 import curses
+import os
+import sys
 import time
 from typing import List, Tuple, Dict, Any
 
@@ -28,6 +30,9 @@ class Renderer:
         self.direction_indicators: List[Dict[str, Any]] = []  # Attack direction arrows
         self.corpses: List[Dict[str, Any]] = []  # Temporary corpse animations (flash on death)
 
+        # Detect Unicode support - be conservative on Windows
+        self.use_unicode = self._detect_unicode_support()
+
         # Initialize color pairs if available
         if curses.has_colors():
             curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Default
@@ -42,6 +47,30 @@ class Renderer:
             curses.init_pair(9, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # Bright yellow (level up)
             curses.init_pair(10, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Bright green (healing)
             curses.init_pair(11, curses.COLOR_BLUE, curses.COLOR_BLACK)   # Blue (rare items)
+
+    def _detect_unicode_support(self) -> bool:
+        """
+        Detect if the terminal properly supports Unicode box-drawing characters.
+        Be conservative - default to ASCII on Windows to avoid rendering issues.
+        """
+        # On Windows, Unicode support in curses is unreliable
+        if sys.platform == 'win32':
+            # Check if running in Windows Terminal (supports Unicode well)
+            # or legacy console (often has issues)
+            wt_session = os.environ.get('WT_SESSION')
+            if wt_session:
+                # Windows Terminal - likely supports Unicode
+                return True
+            # Legacy console or unknown - use ASCII to be safe
+            return False
+
+        # On Unix-like systems, check locale
+        import locale
+        try:
+            encoding = locale.getpreferredencoding()
+            return 'utf' in encoding.lower()
+        except Exception:
+            return False
 
     def _calculate_viewport(self, player: Player, dungeon: Dungeon) -> Tuple[int, int, int, int]:
         """
@@ -279,7 +308,7 @@ class Renderer:
 
     def _render_dungeon(self, dungeon: Dungeon, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
         """Render the dungeon tiles within the viewport."""
-        use_unicode = curses.has_colors()  # Proxy for Unicode support
+        use_unicode = self.use_unicode
 
         # Iterate over viewport area and render corresponding dungeon tiles
         for screen_y in range(vp_h):
@@ -301,14 +330,15 @@ class Renderer:
                     visual_char = dungeon.get_visual_char(world_x, world_y, use_unicode)
 
                     # Visible tiles render normally, explored-but-not-visible render dim
+                    # Use addstr for Unicode compatibility on Windows
                     if dungeon.visible[world_y][world_x]:
-                        self.stdscr.addch(screen_y, screen_x, visual_char)
+                        self.stdscr.addstr(screen_y, screen_x, visual_char)
                     else:
                         # Dim rendering for explored but not visible
                         if curses.has_colors():
-                            self.stdscr.addch(screen_y, screen_x, visual_char, curses.color_pair(7))
+                            self.stdscr.addstr(screen_y, screen_x, visual_char, curses.color_pair(7))
                         else:
-                            self.stdscr.addch(screen_y, screen_x, visual_char)
+                            self.stdscr.addstr(screen_y, screen_x, visual_char)
                 except curses.error:
                     # Ignore errors from trying to write to bottom-right corner
                     pass
@@ -330,18 +360,18 @@ class Renderer:
             screen_x, screen_y = self._world_to_screen(world_x, world_y, vp_x, vp_y)
 
             try:
-                # Render dim if not visible
+                # Render dim if not visible (use addstr for Unicode compatibility)
                 if dungeon.visible[world_y][world_x]:
                     if curses.has_colors():
-                        self.stdscr.addch(screen_y, screen_x, char, curses.color_pair(color_pair))
+                        self.stdscr.addstr(screen_y, screen_x, char, curses.color_pair(color_pair))
                     else:
-                        self.stdscr.addch(screen_y, screen_x, char)
+                        self.stdscr.addstr(screen_y, screen_x, char)
                 else:
                     # Dim rendering for explored but not visible
                     if curses.has_colors():
-                        self.stdscr.addch(screen_y, screen_x, char, curses.color_pair(7))
+                        self.stdscr.addstr(screen_y, screen_x, char, curses.color_pair(7))
                     else:
-                        self.stdscr.addch(screen_y, screen_x, char)
+                        self.stdscr.addstr(screen_y, screen_x, char)
             except curses.error:
                 pass
 
@@ -362,18 +392,18 @@ class Renderer:
             screen_x, screen_y = self._world_to_screen(world_x, world_y, vp_x, vp_y)
 
             try:
-                # Render dim if not visible
+                # Render dim if not visible (use addstr for Unicode compatibility)
                 if dungeon.visible[world_y][world_x]:
                     if curses.has_colors():
-                        self.stdscr.addch(screen_y, screen_x, char, curses.color_pair(color_pair))
+                        self.stdscr.addstr(screen_y, screen_x, char, curses.color_pair(color_pair))
                     else:
-                        self.stdscr.addch(screen_y, screen_x, char)
+                        self.stdscr.addstr(screen_y, screen_x, char)
                 else:
                     # Dim rendering for explored but not visible
                     if curses.has_colors():
-                        self.stdscr.addch(screen_y, screen_x, char, curses.color_pair(7))
+                        self.stdscr.addstr(screen_y, screen_x, char, curses.color_pair(7))
                     else:
-                        self.stdscr.addch(screen_y, screen_x, char)
+                        self.stdscr.addstr(screen_y, screen_x, char)
             except curses.error:
                 pass
 
@@ -399,9 +429,9 @@ class Renderer:
                         color_pair = ITEM_RARITY_COLORS[item.rarity]
                     else:
                         color_pair = 5  # Default to cyan
-                    self.stdscr.addch(screen_y, screen_x, item.symbol, curses.color_pair(color_pair))
+                    self.stdscr.addstr(screen_y, screen_x, item.symbol, curses.color_pair(color_pair))
                 else:
-                    self.stdscr.addch(screen_y, screen_x, item.symbol)
+                    self.stdscr.addstr(screen_y, screen_x, item.symbol)
             except curses.error:
                 pass
 
@@ -433,13 +463,13 @@ class Renderer:
                     if is_animated:
                         color = color | curses.A_REVERSE | curses.A_BOLD
 
-                    self.stdscr.addch(screen_y, screen_x, enemy.symbol, color)
+                    self.stdscr.addstr(screen_y, screen_x, enemy.symbol, color)
                 else:
                     # No color: use '*' for elite, 'E' for regular
                     symbol = '*' if enemy.is_elite else enemy.symbol
                     # Flash with reverse video
                     attr = curses.A_REVERSE if is_animated else curses.A_NORMAL
-                    self.stdscr.addch(screen_y, screen_x, symbol, attr)
+                    self.stdscr.addstr(screen_y, screen_x, symbol, attr)
             except curses.error:
                 pass
 
@@ -462,11 +492,11 @@ class Renderer:
                 if is_animated:
                     color = color | curses.A_REVERSE | curses.A_BOLD
 
-                self.stdscr.addch(screen_y, screen_x, player.symbol, color)
+                self.stdscr.addstr(screen_y, screen_x, player.symbol, color)
             else:
                 # Flash with reverse video
                 attr = curses.A_REVERSE if is_animated else curses.A_NORMAL
-                self.stdscr.addch(screen_y, screen_x, player.symbol, attr)
+                self.stdscr.addstr(screen_y, screen_x, player.symbol, attr)
         except curses.error:
             pass
 
@@ -516,11 +546,11 @@ class Renderer:
 
             try:
                 char = indicator['char']
-                # Render arrow in yellow (bright)
+                # Render arrow in yellow (bright) - use addstr for Unicode compatibility
                 if curses.has_colors():
-                    self.stdscr.addch(screen_y, screen_x, char, curses.color_pair(2) | curses.A_BOLD)
+                    self.stdscr.addstr(screen_y, screen_x, char, curses.color_pair(2) | curses.A_BOLD)
                 else:
-                    self.stdscr.addch(screen_y, screen_x, char, curses.A_BOLD)
+                    self.stdscr.addstr(screen_y, screen_x, char, curses.A_BOLD)
             except curses.error:
                 pass
 
@@ -547,8 +577,8 @@ class Renderer:
             if start_x < 1:
                 start_x = 1
 
-            # Clear the bar area first
-            self.stdscr.addstr(bar_y, 0, " " * (bar_width - 1))
+            # Clear the bar area first (full width to prevent panel border bleed-through)
+            self.stdscr.addstr(bar_y, 0, " " * bar_width)
 
             # Render each shortcut with highlighted key
             x_pos = start_x
@@ -578,7 +608,7 @@ class Renderer:
         msg_area_y = viewport_height + SHORTCUT_BAR_HEIGHT
 
         # Choose border characters based on terminal capability
-        use_unicode = curses.has_colors()
+        use_unicode = self.use_unicode
         h_char = BOX_H if use_unicode else BOX_H_ASCII
         v_char = BOX_V if use_unicode else BOX_V_ASCII
         tl = BOX_TL if use_unicode else BOX_TL_ASCII
@@ -590,11 +620,11 @@ class Renderer:
         msg_width = max_x - STATS_PANEL_WIDTH
 
         try:
-            # Draw top border of message area
-            self.stdscr.addch(msg_area_y, 0, tl)
+            # Draw top border of message area (use addstr for Unicode compatibility)
+            self.stdscr.addstr(msg_area_y, 0, tl)
             for x in range(1, msg_width - 1):
-                self.stdscr.addch(msg_area_y, x, h_char)
-            self.stdscr.addch(msg_area_y, msg_width - 1, tr)
+                self.stdscr.addstr(msg_area_y, x, h_char)
+            self.stdscr.addstr(msg_area_y, msg_width - 1, tr)
 
             # Draw message content area with borders
             for i in range(MESSAGE_LOG_SIZE + 1):  # +1 for header
@@ -603,17 +633,17 @@ class Renderer:
                     break
 
                 # Left border
-                self.stdscr.addch(row_y, 0, v_char)
+                self.stdscr.addstr(row_y, 0, v_char)
                 # Right border
-                self.stdscr.addch(row_y, msg_width - 1, v_char)
+                self.stdscr.addstr(row_y, msg_width - 1, v_char)
 
             # Draw bottom border
             bottom_y = msg_area_y + MESSAGE_LOG_SIZE + 2
             if bottom_y < max_y:
-                self.stdscr.addch(bottom_y, 0, bl)
+                self.stdscr.addstr(bottom_y, 0, bl)
                 for x in range(1, msg_width - 1):
-                    self.stdscr.addch(bottom_y, x, h_char)
-                self.stdscr.addch(bottom_y, msg_width - 1, br)
+                    self.stdscr.addstr(bottom_y, x, h_char)
+                self.stdscr.addstr(bottom_y, msg_width - 1, br)
 
             # Draw header
             header_y = msg_area_y + 1
@@ -666,17 +696,19 @@ class Renderer:
     def _draw_horizontal_border(self, y: int, x: int, width: int, left_char: str, right_char: str, fill_char: str):
         """Draw a horizontal border line."""
         try:
-            self.stdscr.addch(y, x, left_char)
+            # Use addstr instead of addch for Unicode compatibility on Windows
+            self.stdscr.addstr(y, x, left_char)
             for i in range(1, width - 1):
-                self.stdscr.addch(y, x + i, fill_char)
-            self.stdscr.addch(y, x + width - 1, right_char)
+                self.stdscr.addstr(y, x + i, fill_char)
+            self.stdscr.addstr(y, x + width - 1, right_char)
         except curses.error:
             pass
 
     def _draw_vertical_border(self, y: int, x: int, char: str):
         """Draw a single vertical border character."""
         try:
-            self.stdscr.addch(y, x, char)
+            # Use addstr instead of addch for Unicode compatibility on Windows
+            self.stdscr.addstr(y, x, char)
         except curses.error:
             pass
 
@@ -860,7 +892,7 @@ class Renderer:
             return  # Not enough space for panel
 
         # Choose border characters based on terminal capability
-        use_unicode = curses.has_colors()  # Proxy for Unicode support
+        use_unicode = self.use_unicode
         h_char = BOX_H if use_unicode else BOX_H_ASCII
         v_char = BOX_V if use_unicode else BOX_V_ASCII
         tl = BOX_TL if use_unicode else BOX_TL_ASCII
@@ -872,8 +904,11 @@ class Renderer:
             # Top border
             self._draw_horizontal_border(0, panel_x, STATS_PANEL_WIDTH, tl, tr, h_char)
 
-            # Draw vertical borders for all rows
-            for y in range(1, min(max_y, max_y - 1)):
+            # Calculate where message area starts (don't draw panel borders there)
+            msg_area_start = max_y - MESSAGE_AREA_HEIGHT - 1
+
+            # Draw vertical borders only in panel region (stop before message area)
+            for y in range(1, msg_area_start):
                 self._draw_vertical_border(y, panel_x, v_char)
                 self._draw_vertical_border(y, panel_x + STATS_PANEL_WIDTH - 1, v_char)
 
@@ -976,14 +1011,14 @@ class Renderer:
     def render_inventory_screen(self, player: Player, selected_index: int, dungeon_level: int):
         """Render the full-screen inventory management screen."""
         from .screens import render_inventory_screen
-        render_inventory_screen(self.stdscr, player, selected_index, dungeon_level)
+        render_inventory_screen(self.stdscr, player, selected_index, dungeon_level, self.use_unicode)
 
     def render_character_screen(self, player: Player, dungeon_level: int):
         """Render the full-screen character stats screen."""
         from .screens import render_character_screen
-        render_character_screen(self.stdscr, player, dungeon_level)
+        render_character_screen(self.stdscr, player, dungeon_level, self.use_unicode)
 
     def render_help_screen(self):
         """Render the help screen with controls and game info."""
         from .screens import render_help_screen
-        render_help_screen(self.stdscr)
+        render_help_screen(self.stdscr, self.use_unicode)

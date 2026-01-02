@@ -37,11 +37,10 @@ def render_game_over(stdscr, player: Player):
     stdscr.refresh()
 
 
-def render_inventory_screen(stdscr, player: Player, selected_index: int, dungeon_level: int):
+def render_inventory_screen(stdscr, player: Player, selected_index: int, dungeon_level: int, use_unicode: bool = False):
     """Render the full-screen inventory management screen."""
     stdscr.clear()
     max_y, max_x = stdscr.getmaxyx()
-    use_unicode = curses.has_colors()
 
     try:
         # Draw border and title
@@ -152,11 +151,10 @@ def render_inventory_screen(stdscr, player: Player, selected_index: int, dungeon
     stdscr.refresh()
 
 
-def render_character_screen(stdscr, player: Player, dungeon_level: int):
+def render_character_screen(stdscr, player: Player, dungeon_level: int, use_unicode: bool = False):
     """Render the full-screen character stats screen."""
     stdscr.clear()
     max_y, max_x = stdscr.getmaxyx()
-    use_unicode = curses.has_colors()
     h_char = "═" if use_unicode else "="
 
     try:
@@ -263,11 +261,10 @@ def render_character_screen(stdscr, player: Player, dungeon_level: int):
     stdscr.refresh()
 
 
-def render_help_screen(stdscr):
+def render_help_screen(stdscr, use_unicode: bool = False):
     """Render the help screen with controls and game info."""
     stdscr.clear()
     max_y, max_x = stdscr.getmaxyx()
-    use_unicode = curses.has_colors()
 
     try:
         # Draw border and title
