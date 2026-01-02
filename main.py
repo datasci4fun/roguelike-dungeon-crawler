@@ -2,8 +2,8 @@
 import curses
 import sys
 
-from src.game import Game
-from src.save_load import save_exists, load_game, delete_save
+from src.core import Game
+from src.data import load_game, delete_save, save_exists
 
 
 def show_load_prompt(stdscr):

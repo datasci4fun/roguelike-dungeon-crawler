@@ -2,10 +2,10 @@
 import curses
 from typing import TYPE_CHECKING, Tuple, Optional
 
-from .constants import GameState, UIMode
+from ..core.constants import GameState, UIMode
 
 if TYPE_CHECKING:
-    from .game import Game
+    from ..core.game import Game
 
 
 class InputHandler:

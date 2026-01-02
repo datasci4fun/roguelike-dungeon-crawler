@@ -1,14 +1,14 @@
 """Game state serialization and deserialization."""
 from typing import TYPE_CHECKING, List
 
-from .constants import TileType, EnemyType
-from .dungeon import Dungeon
-from .entities import Player, Enemy
-from .items import Item, ItemType, create_item
-from .save_load import save_game, load_game, delete_save
+from ..core.constants import TileType, EnemyType
+from ..world import Dungeon
+from ..entities import Player, Enemy
+from ..items import Item, ItemType, create_item
+from ..data import save_game, load_game, delete_save
 
 if TYPE_CHECKING:
-    from .game import Game
+    from ..core.game import Game
 
 
 class SaveManager:

@@ -1,11 +1,11 @@
 """Level transitions and dungeon lifecycle."""
 from typing import TYPE_CHECKING
 
-from .constants import GameState, TileType, MAX_DUNGEON_LEVELS
-from .dungeon import Dungeon
+from ..core.constants import GameState, TileType, MAX_DUNGEON_LEVELS
+from ..world import Dungeon
 
 if TYPE_CHECKING:
-    from .game import Game
+    from ..core.game import Game
 
 
 class LevelManager:
@@ -27,7 +27,7 @@ class LevelManager:
 
     def _handle_victory(self):
         """Handle player reaching the final level."""
-        from .save_load import delete_save
+        from ..data import delete_save
         delete_save()
         self.game.add_message("You've reached the deepest level!")
         self.game.add_message("Congratulations! You win!")

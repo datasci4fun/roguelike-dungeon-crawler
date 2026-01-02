@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from typing import Tuple
 import math
 
-from .constants import (
+from ..core.constants import (
     PLAYER_SYMBOL, PLAYER_MAX_HEALTH, PLAYER_ATTACK_DAMAGE,
     ENEMY_SYMBOL, ENEMY_MAX_HEALTH, ENEMY_ATTACK_DAMAGE, ENEMY_CHASE_RANGE
 )
-from .items import Inventory
+from ..items import Inventory
 
 
 @dataclass
@@ -63,7 +63,7 @@ class Player(Entity):
 
     def _calculate_xp_for_next_level(self) -> int:
         """Calculate XP required to reach next level."""
-        from .constants import XP_BASE_REQUIREMENT
+        from ..core.constants import XP_BASE_REQUIREMENT
         return self.level * XP_BASE_REQUIREMENT
 
     def gain_xp(self, amount: int) -> bool:
@@ -73,7 +73,7 @@ class Player(Entity):
         Returns:
             True if player leveled up, False otherwise
         """
-        from .constants import MAX_PLAYER_LEVEL, HP_GAIN_PER_LEVEL, ATK_GAIN_PER_LEVEL
+        from ..core.constants import MAX_PLAYER_LEVEL, HP_GAIN_PER_LEVEL, ATK_GAIN_PER_LEVEL
 
         self.xp += amount
 
@@ -103,8 +103,8 @@ class Player(Entity):
         Equip a weapon or armor item.
         Returns a message describing what happened.
         """
-        from .constants import EquipmentSlot
-        from .items import Weapon, Armor
+        from ..core.constants import EquipmentSlot
+        from ..items import Weapon, Armor
 
         if not item.is_equippable():
             return f"Cannot equip {item.name}!"
@@ -141,7 +141,7 @@ class Player(Entity):
         Unequip item from a slot and add it to inventory.
         Returns a message describing what happened.
         """
-        from .constants import EquipmentSlot
+        from ..core.constants import EquipmentSlot
 
         if slot == EquipmentSlot.WEAPON:
             if self.equipped_weapon is None:
@@ -178,7 +178,7 @@ class Enemy(Entity):
     """An enemy entity."""
 
     def __init__(self, x: int, y: int, enemy_type=None, is_elite: bool = False):
-        from .constants import (
+        from ..core.constants import (
             ELITE_HP_MULTIPLIER, ELITE_DAMAGE_MULTIPLIER,
             ENEMY_STATS, EnemyType
         )

@@ -3,15 +3,15 @@ import curses
 import time
 from typing import List, Tuple, Dict, Any
 
-from .constants import (
+from ..core.constants import (
     STATS_PANEL_WIDTH, MESSAGE_LOG_SIZE, MESSAGE_AREA_HEIGHT, SHORTCUT_BAR_HEIGHT, BAR_WIDTH,
     BOX_TL, BOX_TR, BOX_BL, BOX_BR, BOX_H, BOX_V, BOX_LEFT, BOX_RIGHT,
     BOX_TL_ASCII, BOX_TR_ASCII, BOX_BL_ASCII, BOX_BR_ASCII,
     BOX_H_ASCII, BOX_V_ASCII, BOX_LEFT_ASCII, BOX_RIGHT_ASCII
 )
-from .dungeon import Dungeon
-from .entities import Player, Enemy
-from .items import Item
+from ..world import Dungeon
+from ..entities import Player, Enemy
+from ..items import Item
 
 
 class Renderer:
