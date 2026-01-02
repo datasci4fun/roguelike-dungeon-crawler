@@ -379,7 +379,7 @@ class Renderer:
 
     def _render_items(self, items: List[Item], dungeon: Dungeon, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
         """Render all items on the ground (only if visible)."""
-        from .constants import ITEM_RARITY_COLORS
+        from ..core.constants import ITEM_RARITY_COLORS
 
         for item in items:
             # Check if in viewport
@@ -779,7 +779,7 @@ class Renderer:
             List of (status_text, color_pair) tuples
         """
         import time
-        from .constants import PLAYER_ATTACK_DAMAGE, ATK_GAIN_PER_LEVEL
+        from ..core.constants import PLAYER_ATTACK_DAMAGE, ATK_GAIN_PER_LEVEL
 
         indicators = []
 
