@@ -19,14 +19,26 @@
   font-size: 1.2rem;
 }
 
-.game-container {
+.play-layout {
+  display: flex;
+  gap: 1rem;
   width: 100%;
-  max-width: 900px;
+  max-width: 1200px;
   height: 100%;
   max-height: 700px;
+}
+
+.game-container {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.chat-container {
+  flex-shrink: 0;
+  height: 100%;
 }
 
 .game-error {
@@ -136,13 +148,27 @@
 }
 
 /* Responsive adjustments */
+@media (max-width: 1024px) {
+  .play-layout {
+    flex-direction: column;
+    max-height: none;
+  }
+
+  .chat-container {
+    height: 250px;
+  }
+}
+
 @media (max-width: 768px) {
   .play {
     padding: 0.5rem;
   }
 
-  .game-container {
-    max-height: none;
+  .play-layout {
     height: calc(100vh - 80px);
+  }
+
+  .chat-container {
+    height: 200px;
   }
 }

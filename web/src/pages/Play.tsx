@@ -1,24 +1,40 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGameSocket } from '../hooks/useGameSocket';
+import { useChatSocket } from '../hooks/useChatSocket';
 import { GameTerminal } from '../components/GameTerminal';
+import { ChatPanel } from '../components/ChatPanel';
 import './Play.css';
 
 export function Play() {
   const { isAuthenticated, isLoading, token } = useAuth();
   const navigate = useNavigate();
+  const [isChatCollapsed, setIsChatCollapsed] = useState(false);
 
+  // Game WebSocket
   const {
-    status,
+    status: gameStatus,
     gameState,
-    error,
-    connect,
-    disconnect,
+    error: gameError,
+    connect: connectGame,
+    disconnect: disconnectGame,
     sendCommand,
     newGame,
     quit,
   } = useGameSocket(token);
+
+  // Chat WebSocket
+  const {
+    status: chatStatus,
+    messages,
+    onlineUsers,
+    currentUserId,
+    connect: connectChat,
+    disconnect: disconnectChat,
+    sendMessage,
+    sendWhisper,
+  } = useChatSocket(token);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -27,19 +43,25 @@ export function Play() {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Connect to game server when authenticated
+  // Connect to both servers when authenticated
   useEffect(() => {
-    if (isAuthenticated && token && status === 'disconnected') {
-      connect();
+    if (isAuthenticated && token) {
+      if (gameStatus === 'disconnected') {
+        connectGame();
+      }
+      if (chatStatus === 'disconnected') {
+        connectChat();
+      }
     }
-  }, [isAuthenticated, token, status, connect]);
+  }, [isAuthenticated, token, gameStatus, chatStatus, connectGame, connectChat]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      disconnect();
+      disconnectGame();
+      disconnectChat();
     };
-  }, [disconnect]);
+  }, [disconnectGame, disconnectChat]);
 
   // Handle new game - also handles "press enter to play again"
   const handleNewGame = useCallback(() => {
@@ -63,6 +85,11 @@ export function Play() {
     [gameState, sendCommand, newGame]
   );
 
+  // Toggle chat collapse
+  const toggleChat = useCallback(() => {
+    setIsChatCollapsed((prev) => !prev);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="play-loading">
@@ -77,38 +104,54 @@ export function Play() {
 
   return (
     <div className="play">
-      <div className="game-container">
-        {error && (
-          <div className="game-error">
-            <span className="error-icon">!</span>
-            <span>{error}</span>
-            <button onClick={connect} className="retry-btn">
-              Retry
-            </button>
-          </div>
-        )}
+      <div className="play-layout">
+        <div className="game-container">
+          {gameError && (
+            <div className="game-error">
+              <span className="error-icon">!</span>
+              <span>{gameError}</span>
+              <button onClick={connectGame} className="retry-btn">
+                Retry
+              </button>
+            </div>
+          )}
 
-        <div className="terminal-wrapper">
-          <GameTerminal
-            gameState={gameState}
-            onCommand={handleCommand}
-            onNewGame={handleNewGame}
-            onQuit={quit}
-            isConnected={status === 'connected'}
-          />
+          <div className="terminal-wrapper">
+            <GameTerminal
+              gameState={gameState}
+              onCommand={handleCommand}
+              onNewGame={handleNewGame}
+              onQuit={quit}
+              isConnected={gameStatus === 'connected'}
+            />
+          </div>
+
+          <div className="game-status">
+            <span
+              className={`status-indicator ${gameStatus}`}
+              title={`Game: ${gameStatus}`}
+            />
+            <span className="status-text">
+              {gameStatus === 'connecting' && 'Connecting...'}
+              {gameStatus === 'connected' && (gameState ? `Turn ${gameState.turn}` : 'Ready')}
+              {gameStatus === 'disconnected' && 'Disconnected'}
+              {gameStatus === 'error' && 'Connection Error'}
+            </span>
+          </div>
         </div>
 
-        <div className="game-status">
-          <span
-            className={`status-indicator ${status}`}
-            title={`Status: ${status}`}
+        <div className="chat-container">
+          <ChatPanel
+            status={chatStatus}
+            messages={messages}
+            onlineUsers={onlineUsers}
+            currentUserId={currentUserId}
+            onSendMessage={sendMessage}
+            onSendWhisper={sendWhisper}
+            onConnect={connectChat}
+            isCollapsed={isChatCollapsed}
+            onToggleCollapse={toggleChat}
           />
-          <span className="status-text">
-            {status === 'connecting' && 'Connecting...'}
-            {status === 'connected' && (gameState ? `Turn ${gameState.turn}` : 'Ready')}
-            {status === 'disconnected' && 'Disconnected'}
-            {status === 'error' && 'Connection Error'}
-          </span>
         </div>
       </div>
     </div>
