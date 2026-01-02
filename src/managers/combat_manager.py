@@ -75,17 +75,8 @@ class CombatManager:
         self.game.add_message(message)
 
         # Emit combat events (renderer will consume these)
-        if self.events:
+        if self.events is not None:
             self.events.emit_attack(player, enemy, damage, enemy_died)
-        else:
-            # Fallback to direct renderer calls if no event queue
-            renderer = self.game.renderer
-            renderer.add_direction_indicator(player.x, player.y, enemy.x, enemy.y)
-            renderer.add_damage_number(enemy.x, enemy.y, damage)
-            if enemy_died:
-                renderer.add_death_flash(enemy.x, enemy.y)
-            else:
-                renderer.add_hit_animation(enemy)
 
         if enemy_died:
             player.kills += 1
@@ -145,15 +136,8 @@ class CombatManager:
         self.game.last_damage_taken = damage
 
         # Emit combat events (renderer will consume these)
-        if self.events:
+        if self.events is not None:
             self.events.emit_attack(enemy, player, damage, player_died)
-        else:
-            # Fallback to direct renderer calls if no event queue
-            renderer = self.game.renderer
-            renderer.add_direction_indicator(enemy.x, enemy.y, player.x, player.y)
-            renderer.add_damage_number(player.x, player.y, damage)
-            if not player_died:
-                renderer.add_hit_animation(player)
 
         if player_died:
             self.game.state = GameState.DEAD

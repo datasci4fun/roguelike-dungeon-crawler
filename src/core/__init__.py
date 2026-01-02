@@ -1,5 +1,6 @@
 """Core game module - game loop and constants."""
 from .game import Game
+from .engine import GameEngine
 from .messages import GameMessage, MessageCategory, MessageImportance, MessageLog
 from .events import (
     EventType, GameEvent, EventQueue,

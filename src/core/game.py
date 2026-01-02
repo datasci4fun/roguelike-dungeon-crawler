@@ -1,204 +1,224 @@
-"""Main game loop and state management."""
+"""Terminal client for the game engine.
+
+The Game class wraps the GameEngine and handles all curses-specific
+input/output, acting as a terminal client for the platform-agnostic engine.
+"""
 import curses
 from typing import List
 
-from .constants import GameState, UIMode, AUTO_SAVE_INTERVAL
-from .messages import MessageLog, MessageCategory, MessageImportance
-from .events import EventType, EventQueue
-from ..world import Dungeon
-from ..entities import Player
+from .constants import GameState, UIMode
+from .engine import GameEngine
+from .events import EventType
 from ..ui import Renderer, CursesInputAdapter
 from ..ui.screens import (
     render_title_screen, render_intro_screen, render_reading_screen,
     render_dialog, render_message_log_screen, render_victory_screen
 )
-from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
 from ..data import save_exists
-from ..story import StoryManager
-from ..story.story_data import get_tutorial_hint
-
-# Import managers
-from ..managers import (
-    InputHandler, EntityManager, CombatManager,
-    LevelManager, SaveManager
-)
 
 
 class Game:
-    """Main game class coordinating all game systems."""
+    """
+    Terminal client that wraps GameEngine with curses I/O.
+
+    This class handles:
+    - curses screen management
+    - Input translation (keys -> commands)
+    - Event processing (events -> renderer)
+    - Rendering delegation
+
+    All game logic is delegated to the GameEngine.
+    """
 
     def __init__(self, stdscr):
         self.stdscr = stdscr
-        self.state = GameState.TITLE
-        self.ui_mode = UIMode.GAME
+
+        # Initialize the game engine (all game logic lives here)
+        self.engine = GameEngine()
+
+        # Initialize renderer
         self.renderer = Renderer(stdscr)
-        self.message_log = MessageLog()
-        self.current_level = 1
 
-        # Death tracking for recap
-        self.last_attacker_name = None
-        self.last_damage_taken = 0
-        self.kills_count = 0
-        self.max_level_reached = 1
-
-        # Turn tracking for auto-save
-        self.turns_since_save = 0
-
-        # Inventory screen state
-        self.selected_item_index = 0
-
-        # Title/intro screen state
-        self.intro_page = 0
-        self.intro_total_pages = 2  # Default, updated when intro renders
-
-        # Reading screen state
-        self.reading_title = ""
-        self.reading_content = []
-
-        # Dialog state
-        self.dialog_title = ""
-        self.dialog_message = ""
-        self.dialog_callback = None  # Function to call with dialog result
+        # Initialize input adapter
+        self.input_adapter = CursesInputAdapter()
 
         # Set up non-blocking input with timeout
         self.stdscr.timeout(100)
 
-        # Initialize event queue for decoupled communication
-        self.event_queue = EventQueue()
+    # =========================================================================
+    # Property Proxies to Engine (for backward compatibility)
+    # =========================================================================
 
-        # Initialize input adapter for platform-agnostic input
-        self.input_adapter = CursesInputAdapter()
+    @property
+    def state(self) -> GameState:
+        return self.engine.state
 
-        # Initialize managers
-        self.entity_manager = EntityManager()
-        self.input_handler = InputHandler(self)
-        self.combat_manager = CombatManager(self, event_queue=self.event_queue)
-        self.level_manager = LevelManager(self)
-        self.save_manager = SaveManager(self)
-        self.story_manager = StoryManager()
+    @state.setter
+    def state(self, value: GameState):
+        self.engine.state = value
 
-        # Game world initialized on new game or continue
-        self.dungeon = None
-        self.player = None
+    @property
+    def ui_mode(self) -> UIMode:
+        return self.engine.ui_mode
 
-    def _initialize_new_game(self):
-        """Set up a new game."""
-        # Generate first dungeon
-        self.dungeon = Dungeon(level=self.current_level, has_stairs_up=False)
+    @ui_mode.setter
+    def ui_mode(self, value: UIMode):
+        self.engine.ui_mode = value
 
-        # Spawn player
-        player_pos = self.dungeon.get_random_floor_position()
-        self.player = Player(player_pos[0], player_pos[1])
+    @property
+    def player(self):
+        return self.engine.player
 
-        # Initialize FOV
-        self.dungeon.update_fov(self.player.x, self.player.y)
+    @property
+    def dungeon(self):
+        return self.engine.dungeon
 
-        # Spawn entities
-        self.entity_manager.spawn_enemies(self.dungeon, self.player)
-        self.entity_manager.spawn_items(self.dungeon, self.player)
-
-        # Welcome messages
-        self.add_message("Welcome to the dungeon!")
-        self.add_message("Find the stairs (>) to descend deeper")
-        self.add_message("Use arrow keys or WASD to move")
-
-    def add_message(self, message: str,
-                    category: MessageCategory = MessageCategory.SYSTEM,
-                    importance: MessageImportance = MessageImportance.NORMAL):
-        """Add a message to the message log."""
-        self.message_log.add(message, category, importance)
-
-    def show_hint(self, hint_id: str) -> bool:
-        """
-        Show a tutorial hint if it hasn't been shown before.
-
-        Args:
-            hint_id: The ID of the hint to show
-
-        Returns:
-            True if hint was shown, False if already shown
-        """
-        if self.story_manager.show_hint(hint_id):
-            hint_text = get_tutorial_hint(hint_id)
-            if hint_text:
-                self.add_message(hint_text, MessageCategory.SYSTEM, MessageImportance.IMPORTANT)
-                return True
-        return False
+    @property
+    def message_log(self):
+        return self.engine.message_log
 
     @property
     def messages(self) -> List[str]:
-        """Get recent messages as strings (for backward compatibility with renderer)."""
-        return [msg.text for msg in self.message_log.get_recent(5)]
+        return self.engine.messages
+
+    @property
+    def entity_manager(self):
+        return self.engine.entity_manager
+
+    @property
+    def enemies(self) -> List:
+        return self.engine.enemies
+
+    @property
+    def items(self) -> List:
+        return self.engine.items
+
+    @property
+    def story_manager(self):
+        return self.engine.story_manager
+
+    @property
+    def combat_manager(self):
+        return self.engine.combat_manager
+
+    @property
+    def level_manager(self):
+        return self.engine.level_manager
+
+    @property
+    def save_manager(self):
+        return self.engine.save_manager
+
+    @property
+    def current_level(self):
+        return self.engine.current_level
+
+    @current_level.setter
+    def current_level(self, value):
+        self.engine.current_level = value
+
+    @property
+    def selected_item_index(self):
+        return self.engine.selected_item_index
+
+    @selected_item_index.setter
+    def selected_item_index(self, value):
+        self.engine.selected_item_index = value
+
+    @property
+    def last_attacker_name(self):
+        return self.engine.last_attacker_name
+
+    @last_attacker_name.setter
+    def last_attacker_name(self, value):
+        self.engine.last_attacker_name = value
+
+    @property
+    def last_damage_taken(self):
+        return self.engine.last_damage_taken
+
+    @last_damage_taken.setter
+    def last_damage_taken(self, value):
+        self.engine.last_damage_taken = value
+
+    @property
+    def max_level_reached(self):
+        return self.engine.max_level_reached
+
+    @max_level_reached.setter
+    def max_level_reached(self, value):
+        self.engine.max_level_reached = value
+
+    @property
+    def turns_since_save(self):
+        return self.engine.turns_since_save
+
+    @turns_since_save.setter
+    def turns_since_save(self, value):
+        self.engine.turns_since_save = value
+
+    @property
+    def event_queue(self):
+        return self.engine.event_queue
+
+    # =========================================================================
+    # Method Proxies to Engine
+    # =========================================================================
+
+    def add_message(self, message, category=None, importance=None):
+        """Proxy to engine.add_message."""
+        if category is None and importance is None:
+            self.engine.add_message(message)
+        elif importance is None:
+            self.engine.add_message(message, category)
+        else:
+            self.engine.add_message(message, category, importance)
+
+    def show_hint(self, hint_id: str) -> bool:
+        """Proxy to engine.show_hint."""
+        return self.engine.show_hint(hint_id)
+
+    def show_dialog(self, title: str, message: str, callback):
+        """Proxy to engine.show_dialog."""
+        self.engine.show_dialog(title, message, callback)
+
+    def use_item(self, item_index: int) -> bool:
+        """Proxy to engine.use_item."""
+        return self.engine.use_item(item_index)
+
+    def save_game_state(self) -> bool:
+        """Save game state."""
+        return self.engine.save_game()
+
+    def load_game_state(self, game_state: dict) -> bool:
+        """Load game state (delegates to save_manager)."""
+        return self.engine.save_manager.load_game_state(game_state)
+
+    # =========================================================================
+    # Main Game Loop
+    # =========================================================================
 
     def run(self):
         """Main game loop."""
-        while self.state != GameState.QUIT:
-            if self.state == GameState.TITLE:
+        while self.engine.state != GameState.QUIT:
+            if self.engine.state == GameState.TITLE:
                 self._title_loop()
-            elif self.state == GameState.INTRO:
+            elif self.engine.state == GameState.INTRO:
                 self._intro_loop()
-            elif self.state == GameState.PLAYING:
+            elif self.engine.state == GameState.PLAYING:
                 self._game_loop()
-            elif self.state == GameState.DEAD:
+            elif self.engine.state == GameState.DEAD:
                 self._game_over_loop()
-            elif self.state == GameState.VICTORY:
+            elif self.engine.state == GameState.VICTORY:
                 self._victory_loop()
 
-    def _title_loop(self):
-        """Handle the title screen."""
-        has_save = save_exists()
-        use_unicode = self.renderer.use_unicode
-
-        render_title_screen(self.stdscr, has_save, use_unicode)
-
-        key = self.stdscr.getch()
-        command = self.input_adapter.translate_title(key)
-        action = self.input_handler.handle_title_command(command, has_save)
-
-        if action == 'new_game':
-            self.intro_page = 0
-            self.state = GameState.INTRO
-        elif action == 'continue':
-            # Load saved game
-            if self.save_manager.load_game():
-                self.state = GameState.PLAYING
-            else:
-                self.add_message("Failed to load save!")
-                self._initialize_new_game()
-                self.state = GameState.PLAYING
-        elif action == 'help':
-            # Show help screen from title
-            self.renderer.render_help_screen()
-            self.stdscr.timeout(-1)  # Blocking for help
-            self.stdscr.getch()
-            self.stdscr.timeout(100)  # Restore timeout
-        elif action == 'quit':
-            self.state = GameState.QUIT
-
-    def _intro_loop(self):
-        """Handle the intro/prologue screen."""
-        use_unicode = self.renderer.use_unicode
-
-        self.intro_total_pages = render_intro_screen(
-            self.stdscr, self.intro_page, use_unicode
-        )
-
-        key = self.stdscr.getch()
-        command = self.input_adapter.translate_intro(key)
-        new_page, should_skip = self.input_handler.handle_intro_command(
-            command, self.intro_page, self.intro_total_pages
-        )
-
-        self.intro_page = new_page
-
-        if should_skip:
-            # Start new game
-            self._initialize_new_game()
-            self.state = GameState.PLAYING
+    # =========================================================================
+    # Event Processing
+    # =========================================================================
 
     def _process_events(self):
-        """Process events from the event queue and dispatch to renderer."""
-        for event in self.event_queue.flush():
+        """Process events from the engine and dispatch to renderer."""
+        for event in self.engine.flush_events():
             if event.type == EventType.HIT_FLASH:
                 entity = event.data.get('entity')
                 if entity:
@@ -228,28 +248,75 @@ class Game:
             elif event.type == EventType.BLOOD_STAIN:
                 x = event.data.get('x')
                 y = event.data.get('y')
-                if x is not None and y is not None and self.dungeon:
-                    self.dungeon.add_blood_stain(x, y)
+                if x is not None and y is not None and self.engine.dungeon:
+                    self.engine.dungeon.add_blood_stain(x, y)
+
+    # =========================================================================
+    # State-Specific Loops
+    # =========================================================================
+
+    def _title_loop(self):
+        """Handle the title screen."""
+        has_save = save_exists()
+        use_unicode = self.renderer.use_unicode
+
+        render_title_screen(self.stdscr, has_save, use_unicode)
+
+        key = self.stdscr.getch()
+        command = self.input_adapter.translate_title(key)
+        action = self.engine.process_title_command(command, has_save)
+
+        if action == 'new_game':
+            self.engine.intro_page = 0
+            self.engine.state = GameState.INTRO
+        elif action == 'continue':
+            if self.engine.load_game():
+                pass  # State already set by load_game
+            else:
+                self.engine.add_message("Failed to load save!")
+                self.engine.start_new_game()
+        elif action == 'help':
+            self.renderer.render_help_screen()
+            self.stdscr.timeout(-1)
+            self.stdscr.getch()
+            self.stdscr.timeout(100)
+        elif action == 'quit':
+            self.engine.state = GameState.QUIT
+
+    def _intro_loop(self):
+        """Handle the intro/prologue screen."""
+        use_unicode = self.renderer.use_unicode
+
+        self.engine.intro_total_pages = render_intro_screen(
+            self.stdscr, self.engine.intro_page, use_unicode
+        )
+
+        key = self.stdscr.getch()
+        command = self.input_adapter.translate_intro(key)
+        new_page, should_skip = self.engine.process_intro_command(command)
+
+        if should_skip:
+            self.engine.start_new_game()
 
     def _game_loop(self):
         """Main playing state loop."""
         # Handle different UI modes
-        if self.ui_mode == UIMode.INVENTORY:
+        if self.engine.ui_mode == UIMode.INVENTORY:
             self._inventory_loop()
             return
-        elif self.ui_mode == UIMode.CHARACTER:
+        elif self.engine.ui_mode == UIMode.CHARACTER:
             self._character_loop()
             return
-        elif self.ui_mode == UIMode.HELP:
+        elif self.engine.ui_mode == UIMode.HELP:
             self._help_loop()
             return
-        elif self.ui_mode == UIMode.READING:
+        elif self.engine.ui_mode == UIMode.READING:
             self._reading_loop()
             return
-        elif self.ui_mode == UIMode.DIALOG:
+        elif self.engine.ui_mode == UIMode.DIALOG:
             self._dialog_loop()
             return
-        elif self.ui_mode == UIMode.MESSAGE_LOG:
+        elif self.engine.ui_mode == UIMode.MESSAGE_LOG:
             self._message_log_loop()
             return
 
@@ -258,56 +325,43 @@ class Game:
 
         # Normal game rendering
         self.renderer.render(
-            self.dungeon,
-            self.player,
-            self.entity_manager.enemies,
-            self.entity_manager.items,
-            self.messages
+            self.engine.dungeon,
+            self.engine.player,
+            self.engine.enemies,
+            self.engine.items,
+            self.engine.messages
         )
 
         # Handle input
         key = self.stdscr.getch()
         command = self.input_adapter.translate_game(key)
-        player_moved = self.input_handler.handle_game_command(command)
-
-        # Enemy turn (only if player moved)
-        if player_moved:
-            self.combat_manager.process_enemy_turns()
-
-            # Track turns for auto-save
-            self.turns_since_save += 1
-            if self.turns_since_save >= AUTO_SAVE_INTERVAL:
-                self.save_manager.auto_save()
-                self.add_message("Game saved.")
+        self.engine.process_game_command(command)
 
         # Process events generated this tick
         self._process_events()
 
-        # Check if player died
-        if not self.player.is_alive():
-            from ..data import delete_save
-            delete_save()
-            self.state = GameState.DEAD
-
     def _inventory_loop(self):
         """Handle the full-screen inventory UI."""
         self.renderer.render_inventory_screen(
-            self.player,
-            self.selected_item_index,
-            self.dungeon.level
+            self.engine.player,
+            self.engine.selected_item_index,
+            self.engine.dungeon.level
         )
 
         key = self.stdscr.getch()
         command = self.input_adapter.translate_inventory(key)
-        self.input_handler.handle_inventory_command(command)
+        self.engine.process_inventory_command(command)
 
     def _character_loop(self):
         """Handle the character stats screen UI."""
-        self.renderer.render_character_screen(self.player, self.dungeon.level)
+        self.renderer.render_character_screen(
+            self.engine.player,
+            self.engine.dungeon.level
+        )
 
         key = self.stdscr.getch()
         command = self.input_adapter.translate_close_screen(key)
-        self.input_handler.handle_character_command(command)
+        self.engine.process_character_command(command)
 
     def _help_loop(self):
         """Handle the help screen UI."""
@@ -315,21 +369,21 @@ class Game:
 
         key = self.stdscr.getch()
         command = self.input_adapter.translate_close_screen(key)
-        self.input_handler.handle_help_command(command)
+        self.engine.process_help_command(command)
 
     def _reading_loop(self):
         """Handle the lore reading screen UI."""
         use_unicode = self.renderer.use_unicode
         render_reading_screen(
             self.stdscr,
-            self.reading_title,
-            self.reading_content,
+            self.engine.reading_title,
+            self.engine.reading_content,
             use_unicode
         )
 
         key = self.stdscr.getch()
         command = self.input_adapter.translate_close_screen(key)
-        self.input_handler.handle_reading_command(command)
+        self.engine.process_reading_command(command)
 
     def _dialog_loop(self):
         """Handle the confirmation dialog UI."""
@@ -337,156 +391,62 @@ class Game:
 
         # Render the game behind the dialog first
         self.renderer.render(
-            self.dungeon,
-            self.player,
-            self.entity_manager.enemies,
-            self.entity_manager.items,
-            self.messages
+            self.engine.dungeon,
+            self.engine.player,
+            self.engine.enemies,
+            self.engine.items,
+            self.engine.messages
         )
 
         # Render dialog on top
         render_dialog(
             self.stdscr,
-            self.dialog_title,
-            self.dialog_message,
+            self.engine.dialog_title,
+            self.engine.dialog_message,
             use_unicode=use_unicode
         )
 
         key = self.stdscr.getch()
         command = self.input_adapter.translate_dialog(key)
-        result = self.input_handler.handle_dialog_command(command)
-
-        if result is not None and self.dialog_callback:
-            self.dialog_callback(result)
-            self.dialog_callback = None
-
-    def show_dialog(self, title: str, message: str, callback):
-        """
-        Show a confirmation dialog.
-
-        Args:
-            title: Dialog title
-            message: Dialog message/question
-            callback: Function to call with True (confirmed) or False (cancelled)
-        """
-        self.dialog_title = title
-        self.dialog_message = message
-        self.dialog_callback = callback
-        self.ui_mode = UIMode.DIALOG
+        self.engine.process_dialog_command(command)
 
     def _message_log_loop(self):
         """Handle the message log screen UI."""
         use_unicode = self.renderer.use_unicode
         render_message_log_screen(
             self.stdscr,
-            self.message_log,
+            self.engine.message_log,
             use_unicode
         )
 
         key = self.stdscr.getch()
         command = self.input_adapter.translate_message_log(key)
-        # Calculate visible lines for scrolling
         max_y, _ = self.stdscr.getmaxyx()
         visible_lines = max_y - 7
-        self.input_handler.handle_message_log_command(command, visible_lines)
+        self.engine.process_message_log_command(command, visible_lines)
 
     def _game_over_loop(self):
         """Game over state loop."""
-        # Build death recap info
-        lore_found, lore_total = self.story_manager.get_lore_progress()
-        death_info = {
-            'attacker': self.last_attacker_name,
-            'damage': self.last_damage_taken,
-            'max_level': self.max_level_reached,
-            'lore_found': lore_found,
-            'lore_total': lore_total,
-        }
-        self.renderer.render_game_over(self.player, death_info)
-        self.stdscr.timeout(-1)  # Blocking input
+        death_info = self.engine.get_death_info()
+        self.renderer.render_game_over(self.engine.player, death_info)
+
+        self.stdscr.timeout(-1)
         self.stdscr.getch()
-        self.stdscr.timeout(100)  # Restore timeout
-        # Return to title screen instead of quitting
-        self.state = GameState.TITLE
-        self.message_log.clear()  # Clear messages for new game
+        self.stdscr.timeout(100)
+
+        # Return to title screen
+        self.engine.state = GameState.TITLE
+        self.engine.message_log.clear()
 
     def _victory_loop(self):
-        """Victory state loop - player won the game."""
-        # Build victory info
-        lore_found, lore_total = self.story_manager.get_lore_progress()
-        victory_info = {
-            'lore_found': lore_found,
-            'lore_total': lore_total,
-        }
-        render_victory_screen(self.stdscr, self.player, victory_info)
-        self.stdscr.timeout(-1)  # Blocking input
+        """Victory state loop."""
+        victory_info = self.engine.get_victory_info()
+        render_victory_screen(self.stdscr, self.engine.player, victory_info)
+
+        self.stdscr.timeout(-1)
         self.stdscr.getch()
-        self.stdscr.timeout(100)  # Restore timeout
+        self.stdscr.timeout(100)
+
         # Return to title screen
-        self.state = GameState.TITLE
-        self.message_log.clear()  # Clear messages for new game
-
-    def use_item(self, item_index: int) -> bool:
-        """
-        Use an item from the inventory.
-
-        Returns:
-            True if item was used, False otherwise
-        """
-        if item_index < 0 or item_index >= len(self.player.inventory.items):
-            return False
-
-        item = self.player.inventory.get_item(item_index)
-        if not item:
-            return False
-
-        # Handle lore items specially - open reading screen
-        if isinstance(item, (LoreScroll, LoreBook)):
-            title, content = item.get_text()
-            self.reading_title = title
-            self.reading_content = content
-            self.ui_mode = UIMode.READING
-
-            # Mark lore as discovered
-            self.story_manager.discover_lore(item.lore_id)
-
-            # Remove item from inventory after reading
-            self.player.inventory.remove_item(item_index)
-            self.add_message(f"You read {item.name}.")
-            return True
-
-        # Use the item
-        message = item.use(self.player)
-        self.add_message(message)
-
-        # Handle special item effects
-        if isinstance(item, ScrollTeleport):
-            new_pos = self.dungeon.get_random_floor_position()
-            self.player.x, self.player.y = new_pos
-            self.dungeon.update_fov(self.player.x, self.player.y)
-
-        # Remove item from inventory
-        self.player.inventory.remove_item(item_index)
-
-        return True
-
-    # Legacy methods for save/load compatibility
-
-    def save_game_state(self) -> bool:
-        """Save game state (delegates to save_manager)."""
-        return self.save_manager.save_game()
-
-    def load_game_state(self, game_state: dict) -> bool:
-        """Load game state (delegates to save_manager)."""
-        return self.save_manager.load_game_state(game_state)
-
-    # Property aliases for manager collections (for compatibility)
-
-    @property
-    def enemies(self) -> List:
-        """Alias for entity_manager.enemies."""
-        return self.entity_manager.enemies
-
-    @property
-    def items(self) -> List:
-        """Alias for entity_manager.items."""
-        return self.entity_manager.items
+        self.engine.state = GameState.TITLE
+        self.engine.message_log.clear()
