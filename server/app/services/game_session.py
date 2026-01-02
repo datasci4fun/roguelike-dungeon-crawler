@@ -111,15 +111,46 @@ class GameSessionManager:
         async with self._lock:
             session = self.sessions.pop(user_id, None)
             if session and session.engine:
-                # Extract final stats
+                # Extract comprehensive final stats
                 engine = session.engine
-                return {
-                    "turns": session.turn_count,
-                    "level": engine.current_level,
-                    "kills": engine.player.kills if engine.player else 0,
-                    "max_level": engine.max_level_reached,
-                    "victory": engine.state == GameState.VICTORY if GameState else False,
+                player = engine.player
+
+                # Calculate game duration
+                duration_seconds = int(
+                    (datetime.utcnow() - session.created_at).total_seconds()
+                )
+
+                # Determine victory and cause of death
+                victory = engine.state == GameState.VICTORY if GameState else False
+                cause_of_death = None
+                killed_by = None
+
+                if not victory and player and player.health <= 0:
+                    cause_of_death = "killed"
+                    # Try to find what killed the player
+                    if hasattr(engine, 'last_attacker_name'):
+                        killed_by = engine.last_attacker_name
+
+                stats = {
+                    "victory": victory,
+                    "level_reached": engine.current_level,
+                    "kills": player.kills if player else 0,
+                    "damage_dealt": getattr(player, 'damage_dealt', 0) if player else 0,
+                    "damage_taken": getattr(player, 'damage_taken', 0) if player else 0,
+                    "final_hp": player.health if player else 0,
+                    "max_hp": player.max_health if player else 0,
+                    "player_level": player.level if player else 1,
+                    "potions_used": getattr(player, 'potions_used', 0) if player else 0,
+                    "items_collected": getattr(player, 'items_collected', 0) if player else 0,
+                    "gold_collected": getattr(player, 'gold', 0) if player else 0,
+                    "cause_of_death": cause_of_death,
+                    "killed_by": killed_by,
+                    "game_duration_seconds": duration_seconds,
+                    "turns_taken": session.turn_count,
+                    "started_at": session.created_at,
                 }
+
+                return stats
             return None
 
     async def process_command(

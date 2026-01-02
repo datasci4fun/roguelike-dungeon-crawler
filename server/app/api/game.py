@@ -4,10 +4,13 @@ from typing import Optional
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
 from jose import JWTError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..core.security import decode_token
+from ..core.database import AsyncSessionLocal
 from ..core.websocket import manager
 from ..services.game_session import session_manager, GAME_ENGINE_AVAILABLE
+from ..services.leaderboard_service import LeaderboardService
 
 
 router = APIRouter(prefix="/game", tags=["game"])
@@ -19,6 +22,54 @@ async def get_user_from_token(token: str) -> Optional[int]:
     if token_data:
         return token_data.user_id
     return None
+
+
+async def record_game_result(user_id: int, stats: dict) -> Optional[dict]:
+    """
+    Record a completed game result to the leaderboard.
+
+    Args:
+        user_id: The user's ID
+        stats: Game stats from end_session
+
+    Returns:
+        The recorded result data, or None if recording failed
+    """
+    if not stats:
+        return None
+
+    try:
+        async with AsyncSessionLocal() as db:
+            service = LeaderboardService(db)
+            result = await service.record_game_result(
+                user_id=user_id,
+                victory=stats.get("victory", False),
+                level_reached=stats.get("level_reached", 1),
+                kills=stats.get("kills", 0),
+                damage_dealt=stats.get("damage_dealt", 0),
+                damage_taken=stats.get("damage_taken", 0),
+                final_hp=stats.get("final_hp", 0),
+                max_hp=stats.get("max_hp", 0),
+                player_level=stats.get("player_level", 1),
+                potions_used=stats.get("potions_used", 0),
+                items_collected=stats.get("items_collected", 0),
+                gold_collected=stats.get("gold_collected", 0),
+                cause_of_death=stats.get("cause_of_death"),
+                killed_by=stats.get("killed_by"),
+                game_duration_seconds=stats.get("game_duration_seconds", 0),
+                turns_taken=stats.get("turns_taken", 0),
+                started_at=stats.get("started_at"),
+            )
+            return {
+                "game_id": result.id,
+                "score": result.score,
+                "victory": result.victory,
+            }
+    except Exception as e:
+        print(f"Error recording game result: {e}")
+        return None
+
+
 
 
 @router.websocket("/ws")
@@ -140,11 +191,13 @@ async def game_websocket(
                         })
 
                 elif action == "quit":
-                    # End the game session
+                    # End the game session and record result
                     stats = await session_manager.end_session(user_id)
+                    recorded = await record_game_result(user_id, stats)
                     await websocket.send_json({
                         "type": "game_ended",
                         "stats": stats,
+                        "recorded": recorded,
                     })
 
                 elif action == "ping":
@@ -164,8 +217,9 @@ async def game_websocket(
                 })
 
     except WebSocketDisconnect:
-        # Clean up on disconnect
-        await session_manager.end_session(user_id)
+        # Clean up on disconnect and record game result
+        stats = await session_manager.end_session(user_id)
+        await record_game_result(user_id, stats)
         await manager.disconnect(user_id)
 
     except Exception as e:
@@ -177,7 +231,8 @@ async def game_websocket(
             })
         except:
             pass
-        await session_manager.end_session(user_id)
+        stats = await session_manager.end_session(user_id)
+        await record_game_result(user_id, stats)
         await manager.disconnect(user_id)
 
 

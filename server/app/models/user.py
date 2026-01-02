@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import String, Boolean, DateTime, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from passlib.context import CryptContext
 
 from ..core.database import Base
@@ -45,6 +45,9 @@ class User(Base):
     last_login: Mapped[Optional[datetime]] = mapped_column(
         DateTime, nullable=True
     )
+
+    # Relationships
+    game_results = relationship("GameResult", back_populates="user", lazy="dynamic")
 
     def verify_password(self, plain_password: str) -> bool:
         """Verify a plain password against the hash."""
