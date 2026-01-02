@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-02
-**Branch:** develop
-**Version:** v2.2.0 (UX Improvements & Story System)
+**Branch:** master
+**Version:** v2.2.1 (Bug Fixes)
 
 ---
 
@@ -18,6 +18,24 @@ The roguelike dungeon crawler now features a complete **UX overhaul** with title
 - **v2.0.0** - Complete visual overhaul (4 phases)
 - **v2.1.0** - Architecture refactor + equipment system + UI screens + Windows fixes
 - **v2.2.0** - UX improvements + story system + auto-save + tutorial hints
+- **v2.2.1** - Bug fixes for lore items and victory screen
+
+---
+
+## What Changed (v2.2.1)
+
+### Bug Fixes
+- **Lore Items**: Fixed reading screen to display actual lore content when items are used from inventory
+- **Victory Screen**: Added proper victory screen when completing all 5 levels (was closing game immediately)
+- **Save/Load**: Fixed serialization for lore items - now properly stores/restores lore_id
+- **ItemType**: Corrected BOOK_LORE to BOOK enum reference in serialization
+
+### Technical Changes
+- Added `GameState.VICTORY` state for win condition handling
+- Added `render_victory_screen()` in screens.py
+- Added `_victory_loop()` in game.py
+- Updated `use_item()` to open reading screen for lore items with actual content
+- Special handling in `_serialize_item()` and `_deserialize_item()` for lore items
 
 ---
 
@@ -135,6 +153,7 @@ The roguelike dungeon crawler now features a complete **UX overhaul** with title
 - INTRO - Story intro sequence
 - PLAYING - Normal gameplay
 - DEAD - Game over
+- VICTORY - Player won the game
 - QUIT - Exit game
 
 **UIMode Enum:**
@@ -168,7 +187,7 @@ python -m py_compile src/core/game.py src/ui/renderer.py src/story/story_data.py
 
 ---
 
-## Testing Checklist (v2.2.0)
+## Testing Checklist (v2.2.1)
 
 - [x] Title screen displays with ASCII logo
 - [x] New Game shows intro sequence
@@ -184,6 +203,9 @@ python -m py_compile src/core/game.py src/ui/renderer.py src/story/story_data.py
 - [x] Tutorial hints show on first actions
 - [x] Lore items spawn and can be read
 - [x] Death recap shows detailed stats
+- [x] Lore items display actual content when used from inventory
+- [x] Victory screen appears when completing level 5
+- [x] Save/load works correctly with lore items in inventory
 
 ---
 
