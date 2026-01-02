@@ -6,9 +6,10 @@ from .constants import GameState, UIMode
 from ..world import Dungeon
 from ..entities import Player
 from ..ui import Renderer
-from ..ui.screens import render_title_screen, render_intro_screen
+from ..ui.screens import render_title_screen, render_intro_screen, render_reading_screen
 from ..items import Item, ItemType, ScrollTeleport
 from ..data import save_exists
+from ..story import StoryManager
 
 # Import managers
 from ..managers import (
@@ -35,6 +36,10 @@ class Game:
         self.intro_page = 0
         self.intro_total_pages = 2  # Default, updated when intro renders
 
+        # Reading screen state
+        self.reading_title = ""
+        self.reading_content = []
+
         # Set up non-blocking input with timeout
         self.stdscr.timeout(100)
 
@@ -44,6 +49,7 @@ class Game:
         self.combat_manager = CombatManager(self)
         self.level_manager = LevelManager(self)
         self.save_manager = SaveManager(self)
+        self.story_manager = StoryManager()
 
         # Game world initialized on new game or continue
         self.dungeon = None
@@ -150,6 +156,9 @@ class Game:
         elif self.ui_mode == UIMode.HELP:
             self._help_loop()
             return
+        elif self.ui_mode == UIMode.READING:
+            self._reading_loop()
+            return
 
         # Normal game rendering
         self.renderer.render(
@@ -199,6 +208,19 @@ class Game:
 
         key = self.stdscr.getch()
         self.input_handler.handle_help_input(key)
+
+    def _reading_loop(self):
+        """Handle the lore reading screen UI."""
+        use_unicode = self.renderer.use_unicode
+        render_reading_screen(
+            self.stdscr,
+            self.reading_title,
+            self.reading_content,
+            use_unicode
+        )
+
+        key = self.stdscr.getch()
+        self.input_handler.handle_reading_input(key)
 
     def _game_over_loop(self):
         """Game over state loop."""

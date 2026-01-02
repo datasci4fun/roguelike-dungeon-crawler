@@ -88,6 +88,9 @@ class InputHandler:
         elif key in (ord('d'), ord('D')):
             # Drop selected item
             self._drop_selected_item()
+        elif key in (ord('r'), ord('R')):
+            # Read selected item (if it's a lore item)
+            self._read_selected_item()
 
     def handle_character_input(self, key: int):
         """Handle input while in the character screen."""
@@ -96,6 +99,11 @@ class InputHandler:
 
     def handle_help_input(self, key: int):
         """Handle input while in the help screen."""
+        if key != -1:
+            self.game.ui_mode = UIMode.GAME
+
+    def handle_reading_input(self, key: int):
+        """Handle input while in the reading screen."""
         if key != -1:
             self.game.ui_mode = UIMode.GAME
 
@@ -133,6 +141,22 @@ class InputHandler:
             self.game.items.append(item)
             self.game.add_message(f"Dropped {item.name}")
             self._adjust_selection_after_removal()
+
+    def _read_selected_item(self):
+        """Read the currently selected item if it's a lore item."""
+        from ..items import LoreScroll, LoreBook
+        inventory = self.game.player.inventory
+        if 0 <= self.game.selected_item_index < len(inventory.items):
+            item = inventory.get_item(self.game.selected_item_index)
+            if isinstance(item, (LoreScroll, LoreBook)):
+                # Store reading content and switch to reading mode
+                self.game.reading_title, self.game.reading_content = item.get_text()
+                self.game.ui_mode = UIMode.READING
+                # Mark lore as discovered
+                if hasattr(self.game, 'story_manager'):
+                    self.game.story_manager.discover_lore(item.lore_id)
+            else:
+                self.game.add_message("This item cannot be read.")
 
     def _adjust_selection_after_removal(self):
         """Adjust the selection index after an item is removed from inventory."""

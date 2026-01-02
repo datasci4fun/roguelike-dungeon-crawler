@@ -27,6 +27,7 @@ class UIMode(Enum):
     CHARACTER = auto()  # Character stats screen
     HELP = auto()       # Help screen
     TITLE_MENU = auto() # Title screen menu
+    READING = auto()    # Reading a lore item (scroll/book)
 
 
 class DungeonTheme(Enum):
