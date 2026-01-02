@@ -4,7 +4,7 @@ import time
 from typing import List, Tuple, Dict, Any
 
 from .constants import (
-    STATS_PANEL_WIDTH, MESSAGE_LOG_SIZE, MESSAGE_AREA_HEIGHT, BAR_WIDTH,
+    STATS_PANEL_WIDTH, MESSAGE_LOG_SIZE, MESSAGE_AREA_HEIGHT, SHORTCUT_BAR_HEIGHT, BAR_WIDTH,
     BOX_TL, BOX_TR, BOX_BL, BOX_BR, BOX_H, BOX_V, BOX_LEFT, BOX_RIGHT,
     BOX_TL_ASCII, BOX_TR_ASCII, BOX_BL_ASCII, BOX_BR_ASCII,
     BOX_H_ASCII, BOX_V_ASCII, BOX_LEFT_ASCII, BOX_RIGHT_ASCII
@@ -53,9 +53,9 @@ class Renderer:
         """
         max_y, max_x = self.stdscr.getmaxyx()
 
-        # Available space for dungeon (screen minus UI panel and bottom message area)
+        # Available space for dungeon (screen minus UI panel, shortcut bar, and message area)
         viewport_width = max_x - STATS_PANEL_WIDTH - 1
-        viewport_height = max_y - MESSAGE_AREA_HEIGHT - 1  # Leave room for messages at bottom
+        viewport_height = max_y - SHORTCUT_BAR_HEIGHT - MESSAGE_AREA_HEIGHT - 1  # Leave room for shortcut bar and messages
 
         # Center viewport on player
         viewport_x = player.x - viewport_width // 2
@@ -151,6 +151,9 @@ class Renderer:
 
         # Render UI panel (sidebar)
         self._render_ui_panel(player, dungeon, enemies, items)
+
+        # Render shortcut bar between dungeon and messages
+        self._render_shortcut_bar(vp_h)
 
         # Render message log at bottom of screen
         self._render_bottom_messages(messages, vp_h)
@@ -521,12 +524,58 @@ class Renderer:
             except curses.error:
                 pass
 
+    def _render_shortcut_bar(self, viewport_height: int):
+        """Render the shortcut key bar between dungeon and messages."""
+        max_y, max_x = self.stdscr.getmaxyx()
+
+        # Shortcut bar is right below the viewport
+        bar_y = viewport_height
+        bar_width = max_x - STATS_PANEL_WIDTH
+
+        try:
+            # Build shortcut string with highlighted keys
+            shortcuts = [
+                ("[I]", "nventory"),
+                ("[C]", "haracter"),
+                ("[?]", " Help"),
+                ("[Q]", "uit"),
+            ]
+
+            # Render shortcuts centered in the bar
+            shortcut_str = "  ".join(f"{key}{label}" for key, label in shortcuts)
+            start_x = (bar_width - len(shortcut_str)) // 2
+            if start_x < 1:
+                start_x = 1
+
+            # Clear the bar area first
+            self.stdscr.addstr(bar_y, 0, " " * (bar_width - 1))
+
+            # Render each shortcut with highlighted key
+            x_pos = start_x
+            for key, label in shortcuts:
+                if x_pos + len(key) + len(label) >= bar_width:
+                    break
+
+                # Render the key in yellow/bold
+                if curses.has_colors():
+                    self.stdscr.addstr(bar_y, x_pos, key, curses.color_pair(2) | curses.A_BOLD)
+                else:
+                    self.stdscr.addstr(bar_y, x_pos, key, curses.A_BOLD)
+                x_pos += len(key)
+
+                # Render the label normally
+                self.stdscr.addstr(bar_y, x_pos, label)
+                x_pos += len(label) + 2  # +2 for spacing between shortcuts
+
+        except curses.error:
+            pass
+
     def _render_bottom_messages(self, messages: List[str], viewport_height: int):
         """Render the message log at the bottom of the screen."""
         max_y, max_x = self.stdscr.getmaxyx()
 
-        # Message area starts below the viewport
-        msg_area_y = viewport_height
+        # Message area starts below the viewport and shortcut bar
+        msg_area_y = viewport_height + SHORTCUT_BAR_HEIGHT
 
         # Choose border characters based on terminal capability
         use_unicode = curses.has_colors()

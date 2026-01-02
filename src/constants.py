@@ -149,6 +149,7 @@ FOV_LIGHT_WALLS = True          # Whether walls block light
 # UI configuration
 MESSAGE_LOG_SIZE = 5
 MESSAGE_AREA_HEIGHT = 7  # Height of bottom message area (1 border + 1 header + 5 messages)
+SHORTCUT_BAR_HEIGHT = 1  # Single line for shortcut keys between dungeon and messages
 STATS_PANEL_WIDTH = 25
 BAR_WIDTH = 8  # Width of visual health/XP bars (must fit in panel: HP: + bar + space + ###/### = 4+8+1+7=20 < 21)
 
