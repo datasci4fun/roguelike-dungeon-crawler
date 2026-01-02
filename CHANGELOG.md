@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [2.2.1] - 2026-01-02
+
+### Fixed
+- **Lore Items**: Now properly display full content when read from inventory
+- **Victory Screen**: Game shows celebratory victory screen when completing all 5 levels instead of closing
+- **Save/Load**: Fixed serialization for lore items (scrolls and books)
+- **ItemType**: Corrected BOOK_LORE to BOOK enum reference
+
+---
+
 ## [2.2.0] - 2026-01-02
 
 ### Added
