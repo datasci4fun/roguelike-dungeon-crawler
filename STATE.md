@@ -2,13 +2,13 @@
 
 **Last Updated:** 2026-01-02
 **Branch:** develop
-**Version:** v2.1.0 (Architecture Refactor + Equipment System)
+**Version:** v2.2.0 (UX Improvements & Story System)
 
 ---
 
 ## Current Status
 
-The roguelike dungeon crawler has been **significantly refactored** with a new modular architecture, equipment system, full-screen UI screens, and rendering bug fixes for Windows cmd.exe compatibility.
+The roguelike dungeon crawler now features a complete **UX overhaul** with title screen, story system, confirmation dialogs, enhanced message log, auto-save, and tutorial hints.
 
 ### Version History
 
@@ -17,181 +17,134 @@ The roguelike dungeon crawler has been **significantly refactored** with a new m
 - **v1.2.0** - Elite enemies + FOV + save/load
 - **v2.0.0** - Complete visual overhaul (4 phases)
 - **v2.1.0** - Architecture refactor + equipment system + UI screens + Windows fixes
+- **v2.2.0** - UX improvements + story system + auto-save + tutorial hints
 
 ---
 
-## What Changed (v2.1.0)
+## What Changed (v2.2.0)
 
-### Major Refactoring
+### Phase 1: Title Screen & Intro
+- ASCII art game logo on title screen
+- Menu options: New Game, Continue (if save exists), Help, Quit
+- Paginated story intro/prologue sequence
+- Skip intro with ESC, page through with Space/Enter
 
-**1. Folder Structure Reorganization**
-Moved from flat `src/*.py` to organized subfolders:
+### Phase 2: Story System Foundation
+- New `src/story/` module with story_data.py and story_manager.py
+- 12 lore entries (scrolls and books) spread across 5 levels
+- Level intro messages when entering each dungeon theme
+- Enemy first-encounter messages
+- Lore discovery tracking (persists across saves)
 
-```
-src/
-├── core/           # Game loop and constants
-│   ├── __init__.py
-│   ├── game.py     # Main game orchestration (~200 lines, down from ~680)
-│   └── constants.py
-├── managers/       # System managers (NEW)
-│   ├── __init__.py
-│   ├── input_handler.py    # Keyboard input processing
-│   ├── entity_manager.py   # Entity spawning and queries
-│   ├── combat_manager.py   # Combat orchestration
-│   ├── level_manager.py    # Level transitions
-│   └── serialization.py    # Save/load serialization
-├── entities/       # Game entities
-│   ├── __init__.py
-│   ├── entities.py # Player, Enemy classes
-│   └── combat.py   # Combat calculations
-├── world/          # World generation
-│   ├── __init__.py
-│   ├── dungeon.py  # BSP dungeon generation
-│   └── fov.py      # Field of view
-├── items/          # Item system
-│   ├── __init__.py
-│   └── items.py    # Items, inventory, equipment
-├── ui/             # Rendering
-│   ├── __init__.py
-│   ├── renderer.py # Main game rendering (~1000 lines, down from ~1400)
-│   ├── screens.py  # Full-screen UIs (NEW)
-│   └── ui_utils.py # Shared UI utilities (NEW)
-└── data/           # Persistence
-    ├── __init__.py
-    └── save_load.py
-```
+### Phase 3: Confirmation Dialogs
+- New UIMode.DIALOG for modal confirmations
+- Quit confirmation: "Save and quit?" [Y/N]
+- Drop rare item confirmation: warns before dropping rare/epic items
+- Generic dialog system for future use
 
-**2. Manager Classes**
-Extracted orchestration logic from game.py into focused managers:
-- `InputHandler` - Processes keyboard input for all game states
-- `EntityManager` - Spawns and queries enemies/items
-- `CombatManager` - Handles combat resolution and animations
-- `LevelManager` - Manages level transitions and dungeon generation
-- `SaveManager` - Handles serialization/deserialization
+### Phase 4: Enhanced Message System
+- New MessageLog class with GameMessage dataclass
+- Message categories: COMBAT, ITEM, SYSTEM, STORY, LEVEL
+- Message importance levels: NORMAL, IMPORTANT, CRITICAL
+- Full message history screen (M key) with scrolling
+- Enhanced death recap: shows attacker, damage, final stats, lore progress
 
-**3. UI Module Split**
-Split renderer.py into focused modules:
-- `renderer.py` - Main game rendering
-- `screens.py` - Full-screen inventory, character, help screens
-- `ui_utils.py` - Shared utilities (box chars, bars, borders)
+### Phase 5: Auto-Save System
+- AUTO_SAVE_INTERVAL constant (50 turns)
+- Turn tracking in Game class
+- Auto-save on level transitions (descending stairs)
+- Periodic auto-save every 50 player actions
+- "Game saved." message notification
 
-### New Features
-
-**Equipment System**
-- Weapons with attack bonus (+ATK)
-- Armor with defense bonus (+DEF)
-- Equipment slots on Player class
-- Equip/unequip via inventory screen
-- Equipment persists in save files
-- Equipment spawns in dungeons with rarity
-
-**Full-Screen UI Screens**
-- **Inventory Screen (I key)**: Browse items, equip/use/drop, view equipment
-- **Character Screen (C key)**: View stats, equipment, progress
-- **Help Screen (? key)**: Controls reference
-
-**Camera System**
-- Viewport follows player through large dungeons
-- Smooth scrolling when player moves
-- Dungeon can be larger than screen
-
-### Bug Fixes
-
-**Windows cmd.exe Rendering**
-- Fixed off-by-one error in shortcut bar clearing
-- Fixed panel vertical borders overlapping message area
-- Added proper Unicode detection (WT_SESSION check for Windows Terminal)
-- Changed `addch` to `addstr` for Unicode compatibility
-- ASCII fallbacks work correctly on legacy consoles
+### Phase 6: Tutorial Hints System
+- 9 contextual tutorial hints
+- Hints shown once per playthrough (tracked in StoryManager)
+- Triggers: first combat, elite encounter, level up, item pickup, lore discovery, stairs
 
 ---
 
 ## Completed Features
 
 **Core Gameplay:**
-- ✅ Procedural dungeon generation (BSP)
-- ✅ 5 progressive dungeon levels with themed visuals
-- ✅ Bump-to-attack combat system
-- ✅ Player with HP, ATK, DEF, XP, leveling
-- ✅ Equipment system (weapons, armor)
-- ✅ Enemy AI with chase behavior
-- ✅ Win condition and death state
-- ✅ Camera/viewport system
+- Procedural dungeon generation (BSP)
+- 5 progressive dungeon levels with themed visuals
+- Bump-to-attack combat system
+- Player with HP, ATK, DEF, XP, leveling
+- Equipment system (weapons, armor)
+- Enemy AI with chase behavior
+- Win condition and death state
+- Camera/viewport system
 
 **Inventory & Items:**
-- ✅ 10-slot inventory with auto-pickup
-- ✅ Health Potions, Strength Potions, Teleport Scrolls
-- ✅ Weapons and Armor with rarity
-- ✅ Item rarity color coding
-- ✅ Full-screen inventory management
+- 10-slot inventory with auto-pickup
+- Health Potions, Strength Potions, Teleport Scrolls
+- Weapons and Armor with rarity
+- Lore items (scrolls, books) with readable content
+- Item rarity color coding
+- Full-screen inventory management
 
 **UI/Screens:**
-- ✅ Full-screen inventory screen
-- ✅ Full-screen character screen
-- ✅ Full-screen help screen
-- ✅ Visual health/XP bars
-- ✅ Dynamic HP bar coloring
-- ✅ Box-drawing borders (with ASCII fallback)
-- ✅ Color-coded messages
-- ✅ Status indicators
-- ✅ Real-time minimap
+- Title screen with ASCII logo
+- Story intro sequence
+- Full-screen inventory screen
+- Full-screen character screen
+- Full-screen help screen
+- Message log screen (scrollable)
+- Confirmation dialogs
+- Reading screen for lore items
+- Visual health/XP bars
+- Dynamic HP bar coloring
+- Box-drawing borders (with ASCII fallback)
+- Color-coded messages
+- Status indicators
+- Real-time minimap
+- Death recap with stats
 
-**Enemy Variety:**
-- ✅ 6 enemy types with unique stats
-- ✅ Elite variants (2x stats)
-- ✅ Weighted spawning
-- ✅ Combat animations
+**Story System:**
+- 12 discoverable lore entries
+- Level intro messages
+- Enemy encounter messages
+- Tutorial hints system
+- Story progress tracking
 
 **Technical:**
-- ✅ Modular folder structure
-- ✅ Manager classes for clean separation
-- ✅ Windows cmd.exe compatibility
-- ✅ Save/load system
-- ✅ FOV with fog of war
+- Modular folder structure
+- Manager classes for clean separation
+- Auto-save system
+- Windows cmd.exe compatibility
+- Save/load system with story state
+- FOV with fog of war
 
 ---
 
 ## Architecture Notes
 
-### Module Responsibilities
+### New Modules (v2.2.0)
 
-**Core:**
-- `game.py` - Thin orchestrator, wires up managers, runs game loop
-- `constants.py` - All configuration values, enums, stats
+**Story Module:**
+- `story_data.py` - Lore entries, tutorial hints, level intros, enemy messages
+- `story_manager.py` - Tracks discovered lore, shown hints, visited levels
 
-**Managers:**
-- `input_handler.py` - Keyboard input → actions
-- `entity_manager.py` - Spawn/query entities
-- `combat_manager.py` - Combat resolution + animations
-- `level_manager.py` - Level transitions + dungeon gen
-- `serialization.py` - State serialization
+**Core Additions:**
+- `messages.py` - GameMessage dataclass, MessageLog class with categories
 
-**Entities:**
-- `entities.py` - Player, Enemy, Inventory classes
-- `combat.py` - Damage calculation formulas
+### Key Components
 
-**World:**
-- `dungeon.py` - BSP generation, themes, decorations
-- `fov.py` - Raycasting FOV
+**GameState Enum:**
+- TITLE - Title screen
+- INTRO - Story intro sequence
+- PLAYING - Normal gameplay
+- DEAD - Game over
+- QUIT - Exit game
 
-**Items:**
-- `items.py` - Item classes, equipment, scrolls, potions
-
-**UI:**
-- `renderer.py` - Main game rendering (NO game logic)
-- `screens.py` - Full-screen UIs
-- `ui_utils.py` - Shared drawing utilities
-
-**Data:**
-- `save_load.py` - Pickle-based persistence
-
-### Key Design Patterns
-- **Manager pattern**: Focused managers for each system
-- **Clean separation**: UI never contains game logic
-- **Time-based animations**: Auto-cleanup system
-- **Weighted spawning**: Probability distribution
-- **Theme system**: Data-driven visuals
-- **State machine**: GameState + UIMode enums
+**UIMode Enum:**
+- GAME - Normal gameplay view
+- INVENTORY - Inventory screen
+- CHARACTER - Character stats
+- HELP - Help screen
+- READING - Lore reading screen
+- DIALOG - Confirmation dialog
+- MESSAGE_LOG - Message history
 
 ---
 
@@ -202,24 +155,41 @@ Split renderer.py into focused modules:
 python main.py
 ```
 
+### New Controls (v2.2.0)
+- **M** - Open message log
+- **Y/N** - Confirm/cancel dialogs
+- **Space/Enter** - Page through intro
+- **ESC** - Skip intro / close dialogs
+
 ### Compile Check
 ```bash
-python -m py_compile src/core/game.py src/ui/renderer.py
+python -m py_compile src/core/game.py src/ui/renderer.py src/story/story_data.py
 ```
 
-### Git Status
-```bash
-git status
-git log -10 --oneline --graph
-```
+---
+
+## Testing Checklist (v2.2.0)
+
+- [x] Title screen displays with ASCII logo
+- [x] New Game shows intro sequence
+- [x] Continue loads saved game
+- [x] Intro pages with Space/Enter
+- [x] ESC skips intro
+- [x] M key opens message log
+- [x] Message log scrolls with arrows
+- [x] Q key shows quit confirmation
+- [x] Drop rare item shows confirmation
+- [x] Auto-save triggers every 50 turns
+- [x] Auto-save triggers on level transition
+- [x] Tutorial hints show on first actions
+- [x] Lore items spawn and can be read
+- [x] Death recap shows detailed stats
 
 ---
 
 ## Known Issues
 
 **None currently identified.**
-
-All rendering issues on Windows cmd.exe have been resolved.
 
 ---
 
@@ -228,25 +198,8 @@ All rendering issues on Windows cmd.exe have been resolved.
 - More enemy types (Necromancer, Demon)
 - More equipment variety
 - Boss encounters
+- Sound effects (if terminal supports)
 - Persistent levels (return to previous)
 - Score/leaderboard tracking
 - Configurable difficulty
-
----
-
-## Testing Checklist
-
-When testing changes, verify:
-- [ ] Game launches without errors
-- [ ] Player can move (arrows/WASD)
-- [ ] Combat works with animations
-- [ ] I key opens inventory screen
-- [ ] C key opens character screen
-- [ ] ? key opens help screen
-- [ ] Equipment can be equipped/unequipped
-- [ ] Different enemy types spawn
-- [ ] Items have correct colors
-- [ ] Each level has unique theme
-- [ ] UI renders cleanly (no stray lines)
-- [ ] Save/load works
-- [ ] Q key saves and quits
+- Additional lore content

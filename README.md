@@ -33,6 +33,16 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Real-Time Minimap**: 5x5 dungeon overview with room/enemy/item counts
 - **Combat Animations**: Hit flashes, floating damage numbers, attack direction arrows, death animations
 
+### UX & Story System (v2.2.0)
+- **Title Screen**: ASCII art logo with New Game/Continue/Help/Quit menu
+- **Story Intro**: Paginated prologue sequence setting up the game's lore
+- **Readable Lore Items**: Scrolls and books with discoverable story content per level
+- **Confirmation Dialogs**: Safety prompts for quit and dropping rare items
+- **Message Log (M key)**: Scrollable history of all game messages with category colors
+- **Death Recap Screen**: Shows killer, damage, final stats, and lore discovery progress
+- **Auto-Save System**: Automatic saves every 50 turns and on level transitions
+- **Tutorial Hints**: Contextual tips on first combat, item pickup, stairs, and more
+
 ### Technical Features
 - **Save/Load System**: Full game state persistence with permadeath option
 - **11 Color Pairs**: Rich color palette for diverse visuals
@@ -59,10 +69,11 @@ python main.py
 - **Arrow Keys** or **WASD**: Move your character (@)
 - **I**: Open full-screen inventory (equip/use/drop items)
 - **C**: Open character stats screen
+- **M**: Open message log (scrollable history)
 - **?**: Open help screen
 - **1-3**: Quick-use items from sidebar
 - **>**: Descend stairs (when standing on >)
-- **Q**: Save and quit game
+- **Q**: Save and quit game (with confirmation)
 
 ### Inventory Controls (when open)
 - **Arrow Keys**: Navigate items
@@ -78,6 +89,7 @@ python main.py
   - **Health Potions** (!): Restore 10 HP (Common - white)
   - **Strength Potions** (!): Permanently increase attack damage (Uncommon - cyan)
   - **Teleport Scrolls** (?): Instantly move to a random location (Uncommon - cyan)
+  - **Lore Scrolls/Books** (?): Discover the story of Valdris (read from inventory)
 - Face 6 enemy types with varying difficulty:
   - **Goblins** (g): Weak but common (6 HP, 1 DMG, 10 XP)
   - **Skeletons** (s): Basic undead (8 HP, 2 DMG, 15 XP)
@@ -119,7 +131,8 @@ python main.py
 src/
 ├── core/           # Game loop and constants
 │   ├── game.py     # Main game orchestration
-│   └── constants.py
+│   ├── constants.py
+│   └── messages.py # Message log system
 ├── managers/       # System managers
 │   ├── input_handler.py
 │   ├── entity_manager.py
@@ -136,8 +149,11 @@ src/
 │   └── items.py    # Items, inventory, equipment
 ├── ui/             # Rendering
 │   ├── renderer.py # Main game rendering
-│   ├── screens.py  # Full-screen UIs
+│   ├── screens.py  # Full-screen UIs (title, intro, dialogs, etc.)
 │   └── ui_utils.py # Shared UI utilities
+├── story/          # Narrative system
+│   ├── story_data.py    # Lore entries, hints, level intros
+│   └── story_manager.py # Story progress tracking
 └── data/           # Persistence
     └── save_load.py
 ```
