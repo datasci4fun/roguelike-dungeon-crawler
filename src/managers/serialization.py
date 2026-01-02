@@ -173,7 +173,7 @@ class SaveManager:
         item_type_name = None
         for item_type in ItemType:
             # Skip lore types as they can't be created without lore_id
-            if item_type in (ItemType.SCROLL_LORE, ItemType.BOOK_LORE):
+            if item_type in (ItemType.SCROLL_LORE, ItemType.BOOK):
                 continue
             try:
                 if item.name == create_item(item_type, 0, 0).name:
@@ -202,7 +202,7 @@ class SaveManager:
             return None
 
         # Handle lore items specially - they need lore_id
-        if item_type in (ItemType.SCROLL_LORE, ItemType.BOOK_LORE):
+        if item_type in (ItemType.SCROLL_LORE, ItemType.BOOK):
             lore_id = data.get('lore_id')
             if lore_id:
                 return create_lore_item(lore_id, data['x'], data['y'])
