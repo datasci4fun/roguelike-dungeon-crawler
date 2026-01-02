@@ -33,13 +33,14 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Real-Time Minimap**: 5x5 dungeon overview with room/enemy/item counts
 - **Combat Animations**: Hit flashes, floating damage numbers, attack direction arrows, death animations
 
-### UX & Story System (v2.2.0)
+### UX & Story System (v2.2.x)
 - **Title Screen**: ASCII art logo with New Game/Continue/Help/Quit menu
 - **Story Intro**: Paginated prologue sequence setting up the game's lore
 - **Readable Lore Items**: Scrolls and books with discoverable story content per level
 - **Confirmation Dialogs**: Safety prompts for quit and dropping rare items
 - **Message Log (M key)**: Scrollable history of all game messages with category colors
 - **Death Recap Screen**: Shows killer, damage, final stats, and lore discovery progress
+- **Victory Screen**: Celebratory display with final stats when completing the game
 - **Auto-Save System**: Automatic saves every 50 turns and on level transitions
 - **Tutorial Hints**: Contextual tips on first combat, item pickup, stairs, and more
 
