@@ -1,0 +1,112 @@
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0a0a0a;
+  color: #e0e0e0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #1a1a2e;
+  border-bottom: 1px solid #333;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4ade80;
+  text-decoration: none;
+}
+
+.logo:hover {
+  color: #22c55e;
+}
+
+.nav {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.nav a {
+  color: #a0a0a0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav a:hover {
+  color: #e0e0e0;
+}
+
+.username {
+  color: #4ade80;
+  font-weight: 500;
+}
+
+.main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.footer {
+  padding: 1rem 2rem;
+  text-align: center;
+  color: #666;
+  border-top: 1px solid #333;
+}
+
+/* Buttons */
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.btn-primary {
+  background: #4ade80;
+  color: #0a0a0a;
+}
+
+.btn-primary:hover {
+  background: #22c55e;
+}
+
+.btn-secondary {
+  background: #333;
+  color: #e0e0e0;
+}
+
+.btn-secondary:hover {
+  background: #444;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}

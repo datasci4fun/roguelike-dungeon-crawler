@@ -1,0 +1,128 @@
+.ghosts {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.ghosts h1 {
+  color: #4ade80;
+  margin-bottom: 0.5rem;
+}
+
+.description {
+  color: #a0a0a0;
+  margin-bottom: 2rem;
+}
+
+.ghost-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.ghost-card {
+  background: #1a1a2e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.ghost-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.ghost-player {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.ghost-result {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.ghost-result.victory {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+
+.ghost-result.death {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.ghost-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.ghost-stat {
+  text-align: center;
+}
+
+.ghost-stat .label {
+  display: block;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.ghost-stat .value {
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+.ghost-death {
+  color: #a0a0a0;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.ghost-death span {
+  color: #ef4444;
+}
+
+.ghost-date {
+  color: #666;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #a0a0a0;
+}
+
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.no-data {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+  background: #1a1a2e;
+  border-radius: 8px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.page-info {
+  color: #a0a0a0;
+}
