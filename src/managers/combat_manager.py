@@ -1,11 +1,11 @@
 """Combat orchestration and damage flow."""
 from typing import TYPE_CHECKING
 
-from .combat import attack, get_combat_message
-from .constants import GameState, ELITE_XP_MULTIPLIER
+from ..entities import attack, get_combat_message
+from ..core.constants import GameState, ELITE_XP_MULTIPLIER
 
 if TYPE_CHECKING:
-    from .game import Game
+    from ..core.game import Game
 
 
 class CombatManager:

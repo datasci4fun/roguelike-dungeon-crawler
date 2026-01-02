@@ -2,7 +2,7 @@
 import curses
 from typing import Tuple
 
-from .constants import (
+from ..core.constants import (
     BOX_TL, BOX_TR, BOX_BL, BOX_BR, BOX_H, BOX_V,
     BOX_TL_ASCII, BOX_TR_ASCII, BOX_BL_ASCII, BOX_BR_ASCII,
     BOX_H_ASCII, BOX_V_ASCII

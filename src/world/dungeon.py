@@ -3,7 +3,7 @@ import random
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from .constants import (
+from ..core.constants import (
     TileType, DungeonTheme, RoomType,
     DUNGEON_WIDTH, DUNGEON_HEIGHT,
     MIN_ROOM_SIZE, MAX_ROOM_SIZE, MAX_BSP_DEPTH,
@@ -489,7 +489,7 @@ class Dungeon:
         Also marks visible tiles as explored.
         """
         from .fov import calculate_fov
-        from .constants import FOV_RADIUS
+        from ..core.constants import FOV_RADIUS
 
         # Clear previous visibility
         for y in range(self.height):

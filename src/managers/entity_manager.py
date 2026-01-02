@@ -2,11 +2,11 @@
 import random
 from typing import TYPE_CHECKING, List, Optional
 
-from .entities import Player, Enemy
-from .items import Item, ItemType, create_item
+from ..entities import Player, Enemy
+from ..items import Item, ItemType, create_item
 
 if TYPE_CHECKING:
-    from .dungeon import Dungeon
+    from ..world import Dungeon
 
 
 class EntityManager:
@@ -18,7 +18,7 @@ class EntityManager:
 
     def spawn_enemies(self, dungeon: 'Dungeon', player: Player):
         """Spawn enemies in random rooms with weighted type selection."""
-        from .constants import ELITE_SPAWN_RATE, ENEMY_STATS, EnemyType
+        from ..core.constants import ELITE_SPAWN_RATE, ENEMY_STATS, EnemyType
 
         self.enemies.clear()
         num_enemies = min(len(dungeon.rooms) * 2, 15)  # 2 enemies per room, max 15
@@ -42,7 +42,7 @@ class EntityManager:
 
     def spawn_items(self, dungeon: 'Dungeon', player: Player):
         """Spawn items in random locations."""
-        from .items import CONSUMABLE_TYPES, EQUIPMENT_TYPES
+        from ..items import CONSUMABLE_TYPES, EQUIPMENT_TYPES
 
         self.items.clear()
 

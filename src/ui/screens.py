@@ -1,8 +1,8 @@
 """Full-screen UI rendering (inventory, character, help, game over)."""
 import curses
 
-from .constants import ITEM_RARITY_COLORS
-from .entities import Player
+from ..core.constants import ITEM_RARITY_COLORS
+from ..entities import Player
 from .ui_utils import (
     get_box_chars, smart_truncate, render_bar,
     draw_screen_border, draw_title, draw_controls

@@ -3,17 +3,16 @@ import curses
 from typing import List
 
 from .constants import GameState, UIMode
-from .dungeon import Dungeon
-from .entities import Player
-from .renderer import Renderer
-from .items import Item, ItemType, ScrollTeleport
+from ..world import Dungeon
+from ..entities import Player
+from ..ui import Renderer
+from ..items import Item, ItemType, ScrollTeleport
 
 # Import managers
-from .input_handler import InputHandler
-from .entity_manager import EntityManager
-from .combat_manager import CombatManager
-from .level_manager import LevelManager
-from .serialization import SaveManager
+from ..managers import (
+    InputHandler, EntityManager, CombatManager,
+    LevelManager, SaveManager
+)
 
 
 class Game:
@@ -109,7 +108,7 @@ class Game:
 
             # Check if player died
             if not self.player.is_alive():
-                from .save_load import delete_save
+                from ..data import delete_save
                 delete_save()
                 self.state = GameState.DEAD
 

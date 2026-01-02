@@ -4,7 +4,7 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .entities import Player
+    from ..entities import Player
 
 
 class ItemType(Enum):
@@ -51,7 +51,7 @@ class HealthPotion(Item):
     """Health potion that restores HP."""
 
     def __init__(self, x: int, y: int):
-        from .constants import ItemRarity
+        from ..core.constants import ItemRarity
         super().__init__(
             x=x,
             y=y,
@@ -79,7 +79,7 @@ class StrengthPotion(Item):
     """Potion that permanently increases attack damage."""
 
     def __init__(self, x: int, y: int):
-        from .constants import ItemRarity
+        from ..core.constants import ItemRarity
         super().__init__(
             x=x,
             y=y,
@@ -100,7 +100,7 @@ class ScrollTeleport(Item):
     """Scroll that teleports player to a random location."""
 
     def __init__(self, x: int, y: int):
-        from .constants import ItemRarity
+        from ..core.constants import ItemRarity
         super().__init__(
             x=x,
             y=y,
@@ -121,7 +121,7 @@ class Weapon(Item):
 
     def __init__(self, x: int, y: int, item_type: ItemType, name: str,
                  description: str, attack_bonus: int, rarity):
-        from .constants import EquipmentSlot
+        from ..core.constants import EquipmentSlot
         super().__init__(
             x=x,
             y=y,
@@ -143,7 +143,7 @@ class Dagger(Weapon):
     """Basic starting weapon."""
 
     def __init__(self, x: int, y: int):
-        from .constants import ItemRarity
+        from ..core.constants import ItemRarity
         super().__init__(
             x=x, y=y,
             item_type=ItemType.WEAPON_DAGGER,
@@ -158,7 +158,7 @@ class Sword(Weapon):
     """Standard melee weapon."""
 
     def __init__(self, x: int, y: int):
-        from .constants import ItemRarity
+        from ..core.constants import ItemRarity
         super().__init__(
             x=x, y=y,
             item_type=ItemType.WEAPON_SWORD,
@@ -173,7 +173,7 @@ class Axe(Weapon):
     """Powerful melee weapon."""
 
     def __init__(self, x: int, y: int):
-        from .constants import ItemRarity
+        from ..core.constants import ItemRarity
         super().__init__(
             x=x, y=y,
             item_type=ItemType.WEAPON_AXE,
@@ -189,7 +189,7 @@ class Armor(Item):
 
     def __init__(self, x: int, y: int, item_type: ItemType, name: str,
                  description: str, defense_bonus: int, rarity):
-        from .constants import EquipmentSlot
+        from ..core.constants import EquipmentSlot
         super().__init__(
             x=x,
             y=y,
@@ -211,7 +211,7 @@ class LeatherArmor(Armor):
     """Basic light armor."""
 
     def __init__(self, x: int, y: int):
-        from .constants import ItemRarity
+        from ..core.constants import ItemRarity
         super().__init__(
             x=x, y=y,
             item_type=ItemType.ARMOR_LEATHER,
@@ -226,7 +226,7 @@ class ChainMail(Armor):
     """Medium armor."""
 
     def __init__(self, x: int, y: int):
-        from .constants import ItemRarity
+        from ..core.constants import ItemRarity
         super().__init__(
             x=x, y=y,
             item_type=ItemType.ARMOR_CHAIN,
@@ -241,7 +241,7 @@ class PlateArmor(Armor):
     """Heavy armor."""
 
     def __init__(self, x: int, y: int):
-        from .constants import ItemRarity
+        from ..core.constants import ItemRarity
         super().__init__(
             x=x, y=y,
             item_type=ItemType.ARMOR_PLATE,
