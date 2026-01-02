@@ -2,6 +2,8 @@
 
 A terminal-based roguelike game with procedural dungeon generation, exploration, and combat. Features rich visual variety with themed dungeons, diverse enemies, animated combat, equipment system, and enhanced UI.
 
+**Now with multiplayer backend!** v3.0.0 adds a complete FastAPI server with user accounts, leaderboards, ghost replays, and real-time chat.
+
 ## Features
 
 ### Core Gameplay
@@ -51,19 +53,46 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Modular Architecture**: Clean separation with manager classes and organized folder structure
 - **Windows Compatible**: Proper Unicode detection with ASCII fallbacks for cmd.exe
 
+### Multiplayer Backend (v3.0.0)
+- **User Accounts**: Registration, JWT authentication, profile stats
+- **Leaderboards**: Global rankings, daily/weekly scores, speedruns, kill counts
+- **Ghost System**: Watch replays of other players' death runs
+- **Real-time Chat**: Global chat and private whispers via WebSocket
+- **Game Sessions**: Play via WebSocket with full state synchronization
+- **Docker Support**: One-command deployment with PostgreSQL and Redis
+
 ## Installation
+
+### Terminal Client (Single Player)
 
 1. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-## How to Play
-
-Run the game:
+2. Run the game:
 ```bash
 python main.py
 ```
+
+### Multiplayer Server
+
+#### Option 1: Docker (Recommended)
+```bash
+docker-compose up -d
+```
+This starts PostgreSQL, Redis, and the FastAPI server.
+
+#### Option 2: Local Development
+```bash
+cd server
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+The API documentation is available at `http://localhost:8000/docs` when the server is running.
+
+## How to Play
 
 ### Controls
 
@@ -129,32 +158,65 @@ python main.py
 ### Project Structure
 
 ```
-src/
-├── core/           # Game loop and constants
-│   ├── game.py     # Main game orchestration
+src/                    # Game client
+├── core/               # Game loop and engine
+│   ├── game.py         # Terminal client wrapper
+│   ├── engine.py       # Pure game engine (no curses)
+│   ├── events.py       # Event system
+│   ├── commands.py     # Input command abstraction
 │   ├── constants.py
-│   └── messages.py # Message log system
-├── managers/       # System managers
+│   └── messages.py     # Message log system
+├── managers/           # System managers
 │   ├── input_handler.py
 │   ├── entity_manager.py
 │   ├── combat_manager.py
 │   ├── level_manager.py
 │   └── serialization.py
-├── entities/       # Game entities
-│   ├── entities.py # Player, Enemy classes
-│   └── combat.py   # Combat calculations
-├── world/          # World generation
-│   ├── dungeon.py  # BSP dungeon generation
-│   └── fov.py      # Field of view
-├── items/          # Item system
-│   └── items.py    # Items, inventory, equipment
-├── ui/             # Rendering
-│   ├── renderer.py # Main game rendering
-│   ├── screens.py  # Full-screen UIs (title, intro, dialogs, etc.)
-│   └── ui_utils.py # Shared UI utilities
-├── story/          # Narrative system
-│   ├── story_data.py    # Lore entries, hints, level intros
+├── entities/           # Game entities
+│   ├── entities.py     # Player, Enemy classes
+│   └── combat.py       # Combat calculations
+├── world/              # World generation
+│   ├── dungeon.py      # BSP dungeon generation
+│   └── fov.py          # Field of view
+├── items/              # Item system
+│   └── items.py        # Items, inventory, equipment
+├── ui/                 # Rendering
+│   ├── renderer.py     # Main game rendering
+│   ├── screens.py      # Full-screen UIs
+│   ├── ui_utils.py     # Shared UI utilities
+│   └── input_adapter.py # Curses → Command translation
+├── story/              # Narrative system
+│   ├── story_data.py   # Lore entries, hints, level intros
 │   └── story_manager.py # Story progress tracking
-└── data/           # Persistence
+└── data/               # Persistence
     └── save_load.py
+
+server/                 # Multiplayer backend (v3.0.0)
+├── app/
+│   ├── api/            # REST & WebSocket endpoints
+│   │   ├── auth.py     # Authentication
+│   │   ├── game.py     # Game WebSocket
+│   │   ├── leaderboard.py
+│   │   ├── ghost.py    # Ghost replays
+│   │   └── chat.py     # Real-time chat
+│   ├── core/           # Core utilities
+│   │   ├── config.py   # Settings
+│   │   ├── database.py # SQLAlchemy
+│   │   ├── security.py # JWT auth
+│   │   └── websocket.py
+│   ├── models/         # Database models
+│   │   ├── user.py
+│   │   ├── game_result.py
+│   │   └── chat_message.py
+│   ├── schemas/        # Pydantic schemas
+│   └── services/       # Business logic
+│       ├── auth_service.py
+│       ├── game_session.py
+│       ├── leaderboard_service.py
+│       ├── ghost_recorder.py
+│       ├── ghost_service.py
+│       ├── chat_service.py
+│       └── chat_manager.py
+├── Dockerfile
+└── requirements.txt
 ```
