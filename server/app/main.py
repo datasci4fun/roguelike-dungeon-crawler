@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.database import init_db, close_db
 from .api.auth import router as auth_router
+from .api.game import router as game_router
 
 
 @asynccontextmanager
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     # Include routers
     app.include_router(health_router, prefix="/api", tags=["health"])
     app.include_router(auth_router, prefix="/api")
+    app.include_router(game_router, prefix="/api")
 
     return app
 
