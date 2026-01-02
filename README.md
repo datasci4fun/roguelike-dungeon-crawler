@@ -2,7 +2,7 @@
 
 A terminal-based roguelike game with procedural dungeon generation, exploration, and combat. Features rich visual variety with themed dungeons, diverse enemies, animated combat, equipment system, and enhanced UI.
 
-**Now with multiplayer backend!** v3.0.0 adds a complete FastAPI server with user accounts, leaderboards, ghost replays, and real-time chat.
+**Now with full multiplayer stack!** v3.0.0 adds a complete FastAPI backend with user accounts, leaderboards, ghost replays, real-time chat, **plus a React web frontend** with xterm.js game terminal.
 
 ## Features
 
@@ -61,6 +61,14 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Game Sessions**: Play via WebSocket with full state synchronization
 - **Docker Support**: One-command deployment with PostgreSQL and Redis
 
+### Web Frontend (v3.0.0)
+- **React + TypeScript**: Modern frontend with Vite build system
+- **xterm.js Game Terminal**: Full terminal emulation in the browser with ANSI color rendering
+- **Real-time Chat UI**: Side panel with global chat and click-to-whisper
+- **Ghost Replay Viewer**: Watch death runs with playback controls, timeline scrubber, and mini-map
+- **Leaderboard Pages**: Browse rankings, player stats, and game history
+- **JWT Authentication**: Secure login/register with token management
+
 ## Installation
 
 ### Terminal Client (Single Player)
@@ -92,6 +100,22 @@ uvicorn app.main:app --reload
 
 The API documentation is available at `http://localhost:8000/docs` when the server is running.
 
+### Web Frontend
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+Access at `http://localhost:5173`. Requires the backend server to be running.
+
+#### Production Build
+```bash
+cd web
+npm run build
+```
+
 ## How to Play
 
 ### Controls
@@ -110,6 +134,16 @@ The API documentation is available at `http://localhost:8000/docs` when the serv
 - **E** or **Enter**: Equip/use selected item
 - **D**: Drop selected item
 - **I**, **Q**, or **ESC**: Close inventory
+
+### Web Browser Controls
+Same controls work in the web terminal. Additional:
+- **Y/N**: Confirm/cancel dialogs
+
+### Ghost Replay Viewer Controls
+- **Space**: Play/Pause
+- **← / →**: Step backward/forward
+- **Home / End**: Jump to start/end
+- **Esc**: Close viewer
 
 ### Gameplay
 
@@ -219,4 +253,34 @@ server/                 # Multiplayer backend (v3.0.0)
 │       └── chat_manager.py
 ├── Dockerfile
 └── requirements.txt
+
+web/                    # Web frontend (v3.0.0)
+├── index.html
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+└── src/
+    ├── main.tsx              # App entry point
+    ├── App.tsx               # Router setup
+    ├── components/
+    │   ├── Layout.tsx        # Page layout with nav
+    │   ├── GameTerminal.tsx  # xterm.js game renderer
+    │   ├── ChatPanel.tsx     # Real-time chat
+    │   └── GhostReplayViewer.tsx  # Replay viewer
+    ├── contexts/
+    │   └── AuthContext.tsx   # JWT auth state
+    ├── hooks/
+    │   ├── useGameSocket.ts  # Game WebSocket hook
+    │   └── useChatSocket.ts  # Chat WebSocket hook
+    ├── pages/
+    │   ├── Home.tsx
+    │   ├── Login.tsx
+    │   ├── Register.tsx
+    │   ├── Play.tsx          # Game + Chat page
+    │   ├── Leaderboard.tsx
+    │   └── Ghosts.tsx        # Ghost list + viewer
+    ├── services/
+    │   └── api.ts            # REST + WebSocket client
+    └── types/
+        └── index.ts          # TypeScript interfaces
 ```
