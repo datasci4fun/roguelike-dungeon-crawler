@@ -47,8 +47,14 @@ class Player(Entity):
             health=PLAYER_MAX_HEALTH,
             attack_damage=PLAYER_ATTACK_DAMAGE
         )
+        self.base_attack = PLAYER_ATTACK_DAMAGE  # Base attack without equipment
         self.kills = 0
         self.inventory = Inventory(max_size=10)
+
+        # Equipment slots (None = nothing equipped)
+        self.equipped_weapon = None
+        self.equipped_armor = None
+        self.defense = 0  # Defense reduces incoming damage
 
         # XP and leveling
         self.level = 1
@@ -91,6 +97,81 @@ class Player(Entity):
         """Move the player by the given offset."""
         self.x += dx
         self.y += dy
+
+    def equip(self, item) -> str:
+        """
+        Equip a weapon or armor item.
+        Returns a message describing what happened.
+        """
+        from .constants import EquipmentSlot
+        from .items import Weapon, Armor
+
+        if not item.is_equippable():
+            return f"Cannot equip {item.name}!"
+
+        old_item = None
+        message = ""
+
+        if item.equip_slot == EquipmentSlot.WEAPON:
+            old_item = self.equipped_weapon
+            self.equipped_weapon = item
+            # Update attack damage
+            self.attack_damage = self.base_attack + item.attack_bonus
+            message = f"Equipped {item.name} (+{item.attack_bonus} ATK)"
+        elif item.equip_slot == EquipmentSlot.ARMOR:
+            old_item = self.equipped_armor
+            self.equipped_armor = item
+            # Update defense
+            self.defense = item.defense_bonus
+            message = f"Equipped {item.name} (+{item.defense_bonus} DEF)"
+
+        # Remove equipped item from inventory
+        if item in self.inventory.items:
+            self.inventory.items.remove(item)
+
+        # Add old item back to inventory if there was one
+        if old_item is not None:
+            self.inventory.add_item(old_item)
+            message += f", unequipped {old_item.name}"
+
+        return message
+
+    def unequip(self, slot) -> str:
+        """
+        Unequip item from a slot and add it to inventory.
+        Returns a message describing what happened.
+        """
+        from .constants import EquipmentSlot
+
+        if slot == EquipmentSlot.WEAPON:
+            if self.equipped_weapon is None:
+                return "No weapon equipped!"
+            if self.inventory.is_full():
+                return "Inventory full, cannot unequip!"
+            item = self.equipped_weapon
+            self.equipped_weapon = None
+            self.attack_damage = self.base_attack
+            self.inventory.add_item(item)
+            return f"Unequipped {item.name}"
+        elif slot == EquipmentSlot.ARMOR:
+            if self.equipped_armor is None:
+                return "No armor equipped!"
+            if self.inventory.is_full():
+                return "Inventory full, cannot unequip!"
+            item = self.equipped_armor
+            self.equipped_armor = None
+            self.defense = 0
+            self.inventory.add_item(item)
+            return f"Unequipped {item.name}"
+
+        return "Invalid equipment slot!"
+
+    def take_damage(self, damage: int) -> int:
+        """Take damage reduced by defense and return actual damage taken."""
+        reduced_damage = max(1, damage - self.defense)  # Always take at least 1 damage
+        actual_damage = min(reduced_damage, self.health)
+        self.health -= actual_damage
+        return actual_damage
 
 
 class Enemy(Entity):

@@ -9,9 +9,18 @@ if TYPE_CHECKING:
 
 class ItemType(Enum):
     """Types of items in the game."""
+    # Consumables
     HEALTH_POTION = auto()
     STRENGTH_POTION = auto()
     SCROLL_TELEPORT = auto()
+    # Weapons
+    WEAPON_DAGGER = auto()
+    WEAPON_SWORD = auto()
+    WEAPON_AXE = auto()
+    # Armor
+    ARMOR_LEATHER = auto()
+    ARMOR_CHAIN = auto()
+    ARMOR_PLATE = auto()
 
 
 @dataclass
@@ -24,6 +33,7 @@ class Item:
     symbol: str
     description: str
     rarity: 'ItemRarity' = None  # Item rarity for color coding
+    equip_slot: 'EquipmentSlot' = None  # Which slot this item equips to (None = not equippable)
 
     def use(self, player: 'Player') -> str:
         """
@@ -31,6 +41,10 @@ class Item:
         Returns a message describing what happened.
         """
         raise NotImplementedError
+
+    def is_equippable(self) -> bool:
+        """Check if this item can be equipped."""
+        return self.equip_slot is not None
 
 
 class HealthPotion(Item):
@@ -102,16 +116,185 @@ class ScrollTeleport(Item):
         return "Teleported to a random location!"
 
 
+class Weapon(Item):
+    """Base class for weapon items."""
+
+    def __init__(self, x: int, y: int, item_type: ItemType, name: str,
+                 description: str, attack_bonus: int, rarity):
+        from .constants import EquipmentSlot
+        super().__init__(
+            x=x,
+            y=y,
+            item_type=item_type,
+            name=name,
+            symbol='/',
+            description=description,
+            rarity=rarity,
+            equip_slot=EquipmentSlot.WEAPON
+        )
+        self.attack_bonus = attack_bonus
+
+    def use(self, player: 'Player') -> str:
+        """Weapons are equipped, not used directly."""
+        return "Use [E] to equip this weapon."
+
+
+class Dagger(Weapon):
+    """Basic starting weapon."""
+
+    def __init__(self, x: int, y: int):
+        from .constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.WEAPON_DAGGER,
+            name="Dagger",
+            description="+1 ATK",
+            attack_bonus=1,
+            rarity=ItemRarity.COMMON
+        )
+
+
+class Sword(Weapon):
+    """Standard melee weapon."""
+
+    def __init__(self, x: int, y: int):
+        from .constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.WEAPON_SWORD,
+            name="Iron Sword",
+            description="+3 ATK",
+            attack_bonus=3,
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class Axe(Weapon):
+    """Powerful melee weapon."""
+
+    def __init__(self, x: int, y: int):
+        from .constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.WEAPON_AXE,
+            name="Battle Axe",
+            description="+5 ATK",
+            attack_bonus=5,
+            rarity=ItemRarity.RARE
+        )
+
+
+class Armor(Item):
+    """Base class for armor items."""
+
+    def __init__(self, x: int, y: int, item_type: ItemType, name: str,
+                 description: str, defense_bonus: int, rarity):
+        from .constants import EquipmentSlot
+        super().__init__(
+            x=x,
+            y=y,
+            item_type=item_type,
+            name=name,
+            symbol='[',
+            description=description,
+            rarity=rarity,
+            equip_slot=EquipmentSlot.ARMOR
+        )
+        self.defense_bonus = defense_bonus
+
+    def use(self, player: 'Player') -> str:
+        """Armor is equipped, not used directly."""
+        return "Use [E] to equip this armor."
+
+
+class LeatherArmor(Armor):
+    """Basic light armor."""
+
+    def __init__(self, x: int, y: int):
+        from .constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.ARMOR_LEATHER,
+            name="Leather Armor",
+            description="+1 DEF",
+            defense_bonus=1,
+            rarity=ItemRarity.COMMON
+        )
+
+
+class ChainMail(Armor):
+    """Medium armor."""
+
+    def __init__(self, x: int, y: int):
+        from .constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.ARMOR_CHAIN,
+            name="Chain Mail",
+            description="+3 DEF",
+            defense_bonus=3,
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class PlateArmor(Armor):
+    """Heavy armor."""
+
+    def __init__(self, x: int, y: int):
+        from .constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.ARMOR_PLATE,
+            name="Plate Armor",
+            description="+5 DEF",
+            defense_bonus=5,
+            rarity=ItemRarity.RARE
+        )
+
+
 def create_item(item_type: ItemType, x: int, y: int) -> Item:
     """Factory function to create items."""
+    # Consumables
     if item_type == ItemType.HEALTH_POTION:
         return HealthPotion(x, y)
     elif item_type == ItemType.STRENGTH_POTION:
         return StrengthPotion(x, y)
     elif item_type == ItemType.SCROLL_TELEPORT:
         return ScrollTeleport(x, y)
+    # Weapons
+    elif item_type == ItemType.WEAPON_DAGGER:
+        return Dagger(x, y)
+    elif item_type == ItemType.WEAPON_SWORD:
+        return Sword(x, y)
+    elif item_type == ItemType.WEAPON_AXE:
+        return Axe(x, y)
+    # Armor
+    elif item_type == ItemType.ARMOR_LEATHER:
+        return LeatherArmor(x, y)
+    elif item_type == ItemType.ARMOR_CHAIN:
+        return ChainMail(x, y)
+    elif item_type == ItemType.ARMOR_PLATE:
+        return PlateArmor(x, y)
     else:
         raise ValueError(f"Unknown item type: {item_type}")
+
+
+# List of equipment types for spawning
+EQUIPMENT_TYPES = [
+    ItemType.WEAPON_DAGGER,
+    ItemType.WEAPON_SWORD,
+    ItemType.WEAPON_AXE,
+    ItemType.ARMOR_LEATHER,
+    ItemType.ARMOR_CHAIN,
+    ItemType.ARMOR_PLATE,
+]
+
+# Consumable types (original items)
+CONSUMABLE_TYPES = [
+    ItemType.HEALTH_POTION,
+    ItemType.STRENGTH_POTION,
+    ItemType.SCROLL_TELEPORT,
+]
 
 
 class Inventory:

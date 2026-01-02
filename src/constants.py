@@ -62,6 +62,12 @@ class ItemRarity(Enum):
     EPIC = auto()      # Magenta
 
 
+class EquipmentSlot(Enum):
+    """Equipment slots for the player."""
+    WEAPON = auto()
+    ARMOR = auto()
+
+
 # Dungeon configuration
 DUNGEON_WIDTH = 80
 DUNGEON_HEIGHT = 40

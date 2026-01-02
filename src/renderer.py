@@ -908,7 +908,7 @@ class Renderer:
             health_str = f"HP:{health_bar} {player.health}/{player.max_health}"[:content_width]
             self.stdscr.addstr(5, panel_x + 2, health_str, health_color)
 
-            self.stdscr.addstr(6, panel_x + 2, f"ATK: {player.attack_damage}"[:content_width])
+            self.stdscr.addstr(6, panel_x + 2, f"ATK: {player.attack_damage}  DEF: {player.defense}"[:content_width])
             self.stdscr.addstr(7, panel_x + 2, f"Kills: {player.kills}"[:content_width])
 
             # XP bar
@@ -1097,9 +1097,40 @@ class Renderer:
 
                 self.stdscr.addstr(details_y + 2, 3, f"Effect: {item.description}")
 
+            # Equipment section
+            equip_y = max_y - 12
+            self.stdscr.addstr(equip_y, 3, "─" * (max_x - 8) if use_unicode else "-" * (max_x - 8))
+            self.stdscr.addstr(equip_y + 1, 3, "EQUIPMENT", curses.A_BOLD)
+
+            # Weapon slot
+            weapon_str = "Weapon: "
+            if player.equipped_weapon:
+                weapon_name = f"{player.equipped_weapon.name} (+{player.equipped_weapon.attack_bonus} ATK)"
+                if curses.has_colors() and player.equipped_weapon.rarity:
+                    color_pair = ITEM_RARITY_COLORS.get(player.equipped_weapon.rarity, 1)
+                    self.stdscr.addstr(equip_y + 2, 3, weapon_str)
+                    self.stdscr.addstr(equip_y + 2, 3 + len(weapon_str), weapon_name, curses.color_pair(color_pair))
+                else:
+                    self.stdscr.addstr(equip_y + 2, 3, weapon_str + weapon_name)
+            else:
+                self.stdscr.addstr(equip_y + 2, 3, weapon_str + "(none)")
+
+            # Armor slot
+            armor_str = "Armor:  "
+            if player.equipped_armor:
+                armor_name = f"{player.equipped_armor.name} (+{player.equipped_armor.defense_bonus} DEF)"
+                if curses.has_colors() and player.equipped_armor.rarity:
+                    color_pair = ITEM_RARITY_COLORS.get(player.equipped_armor.rarity, 1)
+                    self.stdscr.addstr(equip_y + 3, 3, armor_str)
+                    self.stdscr.addstr(equip_y + 3, 3 + len(armor_str), armor_name, curses.color_pair(color_pair))
+                else:
+                    self.stdscr.addstr(equip_y + 3, 3, armor_str + armor_name)
+            else:
+                self.stdscr.addstr(equip_y + 3, 3, armor_str + "(none)")
+
             # Controls
             controls_y = max_y - 4
-            controls = "[↑/↓] Select  [U/Enter] Use  [D] Drop  [I/Q/ESC] Close"
+            controls = "[↑/↓] Select  [E/Enter] Equip/Use  [D] Drop  [I/Q/ESC] Close"
             controls_x = (max_x - len(controls)) // 2
             if curses.has_colors():
                 self.stdscr.addstr(controls_y, controls_x, controls, curses.color_pair(7))
@@ -1177,6 +1208,8 @@ class Renderer:
             y += 1
 
             self.stdscr.addstr(y, 5, f"Attack:       {player.attack_damage}")
+            y += 1
+            self.stdscr.addstr(y, 5, f"Defense:      {player.defense}")
             y += 2
 
             self.stdscr.addstr(y, 5, f"Position:     ({player.x}, {player.y})")
@@ -1204,8 +1237,32 @@ class Renderer:
             y += 1
             self.stdscr.addstr(y, 40, f"Next Level:   {player.xp_to_next_level} XP")
 
+            # Equipment section
+            y = 17
+            self.stdscr.addstr(y, 5, "═" * 65 if use_unicode else "=" * 65)
+            y += 1
+            self.stdscr.addstr(y, 5, "EQUIPMENT", curses.A_BOLD)
+            y += 1
+
+            # Weapon slot
+            weapon_str = "Weapon: "
+            if player.equipped_weapon:
+                weapon_name = f"{player.equipped_weapon.name} (+{player.equipped_weapon.attack_bonus} ATK)"
+                self.stdscr.addstr(y, 5, weapon_str + weapon_name)
+            else:
+                self.stdscr.addstr(y, 5, weapon_str + "(none)")
+            y += 1
+
+            # Armor slot
+            armor_str = "Armor:  "
+            if player.equipped_armor:
+                armor_name = f"{player.equipped_armor.name} (+{player.equipped_armor.defense_bonus} DEF)"
+                self.stdscr.addstr(y, 5, armor_str + armor_name)
+            else:
+                self.stdscr.addstr(y, 5, armor_str + "(none)")
+            y += 2
+
             # Inventory summary
-            y = 16
             self.stdscr.addstr(y, 5, "═" * 65 if use_unicode else "=" * 65)
             y += 1
             self.stdscr.addstr(y, 5, "INVENTORY", curses.A_BOLD)

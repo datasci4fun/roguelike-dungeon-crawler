@@ -74,6 +74,8 @@ class Game:
 
     def _spawn_items(self):
         """Spawn items in random locations."""
+        from .items import CONSUMABLE_TYPES, EQUIPMENT_TYPES
+
         # GUARANTEED: 2 health potions per level for survivability
         for _ in range(2):
             pos = self.dungeon.get_random_floor_position()
@@ -82,13 +84,25 @@ class Game:
                 item = create_item(ItemType.HEALTH_POTION, pos[0], pos[1])
                 self.items.append(item)
 
-        # RANDOM: 0-3 additional random items (can be any type)
-        num_random_items = random.randint(0, 3)
-        for _ in range(num_random_items):
+        # RANDOM: 0-2 additional consumable items
+        num_consumables = random.randint(0, 2)
+        for _ in range(num_consumables):
             pos = self.dungeon.get_random_floor_position()
             # Make sure not on player or stairs
             if (pos[0] != self.player.x or pos[1] != self.player.y):
-                item_type = random.choice(list(ItemType))
+                item_type = random.choice(CONSUMABLE_TYPES)
+                item = create_item(item_type, pos[0], pos[1])
+                self.items.append(item)
+
+        # RANDOM: 0-2 equipment items per level (rarer than consumables)
+        num_equipment = random.randint(0, 2)
+        for _ in range(num_equipment):
+            pos = self.dungeon.get_random_floor_position()
+            # Make sure not on player or stairs
+            if (pos[0] != self.player.x or pos[1] != self.player.y):
+                # Weight equipment by rarity (common more likely than rare)
+                equipment_weights = [3, 2, 1, 3, 2, 1]  # Dagger, Sword, Axe, Leather, Chain, Plate
+                item_type = random.choices(EQUIPMENT_TYPES, weights=equipment_weights)[0]
                 item = create_item(item_type, pos[0], pos[1])
                 self.items.append(item)
 
@@ -439,11 +453,15 @@ class Game:
             'health': player.health,
             'max_health': player.max_health,
             'attack_damage': player.attack_damage,
+            'base_attack': player.base_attack,
+            'defense': player.defense,
             'level': player.level,
             'xp': player.xp,
             'xp_to_next_level': player.xp_to_next_level,
             'kills': player.kills,
-            'inventory': [self._serialize_item(item) for item in player.inventory.items]
+            'inventory': [self._serialize_item(item) for item in player.inventory.items],
+            'equipped_weapon': self._serialize_item(player.equipped_weapon) if player.equipped_weapon else None,
+            'equipped_armor': self._serialize_item(player.equipped_armor) if player.equipped_armor else None
         }
 
     def _deserialize_player(self, data: dict) -> Player:
@@ -452,6 +470,8 @@ class Game:
         player.health = data['health']
         player.max_health = data['max_health']
         player.attack_damage = data['attack_damage']
+        player.base_attack = data.get('base_attack', data['attack_damage'])  # Fallback for old saves
+        player.defense = data.get('defense', 0)  # Fallback for old saves
         player.level = data['level']
         player.xp = data['xp']
         player.xp_to_next_level = data['xp_to_next_level']
@@ -459,6 +479,12 @@ class Game:
 
         # Restore inventory
         player.inventory.items = [self._deserialize_item(item_data) for item_data in data['inventory']]
+
+        # Restore equipped items (new in equipment update)
+        if data.get('equipped_weapon'):
+            player.equipped_weapon = self._deserialize_item(data['equipped_weapon'])
+        if data.get('equipped_armor'):
+            player.equipped_armor = self._deserialize_item(data['equipped_armor'])
 
         return player
 
@@ -591,10 +617,30 @@ class Game:
         elif key in (ord('u'), ord('U'), ord('\n'), curses.KEY_ENTER):
             # Use selected item
             if 0 <= self.selected_item_index < len(inventory.items):
-                if self._use_item(self.selected_item_index):
+                item = inventory.get_item(self.selected_item_index)
+                if item and item.is_equippable():
+                    # Equip the item
+                    message = self.player.equip(item)
+                    self.add_message(message)
                     # Adjust selection if needed
                     if self.selected_item_index >= len(inventory.items):
                         self.selected_item_index = max(0, len(inventory.items) - 1)
+                elif self._use_item(self.selected_item_index):
+                    # Adjust selection if needed
+                    if self.selected_item_index >= len(inventory.items):
+                        self.selected_item_index = max(0, len(inventory.items) - 1)
+        elif key in (ord('e'), ord('E')):
+            # Equip selected item (explicit equip key)
+            if 0 <= self.selected_item_index < len(inventory.items):
+                item = inventory.get_item(self.selected_item_index)
+                if item and item.is_equippable():
+                    message = self.player.equip(item)
+                    self.add_message(message)
+                    # Adjust selection if needed
+                    if self.selected_item_index >= len(inventory.items):
+                        self.selected_item_index = max(0, len(inventory.items) - 1)
+                else:
+                    self.add_message("Cannot equip this item!")
         elif key in (ord('d'), ord('D')):
             # Drop selected item
             if 0 <= self.selected_item_index < len(inventory.items):
