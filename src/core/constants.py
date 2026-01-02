@@ -17,6 +17,7 @@ class GameState(Enum):
     INTRO = auto()      # Story intro/prologue
     PLAYING = auto()
     DEAD = auto()
+    VICTORY = auto()    # Player won the game
     QUIT = auto()
 
 

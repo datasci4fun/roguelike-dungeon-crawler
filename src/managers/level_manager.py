@@ -34,7 +34,7 @@ class LevelManager:
         delete_save()
         self.game.add_message("You've reached the deepest level!")
         self.game.add_message("Congratulations! You win!")
-        self.game.state = GameState.QUIT
+        self.game.state = GameState.VICTORY
 
     def _descend_level(self):
         """Descend to the next dungeon level."""

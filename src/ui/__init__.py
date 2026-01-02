@@ -2,6 +2,7 @@
 from .renderer import Renderer
 from .screens import (
     render_game_over,
+    render_victory_screen,
     render_inventory_screen,
     render_character_screen,
     render_help_screen,
@@ -18,7 +19,7 @@ from .ui_utils import (
 
 __all__ = [
     'Renderer',
-    'render_game_over', 'render_inventory_screen',
+    'render_game_over', 'render_victory_screen', 'render_inventory_screen',
     'render_character_screen', 'render_help_screen',
     'render_title_screen', 'render_intro_screen', 'render_reading_screen',
     'render_dialog', 'render_message_log_screen',

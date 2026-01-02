@@ -9,9 +9,9 @@ from ..entities import Player
 from ..ui import Renderer
 from ..ui.screens import (
     render_title_screen, render_intro_screen, render_reading_screen,
-    render_dialog, render_message_log_screen
+    render_dialog, render_message_log_screen, render_victory_screen
 )
-from ..items import Item, ItemType, ScrollTeleport
+from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
 from ..data import save_exists
 from ..story import StoryManager
 from ..story.story_data import get_tutorial_hint
@@ -134,6 +134,8 @@ class Game:
                 self._game_loop()
             elif self.state == GameState.DEAD:
                 self._game_over_loop()
+            elif self.state == GameState.VICTORY:
+                self._victory_loop()
 
     def _title_loop(self):
         """Handle the title screen."""
@@ -350,6 +352,22 @@ class Game:
         self.state = GameState.TITLE
         self.message_log.clear()  # Clear messages for new game
 
+    def _victory_loop(self):
+        """Victory state loop - player won the game."""
+        # Build victory info
+        lore_found, lore_total = self.story_manager.get_lore_progress()
+        victory_info = {
+            'lore_found': lore_found,
+            'lore_total': lore_total,
+        }
+        render_victory_screen(self.stdscr, self.player, victory_info)
+        self.stdscr.timeout(-1)  # Blocking input
+        self.stdscr.getch()
+        self.stdscr.timeout(100)  # Restore timeout
+        # Return to title screen
+        self.state = GameState.TITLE
+        self.message_log.clear()  # Clear messages for new game
+
     def use_item(self, item_index: int) -> bool:
         """
         Use an item from the inventory.
@@ -363,6 +381,21 @@ class Game:
         item = self.player.inventory.get_item(item_index)
         if not item:
             return False
+
+        # Handle lore items specially - open reading screen
+        if isinstance(item, (LoreScroll, LoreBook)):
+            title, content = item.get_text()
+            self.reading_title = title
+            self.reading_content = content
+            self.ui_mode = UIMode.READING
+
+            # Mark lore as discovered
+            self.story_manager.discover_lore(item.lore_id)
+
+            # Remove item from inventory after reading
+            self.player.inventory.remove_item(item_index)
+            self.add_message(f"You read {item.name}.")
+            return True
 
         # Use the item
         message = item.use(self.player)
