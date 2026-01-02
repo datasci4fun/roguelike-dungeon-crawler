@@ -18,6 +18,14 @@ class GameState(Enum):
     QUIT = auto()
 
 
+class UIMode(Enum):
+    """UI screen modes (what screen is currently displayed)."""
+    GAME = auto()       # Normal gameplay view
+    INVENTORY = auto()  # Full-screen inventory
+    CHARACTER = auto()  # Character stats screen
+    HELP = auto()       # Help screen
+
+
 class DungeonTheme(Enum):
     """Visual themes for dungeon levels."""
     STONE = auto()    # Classic stone dungeon

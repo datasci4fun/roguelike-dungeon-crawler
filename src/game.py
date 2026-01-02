@@ -3,7 +3,7 @@ import curses
 import random
 from typing import List, Optional
 
-from .constants import GameState, MAX_DUNGEON_LEVELS
+from .constants import GameState, UIMode, MAX_DUNGEON_LEVELS
 from .dungeon import Dungeon
 from .entities import Player, Enemy
 from .renderer import Renderer
@@ -17,9 +17,13 @@ class Game:
     def __init__(self, stdscr):
         self.stdscr = stdscr
         self.state = GameState.PLAYING
+        self.ui_mode = UIMode.GAME  # Current UI screen
         self.renderer = Renderer(stdscr)
         self.messages: List[str] = []
         self.current_level = 1
+
+        # Inventory screen state
+        self.selected_item_index = 0  # Currently selected item in inventory screen
 
         # Set up non-blocking input with timeout
         self.stdscr.timeout(100)
@@ -102,7 +106,18 @@ class Game:
 
     def _game_loop(self):
         """Main playing state loop."""
-        # Render
+        # Handle different UI modes
+        if self.ui_mode == UIMode.INVENTORY:
+            self._inventory_loop()
+            return
+        elif self.ui_mode == UIMode.CHARACTER:
+            self._character_loop()
+            return
+        elif self.ui_mode == UIMode.HELP:
+            self._help_loop()
+            return
+
+        # Normal game rendering
         self.renderer.render(self.dungeon, self.player, self.enemies, self.items, self.messages)
 
         # Handle input
@@ -143,6 +158,19 @@ class Game:
             # Use item from inventory
             item_index = int(chr(key)) - 1
             return self._use_item(item_index)
+        elif key in (ord('i'), ord('I')):
+            # Open inventory screen
+            self.ui_mode = UIMode.INVENTORY
+            self.selected_item_index = 0  # Reset selection
+            return False
+        elif key in (ord('c'), ord('C')):
+            # Open character screen
+            self.ui_mode = UIMode.CHARACTER
+            return False
+        elif key == ord('?'):
+            # Open help screen
+            self.ui_mode = UIMode.HELP
+            return False
         elif key in (ord('q'), ord('Q')):
             # Save game on quit
             if self.save_game_state():
@@ -533,6 +561,71 @@ class Game:
         # Note: We don't restore rooms list as it's not needed for gameplay after generation
 
         return dungeon
+
+    def _inventory_loop(self):
+        """Handle the full-screen inventory UI."""
+        # Render inventory screen
+        self.renderer.render_inventory_screen(
+            self.player,
+            self.selected_item_index,
+            self.dungeon.level
+        )
+
+        # Handle input
+        key = self.stdscr.getch()
+        if key == -1:
+            return
+
+        inventory = self.player.inventory
+
+        if key in (ord('i'), ord('I'), ord('q'), ord('Q'), 27):  # I, Q, or ESC to close
+            self.ui_mode = UIMode.GAME
+        elif key in (curses.KEY_UP, ord('w'), ord('W'), ord('k')):
+            # Move selection up
+            if len(inventory.items) > 0:
+                self.selected_item_index = (self.selected_item_index - 1) % len(inventory.items)
+        elif key in (curses.KEY_DOWN, ord('s'), ord('S'), ord('j')):
+            # Move selection down
+            if len(inventory.items) > 0:
+                self.selected_item_index = (self.selected_item_index + 1) % len(inventory.items)
+        elif key in (ord('u'), ord('U'), ord('\n'), curses.KEY_ENTER):
+            # Use selected item
+            if 0 <= self.selected_item_index < len(inventory.items):
+                if self._use_item(self.selected_item_index):
+                    # Adjust selection if needed
+                    if self.selected_item_index >= len(inventory.items):
+                        self.selected_item_index = max(0, len(inventory.items) - 1)
+        elif key in (ord('d'), ord('D')):
+            # Drop selected item
+            if 0 <= self.selected_item_index < len(inventory.items):
+                item = inventory.remove_item(self.selected_item_index)
+                item.x = self.player.x
+                item.y = self.player.y
+                self.items.append(item)
+                self.add_message(f"Dropped {item.name}")
+                # Adjust selection if needed
+                if self.selected_item_index >= len(inventory.items):
+                    self.selected_item_index = max(0, len(inventory.items) - 1)
+
+    def _character_loop(self):
+        """Handle the character stats screen UI."""
+        # Render character screen
+        self.renderer.render_character_screen(self.player, self.dungeon.level)
+
+        # Handle input - any key closes the screen
+        key = self.stdscr.getch()
+        if key != -1:
+            self.ui_mode = UIMode.GAME
+
+    def _help_loop(self):
+        """Handle the help screen UI."""
+        # Render help screen
+        self.renderer.render_help_screen()
+
+        # Handle input - any key closes the screen
+        key = self.stdscr.getch()
+        if key != -1:
+            self.ui_mode = UIMode.GAME
 
     def _game_over_loop(self):
         """Game over state loop."""
