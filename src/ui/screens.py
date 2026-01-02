@@ -9,28 +9,66 @@ from .ui_utils import (
 )
 
 
-def render_game_over(stdscr, player: Player):
-    """Render the game over screen."""
+def render_game_over(stdscr, player: Player, death_info: dict = None):
+    """
+    Render the enhanced game over screen with death recap.
+
+    Args:
+        stdscr: The curses screen
+        player: The player object
+        death_info: Optional dict with 'attacker', 'damage', 'max_level', 'lore_found', 'lore_total'
+    """
     stdscr.clear()
     max_y, max_x = stdscr.getmaxyx()
 
+    # Death recap info
+    attacker = death_info.get('attacker', 'Unknown') if death_info else 'Unknown'
+    damage = death_info.get('damage', 0) if death_info else 0
+    max_level = death_info.get('max_level', 1) if death_info else 1
+    lore_found = death_info.get('lore_found', 0) if death_info else 0
+    lore_total = death_info.get('lore_total', 0) if death_info else 0
+
+    # Build messages
     messages = [
-        "YOU DIED",
-        "",
-        f"Final Level: {player.level}",
-        f"Enemies Defeated: {player.kills}",
-        "",
-        "Press any key to exit..."
+        ("YOU DIED", 3, True),  # Red, bold
+        ("", 0, False),
     ]
 
-    start_y = max_y // 2 - len(messages) // 2
+    # Death cause
+    if attacker and attacker != 'Unknown':
+        messages.append((f"Slain by: {attacker}", 3, False))
+        if damage > 0:
+            messages.append((f"Final blow: {damage} damage", 7, False))
+    messages.append(("", 0, False))
 
-    for i, message in enumerate(messages):
-        x = max_x // 2 - len(message) // 2
+    # Stats section
+    messages.append(("--- Final Stats ---", 2, True))  # Yellow, bold
+    messages.append((f"Character Level: {player.level}", 1, False))
+    messages.append((f"Deepest Floor: {max_level}", 1, False))
+    messages.append((f"Enemies Defeated: {player.kills}", 1, False))
+
+    # Lore progress
+    if lore_total > 0:
+        lore_pct = int((lore_found / lore_total) * 100)
+        messages.append((f"Lore Discovered: {lore_found}/{lore_total} ({lore_pct}%)", 6, False))
+
+    messages.append(("", 0, False))
+    messages.append(("Press any key to return to title...", 7, False))
+
+    # Calculate starting position
+    start_y = max(2, max_y // 2 - len(messages) // 2)
+
+    for i, (message, color, bold) in enumerate(messages):
+        x = max(0, max_x // 2 - len(message) // 2)
         y = start_y + i
-        if 0 <= y < max_y and 0 <= x < max_x:
+        if 0 <= y < max_y - 1 and 0 <= x < max_x:
             try:
-                stdscr.addstr(y, x, message)
+                attr = curses.A_NORMAL
+                if curses.has_colors() and color > 0:
+                    attr = curses.color_pair(color)
+                if bold:
+                    attr |= curses.A_BOLD
+                stdscr.addstr(y, x, message, attr)
             except curses.error:
                 pass
 
@@ -701,6 +739,101 @@ def render_dialog(stdscr, title: str, message: str, options: list = None,
                 stdscr.addstr(options_y, current_x, key_text, curses.A_BOLD)
                 stdscr.addstr(options_y, current_x + len(key_text), f" {label}")
             current_x += len(key_text) + len(label) + 3  # +3 for space and separator
+
+    except curses.error:
+        pass
+
+    stdscr.refresh()
+
+
+def render_message_log_screen(stdscr, message_log, use_unicode: bool = False):
+    """
+    Render the full message history screen.
+
+    Args:
+        stdscr: The curses screen
+        message_log: The MessageLog object containing all messages
+        use_unicode: Whether to use Unicode box drawing characters
+    """
+    from ..core.messages import MessageCategory, MessageImportance
+
+    stdscr.clear()
+    max_y, max_x = stdscr.getmaxyx()
+
+    try:
+        # Draw border
+        draw_screen_border(stdscr, use_unicode)
+
+        # Title
+        title = "~ Message Log ~"
+        draw_title(stdscr, title)
+
+        # Get all messages
+        all_messages = message_log.get_all()
+        visible_lines = max_y - 7  # Leave room for border, title, controls
+
+        # Calculate scroll range
+        total_messages = len(all_messages)
+        scroll_offset = message_log.scroll_offset
+
+        # Display messages
+        content_start_y = 3
+        content_width = max_x - 6
+
+        if not all_messages:
+            # No messages
+            no_msg = "No messages yet."
+            msg_x = (max_x - len(no_msg)) // 2
+            if curses.has_colors():
+                stdscr.addstr(content_start_y + 2, msg_x, no_msg, curses.color_pair(7))
+            else:
+                stdscr.addstr(content_start_y + 2, msg_x, no_msg)
+        else:
+            # Show messages from scroll_offset
+            display_messages = all_messages[scroll_offset:scroll_offset + visible_lines]
+
+            for i, msg in enumerate(display_messages):
+                y = content_start_y + i
+                if y >= max_y - 4:
+                    break
+
+                # Truncate message if too long
+                text = msg.text
+                if len(text) > content_width:
+                    text = text[:content_width - 3] + "..."
+
+                # Choose color based on category/importance
+                color_pair = 1  # Default white
+                if curses.has_colors():
+                    if msg.importance == MessageImportance.CRITICAL:
+                        color_pair = 3  # Red
+                    elif msg.importance == MessageImportance.IMPORTANT:
+                        color_pair = 2  # Yellow
+                    elif msg.category == MessageCategory.COMBAT:
+                        color_pair = 3  # Red for combat
+                    elif msg.category == MessageCategory.ITEM:
+                        color_pair = 5  # Cyan for items
+                    elif msg.category == MessageCategory.STORY:
+                        color_pair = 6  # Magenta for story
+
+                x = 3
+                if curses.has_colors():
+                    stdscr.addstr(y, x, text, curses.color_pair(color_pair))
+                else:
+                    stdscr.addstr(y, x, text)
+
+            # Scroll indicator
+            if total_messages > visible_lines:
+                scroll_info = f"[{scroll_offset + 1}-{min(scroll_offset + visible_lines, total_messages)}/{total_messages}]"
+                scroll_x = max_x - len(scroll_info) - 3
+                if curses.has_colors():
+                    stdscr.addstr(2, scroll_x, scroll_info, curses.color_pair(7))
+                else:
+                    stdscr.addstr(2, scroll_x, scroll_info)
+
+        # Controls hint at bottom
+        controls = "Up/Down: Scroll | Q/ESC: Close"
+        draw_controls(stdscr, controls)
 
     except curses.error:
         pass

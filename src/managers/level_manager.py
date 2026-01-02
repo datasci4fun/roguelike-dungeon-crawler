@@ -36,6 +36,7 @@ class LevelManager:
     def _descend_level(self):
         """Descend to the next dungeon level."""
         self.game.current_level += 1
+        self.game.max_level_reached = max(self.game.max_level_reached, self.game.current_level)
         self.game.add_message(f"You descend to level {self.game.current_level}...")
 
         # Generate new dungeon

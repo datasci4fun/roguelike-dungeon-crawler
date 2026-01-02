@@ -52,6 +52,11 @@ class InputHandler:
             # Open help screen
             self.game.ui_mode = UIMode.HELP
             return False
+        elif key in (ord('m'), ord('M')):
+            # Open message log screen
+            self.game.message_log.reset_scroll()
+            self.game.ui_mode = UIMode.MESSAGE_LOG
+            return False
         elif key in (ord('q'), ord('Q')):
             # Show quit confirmation dialog
             self.game.show_dialog(
@@ -133,6 +138,30 @@ class InputHandler:
             return False
 
         return None  # Invalid key, keep dialog open
+
+    def handle_message_log_input(self, key: int):
+        """Handle input while in the message log screen."""
+        if key == -1:
+            return
+
+        max_y, _ = self.game.stdscr.getmaxyx()
+        visible_lines = max_y - 7  # Same calculation as renderer
+
+        # Close on Q, ESC, or M
+        if key in (ord('q'), ord('Q'), ord('m'), ord('M'), 27):
+            self.game.ui_mode = UIMode.GAME
+        # Scroll up
+        elif key in (curses.KEY_UP, ord('k'), ord('K'), ord('w'), ord('W')):
+            self.game.message_log.scroll_up()
+        # Scroll down
+        elif key in (curses.KEY_DOWN, ord('j'), ord('J'), ord('s'), ord('S')):
+            self.game.message_log.scroll_down(visible_lines=visible_lines)
+        # Page up
+        elif key == curses.KEY_PPAGE:
+            self.game.message_log.scroll_up(visible_lines)
+        # Page down
+        elif key == curses.KEY_NPAGE:
+            self.game.message_log.scroll_down(visible_lines, visible_lines)
 
     def _use_or_equip_selected_item(self):
         """Use or equip the currently selected inventory item."""

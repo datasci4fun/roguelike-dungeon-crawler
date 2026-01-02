@@ -3,10 +3,14 @@ import curses
 from typing import List
 
 from .constants import GameState, UIMode
+from .messages import MessageLog, MessageCategory, MessageImportance
 from ..world import Dungeon
 from ..entities import Player
 from ..ui import Renderer
-from ..ui.screens import render_title_screen, render_intro_screen, render_reading_screen, render_dialog
+from ..ui.screens import (
+    render_title_screen, render_intro_screen, render_reading_screen,
+    render_dialog, render_message_log_screen
+)
 from ..items import Item, ItemType, ScrollTeleport
 from ..data import save_exists
 from ..story import StoryManager
@@ -26,8 +30,14 @@ class Game:
         self.state = GameState.TITLE
         self.ui_mode = UIMode.GAME
         self.renderer = Renderer(stdscr)
-        self.messages: List[str] = []
+        self.message_log = MessageLog()
         self.current_level = 1
+
+        # Death tracking for recap
+        self.last_attacker_name = None
+        self.last_damage_taken = 0
+        self.kills_count = 0
+        self.max_level_reached = 1
 
         # Inventory screen state
         self.selected_item_index = 0
@@ -81,9 +91,16 @@ class Game:
         self.add_message("Find the stairs (>) to descend deeper")
         self.add_message("Use arrow keys or WASD to move")
 
-    def add_message(self, message: str):
+    def add_message(self, message: str,
+                    category: MessageCategory = MessageCategory.SYSTEM,
+                    importance: MessageImportance = MessageImportance.NORMAL):
         """Add a message to the message log."""
-        self.messages.append(message)
+        self.message_log.add(message, category, importance)
+
+    @property
+    def messages(self) -> List[str]:
+        """Get recent messages as strings (for backward compatibility with renderer)."""
+        return [msg.text for msg in self.message_log.get_recent(5)]
 
     def run(self):
         """Main game loop."""
@@ -166,6 +183,9 @@ class Game:
             return
         elif self.ui_mode == UIMode.DIALOG:
             self._dialog_loop()
+            return
+        elif self.ui_mode == UIMode.MESSAGE_LOG:
+            self._message_log_loop()
             return
 
         # Normal game rendering
@@ -272,15 +292,36 @@ class Game:
         self.dialog_callback = callback
         self.ui_mode = UIMode.DIALOG
 
+    def _message_log_loop(self):
+        """Handle the message log screen UI."""
+        use_unicode = self.renderer.use_unicode
+        render_message_log_screen(
+            self.stdscr,
+            self.message_log,
+            use_unicode
+        )
+
+        key = self.stdscr.getch()
+        self.input_handler.handle_message_log_input(key)
+
     def _game_over_loop(self):
         """Game over state loop."""
-        self.renderer.render_game_over(self.player)
+        # Build death recap info
+        lore_found, lore_total = self.story_manager.get_lore_progress()
+        death_info = {
+            'attacker': self.last_attacker_name,
+            'damage': self.last_damage_taken,
+            'max_level': self.max_level_reached,
+            'lore_found': lore_found,
+            'lore_total': lore_total,
+        }
+        self.renderer.render_game_over(self.player, death_info)
         self.stdscr.timeout(-1)  # Blocking input
         self.stdscr.getch()
         self.stdscr.timeout(100)  # Restore timeout
         # Return to title screen instead of quitting
         self.state = GameState.TITLE
-        self.messages.clear()  # Clear messages for new game
+        self.message_log.clear()  # Clear messages for new game
 
     def use_item(self, item_index: int) -> bool:
         """

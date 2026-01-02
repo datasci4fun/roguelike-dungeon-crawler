@@ -119,6 +119,10 @@ class CombatManager:
         message = get_combat_message(enemy_name, "you", damage, player_died)
         self.game.add_message(message)
 
+        # Track damage for death recap
+        self.game.last_attacker_name = enemy_name
+        self.game.last_damage_taken = damage
+
         # Combat feedback animations
         renderer.add_direction_indicator(enemy.x, enemy.y, player.x, player.y)
         renderer.add_damage_number(player.x, player.y, damage)

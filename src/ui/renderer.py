@@ -1003,10 +1003,10 @@ class Renderer:
             # Ignore errors from terminal being too small
             pass
 
-    def render_game_over(self, player: Player):
-        """Render the game over screen."""
+    def render_game_over(self, player: Player, death_info: dict = None):
+        """Render the game over screen with death recap."""
         from .screens import render_game_over
-        render_game_over(self.stdscr, player)
+        render_game_over(self.stdscr, player, death_info)
 
     def render_inventory_screen(self, player: Player, selected_index: int, dungeon_level: int):
         """Render the full-screen inventory management screen."""

@@ -1,5 +1,6 @@
 """Core game module - game loop and constants."""
 from .game import Game
+from .messages import GameMessage, MessageCategory, MessageImportance, MessageLog
 from .constants import (
     TileType, GameState, UIMode, DungeonTheme, RoomType, EnemyType,
     ItemRarity, EquipmentSlot,

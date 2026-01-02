@@ -29,6 +29,7 @@ class UIMode(Enum):
     TITLE_MENU = auto() # Title screen menu
     READING = auto()    # Reading a lore item (scroll/book)
     DIALOG = auto()     # Confirmation dialog
+    MESSAGE_LOG = auto() # Full message history screen
 
 
 class DungeonTheme(Enum):
