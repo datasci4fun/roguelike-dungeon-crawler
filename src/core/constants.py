@@ -166,6 +166,9 @@ ATK_GAIN_PER_LEVEL = 1         # Attack damage increase per level
 FOV_RADIUS = 8                  # Player can see 8 tiles in all directions
 FOV_LIGHT_WALLS = True          # Whether walls block light
 
+# Auto-save configuration
+AUTO_SAVE_INTERVAL = 50  # Auto-save every N player turns
+
 # UI configuration
 MESSAGE_LOG_SIZE = 5
 MESSAGE_AREA_HEIGHT = 7  # Height of bottom message area (1 border + 1 header + 5 messages)

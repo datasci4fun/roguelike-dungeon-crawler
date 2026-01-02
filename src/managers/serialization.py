@@ -17,6 +17,18 @@ class SaveManager:
     def __init__(self, game: 'Game'):
         self.game = game
 
+    def auto_save(self) -> bool:
+        """
+        Perform an auto-save and reset turn counter.
+
+        Returns:
+            True if save succeeded, False otherwise
+        """
+        if self.save_game():
+            self.game.turns_since_save = 0
+            return True
+        return False
+
     def save_game(self) -> bool:
         """
         Save the current game state to disk.

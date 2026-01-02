@@ -2,7 +2,7 @@
 import curses
 from typing import List
 
-from .constants import GameState, UIMode
+from .constants import GameState, UIMode, AUTO_SAVE_INTERVAL
 from .messages import MessageLog, MessageCategory, MessageImportance
 from ..world import Dungeon
 from ..entities import Player
@@ -38,6 +38,9 @@ class Game:
         self.last_damage_taken = 0
         self.kills_count = 0
         self.max_level_reached = 1
+
+        # Turn tracking for auto-save
+        self.turns_since_save = 0
 
         # Inventory screen state
         self.selected_item_index = 0
@@ -205,6 +208,12 @@ class Game:
             # Enemy turn (only if player moved)
             if player_moved:
                 self.combat_manager.process_enemy_turns()
+
+                # Track turns for auto-save
+                self.turns_since_save += 1
+                if self.turns_since_save >= AUTO_SAVE_INTERVAL:
+                    self.save_manager.auto_save()
+                    self.add_message("Game saved.")
 
             # Check if player died
             if not self.player.is_alive():

@@ -59,6 +59,10 @@ class LevelManager:
 
         self.game.add_message("The air grows colder...")
 
+        # Auto-save on level transition
+        self.game.save_manager.auto_save()
+        self.game.add_message("Game saved.")
+
     def initialize_level(self, level: int = 1):
         """Initialize a new game level."""
         self.game.current_level = level
