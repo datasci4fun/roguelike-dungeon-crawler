@@ -16,11 +16,11 @@ from ..services.leaderboard_service import LeaderboardService
 router = APIRouter(prefix="/game", tags=["game"])
 
 
-async def get_user_from_token(token: str) -> Optional[int]:
-    """Extract user ID from JWT token."""
+async def get_user_from_token(token: str) -> Optional[tuple]:
+    """Extract user ID and username from JWT token."""
     token_data = decode_token(token)
     if token_data:
-        return token_data.user_id
+        return (token_data.user_id, token_data.username)
     return None
 
 
@@ -59,6 +59,7 @@ async def record_game_result(user_id: int, stats: dict) -> Optional[dict]:
                 game_duration_seconds=stats.get("game_duration_seconds", 0),
                 turns_taken=stats.get("turns_taken", 0),
                 started_at=stats.get("started_at"),
+                ghost_data=stats.get("ghost_data"),
             )
             return {
                 "game_id": result.id,
@@ -114,10 +115,11 @@ async def game_websocket(
     }
     """
     # Authenticate user from token
-    user_id = await get_user_from_token(token)
-    if not user_id:
+    user_info = await get_user_from_token(token)
+    if not user_info:
         await websocket.close(code=4001, reason="Invalid or expired token")
         return
+    user_id, username = user_info
 
     # Check if game engine is available
     if not GAME_ENGINE_AVAILABLE:
@@ -149,7 +151,7 @@ async def game_websocket(
 
                 if action == "new_game":
                     # Start a new game session
-                    session = await session_manager.create_session(user_id)
+                    session = await session_manager.create_session(user_id, username)
                     if session:
                         state = session_manager.serialize_game_state(session)
                         await websocket.send_json(state)

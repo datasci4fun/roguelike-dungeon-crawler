@@ -8,6 +8,7 @@ from .core.database import init_db, close_db
 from .api.auth import router as auth_router
 from .api.game import router as game_router
 from .api.leaderboard import router as leaderboard_router
+from .api.ghost import router as ghost_router
 
 
 @asynccontextmanager
@@ -49,6 +50,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router, prefix="/api")
     app.include_router(game_router, prefix="/api")
     app.include_router(leaderboard_router)
+    app.include_router(ghost_router)
 
     return app
 
