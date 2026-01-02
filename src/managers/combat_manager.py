@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from ..entities import attack, get_combat_message
 from ..core.constants import GameState, ELITE_XP_MULTIPLIER
+from ..core.events import EventType, EventQueue
 
 if TYPE_CHECKING:
     from ..core.game import Game
@@ -11,8 +12,9 @@ if TYPE_CHECKING:
 class CombatManager:
     """Orchestrates combat between entities."""
 
-    def __init__(self, game: 'Game'):
+    def __init__(self, game: 'Game', event_queue: EventQueue = None):
         self.game = game
+        self.events = event_queue
 
     def try_move_or_attack(self, dx: int, dy: int) -> bool:
         """
@@ -57,7 +59,6 @@ class CombatManager:
     def _player_attack_enemy(self, enemy):
         """Handle player attacking an enemy."""
         player = self.game.player
-        renderer = self.game.renderer
 
         # Show combat hint on first attack
         self.game.show_hint("first_combat")
@@ -73,15 +74,23 @@ class CombatManager:
         message = get_combat_message("You", enemy_name, damage, enemy_died)
         self.game.add_message(message)
 
-        # Combat feedback animations
-        renderer.add_direction_indicator(player.x, player.y, enemy.x, enemy.y)
-        renderer.add_damage_number(enemy.x, enemy.y, damage)
+        # Emit combat events (renderer will consume these)
+        if self.events:
+            self.events.emit_attack(player, enemy, damage, enemy_died)
+        else:
+            # Fallback to direct renderer calls if no event queue
+            renderer = self.game.renderer
+            renderer.add_direction_indicator(player.x, player.y, enemy.x, enemy.y)
+            renderer.add_damage_number(enemy.x, enemy.y, damage)
+            if enemy_died:
+                renderer.add_death_flash(enemy.x, enemy.y)
+            else:
+                renderer.add_hit_animation(enemy)
 
         if enemy_died:
             player.kills += 1
 
-            # Death animations
-            renderer.add_death_flash(enemy.x, enemy.y)
+            # Add blood stain to dungeon (world state change)
             self.game.dungeon.add_blood_stain(enemy.x, enemy.y)
 
             # Award XP (2x for elites) and check for level up
@@ -92,9 +101,6 @@ class CombatManager:
                 self.game.add_message(f"LEVEL UP! You are now level {player.level}!")
                 self.game.add_message(f"HP: {player.max_health}, ATK: {player.attack_damage}")
                 self.game.show_hint("first_level_up")
-        else:
-            # Hit animation for surviving enemy
-            renderer.add_hit_animation(enemy)
 
     def process_enemy_turns(self):
         """Process all enemy turns."""
@@ -126,7 +132,6 @@ class CombatManager:
     def _enemy_attack_player(self, enemy):
         """Handle an enemy attacking the player."""
         player = self.game.player
-        renderer = self.game.renderer
 
         damage, player_died = attack(enemy, player)
 
@@ -139,12 +144,16 @@ class CombatManager:
         self.game.last_attacker_name = enemy_name
         self.game.last_damage_taken = damage
 
-        # Combat feedback animations
-        renderer.add_direction_indicator(enemy.x, enemy.y, player.x, player.y)
-        renderer.add_damage_number(player.x, player.y, damage)
+        # Emit combat events (renderer will consume these)
+        if self.events:
+            self.events.emit_attack(enemy, player, damage, player_died)
+        else:
+            # Fallback to direct renderer calls if no event queue
+            renderer = self.game.renderer
+            renderer.add_direction_indicator(enemy.x, enemy.y, player.x, player.y)
+            renderer.add_damage_number(player.x, player.y, damage)
+            if not player_died:
+                renderer.add_hit_animation(player)
 
         if player_died:
             self.game.state = GameState.DEAD
-        else:
-            # Hit animation for surviving player
-            renderer.add_hit_animation(player)

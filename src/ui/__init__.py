@@ -1,5 +1,6 @@
 """UI modules - rendering and screens."""
 from .renderer import Renderer
+from .input_adapter import CursesInputAdapter
 from .screens import (
     render_game_over,
     render_victory_screen,
@@ -18,7 +19,7 @@ from .ui_utils import (
 )
 
 __all__ = [
-    'Renderer',
+    'Renderer', 'CursesInputAdapter',
     'render_game_over', 'render_victory_screen', 'render_inventory_screen',
     'render_character_screen', 'render_help_screen',
     'render_title_screen', 'render_intro_screen', 'render_reading_screen',

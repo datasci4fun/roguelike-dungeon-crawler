@@ -4,9 +4,10 @@ from typing import List
 
 from .constants import GameState, UIMode, AUTO_SAVE_INTERVAL
 from .messages import MessageLog, MessageCategory, MessageImportance
+from .events import EventType, EventQueue
 from ..world import Dungeon
 from ..entities import Player
-from ..ui import Renderer
+from ..ui import Renderer, CursesInputAdapter
 from ..ui.screens import (
     render_title_screen, render_intro_screen, render_reading_screen,
     render_dialog, render_message_log_screen, render_victory_screen
@@ -62,10 +63,16 @@ class Game:
         # Set up non-blocking input with timeout
         self.stdscr.timeout(100)
 
+        # Initialize event queue for decoupled communication
+        self.event_queue = EventQueue()
+
+        # Initialize input adapter for platform-agnostic input
+        self.input_adapter = CursesInputAdapter()
+
         # Initialize managers
         self.entity_manager = EntityManager()
         self.input_handler = InputHandler(self)
-        self.combat_manager = CombatManager(self)
+        self.combat_manager = CombatManager(self, event_queue=self.event_queue)
         self.level_manager = LevelManager(self)
         self.save_manager = SaveManager(self)
         self.story_manager = StoryManager()
@@ -145,28 +152,28 @@ class Game:
         render_title_screen(self.stdscr, has_save, use_unicode)
 
         key = self.stdscr.getch()
-        if key != -1:
-            action = self.input_handler.handle_title_input(key, has_save)
+        command = self.input_adapter.translate_title(key)
+        action = self.input_handler.handle_title_command(command, has_save)
 
-            if action == 'new_game':
-                self.intro_page = 0
-                self.state = GameState.INTRO
-            elif action == 'continue':
-                # Load saved game
-                if self.save_manager.load_game():
-                    self.state = GameState.PLAYING
-                else:
-                    self.add_message("Failed to load save!")
-                    self._initialize_new_game()
-                    self.state = GameState.PLAYING
-            elif action == 'help':
-                # Show help screen from title
-                self.renderer.render_help_screen()
-                self.stdscr.timeout(-1)  # Blocking for help
-                self.stdscr.getch()
-                self.stdscr.timeout(100)  # Restore timeout
-            elif action == 'quit':
-                self.state = GameState.QUIT
+        if action == 'new_game':
+            self.intro_page = 0
+            self.state = GameState.INTRO
+        elif action == 'continue':
+            # Load saved game
+            if self.save_manager.load_game():
+                self.state = GameState.PLAYING
+            else:
+                self.add_message("Failed to load save!")
+                self._initialize_new_game()
+                self.state = GameState.PLAYING
+        elif action == 'help':
+            # Show help screen from title
+            self.renderer.render_help_screen()
+            self.stdscr.timeout(-1)  # Blocking for help
+            self.stdscr.getch()
+            self.stdscr.timeout(100)  # Restore timeout
+        elif action == 'quit':
+            self.state = GameState.QUIT
 
     def _intro_loop(self):
         """Handle the intro/prologue screen."""
@@ -177,17 +184,52 @@ class Game:
         )
 
         key = self.stdscr.getch()
-        if key != -1:
-            new_page, should_skip = self.input_handler.handle_intro_input(
-                key, self.intro_page, self.intro_total_pages
-            )
+        command = self.input_adapter.translate_intro(key)
+        new_page, should_skip = self.input_handler.handle_intro_command(
+            command, self.intro_page, self.intro_total_pages
+        )
 
-            self.intro_page = new_page
+        self.intro_page = new_page
 
-            if should_skip:
-                # Start new game
-                self._initialize_new_game()
-                self.state = GameState.PLAYING
+        if should_skip:
+            # Start new game
+            self._initialize_new_game()
+            self.state = GameState.PLAYING
+
+    def _process_events(self):
+        """Process events from the event queue and dispatch to renderer."""
+        for event in self.event_queue.flush():
+            if event.type == EventType.HIT_FLASH:
+                entity = event.data.get('entity')
+                if entity:
+                    self.renderer.add_hit_animation(entity)
+
+            elif event.type == EventType.DAMAGE_NUMBER:
+                x = event.data.get('x')
+                y = event.data.get('y')
+                amount = event.data.get('amount', 0)
+                if x is not None and y is not None:
+                    self.renderer.add_damage_number(x, y, amount)
+
+            elif event.type == EventType.DIRECTION_ARROW:
+                from_x = event.data.get('from_x')
+                from_y = event.data.get('from_y')
+                to_x = event.data.get('to_x')
+                to_y = event.data.get('to_y')
+                if all(v is not None for v in [from_x, from_y, to_x, to_y]):
+                    self.renderer.add_direction_indicator(from_x, from_y, to_x, to_y)
+
+            elif event.type == EventType.DEATH_FLASH:
+                x = event.data.get('x')
+                y = event.data.get('y')
+                if x is not None and y is not None:
+                    self.renderer.add_death_flash(x, y)
+
+            elif event.type == EventType.BLOOD_STAIN:
+                x = event.data.get('x')
+                y = event.data.get('y')
+                if x is not None and y is not None and self.dungeon:
+                    self.dungeon.add_blood_stain(x, y)
 
     def _game_loop(self):
         """Main playing state loop."""
@@ -211,6 +253,9 @@ class Game:
             self._message_log_loop()
             return
 
+        # Process any pending events from previous tick
+        self._process_events()
+
         # Normal game rendering
         self.renderer.render(
             self.dungeon,
@@ -222,24 +267,27 @@ class Game:
 
         # Handle input
         key = self.stdscr.getch()
-        if key != -1:
-            player_moved = self.input_handler.handle_game_input(key)
+        command = self.input_adapter.translate_game(key)
+        player_moved = self.input_handler.handle_game_command(command)
 
-            # Enemy turn (only if player moved)
-            if player_moved:
-                self.combat_manager.process_enemy_turns()
+        # Enemy turn (only if player moved)
+        if player_moved:
+            self.combat_manager.process_enemy_turns()
 
-                # Track turns for auto-save
-                self.turns_since_save += 1
-                if self.turns_since_save >= AUTO_SAVE_INTERVAL:
-                    self.save_manager.auto_save()
-                    self.add_message("Game saved.")
+            # Track turns for auto-save
+            self.turns_since_save += 1
+            if self.turns_since_save >= AUTO_SAVE_INTERVAL:
+                self.save_manager.auto_save()
+                self.add_message("Game saved.")
 
-            # Check if player died
-            if not self.player.is_alive():
-                from ..data import delete_save
-                delete_save()
-                self.state = GameState.DEAD
+        # Process events generated this tick
+        self._process_events()
+
+        # Check if player died
+        if not self.player.is_alive():
+            from ..data import delete_save
+            delete_save()
+            self.state = GameState.DEAD
 
     def _inventory_loop(self):
         """Handle the full-screen inventory UI."""
@@ -250,21 +298,24 @@ class Game:
         )
 
         key = self.stdscr.getch()
-        self.input_handler.handle_inventory_input(key)
+        command = self.input_adapter.translate_inventory(key)
+        self.input_handler.handle_inventory_command(command)
 
     def _character_loop(self):
         """Handle the character stats screen UI."""
         self.renderer.render_character_screen(self.player, self.dungeon.level)
 
         key = self.stdscr.getch()
-        self.input_handler.handle_character_input(key)
+        command = self.input_adapter.translate_close_screen(key)
+        self.input_handler.handle_character_command(command)
 
     def _help_loop(self):
         """Handle the help screen UI."""
         self.renderer.render_help_screen()
 
         key = self.stdscr.getch()
-        self.input_handler.handle_help_input(key)
+        command = self.input_adapter.translate_close_screen(key)
+        self.input_handler.handle_help_command(command)
 
     def _reading_loop(self):
         """Handle the lore reading screen UI."""
@@ -277,7 +328,8 @@ class Game:
         )
 
         key = self.stdscr.getch()
-        self.input_handler.handle_reading_input(key)
+        command = self.input_adapter.translate_close_screen(key)
+        self.input_handler.handle_reading_command(command)
 
     def _dialog_loop(self):
         """Handle the confirmation dialog UI."""
@@ -301,7 +353,8 @@ class Game:
         )
 
         key = self.stdscr.getch()
-        result = self.input_handler.handle_dialog_input(key)
+        command = self.input_adapter.translate_dialog(key)
+        result = self.input_handler.handle_dialog_command(command)
 
         if result is not None and self.dialog_callback:
             self.dialog_callback(result)
@@ -331,7 +384,11 @@ class Game:
         )
 
         key = self.stdscr.getch()
-        self.input_handler.handle_message_log_input(key)
+        command = self.input_adapter.translate_message_log(key)
+        # Calculate visible lines for scrolling
+        max_y, _ = self.stdscr.getmaxyx()
+        visible_lines = max_y - 7
+        self.input_handler.handle_message_log_command(command, visible_lines)
 
     def _game_over_loop(self):
         """Game over state loop."""

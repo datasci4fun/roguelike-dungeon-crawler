@@ -1,6 +1,16 @@
 """Core game module - game loop and constants."""
 from .game import Game
 from .messages import GameMessage, MessageCategory, MessageImportance, MessageLog
+from .events import (
+    EventType, GameEvent, EventQueue,
+    get_event_queue, reset_event_queue
+)
+from .commands import (
+    Command, CommandType,
+    MOVEMENT_COMMANDS, ITEM_COMMANDS, UI_OPEN_COMMANDS,
+    INVENTORY_COMMANDS, SCROLL_COMMANDS,
+    get_movement_delta, get_item_index
+)
 from .constants import (
     TileType, GameState, UIMode, DungeonTheme, RoomType, EnemyType,
     ItemRarity, EquipmentSlot,
@@ -26,4 +36,8 @@ from .constants import (
     ITEM_RARITY_COLORS
 )
 
-__all__ = ['Game', 'TileType', 'GameState', 'UIMode', 'DungeonTheme', 'RoomType', 'EnemyType']
+__all__ = [
+    'Game', 'TileType', 'GameState', 'UIMode', 'DungeonTheme', 'RoomType', 'EnemyType',
+    'EventType', 'GameEvent', 'EventQueue', 'get_event_queue', 'reset_event_queue',
+    'Command', 'CommandType', 'get_movement_delta', 'get_item_index'
+]

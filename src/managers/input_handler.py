@@ -1,15 +1,19 @@
 """Input handling for game controls."""
-import curses
 from typing import TYPE_CHECKING, Tuple, Optional
 
 from ..core.constants import GameState, UIMode
+from ..core.commands import (
+    Command, CommandType,
+    MOVEMENT_COMMANDS, ITEM_COMMANDS,
+    get_movement_delta, get_item_index
+)
 
 if TYPE_CHECKING:
     from ..core.game import Game
 
 
 class InputHandler:
-    """Handles all keyboard input processing."""
+    """Handles all command processing (platform-agnostic)."""
 
     def __init__(self, game: 'Game'):
         self.game = game
@@ -17,48 +21,50 @@ class InputHandler:
         self._pending_drop_item = None
         self._pending_drop_index = None
 
-    def handle_game_input(self, key: int) -> bool:
+    def handle_game_command(self, command: Command) -> bool:
         """
-        Handle player input during normal gameplay.
+        Handle a command during normal gameplay.
+
+        Args:
+            command: The command to process
 
         Returns:
             True if the player took an action (moved or attacked), False otherwise
         """
-        # Movement keys
-        dx, dy = 0, 0
+        cmd_type = command.type
 
-        if key in (curses.KEY_UP, ord('w'), ord('W')):
-            dy = -1
-        elif key in (curses.KEY_DOWN, ord('s'), ord('S')):
-            dy = 1
-        elif key in (curses.KEY_LEFT, ord('a'), ord('A')):
-            dx = -1
-        elif key in (curses.KEY_RIGHT, ord('d'), ord('D')):
-            dx = 1
-        elif key in (ord('1'), ord('2'), ord('3')):
-            # Use item from inventory (quick slots)
-            item_index = int(chr(key)) - 1
-            return self.game.use_item(item_index)
-        elif key in (ord('i'), ord('I')):
-            # Open inventory screen
+        # Movement commands
+        if cmd_type in MOVEMENT_COMMANDS:
+            dx, dy = get_movement_delta(cmd_type)
+            return self.game.combat_manager.try_move_or_attack(dx, dy)
+
+        # Item use commands
+        if cmd_type in ITEM_COMMANDS:
+            item_index = get_item_index(cmd_type)
+            if item_index >= 0:
+                return self.game.use_item(item_index)
+            return False
+
+        # UI screen commands
+        if cmd_type == CommandType.OPEN_INVENTORY:
             self.game.ui_mode = UIMode.INVENTORY
             self.game.selected_item_index = 0
             return False
-        elif key in (ord('c'), ord('C')):
-            # Open character screen
+
+        if cmd_type == CommandType.OPEN_CHARACTER:
             self.game.ui_mode = UIMode.CHARACTER
             return False
-        elif key == ord('?'):
-            # Open help screen
+
+        if cmd_type == CommandType.OPEN_HELP:
             self.game.ui_mode = UIMode.HELP
             return False
-        elif key in (ord('m'), ord('M')):
-            # Open message log screen
+
+        if cmd_type == CommandType.OPEN_MESSAGE_LOG:
             self.game.message_log.reset_scroll()
             self.game.ui_mode = UIMode.MESSAGE_LOG
             return False
-        elif key in (ord('q'), ord('Q')):
-            # Show quit confirmation dialog
+
+        if cmd_type == CommandType.QUIT:
             self.game.show_dialog(
                 "Quit Game",
                 "Save and quit?",
@@ -66,101 +72,91 @@ class InputHandler:
             )
             return False
 
-        # Try to move if direction was selected
-        if dx != 0 or dy != 0:
-            return self.game.combat_manager.try_move_or_attack(dx, dy)
-
         return False
 
-    def handle_inventory_input(self, key: int):
-        """Handle input while in the inventory screen."""
-        if key == -1:
-            return
-
+    def handle_inventory_command(self, command: Command):
+        """Handle a command while in the inventory screen."""
+        cmd_type = command.type
         inventory = self.game.player.inventory
 
-        if key in (ord('i'), ord('I'), ord('q'), ord('Q'), 27):  # I, Q, or ESC to close
+        if cmd_type == CommandType.CLOSE_SCREEN:
             self.game.ui_mode = UIMode.GAME
-        elif key in (curses.KEY_UP, ord('w'), ord('W'), ord('k')):
-            # Move selection up
+
+        elif cmd_type == CommandType.INVENTORY_UP:
             if len(inventory.items) > 0:
                 self.game.selected_item_index = (self.game.selected_item_index - 1) % len(inventory.items)
-        elif key in (curses.KEY_DOWN, ord('s'), ord('S'), ord('j')):
-            # Move selection down
+
+        elif cmd_type == CommandType.INVENTORY_DOWN:
             if len(inventory.items) > 0:
                 self.game.selected_item_index = (self.game.selected_item_index + 1) % len(inventory.items)
-        elif key in (ord('u'), ord('U'), ord('\n'), curses.KEY_ENTER):
-            # Use/equip selected item
+
+        elif cmd_type == CommandType.INVENTORY_USE:
             self._use_or_equip_selected_item()
-        elif key in (ord('e'), ord('E')):
-            # Equip selected item (explicit equip key)
+
+        elif cmd_type == CommandType.INVENTORY_EQUIP:
             self._equip_selected_item()
-        elif key in (ord('d'), ord('D')):
-            # Drop selected item
+
+        elif cmd_type == CommandType.INVENTORY_DROP:
             self._drop_selected_item()
-        elif key in (ord('r'), ord('R')):
-            # Read selected item (if it's a lore item)
+
+        elif cmd_type == CommandType.INVENTORY_READ:
             self._read_selected_item()
 
-    def handle_character_input(self, key: int):
-        """Handle input while in the character screen."""
-        if key != -1:
+    def handle_character_command(self, command: Command):
+        """Handle a command while in the character screen."""
+        if command.type == CommandType.CLOSE_SCREEN:
             self.game.ui_mode = UIMode.GAME
 
-    def handle_help_input(self, key: int):
-        """Handle input while in the help screen."""
-        if key != -1:
+    def handle_help_command(self, command: Command):
+        """Handle a command while in the help screen."""
+        if command.type == CommandType.CLOSE_SCREEN:
             self.game.ui_mode = UIMode.GAME
 
-    def handle_reading_input(self, key: int):
-        """Handle input while in the reading screen."""
-        if key != -1:
+    def handle_reading_command(self, command: Command):
+        """Handle a command while in the reading screen."""
+        if command.type == CommandType.CLOSE_SCREEN:
             self.game.ui_mode = UIMode.GAME
 
-    def handle_dialog_input(self, key: int) -> bool:
+    def handle_dialog_command(self, command: Command) -> Optional[bool]:
         """
-        Handle input while a dialog is displayed.
+        Handle a command while a dialog is displayed.
 
         Returns:
-            True if confirmed (Y), False if cancelled (N/ESC)
+            True if confirmed, False if cancelled, None if no decision yet
         """
-        if key == -1:
-            return None  # No input yet
-
-        # Y for yes/confirm
-        if key in (ord('y'), ord('Y')):
+        if command.type == CommandType.CONFIRM:
             self.game.ui_mode = UIMode.GAME
             return True
 
-        # N or ESC for no/cancel
-        if key in (ord('n'), ord('N'), 27):
+        if command.type == CommandType.CANCEL:
             self.game.ui_mode = UIMode.GAME
             return False
 
-        return None  # Invalid key, keep dialog open
+        return None  # No valid response yet
 
-    def handle_message_log_input(self, key: int):
-        """Handle input while in the message log screen."""
-        if key == -1:
-            return
+    def handle_message_log_command(self, command: Command, visible_lines: int = 20):
+        """
+        Handle a command while in the message log screen.
 
-        max_y, _ = self.game.stdscr.getmaxyx()
-        visible_lines = max_y - 7  # Same calculation as renderer
+        Args:
+            command: The command to process
+            visible_lines: Number of visible lines for scrolling calculations
+        """
+        cmd_type = command.type
 
-        # Close on Q, ESC, or M
-        if key in (ord('q'), ord('Q'), ord('m'), ord('M'), 27):
+        if cmd_type == CommandType.CLOSE_SCREEN:
             self.game.ui_mode = UIMode.GAME
-        # Scroll up
-        elif key in (curses.KEY_UP, ord('k'), ord('K'), ord('w'), ord('W')):
+
+        elif cmd_type == CommandType.SCROLL_UP:
             self.game.message_log.scroll_up()
-        # Scroll down
-        elif key in (curses.KEY_DOWN, ord('j'), ord('J'), ord('s'), ord('S')):
+
+        elif cmd_type == CommandType.SCROLL_DOWN:
             self.game.message_log.scroll_down(visible_lines=visible_lines)
-        # Page up
-        elif key == curses.KEY_PPAGE:
+
+        elif cmd_type == CommandType.PAGE_UP:
             self.game.message_log.scroll_up(visible_lines)
-        # Page down
-        elif key == curses.KEY_NPAGE:
+
+        elif cmd_type == CommandType.PAGE_DOWN:
             self.game.message_log.scroll_down(visible_lines, visible_lines)
 
     def _use_or_equip_selected_item(self):
@@ -257,9 +253,13 @@ class InputHandler:
         self._pending_drop_item = None
         self._pending_drop_index = None
 
-    def handle_title_input(self, key: int, has_save: bool) -> Optional[str]:
+    def handle_title_command(self, command: Command, has_save: bool) -> Optional[str]:
         """
-        Handle input on the title screen.
+        Handle a command on the title screen.
+
+        Args:
+            command: The command to process
+            has_save: Whether a save file exists
 
         Returns:
             'new_game' - Start new game
@@ -268,45 +268,48 @@ class InputHandler:
             'quit' - Quit game
             None - No action
         """
-        if key == -1:
-            return None
+        cmd_type = command.type
 
-        if key in (ord('n'), ord('N')):
+        if cmd_type == CommandType.NEW_GAME:
             return 'new_game'
-        elif key in (ord('c'), ord('C')) and has_save:
+        elif cmd_type == CommandType.CONTINUE_GAME and has_save:
             return 'continue'
-        elif key in (ord('h'), ord('H')):
+        elif cmd_type == CommandType.OPEN_HELP:
             return 'help'
-        elif key in (ord('q'), ord('Q')):
+        elif cmd_type == CommandType.QUIT:
             return 'quit'
 
         return None
 
-    def handle_intro_input(self, key: int, current_page: int, total_pages: int) -> Tuple[int, bool]:
+    def handle_intro_command(self, command: Command, current_page: int, total_pages: int) -> Tuple[int, bool]:
         """
-        Handle input on the intro/prologue screen.
+        Handle a command on the intro/prologue screen.
+
+        Args:
+            command: The command to process
+            current_page: Current page number
+            total_pages: Total number of pages
 
         Returns:
             Tuple of (new_page, should_skip):
             - new_page: The page to display next
             - should_skip: True if player wants to skip intro entirely
         """
-        if key == -1:
-            return current_page, False
+        cmd_type = command.type
 
-        # ESC to skip
-        if key == 27:
+        # Skip on ESC
+        if cmd_type == CommandType.SKIP:
             return current_page, True
 
-        # Space or Enter to continue
-        if key in (ord(' '), ord('\n'), curses.KEY_ENTER):
+        # Continue on Space/Enter
+        if cmd_type == CommandType.MENU_SELECT:
             if current_page < total_pages - 1:
                 return current_page + 1, False
             else:
                 return current_page, True  # Last page, proceed to game
 
         # Any other key on last page proceeds
-        if current_page >= total_pages - 1:
+        if cmd_type == CommandType.ANY_KEY and current_page >= total_pages - 1:
             return current_page, True
 
         return current_page, False
