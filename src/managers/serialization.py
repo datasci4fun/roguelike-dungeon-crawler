@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, List
 from ..core.constants import TileType, EnemyType
 from ..world import Dungeon
 from ..entities import Player, Enemy
-from ..items import Item, ItemType, create_item
+from ..items import Item, ItemType, create_item, create_lore_item
 from ..data import save_game, load_game, delete_save
 
 if TYPE_CHECKING:
@@ -75,7 +75,7 @@ class SaveManager:
             self.game.messages = game_state['messages']
             self.game.player = self._deserialize_player(game_state['player'])
             self.game.entity_manager.enemies = [self._deserialize_enemy(e) for e in game_state['enemies']]
-            self.game.entity_manager.items = [self._deserialize_item(i) for i in game_state['items']]
+            self.game.entity_manager.items = [item for item in (self._deserialize_item(i) for i in game_state['items']) if item is not None]
             self.game.dungeon = self._deserialize_dungeon(game_state['dungeon'])
 
             # Update FOV after loading
@@ -124,8 +124,8 @@ class SaveManager:
         player.xp_to_next_level = data['xp_to_next_level']
         player.kills = data['kills']
 
-        # Restore inventory
-        player.inventory.items = [self._deserialize_item(item_data) for item_data in data['inventory']]
+        # Restore inventory (filter out None for items that couldn't be restored)
+        player.inventory.items = [item for item in (self._deserialize_item(item_data) for item_data in data['inventory']) if item is not None]
 
         # Restore equipped items
         if data.get('equipped_weapon'):
@@ -158,12 +158,29 @@ class SaveManager:
 
     def _serialize_item(self, item: Item) -> dict:
         """Serialize item to dictionary."""
+        # Check if this is a lore item (has lore_id attribute)
+        if hasattr(item, 'lore_id'):
+            return {
+                'x': item.x,
+                'y': item.y,
+                'item_type': item.item_type.name,
+                'lore_id': item.lore_id,
+                'name': item.name,
+                'symbol': item.symbol
+            }
+
         # Get the item type name by matching item name
         item_type_name = None
         for item_type in ItemType:
-            if item.name == create_item(item_type, 0, 0).name:
-                item_type_name = item_type.name
-                break
+            # Skip lore types as they can't be created without lore_id
+            if item_type in (ItemType.SCROLL_LORE, ItemType.BOOK_LORE):
+                continue
+            try:
+                if item.name == create_item(item_type, 0, 0).name:
+                    item_type_name = item_type.name
+                    break
+            except ValueError:
+                continue
 
         return {
             'x': item.x,
@@ -175,7 +192,24 @@ class SaveManager:
 
     def _deserialize_item(self, data: dict) -> Item:
         """Deserialize item from dictionary."""
-        item_type = ItemType[data['item_type']]
+        item_type_name = data.get('item_type')
+        if not item_type_name:
+            return None
+
+        try:
+            item_type = ItemType[item_type_name]
+        except KeyError:
+            return None
+
+        # Handle lore items specially - they need lore_id
+        if item_type in (ItemType.SCROLL_LORE, ItemType.BOOK_LORE):
+            lore_id = data.get('lore_id')
+            if lore_id:
+                return create_lore_item(lore_id, data['x'], data['y'])
+            else:
+                # Fallback: can't restore lore item without lore_id
+                return None
+
         return create_item(item_type, data['x'], data['y'])
 
     def _serialize_dungeon(self, dungeon: Dungeon) -> dict:
