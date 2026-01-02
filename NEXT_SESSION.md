@@ -249,34 +249,17 @@ CREATE TABLE chat_messages (
 
 ---
 
-## Questions to Decide Before Starting
+## Decisions Made
 
-1. **Architecture?**
-   - Web-based (most accessible)
-   - SSH server (most authentic)
-   - Hybrid (download client)
+| Question | Decision | Notes |
+|----------|----------|-------|
+| **Architecture** | Web-Based | Browser + xterm.js, FastAPI backend, most accessible |
+| **Ghost Behavior** | Random Mix | Ghosts randomly spawn as hostile, friendly, or gravestone |
+| **Hosting** | Self-Hosted | Run on own hardware, requires networking/dynamic DNS setup |
 
-2. **Ghost behavior?**
-   - Hostile enemies (attack player)
-   - Friendly NPCs (give hints/items)
-   - Gravestones only (loot + message)
-   - Mix (random behavior)
-
-3. **Chat scope?**
-   - Global only
-   - Per-dungeon-level channels
-   - Private messages
-   - All of the above
-
-4. **Hosting target?**
-   - Self-hosted VPS
-   - Cloud (AWS/GCP/DigitalOcean)
-   - Platform (Railway/Render/Fly.io)
-
-5. **Free or paid?**
-   - Completely free
-   - Cosmetics (name colors, titles)
-   - Premium features
+### Still To Decide
+- **Chat scope?** Global only, per-level channels, private messages, or all?
+- **Free or paid?** Completely free, cosmetics, or premium features?
 
 ---
 
