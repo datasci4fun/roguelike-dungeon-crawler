@@ -6,7 +6,9 @@ from .constants import GameState, UIMode
 from ..world import Dungeon
 from ..entities import Player
 from ..ui import Renderer
+from ..ui.screens import render_title_screen, render_intro_screen
 from ..items import Item, ItemType, ScrollTeleport
+from ..data import save_exists
 
 # Import managers
 from ..managers import (
@@ -20,7 +22,7 @@ class Game:
 
     def __init__(self, stdscr):
         self.stdscr = stdscr
-        self.state = GameState.PLAYING
+        self.state = GameState.TITLE
         self.ui_mode = UIMode.GAME
         self.renderer = Renderer(stdscr)
         self.messages: List[str] = []
@@ -28,6 +30,10 @@ class Game:
 
         # Inventory screen state
         self.selected_item_index = 0
+
+        # Title/intro screen state
+        self.intro_page = 0
+        self.intro_total_pages = 2  # Default, updated when intro renders
 
         # Set up non-blocking input with timeout
         self.stdscr.timeout(100)
@@ -39,8 +45,9 @@ class Game:
         self.level_manager = LevelManager(self)
         self.save_manager = SaveManager(self)
 
-        # Initialize game world
-        self._initialize_new_game()
+        # Game world initialized on new game or continue
+        self.dungeon = None
+        self.player = None
 
     def _initialize_new_game(self):
         """Set up a new game."""
@@ -70,10 +77,66 @@ class Game:
     def run(self):
         """Main game loop."""
         while self.state != GameState.QUIT:
-            if self.state == GameState.PLAYING:
+            if self.state == GameState.TITLE:
+                self._title_loop()
+            elif self.state == GameState.INTRO:
+                self._intro_loop()
+            elif self.state == GameState.PLAYING:
                 self._game_loop()
             elif self.state == GameState.DEAD:
                 self._game_over_loop()
+
+    def _title_loop(self):
+        """Handle the title screen."""
+        has_save = save_exists()
+        use_unicode = self.renderer.use_unicode
+
+        render_title_screen(self.stdscr, has_save, use_unicode)
+
+        key = self.stdscr.getch()
+        if key != -1:
+            action = self.input_handler.handle_title_input(key, has_save)
+
+            if action == 'new_game':
+                self.intro_page = 0
+                self.state = GameState.INTRO
+            elif action == 'continue':
+                # Load saved game
+                if self.save_manager.load_game():
+                    self.state = GameState.PLAYING
+                else:
+                    self.add_message("Failed to load save!")
+                    self._initialize_new_game()
+                    self.state = GameState.PLAYING
+            elif action == 'help':
+                # Show help screen from title
+                self.renderer.render_help_screen()
+                self.stdscr.timeout(-1)  # Blocking for help
+                self.stdscr.getch()
+                self.stdscr.timeout(100)  # Restore timeout
+            elif action == 'quit':
+                self.state = GameState.QUIT
+
+    def _intro_loop(self):
+        """Handle the intro/prologue screen."""
+        use_unicode = self.renderer.use_unicode
+
+        self.intro_total_pages = render_intro_screen(
+            self.stdscr, self.intro_page, use_unicode
+        )
+
+        key = self.stdscr.getch()
+        if key != -1:
+            new_page, should_skip = self.input_handler.handle_intro_input(
+                key, self.intro_page, self.intro_total_pages
+            )
+
+            self.intro_page = new_page
+
+            if should_skip:
+                # Start new game
+                self._initialize_new_game()
+                self.state = GameState.PLAYING
 
     def _game_loop(self):
         """Main playing state loop."""
@@ -142,7 +205,10 @@ class Game:
         self.renderer.render_game_over(self.player)
         self.stdscr.timeout(-1)  # Blocking input
         self.stdscr.getch()
-        self.state = GameState.QUIT
+        self.stdscr.timeout(100)  # Restore timeout
+        # Return to title screen instead of quitting
+        self.state = GameState.TITLE
+        self.messages.clear()  # Clear messages for new game
 
     def use_item(self, item_index: int) -> bool:
         """

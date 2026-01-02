@@ -139,3 +139,57 @@ class InputHandler:
         inventory = self.game.player.inventory
         if self.game.selected_item_index >= len(inventory.items):
             self.game.selected_item_index = max(0, len(inventory.items) - 1)
+
+    def handle_title_input(self, key: int, has_save: bool) -> Optional[str]:
+        """
+        Handle input on the title screen.
+
+        Returns:
+            'new_game' - Start new game
+            'continue' - Load saved game
+            'help' - Show help screen
+            'quit' - Quit game
+            None - No action
+        """
+        if key == -1:
+            return None
+
+        if key in (ord('n'), ord('N')):
+            return 'new_game'
+        elif key in (ord('c'), ord('C')) and has_save:
+            return 'continue'
+        elif key in (ord('h'), ord('H')):
+            return 'help'
+        elif key in (ord('q'), ord('Q')):
+            return 'quit'
+
+        return None
+
+    def handle_intro_input(self, key: int, current_page: int, total_pages: int) -> Tuple[int, bool]:
+        """
+        Handle input on the intro/prologue screen.
+
+        Returns:
+            Tuple of (new_page, should_skip):
+            - new_page: The page to display next
+            - should_skip: True if player wants to skip intro entirely
+        """
+        if key == -1:
+            return current_page, False
+
+        # ESC to skip
+        if key == 27:
+            return current_page, True
+
+        # Space or Enter to continue
+        if key in (ord(' '), ord('\n'), curses.KEY_ENTER):
+            if current_page < total_pages - 1:
+                return current_page + 1, False
+            else:
+                return current_page, True  # Last page, proceed to game
+
+        # Any other key on last page proceeds
+        if current_page >= total_pages - 1:
+            return current_page, True
+
+        return current_page, False

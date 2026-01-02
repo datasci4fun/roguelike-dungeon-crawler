@@ -13,6 +13,8 @@ class TileType(Enum):
 
 class GameState(Enum):
     """Possible game states."""
+    TITLE = auto()      # Title screen
+    INTRO = auto()      # Story intro/prologue
     PLAYING = auto()
     DEAD = auto()
     QUIT = auto()
@@ -24,6 +26,7 @@ class UIMode(Enum):
     INVENTORY = auto()  # Full-screen inventory
     CHARACTER = auto()  # Character stats screen
     HELP = auto()       # Help screen
+    TITLE_MENU = auto() # Title screen menu
 
 
 class DungeonTheme(Enum):
