@@ -2,13 +2,39 @@
 
 **Last Updated:** 2026-01-02
 **Branch:** master
-**Version:** v2.2.1 (Bug Fixes)
+**Version:** v2.2.1 (Bug Fixes) + Engine Separation
 
 ---
 
 ## Current Status
 
-The roguelike dungeon crawler now features a complete **UX overhaul** with title screen, story system, confirmation dialogs, enhanced message log, auto-save, and tutorial hints.
+The roguelike dungeon crawler has undergone a major **architecture refactor** to prepare for v3.0.0 multiplayer support. The game engine is now fully decoupled from terminal rendering.
+
+### Engine/Renderer Separation (Complete)
+
+The codebase now has clean separation between game logic and rendering:
+
+**New Components:**
+- `src/core/events.py` - Event system for decoupled communication
+- `src/core/commands.py` - Platform-agnostic input commands
+- `src/core/engine.py` - Pure game engine (no curses dependencies)
+- `src/ui/input_adapter.py` - Curses key → Command translation
+
+**Architecture:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Terminal Client (Game)                    │
+│  curses.getch() → InputAdapter → Command → GameEngine      │
+│                                              ↓              │
+│                              EventQueue → Renderer (curses) │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Benefits:**
+- GameEngine can be used by web backend (FastAPI) for multiplayer
+- Easy to add new clients (web, mobile, tests)
+- Clean separation of concerns
+- Input/output fully abstracted
 
 ### Version History
 
@@ -215,13 +241,25 @@ python -m py_compile src/core/game.py src/ui/renderer.py src/story/story_data.py
 
 ---
 
-## What's Next (Future Enhancements)
+## What's Next
+
+### v3.0.0 - Online Multiplayer (Planned)
+
+The engine separation is complete. Next steps for multiplayer:
+
+1. **Phase 1: Docker + Backend** - FastAPI skeleton, PostgreSQL, Redis
+2. **Phase 2: Authentication** - JWT auth, user accounts
+3. **Phase 3: Web Game Client** - React + xterm.js terminal emulation
+4. **Phase 4: Leaderboards** - Global high scores
+5. **Phase 5: Ghost System** - Dead players appear in others' games
+6. **Phase 6: Real-Time Chat** - WebSocket chat
+
+See `NEXT_SESSION.md` for full v3.0.0 architecture plan.
+
+### Future Single-Player Enhancements
 
 - More enemy types (Necromancer, Demon)
 - More equipment variety
 - Boss encounters
-- Sound effects (if terminal supports)
 - Persistent levels (return to previous)
-- Score/leaderboard tracking
-- Configurable difficulty
 - Additional lore content
