@@ -8,6 +8,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v3.3.0 adds Spectator Mode!** Watch other players' live games in real-time, plus new boss achievements and legendary items.
 
+**v3.4.0 adds Mobile Support!** Play on your phone with touch controls, responsive layout, and installable PWA.
+
 ## Features
 
 ### Core Gameplay
@@ -114,6 +116,15 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Dragon Slayer** (Weapon): +8 ATK, dropped by Dragon Emperor
 - **Dragon Scale Armor** (Armor): +8 DEF, dropped by Dragon Emperor
 
+### Mobile Support (v3.4.0)
+- **Touch Controls**: D-pad for movement, action buttons for inventory/items/stairs
+- **Adaptive Layout**: Supports both portrait and landscape orientations
+- **UI Mode Awareness**: Controls adapt to current screen (game, inventory, dialog, message log)
+- **Mobile Chat**: Hidden by default with floating toggle button and unread badge
+- **PWA Installable**: Add to home screen for app-like experience on iOS and Android
+- **Service Worker**: Caches static assets for faster loading
+- **Responsive Design**: Optimized for touch devices with `pointer: coarse` media queries
+
 ## Installation
 
 ### Terminal Client (Single Player)
@@ -189,6 +200,16 @@ Same controls work in the web terminal. Additional:
 - **← / →**: Step backward/forward
 - **Home / End**: Jump to start/end
 - **Esc**: Close viewer
+
+### Mobile Touch Controls (v3.4.0)
+On touch devices, an on-screen control overlay appears:
+- **D-Pad** (left side): Tap arrows to move in 4 directions
+- **Action Buttons** (right side):
+  - **I**: Open inventory
+  - **>**: Descend stairs
+  - **1/2/3**: Quick-use items
+  - **Q**: Quit/menu
+- Controls automatically adapt based on current screen (inventory shows Use/Drop/Read/Close buttons, dialogs show Yes/No)
 
 ### Gameplay
 
@@ -312,10 +333,14 @@ server/                 # Multiplayer backend (v3.0.0+)
 └── requirements.txt
 
 web/                    # Web frontend (v3.0.0+)
-├── index.html
+├── index.html          # PWA meta tags (v3.4.0)
 ├── package.json
 ├── vite.config.ts
 ├── tsconfig.json
+├── public/
+│   ├── manifest.json   # PWA manifest (v3.4.0)
+│   ├── icon.svg        # App icon (v3.4.0)
+│   └── sw.js           # Service worker (v3.4.0)
 └── src/
     ├── main.tsx              # App entry point
     ├── App.tsx               # Router setup
@@ -323,6 +348,7 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── Layout.tsx        # Page layout with nav
     │   ├── GameTerminal.tsx  # xterm.js game renderer
     │   ├── ChatPanel.tsx     # Real-time chat
+    │   ├── TouchControls.tsx # Mobile touch controls (v3.4.0)
     │   └── GhostReplayViewer.tsx  # Replay viewer
     ├── contexts/
     │   └── AuthContext.tsx   # JWT auth state
@@ -333,7 +359,7 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── Home.tsx
     │   ├── Login.tsx
     │   ├── Register.tsx
-    │   ├── Play.tsx          # Game + Chat page
+    │   ├── Play.tsx          # Game + Chat page (mobile layout v3.4.0)
     │   ├── Leaderboard.tsx
     │   ├── Ghosts.tsx        # Ghost list + viewer
     │   ├── Profile.tsx       # Player profiles (v3.1.0)
