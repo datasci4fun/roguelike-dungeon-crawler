@@ -69,6 +69,18 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Leaderboard Pages**: Browse rankings, player stats, and game history
 - **JWT Authentication**: Secure login/register with token management
 
+### Player Profiles & Achievements (v3.1.0)
+- **Player Profiles**: View stats (games played, wins, kills, score), recent games, achievement showcase
+- **Public Profiles**: View other players' profiles by clicking usernames
+- **Achievement System**: 20 achievements across 5 categories
+  - **Combat**: First Blood, Monster Slayer, Dragon Slayer, Overkill, Elite Hunter
+  - **Progression**: First Victory, Champion, Deep Delver, Max Level, Dedicated
+  - **Efficiency**: Speedrunner, Untouchable (Legendary!), No Potions, Flawless Level
+  - **Collection**: Collector, Potion Master, Hoarder
+  - **Special**: Welcome, Comeback, High Roller
+- **Rarity Tiers**: Common, Rare, Epic, Legendary with point values
+- **Achievement Browser**: Filter by category, track progress, view unlock dates
+
 ## Installation
 
 ### Terminal Client (Single Player)
@@ -225,14 +237,18 @@ src/                    # Game client
 └── data/               # Persistence
     └── save_load.py
 
-server/                 # Multiplayer backend (v3.0.0)
+server/                 # Multiplayer backend (v3.0.0+)
 ├── app/
 │   ├── api/            # REST & WebSocket endpoints
 │   │   ├── auth.py     # Authentication
 │   │   ├── game.py     # Game WebSocket
 │   │   ├── leaderboard.py
 │   │   ├── ghost.py    # Ghost replays
-│   │   └── chat.py     # Real-time chat
+│   │   ├── chat.py     # Real-time chat
+│   │   ├── profile.py  # Player profiles (v3.1.0)
+│   │   └── achievements.py  # Achievements (v3.1.0)
+│   ├── config/         # Configuration (v3.1.0)
+│   │   └── achievements.py  # Achievement definitions
 │   ├── core/           # Core utilities
 │   │   ├── config.py   # Settings
 │   │   ├── database.py # SQLAlchemy
@@ -241,8 +257,11 @@ server/                 # Multiplayer backend (v3.0.0)
 │   ├── models/         # Database models
 │   │   ├── user.py
 │   │   ├── game_result.py
-│   │   └── chat_message.py
+│   │   ├── chat_message.py
+│   │   └── user_achievement.py  # (v3.1.0)
 │   ├── schemas/        # Pydantic schemas
+│   │   ├── achievement.py  # (v3.1.0)
+│   │   └── profile.py      # (v3.1.0)
 │   └── services/       # Business logic
 │       ├── auth_service.py
 │       ├── game_session.py
@@ -250,11 +269,14 @@ server/                 # Multiplayer backend (v3.0.0)
 │       ├── ghost_recorder.py
 │       ├── ghost_service.py
 │       ├── chat_service.py
-│       └── chat_manager.py
+│       ├── chat_manager.py
+│       ├── achievement_service.py  # (v3.1.0)
+│       └── profile_service.py      # (v3.1.0)
+├── alembic/            # Database migrations (v3.1.0)
 ├── Dockerfile
 └── requirements.txt
 
-web/                    # Web frontend (v3.0.0)
+web/                    # Web frontend (v3.0.0+)
 ├── index.html
 ├── package.json
 ├── vite.config.ts
@@ -278,7 +300,9 @@ web/                    # Web frontend (v3.0.0)
     │   ├── Register.tsx
     │   ├── Play.tsx          # Game + Chat page
     │   ├── Leaderboard.tsx
-    │   └── Ghosts.tsx        # Ghost list + viewer
+    │   ├── Ghosts.tsx        # Ghost list + viewer
+    │   ├── Profile.tsx       # Player profiles (v3.1.0)
+    │   └── Achievements.tsx  # Achievement browser (v3.1.0)
     ├── services/
     │   └── api.ts            # REST + WebSocket client
     └── types/

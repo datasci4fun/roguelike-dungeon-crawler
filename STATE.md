@@ -1,14 +1,33 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-02
-**Branch:** develop
-**Version:** v3.0.0 (Full Stack Complete)
+**Branch:** feature/player-profiles-achievements
+**Version:** v3.1.0 (Player Profiles & Achievements)
 
 ---
 
 ## Current Status
 
 The roguelike dungeon crawler now has a **complete multiplayer stack**: backend server with WebSocket game sessions, real-time chat, leaderboards, and ghost replays, plus a **full React web frontend** with xterm.js game terminal.
+
+**v3.1.0 adds Player Profiles and an Achievements system** with 20 achievements across 5 categories (combat, progression, efficiency, collection, special) and 4 rarity tiers.
+
+### v3.1.0 Player Profiles & Achievements (In Progress)
+
+| Component | Status |
+|-----------|--------|
+| UserAchievement database model | ✅ Done |
+| Achievement definitions (20 achievements) | ✅ Done |
+| Alembic migration infrastructure | ✅ Done |
+| Achievement service (check & award) | ✅ Done |
+| Profile service (stats aggregation) | ✅ Done |
+| Achievements API endpoints | ✅ Done |
+| Profile API endpoints | ✅ Done |
+| Frontend types & API client | ✅ Done |
+| Profile page (stats, games, achievements) | ✅ Done |
+| Achievements page (categories, filtering) | ✅ Done |
+| Achievement toast notifications | ⏳ Pending |
+| Integration testing | ⏳ Pending |
 
 ### v3.0.0 Web Frontend (Complete)
 
@@ -74,6 +93,69 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 │         PostgreSQL (users, games, chat) + Redis (sessions)       │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## What Changed (v3.1.0)
+
+### Achievement System
+- `server/app/config/achievements.py` - 20 achievement definitions
+  - Categories: combat, progression, efficiency, collection, special
+  - Rarities: common (5), rare (9), epic (5), legendary (1)
+  - Point values: common=10, rare=25, epic=50, legendary=100
+- `server/app/models/user_achievement.py` - UserAchievement model
+- `server/app/services/achievement_service.py` - Achievement checking & awarding
+- `server/app/schemas/achievement.py` - Pydantic schemas
+- `server/app/api/achievements.py` - REST endpoints
+
+### Profile System
+- `server/app/services/profile_service.py` - Profile stats aggregation
+- `server/app/schemas/profile.py` - Profile response schemas
+- `server/app/api/profile.py` - Profile REST endpoints
+
+### Alembic Migrations
+- `server/alembic/` - Migration infrastructure
+- Initial migration for user_achievements table
+
+### Frontend Pages
+- `web/src/pages/Profile.tsx` - User profile page
+  - Stats grid (games, wins, kills, score)
+  - Achievement showcase (top 3 unlocked)
+  - Recent game history
+  - Routes: `/profile` and `/profile/:userId`
+- `web/src/pages/Achievements.tsx` - Achievement browser
+  - Category filter tabs
+  - Rarity-colored cards
+  - Progress stats (unlocked, points, percentage)
+  - Locked/unlocked display
+
+### API Client Updates
+- `web/src/services/api.ts` - Added profileApi and achievementsApi
+- `web/src/types/index.ts` - Added achievement and profile types
+
+### Achievement List (20 total)
+| Category | Achievement | Rarity |
+|----------|-------------|--------|
+| Combat | First Blood (kill first enemy) | Common |
+| Combat | Monster Slayer (100 kills) | Rare |
+| Combat | Dragon Slayer (kill dragon) | Epic |
+| Combat | Overkill (500+ damage/run) | Rare |
+| Combat | Elite Hunter (10 elites) | Rare |
+| Progression | First Victory (win game) | Rare |
+| Progression | Champion (10 wins) | Epic |
+| Progression | Deep Delver (reach level 5) | Rare |
+| Progression | Max Level (player level 10) | Rare |
+| Progression | Dedicated (50 games) | Rare |
+| Efficiency | Speedrunner (<500 turns win) | Epic |
+| Efficiency | Untouchable (no damage win) | Legendary |
+| Efficiency | No Potions (win w/o potions) | Epic |
+| Efficiency | Flawless Level (clear undamaged) | Rare |
+| Collection | Collector (50 items/run) | Rare |
+| Collection | Potion Master (50 potions) | Rare |
+| Collection | Hoarder (500 items total) | Epic |
+| Special | Welcome (play first game) | Common |
+| Special | Comeback (win <10% HP) | Epic |
+| Special | High Roller (50k+ score) | Epic |
 
 ---
 
@@ -269,10 +351,16 @@ npm run build
 - **v2.2.1** - Bug fixes for lore items and victory screen
 - **v3.0.0-backend** - Complete multiplayer backend (6 phases)
 - **v3.0.0** - Full stack with React web frontend
+- **v3.1.0** - Player profiles & achievements system (in progress)
 
 ---
 
 ## What's Next
+
+### v3.1.0 Remaining Tasks
+- Achievement toast notifications on game end
+- Integration testing with running server
+- Database migration testing
 
 ### Future Enhancements
 
@@ -280,13 +368,13 @@ npm run build
 - More enemy types (Necromancer, Demon)
 - Boss encounters
 - More equipment variety
-- Achievements system
+- More achievements (unlock tiers, seasonal)
 
 **Multiplayer:**
 - Spectator mode
 - Guilds/clans
 - Tournaments
-- Player profiles
+- Player search/friends
 
 **Polish:**
 - Mobile responsiveness improvements
