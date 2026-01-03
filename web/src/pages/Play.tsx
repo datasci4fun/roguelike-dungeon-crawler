@@ -5,6 +5,7 @@ import { useGameSocket } from '../hooks/useGameSocket';
 import { useChatSocket } from '../hooks/useChatSocket';
 import { GameTerminal } from '../components/GameTerminal';
 import { ChatPanel } from '../components/ChatPanel';
+import { AchievementToast } from '../components/AchievementToast';
 import './Play.css';
 
 export function Play() {
@@ -17,11 +18,13 @@ export function Play() {
     status: gameStatus,
     gameState,
     error: gameError,
+    newAchievements,
     connect: connectGame,
     disconnect: disconnectGame,
     sendCommand,
     newGame,
     quit,
+    clearAchievements,
   } = useGameSocket(token);
 
   // Chat WebSocket
@@ -154,6 +157,14 @@ export function Play() {
           />
         </div>
       </div>
+
+      {/* Achievement Toast */}
+      {newAchievements.length > 0 && (
+        <AchievementToast
+          achievements={newAchievements}
+          onDismiss={clearAchievements}
+        />
+      )}
     </div>
   );
 }

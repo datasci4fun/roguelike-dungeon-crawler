@@ -1,0 +1,236 @@
+.achievement-toast-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.achievement-toast {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.4s ease;
+  cursor: pointer;
+}
+
+.achievement-toast.exiting {
+  animation: slideOut 0.3s ease forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+}
+
+/* Rarity-based border colors */
+.achievement-toast.common {
+  border: 2px solid #9ca3af;
+}
+
+.achievement-toast.rare {
+  border: 2px solid #3b82f6;
+}
+
+.achievement-toast.epic {
+  border: 2px solid #a855f7;
+}
+
+.achievement-toast.legendary {
+  border: 2px solid #f59e0b;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d1f0f 100%);
+  box-shadow: 0 8px 32px rgba(245, 158, 11, 0.3);
+}
+
+/* Header */
+.toast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.toast-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #4ade80;
+}
+
+.toast-counter {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* Content */
+.toast-content {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.toast-icon {
+  font-size: 3rem;
+  width: 72px;
+  height: 72px;
+  min-width: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 2px solid #333;
+}
+
+.achievement-toast.common .toast-icon {
+  border-color: #9ca3af;
+}
+
+.achievement-toast.rare .toast-icon {
+  border-color: #3b82f6;
+}
+
+.achievement-toast.epic .toast-icon {
+  border-color: #a855f7;
+}
+
+.achievement-toast.legendary .toast-icon {
+  border-color: #f59e0b;
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.8);
+  }
+}
+
+.toast-info {
+  flex: 1;
+}
+
+.toast-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  color: #fff;
+}
+
+.toast-description {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin: 0 0 0.75rem;
+  line-height: 1.4;
+}
+
+.toast-meta {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.toast-rarity {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.toast-rarity.common {
+  color: #9ca3af;
+}
+
+.toast-rarity.rare {
+  color: #3b82f6;
+}
+
+.toast-rarity.epic {
+  color: #a855f7;
+}
+
+.toast-rarity.legendary {
+  color: #f59e0b;
+}
+
+.toast-points {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4ade80;
+}
+
+/* Footer */
+.toast-footer {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #333;
+  text-align: center;
+}
+
+.toast-hint {
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .achievement-toast {
+    padding: 1rem;
+  }
+
+  .toast-icon {
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+  }
+
+  .toast-name {
+    font-size: 1.1rem;
+  }
+
+  .toast-description {
+    font-size: 0.85rem;
+  }
+}

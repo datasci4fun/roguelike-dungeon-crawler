@@ -1,6 +1,6 @@
 """Game WebSocket API endpoint."""
 import json
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
 from jose import JWTError
@@ -11,6 +11,7 @@ from ..core.database import AsyncSessionLocal
 from ..core.websocket import manager
 from ..services.game_session import session_manager, GAME_ENGINE_AVAILABLE
 from ..services.leaderboard_service import LeaderboardService
+from ..config.achievements import ACHIEVEMENTS
 
 
 router = APIRouter(prefix="/game", tags=["game"])
@@ -26,14 +27,14 @@ async def get_user_from_token(token: str) -> Optional[tuple]:
 
 async def record_game_result(user_id: int, stats: dict) -> Optional[dict]:
     """
-    Record a completed game result to the leaderboard.
+    Record a completed game result to the leaderboard and check for achievements.
 
     Args:
         user_id: The user's ID
         stats: Game stats from end_session
 
     Returns:
-        The recorded result data, or None if recording failed
+        The recorded result data with new achievements, or None if recording failed
     """
     if not stats:
         return None
@@ -41,7 +42,7 @@ async def record_game_result(user_id: int, stats: dict) -> Optional[dict]:
     try:
         async with AsyncSessionLocal() as db:
             service = LeaderboardService(db)
-            result = await service.record_game_result(
+            result, new_achievement_ids = await service.record_game_result_with_achievements(
                 user_id=user_id,
                 victory=stats.get("victory", False),
                 level_reached=stats.get("level_reached", 1),
@@ -61,10 +62,26 @@ async def record_game_result(user_id: int, stats: dict) -> Optional[dict]:
                 started_at=stats.get("started_at"),
                 ghost_data=stats.get("ghost_data"),
             )
+
+            # Build achievement details for new unlocks
+            new_achievements = []
+            for ach_id in new_achievement_ids:
+                ach_def = ACHIEVEMENTS.get(ach_id)
+                if ach_def:
+                    new_achievements.append({
+                        "id": ach_def.id,
+                        "name": ach_def.name,
+                        "description": ach_def.description,
+                        "icon": ach_def.icon,
+                        "rarity": ach_def.rarity,
+                        "points": ach_def.points,
+                    })
+
             return {
                 "game_id": result.id,
                 "score": result.score,
                 "victory": result.victory,
+                "new_achievements": new_achievements,
             }
     except Exception as e:
         print(f"Error recording game result: {e}")

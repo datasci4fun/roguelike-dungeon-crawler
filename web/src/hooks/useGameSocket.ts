@@ -55,6 +55,15 @@ export interface GameEvent {
   data: Record<string, unknown>;
 }
 
+export interface NewAchievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  points: number;
+}
+
 export interface FullGameState {
   type: 'game_state';
   session_id: string;
@@ -83,11 +92,13 @@ export interface UseGameSocketResult {
   status: ConnectionStatus;
   gameState: FullGameState | null;
   error: string | null;
+  newAchievements: NewAchievement[];
   connect: () => void;
   disconnect: () => void;
   sendCommand: (command: string) => void;
   newGame: () => void;
   quit: () => void;
+  clearAchievements: () => void;
 }
 
 export function useGameSocket(token: string | null): UseGameSocketResult {
@@ -95,6 +106,7 @@ export function useGameSocket(token: string | null): UseGameSocketResult {
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [gameState, setGameState] = useState<FullGameState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [newAchievements, setNewAchievements] = useState<NewAchievement[]>([]);
 
   const connect = useCallback(() => {
     if (!token || wsRef.current?.readyState === WebSocket.OPEN) {
@@ -125,6 +137,10 @@ export function useGameSocket(token: string | null): UseGameSocketResult {
         } else if (data.type === 'game_ended') {
           setGameState(null);
           console.log('Game ended:', data.stats);
+          // Check for new achievements
+          if (data.recorded?.new_achievements?.length > 0) {
+            setNewAchievements(data.recorded.new_achievements);
+          }
         } else if (data.type === 'pong') {
           // Keep-alive response
         }
@@ -179,6 +195,10 @@ export function useGameSocket(token: string | null): UseGameSocketResult {
     }
   }, []);
 
+  const clearAchievements = useCallback(() => {
+    setNewAchievements([]);
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -192,10 +212,12 @@ export function useGameSocket(token: string | null): UseGameSocketResult {
     status,
     gameState,
     error,
+    newAchievements,
     connect,
     disconnect,
     sendCommand,
     newGame,
     quit,
+    clearAchievements,
   };
 }
