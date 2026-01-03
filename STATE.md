@@ -1,12 +1,107 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-03
-**Branch:** master
-**Version:** v3.5.0 (Friends & Social) - Released
+**Branch:** feature/v4.0-expanded-gameplay
+**Version:** v4.0.0 (Expanded Gameplay) - In Progress
 
 ---
 
 ## Current Status
+
+**v4.0.0 adds Expanded Gameplay** with new enemy types, dungeon mechanics, status effects, and new equipment.
+
+### v4.0.0 Expanded Gameplay (In Progress)
+
+| Phase | Feature | Status |
+|-------|---------|--------|
+| 1 | Core infrastructure (new enums, stats) | ✅ Done |
+| 2 | Status effects system | ✅ Done |
+| 3 | New enemy types with AI behaviors | ✅ Done |
+| 4 | Traps and hazards | ✅ Done |
+| 5 | New item types | ✅ Done |
+| 6 | Combat integration | ✅ Done |
+| 7 | Dungeon integration | ✅ Done |
+| 8 | UI updates | ✅ Done |
+| 9 | Balance and testing | ⏳ In Progress |
+| 10 | Release | ⏳ Pending |
+
+### New Enemy Types (6)
+
+| Enemy | HP | ATK | DEF | XP | Min Level | AI Type | Abilities |
+|-------|-----|-----|-----|-----|-----------|---------|-----------|
+| Necromancer | 25 | 8 | 3 | 40 | 3 | Ranged Kite | raise_skeleton, dark_bolt |
+| Demon | 45 | 16 | 6 | 60 | 4 | Aggressive | fire_strike |
+| Assassin | 20 | 14 | 2 | 35 | 2 | Stealth | backstab, vanish |
+| Fire Elemental | 30 | 12 | 4 | 45 | 3 | Elemental | fire_bolt |
+| Ice Elemental | 30 | 10 | 5 | 45 | 3 | Elemental | ice_shard |
+| Lightning Elemental | 25 | 14 | 3 | 50 | 4 | Elemental | chain_lightning |
+
+### Status Effects
+
+| Effect | Damage | Duration | Stacking |
+|--------|--------|----------|----------|
+| Poison | 2/turn | 5 turns | Intensity (max 3x) |
+| Burn | 3/turn | 3 turns | Refresh duration |
+| Freeze | 0 | 3 turns | No stack, -50% move |
+| Stun | 0 | 1 turn | No stack, skip turn |
+
+### Traps (4 types)
+
+| Trap | Damage | Effect | Cooldown |
+|------|--------|--------|----------|
+| Spike | 5-10 | None | 3 turns |
+| Fire | 3-6 | Burn | 5 turns |
+| Poison | 2-4 | Poison | 4 turns |
+| Arrow | 6-10 | None | 2 turns |
+
+### Environmental Hazards (4 types)
+
+| Hazard | Effect | Behavior |
+|--------|--------|----------|
+| Lava | 5 damage/turn + Burn | Static |
+| Ice | Causes sliding | Static |
+| Poison Gas | Poison effect | Spreads over time |
+| Deep Water | Slows movement, drowning risk | Static |
+
+### New Item Types
+
+| Type | Slot | Examples |
+|------|------|----------|
+| Shield | Off-hand | Wooden, Iron, Tower Shield |
+| Ring | Ring | Ring of Strength, Defense, Speed |
+| Amulet | Amulet | Amulet of Health, Resistance, Vision |
+| Ranged Weapon | Weapon | Shortbow, Longbow, Crossbow |
+| Throwable | Consumable | Throwing Knife, Bomb, Poison Vial |
+| Key | Consumable | Bronze, Silver, Gold Key |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| src/entities/status_effects.py | Status effect system |
+| src/entities/ai_behaviors.py | Enemy AI dispatch |
+| src/world/traps.py | Trap mechanics |
+| src/world/hazards.py | Environmental hazards |
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| src/core/constants.py | New enums, enemy stats, trap/hazard stats |
+| src/entities/entities.py | Entity status effects, enemy AI properties |
+| src/entities/abilities.py | 8 new abilities |
+| src/world/dungeon.py | Trap/hazard generation |
+| src/items/items.py | 6 new item classes |
+| src/managers/combat_manager.py | Shield blocking, status effects, AI |
+| src/managers/entity_manager.py | Level-filtered enemy spawning |
+| src/managers/level_manager.py | Trap/hazard generation on level change |
+| src/core/engine.py | Trap/hazard processing in game loop |
+| src/core/game.py | Pass traps/hazards to renderer |
+| src/ui/renderer.py | Trap/hazard/status effect rendering |
+
+---
+
+## Previous Releases
 
 The roguelike dungeon crawler now has a **complete multiplayer stack**: backend server with WebSocket game sessions, real-time chat, leaderboards, and ghost replays, plus a **full React web frontend** with xterm.js game terminal.
 
