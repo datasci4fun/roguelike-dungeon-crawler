@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-03
-**Branch:** feature/v3.5-friends-achievements
-**Version:** v3.5.0 (Friends & Social) - In Progress
+**Branch:** master
+**Version:** v3.5.0 (Friends & Social) - Released
 
 ---
 
@@ -20,7 +20,7 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 
 **v3.5.0 adds Friends & Social** with player search, friend requests, and 10 new achievements plus visual polish.
 
-### v3.5.0 Friends & Social (In Progress)
+### v3.5.0 Friends & Social (Complete)
 
 | Component | Status |
 |-----------|--------|
@@ -36,7 +36,7 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 | 10 new achievements | ✅ Done |
 | Terminal animation polish | ✅ Done |
 | Documentation updates | ✅ Done |
-| Git merge and tag | ⏳ Pending |
+| Git merge and tag | ✅ Done |
 
 ### New Achievements in v3.5.0
 
@@ -517,8 +517,8 @@ npm run build
 - ✅ v3.5.0 friends system implemented
 - ✅ 10 new achievements added
 - ✅ Visual animation polish added
-- ⏳ Merge to develop and master
-- ⏳ Tag v3.5.0 release
+- ✅ Merged to develop and master
+- ✅ Tagged v3.5.0 release
 
 ### Future Enhancements
 
