@@ -76,10 +76,11 @@ const TILE_COLORS: Record<string, string> = {
 
 interface GameTerminalProps {
   gameState: FullGameState | null;
-  onCommand: (command: string) => void;
-  onNewGame: () => void;
-  onQuit: () => void;
-  isConnected: boolean;
+  onCommand?: (command: string) => void;
+  onNewGame?: () => void;
+  onQuit?: () => void;
+  isConnected?: boolean;
+  isSpectator?: boolean;
 }
 
 export function GameTerminal({
@@ -87,7 +88,8 @@ export function GameTerminal({
   onCommand,
   onNewGame,
   onQuit,
-  isConnected,
+  isConnected = true,
+  isSpectator = false,
 }: GameTerminalProps) {
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
@@ -153,8 +155,8 @@ export function GameTerminal({
   // Handle keyboard input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't capture if terminal not focused or no game
-      if (!isConnected) return;
+      // Don't capture input if spectating, disconnected, or no game
+      if (isSpectator || !isConnected) return;
 
       // Prevent default for game keys
       const gameKeys = [
@@ -173,18 +175,18 @@ export function GameTerminal({
       const command = mapKeyToCommand(e.key, gameState?.ui_mode || 'GAME');
       if (command) {
         if (command === 'NEW_GAME') {
-          onNewGame();
+          onNewGame?.();
         } else if (command === 'QUIT' && !gameState) {
-          onQuit();
+          onQuit?.();
         } else {
-          onCommand(command);
+          onCommand?.(command);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isConnected, gameState?.ui_mode, onCommand, onNewGame, onQuit, gameState]);
+  }, [isConnected, isSpectator, gameState?.ui_mode, onCommand, onNewGame, onQuit, gameState]);
 
   // Render game state to terminal
   useEffect(() => {
@@ -198,11 +200,15 @@ export function GameTerminal({
     if (!isConnected) {
       renderDisconnected(terminal);
     } else if (!gameState) {
-      renderNoGame(terminal);
+      if (!isSpectator) {
+        renderNoGame(terminal);
+      } else {
+        terminal.writeln(`${COLORS.dim}  Connecting to game...${COLORS.reset}`);
+      }
     } else {
-      renderGameState(terminal, gameState);
+      renderGameState(terminal, gameState, isSpectator);
     }
-  }, [gameState, isConnected]);
+  }, [gameState, isConnected, isSpectator]);
 
   return <div ref={terminalRef} className="game-terminal" />;
 }
@@ -365,15 +371,15 @@ function renderNoGame(terminal: Terminal) {
   title.forEach((line) => terminal.writeln(line));
 }
 
-function renderGameState(terminal: Terminal, state: FullGameState) {
+function renderGameState(terminal: Terminal, state: FullGameState, isSpectator = false) {
   // Handle different game states
   if (state.game_state === 'DEAD') {
-    renderDeathScreen(terminal, state);
+    renderDeathScreen(terminal, state, isSpectator);
     return;
   }
 
   if (state.game_state === 'VICTORY') {
-    renderVictoryScreen(terminal, state);
+    renderVictoryScreen(terminal, state, isSpectator);
     return;
   }
 
@@ -389,10 +395,10 @@ function renderGameState(terminal: Terminal, state: FullGameState) {
   }
 
   // Default: render game view
-  renderGameView(terminal, state);
+  renderGameView(terminal, state, isSpectator);
 }
 
-function renderGameView(terminal: Terminal, state: FullGameState) {
+function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = false) {
   const { player, dungeon, enemies, items, messages } = state;
 
   if (!dungeon || !player) {
@@ -429,8 +435,10 @@ function renderGameView(terminal: Terminal, state: FullGameState) {
   });
 
   // Render header
+  const spectatorBadge = isSpectator ? `${COLORS.brightMagenta}[SPECTATING]${COLORS.reset} ` : '';
   terminal.writeln(
-    `${COLORS.brightYellow} Level ${dungeon.level}${COLORS.reset}` +
+    spectatorBadge +
+    `${COLORS.brightYellow}Level ${dungeon.level}${COLORS.reset}` +
     `  ${COLORS.green}HP: ${player.health}/${player.max_health}${COLORS.reset}` +
     `  ${COLORS.cyan}ATK: ${player.attack}${COLORS.reset}` +
     `  ${COLORS.blue}DEF: ${player.defense}${COLORS.reset}` +
@@ -503,14 +511,18 @@ function renderGameView(terminal: Terminal, state: FullGameState) {
 
   // Controls hint
   terminal.writeln('');
-  terminal.writeln(`${COLORS.dim} [I]nventory [C]haracter [M]essages [?]Help [Q]uit${COLORS.reset}`);
+  if (isSpectator) {
+    terminal.writeln(`${COLORS.dim} Spectating - watch the player explore the dungeon${COLORS.reset}`);
+  } else {
+    terminal.writeln(`${COLORS.dim} [I]nventory [C]haracter [M]essages [?]Help [Q]uit${COLORS.reset}`);
+  }
 }
 
-function renderDeathScreen(terminal: Terminal, state: FullGameState) {
+function renderDeathScreen(terminal: Terminal, state: FullGameState, isSpectator = false) {
   const { player } = state;
   terminal.writeln('');
   terminal.writeln(`${COLORS.brightRed}  ╔══════════════════════════════════════╗${COLORS.reset}`);
-  terminal.writeln(`${COLORS.brightRed}  ║${COLORS.reset}          ${COLORS.brightRed}YOU HAVE DIED${COLORS.reset}             ${COLORS.brightRed}║${COLORS.reset}`);
+  terminal.writeln(`${COLORS.brightRed}  ║${COLORS.reset}          ${COLORS.brightRed}${isSpectator ? 'PLAYER HAS DIED' : 'YOU HAVE DIED'}${COLORS.reset}           ${COLORS.brightRed}║${COLORS.reset}`);
   terminal.writeln(`${COLORS.brightRed}  ╚══════════════════════════════════════╝${COLORS.reset}`);
   terminal.writeln('');
   if (player) {
@@ -518,24 +530,32 @@ function renderDeathScreen(terminal: Terminal, state: FullGameState) {
     terminal.writeln(`  ${COLORS.white}Enemies slain: ${COLORS.red}${player.kills}${COLORS.reset}`);
   }
   terminal.writeln('');
-  terminal.writeln(`${COLORS.cyan}  Press ${COLORS.brightWhite}ENTER${COLORS.cyan} to play again${COLORS.reset}`);
+  if (isSpectator) {
+    terminal.writeln(`${COLORS.dim}  Game over - returning to spectate list...${COLORS.reset}`);
+  } else {
+    terminal.writeln(`${COLORS.cyan}  Press ${COLORS.brightWhite}ENTER${COLORS.cyan} to play again${COLORS.reset}`);
+  }
 }
 
-function renderVictoryScreen(terminal: Terminal, state: FullGameState) {
+function renderVictoryScreen(terminal: Terminal, state: FullGameState, isSpectator = false) {
   const { player } = state;
   terminal.writeln('');
   terminal.writeln(`${COLORS.brightYellow}  ╔══════════════════════════════════════╗${COLORS.reset}`);
   terminal.writeln(`${COLORS.brightYellow}  ║${COLORS.reset}          ${COLORS.brightGreen}VICTORY!${COLORS.reset}                   ${COLORS.brightYellow}║${COLORS.reset}`);
   terminal.writeln(`${COLORS.brightYellow}  ╚══════════════════════════════════════╝${COLORS.reset}`);
   terminal.writeln('');
-  terminal.writeln(`  ${COLORS.brightWhite}You have conquered the dungeon!${COLORS.reset}`);
+  terminal.writeln(`  ${COLORS.brightWhite}${isSpectator ? 'Player has conquered the dungeon!' : 'You have conquered the dungeon!'}${COLORS.reset}`);
   terminal.writeln('');
   if (player) {
     terminal.writeln(`  ${COLORS.white}Final Level: ${COLORS.yellow}${player.level}${COLORS.reset}`);
     terminal.writeln(`  ${COLORS.white}Total Kills: ${COLORS.red}${player.kills}${COLORS.reset}`);
   }
   terminal.writeln('');
-  terminal.writeln(`${COLORS.cyan}  Press ${COLORS.brightWhite}ENTER${COLORS.cyan} to play again${COLORS.reset}`);
+  if (isSpectator) {
+    terminal.writeln(`${COLORS.dim}  Congratulations to the player!${COLORS.reset}`);
+  } else {
+    terminal.writeln(`${COLORS.cyan}  Press ${COLORS.brightWhite}ENTER${COLORS.cyan} to play again${COLORS.reset}`);
+  }
 }
 
 function renderInventory(terminal: Terminal, state: FullGameState) {

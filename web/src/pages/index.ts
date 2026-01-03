@@ -6,3 +6,4 @@ export { Leaderboard } from './Leaderboard';
 export { Ghosts } from './Ghosts';
 export { Profile } from './Profile';
 export { Achievements } from './Achievements';
+export { Spectate } from './Spectate';
