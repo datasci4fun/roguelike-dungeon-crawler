@@ -26,7 +26,7 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 | Frontend types & API client | ✅ Done |
 | Profile page (stats, games, achievements) | ✅ Done |
 | Achievements page (categories, filtering) | ✅ Done |
-| Achievement toast notifications | ⏳ Pending |
+| Achievement toast notifications | ✅ Done |
 | Integration testing | ⏳ Pending |
 
 ### v3.0.0 Web Frontend (Complete)
@@ -358,7 +358,6 @@ npm run build
 ## What's Next
 
 ### v3.1.0 Remaining Tasks
-- Achievement toast notifications on game end
 - Integration testing with running server
 - Database migration testing
 
