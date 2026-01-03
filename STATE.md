@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-03
-**Branch:** feature/v4.0-expanded-gameplay
-**Version:** v4.0.0 (Expanded Gameplay) - In Progress
+**Branch:** master
+**Version:** v4.0.0 (Expanded Gameplay) - Released
 
 ---
 
@@ -10,7 +10,7 @@
 
 **v4.0.0 adds Expanded Gameplay** with new enemy types, dungeon mechanics, status effects, and new equipment.
 
-### v4.0.0 Expanded Gameplay (In Progress)
+### v4.0.0 Expanded Gameplay (Complete)
 
 | Phase | Feature | Status |
 |-------|---------|--------|
@@ -22,8 +22,8 @@
 | 6 | Combat integration | ✅ Done |
 | 7 | Dungeon integration | ✅ Done |
 | 8 | UI updates | ✅ Done |
-| 9 | Balance and testing | ⏳ In Progress |
-| 10 | Release | ⏳ Pending |
+| 9 | Balance and testing | ✅ Done |
+| 10 | Release | ✅ Done |
 
 ### New Enemy Types (6)
 
