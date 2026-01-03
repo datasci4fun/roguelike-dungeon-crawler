@@ -61,6 +61,15 @@ class EnemyType(Enum):
     DRAGON = auto()    # Boss-tier, very rare (symbol: 'D')
 
 
+class BossType(Enum):
+    """Boss types, one per dungeon level."""
+    GOBLIN_KING = auto()      # Level 1 - Stone Dungeon
+    CAVE_TROLL = auto()       # Level 2 - Cave
+    LICH_LORD = auto()        # Level 3 - Crypt
+    ARCANE_KEEPER = auto()    # Level 4 - Library
+    DRAGON_EMPEROR = auto()   # Level 5 - Treasury
+
+
 class ItemRarity(Enum):
     """Item rarity levels for color coding."""
     COMMON = auto()    # White
@@ -153,6 +162,81 @@ ENEMY_STATS = {
         'weight': 2,  # Very rare
     },
 }
+
+# Boss configuration
+BOSS_STATS = {
+    BossType.GOBLIN_KING: {
+        'symbol': 'K',
+        'name': 'Goblin King',
+        'hp': 50,
+        'damage': 5,
+        'xp': 200,
+        'level': 1,
+        'abilities': ['summon_goblins', 'war_cry'],
+        'description': 'A crowned goblin wielding a bloodied mace',
+    },
+    BossType.CAVE_TROLL: {
+        'symbol': 'T',
+        'name': 'Cave Troll',
+        'hp': 80,
+        'damage': 8,
+        'xp': 300,
+        'level': 2,
+        'abilities': ['ground_slam', 'regenerate'],
+        'description': 'A massive troll with stone-like skin',
+    },
+    BossType.LICH_LORD: {
+        'symbol': 'L',
+        'name': 'Lich Lord',
+        'hp': 70,
+        'damage': 10,
+        'xp': 400,
+        'level': 3,
+        'abilities': ['raise_dead', 'life_drain'],
+        'description': 'An ancient undead sorcerer crackling with dark energy',
+    },
+    BossType.ARCANE_KEEPER: {
+        'symbol': 'A',
+        'name': 'Arcane Keeper',
+        'hp': 60,
+        'damage': 12,
+        'xp': 500,
+        'level': 4,
+        'abilities': ['arcane_bolt', 'teleport'],
+        'description': 'A spectral guardian of forbidden knowledge',
+    },
+    BossType.DRAGON_EMPEROR: {
+        'symbol': 'E',
+        'name': 'Dragon Emperor',
+        'hp': 150,
+        'damage': 15,
+        'xp': 1000,
+        'level': 5,
+        'abilities': ['fire_breath', 'tail_sweep'],
+        'description': 'The ancient dragon lord guarding the ultimate treasure',
+    },
+}
+
+# Map dungeon levels to boss types
+LEVEL_BOSS_MAP = {
+    1: BossType.GOBLIN_KING,
+    2: BossType.CAVE_TROLL,
+    3: BossType.LICH_LORD,
+    4: BossType.ARCANE_KEEPER,
+    5: BossType.DRAGON_EMPEROR,
+}
+
+# Boss loot tables (guaranteed drops)
+BOSS_LOOT = {
+    BossType.GOBLIN_KING: ['iron_sword', 'chain_mail'],
+    BossType.CAVE_TROLL: ['battle_axe', 'strength_potion', 'strength_potion'],
+    BossType.LICH_LORD: ['plate_armor', 'health_potion', 'health_potion'],
+    BossType.ARCANE_KEEPER: ['teleport_scroll', 'teleport_scroll', 'strength_potion'],
+    BossType.DRAGON_EMPEROR: ['dragon_slayer', 'dragon_scale'],
+}
+
+# Boss chase range (larger than normal enemies)
+BOSS_CHASE_RANGE = 12
 
 # XP and Leveling configuration
 XP_PER_KILL = 15                # XP awarded per enemy kill

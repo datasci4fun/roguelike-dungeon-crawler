@@ -216,14 +216,134 @@ class Enemy(Entity):
         self.xp_reward = stats['xp']  # Base XP reward (elite multiplier applied at kill time)
         self.name = stats['name']  # Enemy name for messages
 
+        # Boss attributes (set by make_boss())
+        self.is_boss = False
+        self.boss_type = None
+        self.abilities = []
+        self.ability_cooldowns = {}
+        self.buff_turns = {}  # Active buffs with remaining turns
+        self.base_attack_damage = damage  # Store base for buff calculations
+        self.buffed_damage = None  # Damage when buffed
+
+    def make_boss(self, boss_type):
+        """Configure this enemy as a boss."""
+        from ..core.constants import BOSS_STATS
+
+        stats = BOSS_STATS[boss_type]
+        self.is_boss = True
+        self.boss_type = boss_type
+        self.symbol = stats['symbol']
+        self.name = stats['name']
+        self.max_health = stats['hp']
+        self.health = stats['hp']
+        self.attack_damage = stats['damage']
+        self.base_attack_damage = stats['damage']
+        self.xp_reward = stats['xp']
+        self.abilities = stats['abilities']
+        self.ability_cooldowns = {a: 0 for a in self.abilities}
+        self.is_elite = False  # Bosses aren't elite
+        self.enemy_type = None  # Bosses don't use enemy types
+
+    def process_boss_turn(self, player, dungeon, entity_manager):
+        """
+        Process boss turn with ability usage.
+
+        Returns:
+            Tuple of (used_ability, message, damage_dealt) or None if normal move
+        """
+        from .abilities import execute_ability, BOSS_ABILITIES
+
+        # Tick down cooldowns
+        for ability in list(self.ability_cooldowns.keys()):
+            if self.ability_cooldowns[ability] > 0:
+                self.ability_cooldowns[ability] -= 1
+
+        # Tick down buffs
+        expired_buffs = []
+        for buff, turns in list(self.buff_turns.items()):
+            self.buff_turns[buff] -= 1
+            if self.buff_turns[buff] <= 0:
+                expired_buffs.append(buff)
+
+        # Remove expired buffs
+        for buff in expired_buffs:
+            del self.buff_turns[buff]
+            if buff == 'war_cry':
+                self.buffed_damage = None  # Remove damage buff
+
+        # Try to use abilities
+        for ability_name in self.abilities:
+            if self._should_use_ability(ability_name, player):
+                success, message, damage = execute_ability(
+                    ability_name, self, player, dungeon, entity_manager
+                )
+                if success:
+                    # Set cooldown
+                    ability = BOSS_ABILITIES[ability_name]
+                    self.ability_cooldowns[ability_name] = ability.cooldown
+                    return (True, message, damage)
+
+        # No ability used, do normal move
+        return None
+
+    def _should_use_ability(self, ability_name: str, player) -> bool:
+        """Determine if boss should use an ability."""
+        from .abilities import BOSS_ABILITIES, AbilityType
+
+        # Check if ability is on cooldown
+        if self.ability_cooldowns.get(ability_name, 0) > 0:
+            return False
+
+        ability = BOSS_ABILITIES.get(ability_name)
+        if not ability:
+            return False
+
+        distance = self.distance_to(player.x, player.y)
+
+        # Regenerate only when low HP
+        if ability_name == 'regenerate':
+            return self.health < self.max_health // 2
+
+        # Summon abilities: use when player is close but not adjacent
+        if ability.ability_type == AbilityType.SUMMON:
+            return 2 <= distance <= 5
+
+        # Buff abilities: use when player is approaching
+        if ability.ability_type == AbilityType.BUFF:
+            return distance <= 4 and ability_name not in self.buff_turns
+
+        # Ranged/AOE abilities: use when in range
+        if ability.ability_type in (AbilityType.RANGED, AbilityType.AOE_ATTACK):
+            return distance <= ability.range + 1
+
+        # Teleport: use when low HP and player is close
+        if ability_name == 'teleport':
+            return self.health < self.max_health // 3 and distance <= 2
+
+        # Life drain: use when in range
+        if ability_name == 'life_drain':
+            return distance <= ability.range
+
+        return False
+
+    @property
+    def effective_damage(self) -> int:
+        """Get current attack damage including buffs."""
+        if self.buffed_damage is not None:
+            return self.buffed_damage
+        return self.attack_damage
+
     def get_move_toward_player(self, player_x: int, player_y: int, is_walkable_func) -> Tuple[int, int]:
         """
         Calculate a move toward the player using simple pathfinding.
         Returns (dx, dy) for the next move, or (0, 0) if no valid move.
         """
-        # Check if player is in chase range
+        from ..core.constants import BOSS_CHASE_RANGE
+
+        # Check if player is in chase range (bosses have larger range)
+        chase_range = BOSS_CHASE_RANGE if self.is_boss else ENEMY_CHASE_RANGE
         distance = self.distance_to(player_x, player_y)
-        if distance > ENEMY_CHASE_RANGE:
+        if distance > chase_range:
             return (0, 0)
 
         # Try to move toward player

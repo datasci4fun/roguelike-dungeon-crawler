@@ -59,8 +59,12 @@ class LevelManager:
         # Spawn new entities
         self.game.entity_manager.spawn_enemies(self.game.dungeon, self.game.player)
         self.game.entity_manager.spawn_items(self.game.dungeon, self.game.player)
+        self.game.entity_manager.spawn_boss(self.game.dungeon, self.game.player)
 
         self.game.add_message("The air grows colder...")
+        if self.game.entity_manager.boss:
+            boss_name = self.game.entity_manager.boss.name
+            self.game.add_message(f"You sense a powerful presence... The {boss_name} awaits.")
 
         # Auto-save on level transition
         self.game.save_manager.auto_save()
@@ -84,3 +88,4 @@ class LevelManager:
         # Spawn entities
         self.game.entity_manager.spawn_enemies(self.game.dungeon, self.game.player)
         self.game.entity_manager.spawn_items(self.game.dungeon, self.game.player)
+        self.game.entity_manager.spawn_boss(self.game.dungeon, self.game.player)

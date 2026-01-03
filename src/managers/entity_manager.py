@@ -15,6 +15,8 @@ class EntityManager:
     def __init__(self):
         self.enemies: List[Enemy] = []
         self.items: List[Item] = []
+        self.boss: Optional[Enemy] = None
+        self.boss_defeated: bool = False
 
     def spawn_enemies(self, dungeon: 'Dungeon', player: Player):
         """Spawn enemies in random rooms with weighted type selection."""
@@ -86,6 +88,42 @@ class EntityManager:
                         self.items.append(lore_item)
                     except ValueError:
                         pass  # Skip if lore entry not found
+
+    def spawn_boss(self, dungeon: 'Dungeon', player: Player):
+        """Spawn the level boss in the boss room (largest room)."""
+        from ..core.constants import LEVEL_BOSS_MAP
+
+        # Get boss type for this level
+        boss_type = LEVEL_BOSS_MAP.get(dungeon.level)
+        if not boss_type:
+            return
+
+        # Find the largest room for boss placement
+        if not dungeon.rooms:
+            return
+
+        boss_room = max(dungeon.rooms, key=lambda r: r.width * r.height)
+
+        # Get room center
+        cx = boss_room.x + boss_room.width // 2
+        cy = boss_room.y + boss_room.height // 2
+
+        # Remove any regular enemies from the boss room
+        boss_room_enemies = [
+            e for e in self.enemies
+            if (boss_room.x <= e.x < boss_room.x + boss_room.width and
+                boss_room.y <= e.y < boss_room.y + boss_room.height)
+        ]
+        for enemy in boss_room_enemies:
+            self.enemies.remove(enemy)
+
+        # Create boss enemy
+        boss = Enemy(cx, cy)
+        boss.make_boss(boss_type)
+
+        self.enemies.append(boss)
+        self.boss = boss
+        self.boss_defeated = False
 
     def get_enemy_at(self, x: int, y: int) -> Optional[Enemy]:
         """Get the living enemy at the given position, or None."""

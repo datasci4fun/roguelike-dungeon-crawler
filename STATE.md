@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-02
-**Branch:** master
-**Version:** v3.1.0 (Player Profiles & Achievements) - Released
+**Branch:** feature/boss-monsters
+**Version:** v3.2.0 (Boss Monsters) - In Development
 
 ---
 
@@ -11,6 +11,58 @@
 The roguelike dungeon crawler now has a **complete multiplayer stack**: backend server with WebSocket game sessions, real-time chat, leaderboards, and ghost replays, plus a **full React web frontend** with xterm.js game terminal.
 
 **v3.1.0 adds Player Profiles and an Achievements system** with 20 achievements across 5 categories (combat, progression, efficiency, collection, special) and 4 rarity tiers.
+
+**v3.2.0 adds Boss Monsters** with 5 unique bosses (one per level), 10 special abilities, and guaranteed loot drops.
+
+### v3.2.0 Boss Monster System (In Progress)
+
+| Component | Status |
+|-----------|--------|
+| BossType enum and BOSS_STATS config | ✅ Done |
+| Boss ability system (10 abilities) | ✅ Done |
+| Enemy class boss extension | ✅ Done |
+| Boss spawning in level manager | ✅ Done |
+| Combat integration (boss turns, abilities) | ✅ Done |
+| Boss loot drops (guaranteed) | ✅ Done |
+| Boss health bar in UI panel | ✅ Done |
+| Boss-specific message coloring | ✅ Done |
+| Boss tutorial hint | ✅ Done |
+| Boss achievements | ⏳ Todo |
+
+### The 5 Bosses
+
+| Level | Boss | HP | DMG | XP | Abilities |
+|-------|------|-----|-----|-----|-----------|
+| 1 | Goblin King | 50 | 5 | 200 | Summon Goblins, War Cry |
+| 2 | Cave Troll | 80 | 8 | 300 | Ground Slam, Regenerate |
+| 3 | Lich Lord | 70 | 10 | 400 | Raise Dead, Life Drain |
+| 4 | Arcane Keeper | 60 | 12 | 500 | Arcane Bolt, Teleport |
+| 5 | Dragon Emperor | 150 | 15 | 1000 | Fire Breath, Tail Sweep |
+
+### Boss Abilities
+
+| Ability | Type | Cooldown | Effect |
+|---------|------|----------|--------|
+| Summon Goblins | Summon | 5 turns | Spawns 2-3 goblin minions |
+| War Cry | Buff | 8 turns | +50% damage for 3 turns |
+| Ground Slam | AOE | 4 turns | 8 damage in range 2 |
+| Regenerate | Buff | Passive | Heals 5 HP when below 50% |
+| Raise Dead | Summon | 6 turns | Spawns 2 skeleton minions |
+| Life Drain | Special | 3 turns | 6 damage, heals boss |
+| Arcane Bolt | Ranged | 2 turns | 8 damage, range 5 |
+| Teleport | Special | 5 turns | Relocates boss randomly |
+| Fire Breath | AOE | 4 turns | 12 damage, range 3 |
+| Tail Sweep | AOE | 3 turns | 10 damage to adjacent |
+
+### Boss Loot Drops
+
+| Boss | Guaranteed Drops |
+|------|-----------------|
+| Goblin King | Iron Sword, Chain Mail |
+| Cave Troll | Battle Axe, Strength Potion x2 |
+| Lich Lord | Plate Armor, Health Potion x2 |
+| Arcane Keeper | Teleport Scroll x2, Strength Potion |
+| Dragon Emperor | Battle Axe (Dragon Slayer), Plate Armor (Dragon Scale) |
 
 ### v3.1.0 Player Profiles & Achievements (Complete)
 
@@ -356,12 +408,17 @@ npm run build
 
 ## What's Next
 
+### Immediate Tasks (v3.2.0)
+- Add boss-related achievements (Boss Slayer, Kingslayer, Dragon Emperor Slain, Dungeon Master)
+- Test boss encounters in gameplay
+- Merge feature branch to develop
+
 ### Future Enhancements
 
 **Gameplay:**
 - More enemy types (Necromancer, Demon)
-- Boss encounters
-- More equipment variety
+- ~~Boss encounters~~ ✅ Done in v3.2.0
+- More equipment variety (legendary items)
 - More achievements (unlock tiers, seasonal)
 
 **Multiplayer:**
