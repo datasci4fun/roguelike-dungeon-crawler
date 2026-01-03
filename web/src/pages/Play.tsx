@@ -5,6 +5,7 @@ import { useGameSocket } from '../hooks/useGameSocket';
 import { useChatSocket } from '../hooks/useChatSocket';
 import { GameTerminal } from '../components/GameTerminal';
 import { ChatPanel } from '../components/ChatPanel';
+import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
 import './Play.css';
 
@@ -12,6 +13,8 @@ export function Play() {
   const { isAuthenticated, isLoading, token } = useAuth();
   const navigate = useNavigate();
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Game WebSocket
   const {
@@ -93,6 +96,24 @@ export function Play() {
     setIsChatCollapsed((prev) => !prev);
   }, []);
 
+  // Toggle mobile chat modal
+  const toggleMobileChat = useCallback(() => {
+    setIsMobileChatOpen((prev) => {
+      if (!prev) {
+        // Opening chat, clear unread count
+        setUnreadCount(0);
+      }
+      return !prev;
+    });
+  }, []);
+
+  // Track unread messages when mobile chat is closed
+  useEffect(() => {
+    if (!isMobileChatOpen && messages.length > 0) {
+      setUnreadCount((prev) => prev + 1);
+    }
+  }, [messages.length, isMobileChatOpen]);
+
   if (isLoading) {
     return (
       <div className="play-loading">
@@ -157,6 +178,52 @@ export function Play() {
           />
         </div>
       </div>
+
+      {/* Touch Controls (mobile only) */}
+      <TouchControls
+        onCommand={handleCommand}
+        onNewGame={handleNewGame}
+        uiMode={gameState?.ui_mode}
+        isConnected={gameStatus === 'connected'}
+        gameActive={!!gameState && gameState.game_state === 'PLAYING'}
+      />
+
+      {/* Mobile Chat Toggle Button */}
+      <button
+        className="mobile-chat-toggle"
+        onClick={toggleMobileChat}
+        aria-label="Toggle chat"
+      >
+        <span className="chat-icon">💬</span>
+        {unreadCount > 0 && (
+          <span className="unread-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+        )}
+      </button>
+
+      {/* Mobile Chat Modal */}
+      {isMobileChatOpen && (
+        <div className="mobile-chat-overlay" onClick={toggleMobileChat}>
+          <div className="mobile-chat-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-chat-header">
+              <span>Chat</span>
+              <button className="mobile-chat-close" onClick={toggleMobileChat}>
+                ×
+              </button>
+            </div>
+            <ChatPanel
+              status={chatStatus}
+              messages={messages}
+              onlineUsers={onlineUsers}
+              currentUserId={currentUserId}
+              onSendMessage={sendMessage}
+              onSendWhisper={sendWhisper}
+              onConnect={connectChat}
+              isCollapsed={false}
+              onToggleCollapse={() => {}}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Achievement Toast */}
       {newAchievements.length > 0 && (

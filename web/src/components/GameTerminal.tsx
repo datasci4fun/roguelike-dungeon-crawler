@@ -138,14 +138,19 @@ export function GameTerminal({
     xtermRef.current = terminal;
     fitAddonRef.current = fitAddon;
 
-    // Handle resize
+    // Handle resize and orientation change
     const handleResize = () => {
-      fitAddon.fit();
+      // Small delay to let the layout settle
+      setTimeout(() => {
+        fitAddon.fit();
+      }, 100);
     };
     window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
       terminal.dispose();
       xtermRef.current = null;
       fitAddonRef.current = null;

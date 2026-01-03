@@ -1,0 +1,277 @@
+/* TouchControls.css - Mobile touch control overlay */
+
+.touch-controls {
+  display: none; /* Hidden by default, shown via media query */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(26, 26, 46, 0.95);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  z-index: 1000;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Show only on touch devices */
+@media (pointer: coarse) {
+  .touch-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+}
+
+/* Portrait layout */
+.touch-controls.portrait {
+  height: 140px;
+  flex-direction: row;
+}
+
+/* Landscape layout */
+.touch-controls.landscape {
+  height: 100px;
+  flex-direction: row;
+}
+
+.controls-left,
+.controls-right {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.controls-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
+
+/* D-Pad Styles */
+.dpad {
+  display: grid;
+  grid-template-columns: 52px 52px 52px;
+  grid-template-rows: 52px 52px 52px;
+  gap: 4px;
+}
+
+.dpad.vertical-only {
+  grid-template-columns: 52px;
+  grid-template-rows: 52px 52px;
+}
+
+.dpad-btn {
+  width: 52px;
+  height: 52px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #eaeaea;
+  font-size: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dpad-btn:active,
+.dpad-btn.active {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0.95);
+}
+
+.dpad-up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.dpad-left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpad-center {
+  grid-column: 2;
+  grid-row: 2;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dpad-right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.dpad-down {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.dpad.vertical-only .dpad-up {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.dpad.vertical-only .dpad-down {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.dpad-arrow {
+  font-family: monospace;
+}
+
+/* Action Button Grid */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 48px);
+  grid-template-rows: repeat(2, 48px);
+  gap: 8px;
+}
+
+.action-grid.inventory-actions {
+  grid-template-columns: repeat(2, 60px);
+  grid-template-rows: repeat(2, 48px);
+}
+
+/* Dialog controls - larger buttons */
+.dialog-controls {
+  gap: 32px;
+}
+
+/* Action Button Styles */
+.action-btn {
+  min-width: 48px;
+  min-height: 48px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #eaeaea;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  padding: 4px;
+}
+
+.action-btn:active,
+.action-btn.active {
+  transform: scale(0.95);
+}
+
+.action-btn.large {
+  min-width: 80px;
+  min-height: 60px;
+  font-size: 16px;
+}
+
+.action-icon {
+  font-size: 18px;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.action-label {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* Color variants */
+.action-btn.default {
+  background: rgba(255, 255, 255, 0.1);
+}
+.action-btn.default:active,
+.action-btn.default.active {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.action-btn.green {
+  background: rgba(80, 250, 123, 0.2);
+  color: #50fa7b;
+}
+.action-btn.green:active,
+.action-btn.green.active {
+  background: rgba(80, 250, 123, 0.4);
+}
+
+.action-btn.red {
+  background: rgba(255, 85, 85, 0.2);
+  color: #ff5555;
+}
+.action-btn.red:active,
+.action-btn.red.active {
+  background: rgba(255, 85, 85, 0.4);
+}
+
+.action-btn.yellow {
+  background: rgba(241, 250, 140, 0.2);
+  color: #f1fa8c;
+}
+.action-btn.yellow:active,
+.action-btn.yellow.active {
+  background: rgba(241, 250, 140, 0.4);
+}
+
+.action-btn.cyan {
+  background: rgba(139, 233, 253, 0.2);
+  color: #8be9fd;
+}
+.action-btn.cyan:active,
+.action-btn.cyan.active {
+  background: rgba(139, 233, 253, 0.4);
+}
+
+.action-btn.magenta {
+  background: rgba(255, 121, 198, 0.2);
+  color: #ff79c6;
+}
+.action-btn.magenta:active,
+.action-btn.magenta.active {
+  background: rgba(255, 121, 198, 0.4);
+}
+
+/* Landscape-specific adjustments */
+.touch-controls.landscape .dpad {
+  transform: scale(0.85);
+}
+
+.touch-controls.landscape .action-grid {
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(2, 44px);
+  gap: 6px;
+}
+
+.touch-controls.landscape .action-btn {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.touch-controls.landscape .action-icon {
+  font-size: 16px;
+}
+
+.touch-controls.landscape .action-label {
+  font-size: 9px;
+}
+
+/* Safe area padding for devices with notches */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .touch-controls {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+}
