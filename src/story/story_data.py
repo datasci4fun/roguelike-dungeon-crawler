@@ -163,6 +163,7 @@ TUTORIAL_HINTS: Dict[str, str] = {
     "inventory_hint": "Tip: Press I for inventory, C for character stats, M for message log.",
     "first_elite": "Tip: Elite enemies (bright red) are tougher but give more XP!",
     "first_lore": "Tip: Lore items reveal the story. Read them from your inventory.",
+    "first_boss": "Tip: BOSS FIGHT! These powerful foes have special abilities and drop rare loot!",
 }
 
 

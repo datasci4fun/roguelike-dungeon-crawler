@@ -456,8 +456,14 @@ class Renderer:
                 is_animated = any(anim['entity'] == enemy for anim in self.animations)
 
                 if curses.has_colors():
+                    # Bosses render in bright magenta with bold
                     # Elites render in magenta, regular enemies in red
-                    color = curses.color_pair(6) if enemy.is_elite else curses.color_pair(3)
+                    if enemy.is_boss:
+                        color = curses.color_pair(6) | curses.A_BOLD
+                    elif enemy.is_elite:
+                        color = curses.color_pair(6)
+                    else:
+                        color = curses.color_pair(3)
 
                     # Apply hit animation: flash with reverse video and bold
                     if is_animated:
@@ -465,8 +471,13 @@ class Renderer:
 
                     self.stdscr.addstr(screen_y, screen_x, enemy.symbol, color)
                 else:
-                    # No color: use '*' for elite, 'E' for regular
-                    symbol = '*' if enemy.is_elite else enemy.symbol
+                    # No color: use '!' for boss, '*' for elite, symbol for regular
+                    if enemy.is_boss:
+                        symbol = '!'
+                    elif enemy.is_elite:
+                        symbol = '*'
+                    else:
+                        symbol = enemy.symbol
                     # Flash with reverse video
                     attr = curses.A_REVERSE if is_animated else curses.A_NORMAL
                     self.stdscr.addstr(screen_y, screen_x, symbol, attr)
@@ -859,6 +870,14 @@ class Renderer:
 
         msg_lower = message.lower()
 
+        # Boss defeat messages (bright magenta + bold)
+        if "defeated" in msg_lower and ("***" in message or "boss" in msg_lower):
+            return curses.color_pair(6) | curses.A_BOLD
+
+        # Boss ability messages (magenta)
+        if any(word in msg_lower for word in ["summons", "slams", "breathes", "drains", "fires", "sweeps", "war cry", "regenerates", "raises", "teleports"]):
+            return curses.color_pair(6)
+
         # Combat kill messages (bright red + bold)
         if "killed" in msg_lower:
             return curses.color_pair(8) | curses.A_BOLD
@@ -876,8 +895,12 @@ class Renderer:
             return curses.color_pair(3)
 
         # Item pickup messages (cyan)
-        if "picked up" in msg_lower:
+        if "picked up" in msg_lower or "dropped" in msg_lower:
             return curses.color_pair(5)
+
+        # Boss presence messages (magenta)
+        if "powerful presence" in msg_lower or "awaits" in msg_lower:
+            return curses.color_pair(6)
 
         # Default (white)
         return curses.color_pair(1)
@@ -968,6 +991,57 @@ class Renderer:
 
             # Position (for debugging/exploration feel)
             self.stdscr.addstr(10, panel_x + 2, f"Pos: ({player.x},{player.y})"[:content_width])
+
+            # Boss health bar (if boss is alive on this level)
+            boss = next((e for e in enemies if e.is_boss and e.is_alive()), None)
+            if boss:
+                # Section divider before boss
+                self._draw_horizontal_border(11, panel_x, STATS_PANEL_WIDTH, left_t, right_t, h_char)
+
+                # Boss name (truncated if needed)
+                boss_name = self._smart_truncate(boss.name, content_width)
+                if curses.has_colors():
+                    self.stdscr.addstr(12, panel_x + 2, boss_name, curses.color_pair(6) | curses.A_BOLD)
+                else:
+                    self.stdscr.addstr(12, panel_x + 2, boss_name, curses.A_BOLD)
+
+                # Boss health bar
+                boss_health_bar = self._render_bar(boss.health, boss.max_health, BAR_WIDTH)
+                boss_health_str = f"HP:{boss_health_bar} {boss.health}/{boss.max_health}"[:content_width]
+                if curses.has_colors():
+                    self.stdscr.addstr(13, panel_x + 2, boss_health_str, curses.color_pair(3))  # Red for boss HP
+                else:
+                    self.stdscr.addstr(13, panel_x + 2, boss_health_str)
+
+                # Section divider before minimap (shifted down)
+                self._draw_horizontal_border(14, panel_x, STATS_PANEL_WIDTH, left_t, right_t, h_char)
+
+                # Minimap position shifts down when boss is shown
+                self._render_minimap(15, panel_x + 2, dungeon, player, enemies, items, max_y)
+
+                # Section divider before inventory (shifted down)
+                self._draw_horizontal_border(22, panel_x, STATS_PANEL_WIDTH, left_t, right_t, h_char)
+
+                # Inventory (shifted down)
+                inv_header = f"INVENTORY ({len(player.inventory.items)}/10)"[:content_width]
+                self.stdscr.addstr(23, panel_x + 2, inv_header)
+                for i, item in enumerate(player.inventory.items[:3]):  # Show first 3 items
+                    item_y = 24 + i
+                    if item_y < max_y:
+                        max_item_name_len = content_width - 3
+                        truncated_name = self._smart_truncate(item.name, max_item_name_len)
+                        item_str = f"{i+1}. {truncated_name}"[:content_width]
+                        self.stdscr.addstr(item_y, panel_x + 2, item_str)
+
+                # Section divider before controls (shifted down)
+                self._draw_horizontal_border(27, panel_x, STATS_PANEL_WIDTH, left_t, right_t, h_char)
+
+                # Controls (shifted down)
+                self.stdscr.addstr(28, panel_x + 2, "CONTROLS"[:content_width])
+                self.stdscr.addstr(29, panel_x + 2, "WASD/Arrows: Move"[:content_width])
+                self.stdscr.addstr(30, panel_x + 2, "1-3: Use item"[:content_width])
+                self.stdscr.addstr(31, panel_x + 2, "Q: Quit"[:content_width])
+                return  # Exit early, already rendered with boss bar
 
             # Section divider before minimap
             self._draw_horizontal_border(11, panel_x, STATS_PANEL_WIDTH, left_t, right_t, h_char)
