@@ -121,6 +121,72 @@ BOSS_ABILITIES = {
         range=1,
         description='Sweeps tail, hitting all adjacent',
     ),
+
+    # v4.0 New enemy abilities
+    'raise_skeleton': BossAbility(
+        name='Raise Skeleton',
+        ability_type=AbilityType.SUMMON,
+        cooldown=6,
+        damage=0,
+        range=0,
+        description='Raises a skeleton minion',
+    ),
+    'dark_bolt': BossAbility(
+        name='Dark Bolt',
+        ability_type=AbilityType.RANGED,
+        cooldown=2,
+        damage=6,
+        range=5,
+        description='Fires a bolt of dark energy',
+    ),
+    'fire_strike': BossAbility(
+        name='Fire Strike',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=3,
+        damage=10,
+        range=1,
+        description='Melee attack that applies burn',
+    ),
+    'backstab': BossAbility(
+        name='Backstab',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=0,  # Always available from stealth
+        damage=0,  # 3x normal damage
+        range=1,
+        description='3x damage when attacking from stealth',
+    ),
+    'vanish': BossAbility(
+        name='Vanish',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=5,
+        damage=0,
+        range=0,
+        description='Become invisible',
+    ),
+    'fire_bolt': BossAbility(
+        name='Fire Bolt',
+        ability_type=AbilityType.RANGED,
+        cooldown=2,
+        damage=8,
+        range=4,
+        description='Ranged fire attack that applies burn',
+    ),
+    'ice_shard': BossAbility(
+        name='Ice Shard',
+        ability_type=AbilityType.RANGED,
+        cooldown=2,
+        damage=6,
+        range=4,
+        description='Ranged ice attack that applies freeze',
+    ),
+    'chain_lightning': BossAbility(
+        name='Chain Lightning',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=4,
+        damage=5,
+        range=5,
+        description='Lightning that can jump to nearby targets',
+    ),
 }
 
 
@@ -153,6 +219,15 @@ def execute_ability(
         'teleport': _execute_teleport,
         'fire_breath': _execute_fire_breath,
         'tail_sweep': _execute_tail_sweep,
+        # v4.0 new abilities
+        'raise_skeleton': _execute_raise_skeleton,
+        'dark_bolt': _execute_dark_bolt,
+        'fire_strike': _execute_fire_strike,
+        'backstab': _execute_backstab,
+        'vanish': _execute_vanish,
+        'fire_bolt': _execute_fire_bolt,
+        'ice_shard': _execute_ice_shard,
+        'chain_lightning': _execute_chain_lightning,
     }
 
     handler = handlers.get(ability_name)
@@ -355,4 +430,162 @@ def _execute_tail_sweep(
     if distance <= ability.range:
         damage = player.take_damage(ability.damage)
         return True, f"The {boss.name} sweeps its tail for {damage} damage!", damage
+    return False, "", 0
+
+
+# v4.0 New ability handlers
+
+def _execute_raise_skeleton(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Summon a single skeleton minion."""
+    from .entities import Enemy
+    from ..core.constants import EnemyType
+
+    # Find a valid spawn position near the caster
+    for dx in range(-2, 3):
+        for dy in range(-2, 3):
+            if dx == 0 and dy == 0:
+                continue
+            nx, ny = caster.x + dx, caster.y + dy
+            if (dungeon.is_walkable(nx, ny) and
+                not entity_manager.get_enemy_at(nx, ny) and
+                (nx != player.x or ny != player.y)):
+                skeleton = Enemy(nx, ny, enemy_type=EnemyType.SKELETON, is_elite=False)
+                entity_manager.enemies.append(skeleton)
+                return True, f"The {caster.name} raises a skeleton from the shadows!", 0
+
+    return False, "", 0
+
+
+def _execute_dark_bolt(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Ranged dark magic attack."""
+    distance = abs(player.x - caster.x) + abs(player.y - caster.y)
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        return True, f"The {caster.name} fires a dark bolt for {damage} damage!", damage
+    return False, "", 0
+
+
+def _execute_fire_strike(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Melee attack that applies burn status."""
+    from ..core.constants import StatusEffectType
+
+    distance = max(abs(player.x - caster.x), abs(player.y - caster.y))
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        burn_msg = player.apply_status_effect(StatusEffectType.BURN, caster.name)
+        return True, f"The {caster.name} strikes with fire for {damage} damage! {burn_msg}", damage
+    return False, "", 0
+
+
+def _execute_backstab(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """3x damage attack from stealth."""
+    distance = max(abs(player.x - caster.x), abs(player.y - caster.y))
+    if distance <= ability.range:
+        # Check if caster is invisible (stealthed)
+        is_stealthed = getattr(caster, 'is_invisible', False)
+        multiplier = 3 if is_stealthed else 1
+        base_damage = caster.attack_damage * multiplier
+        damage = player.take_damage(base_damage)
+
+        # Break stealth after attacking
+        if is_stealthed:
+            caster.is_invisible = False
+            return True, f"The {caster.name} backstabs you for {damage} critical damage!", damage
+
+        return True, f"The {caster.name} strikes for {damage} damage!", damage
+    return False, "", 0
+
+
+def _execute_vanish(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Enter invisibility."""
+    caster.is_invisible = True
+    return True, f"The {caster.name} vanishes into the shadows!", 0
+
+
+def _execute_fire_bolt(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Ranged fire attack that applies burn."""
+    from ..core.constants import StatusEffectType
+
+    distance = abs(player.x - caster.x) + abs(player.y - caster.y)
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        burn_msg = player.apply_status_effect(StatusEffectType.BURN, caster.name)
+        return True, f"The {caster.name} hurls a fire bolt for {damage} damage! {burn_msg}", damage
+    return False, "", 0
+
+
+def _execute_ice_shard(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Ranged ice attack that applies freeze."""
+    from ..core.constants import StatusEffectType
+
+    distance = abs(player.x - caster.x) + abs(player.y - caster.y)
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        freeze_msg = player.apply_status_effect(StatusEffectType.FREEZE, caster.name)
+        return True, f"The {caster.name} launches an ice shard for {damage} damage! {freeze_msg}", damage
+    return False, "", 0
+
+
+def _execute_chain_lightning(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Lightning that can jump to nearby enemies (damages player primarily)."""
+    distance = abs(player.x - caster.x) + abs(player.y - caster.y)
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        msg = f"The {caster.name} unleashes chain lightning for {damage} damage!"
+
+        # Lightning can stun
+        from ..core.constants import StatusEffectType
+        if random.random() < 0.3:  # 30% chance to stun
+            stun_msg = player.apply_status_effect(StatusEffectType.STUN, caster.name)
+            msg += f" {stun_msg}"
+
+        return True, msg, damage
     return False, "", 0

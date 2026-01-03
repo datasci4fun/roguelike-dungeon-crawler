@@ -26,6 +26,31 @@ class ItemType(Enum):
     # Story/Lore items
     SCROLL_LORE = auto()
     BOOK = auto()
+    # v4.0 New item types
+    # Shields (off-hand)
+    SHIELD_WOODEN = auto()
+    SHIELD_IRON = auto()
+    SHIELD_TOWER = auto()
+    # Rings
+    RING_STRENGTH = auto()
+    RING_DEFENSE = auto()
+    RING_SPEED = auto()
+    # Amulets
+    AMULET_HEALTH = auto()
+    AMULET_RESISTANCE = auto()
+    AMULET_VISION = auto()
+    # Ranged weapons
+    WEAPON_SHORTBOW = auto()
+    WEAPON_LONGBOW = auto()
+    WEAPON_CROSSBOW = auto()
+    # Throwables
+    THROWING_KNIFE = auto()
+    BOMB = auto()
+    POISON_VIAL = auto()
+    # Keys
+    KEY_BRONZE = auto()
+    KEY_SILVER = auto()
+    KEY_GOLD = auto()
 
 
 @dataclass
@@ -339,6 +364,385 @@ class LoreBook(Item):
         return self.title, self.content
 
 
+# v4.0 New Item Classes
+
+class Shield(Item):
+    """Off-hand shield providing defense and block chance."""
+
+    def __init__(self, x: int, y: int, item_type: ItemType, name: str,
+                 description: str, defense_bonus: int, block_chance: float, rarity):
+        from ..core.constants import EquipmentSlot
+        super().__init__(
+            x=x, y=y,
+            item_type=item_type,
+            name=name,
+            symbol=')',
+            description=description,
+            rarity=rarity,
+            equip_slot=EquipmentSlot.OFF_HAND
+        )
+        self.defense_bonus = defense_bonus
+        self.block_chance = block_chance  # 0.0 to 1.0
+
+    def use(self, player: 'Player') -> str:
+        return "Use [E] to equip this shield."
+
+
+class WoodenShield(Shield):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.SHIELD_WOODEN,
+            name="Wooden Shield",
+            description="+1 DEF, 10% block",
+            defense_bonus=1,
+            block_chance=0.10,
+            rarity=ItemRarity.COMMON
+        )
+
+
+class IronShield(Shield):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.SHIELD_IRON,
+            name="Iron Shield",
+            description="+2 DEF, 15% block",
+            defense_bonus=2,
+            block_chance=0.15,
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class TowerShield(Shield):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.SHIELD_TOWER,
+            name="Tower Shield",
+            description="+4 DEF, 25% block",
+            defense_bonus=4,
+            block_chance=0.25,
+            rarity=ItemRarity.RARE
+        )
+
+
+class Ring(Item):
+    """Accessory providing passive stat bonuses."""
+
+    def __init__(self, x: int, y: int, item_type: ItemType, name: str,
+                 description: str, stat_bonuses: dict, rarity):
+        from ..core.constants import EquipmentSlot
+        super().__init__(
+            x=x, y=y,
+            item_type=item_type,
+            name=name,
+            symbol='o',
+            description=description,
+            rarity=rarity,
+            equip_slot=EquipmentSlot.RING
+        )
+        self.stat_bonuses = stat_bonuses  # e.g., {'attack': 2, 'defense': 1}
+
+    def use(self, player: 'Player') -> str:
+        return "Use [E] to equip this ring."
+
+
+class RingOfStrength(Ring):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.RING_STRENGTH,
+            name="Ring of Strength",
+            description="+2 ATK",
+            stat_bonuses={'attack': 2},
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class RingOfDefense(Ring):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.RING_DEFENSE,
+            name="Ring of Defense",
+            description="+2 DEF",
+            stat_bonuses={'defense': 2},
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class RingOfSpeed(Ring):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.RING_SPEED,
+            name="Ring of Speed",
+            description="+1 Move Speed",
+            stat_bonuses={'speed': 1},
+            rarity=ItemRarity.RARE
+        )
+
+
+class Amulet(Item):
+    """Accessory providing passive effects."""
+
+    def __init__(self, x: int, y: int, item_type: ItemType, name: str,
+                 description: str, effect: str, effect_value: int, rarity):
+        from ..core.constants import EquipmentSlot
+        super().__init__(
+            x=x, y=y,
+            item_type=item_type,
+            name=name,
+            symbol='&',
+            description=description,
+            rarity=rarity,
+            equip_slot=EquipmentSlot.AMULET
+        )
+        self.effect = effect  # e.g., 'max_health', 'resistance', 'vision'
+        self.effect_value = effect_value
+
+    def use(self, player: 'Player') -> str:
+        return "Use [E] to equip this amulet."
+
+
+class AmuletOfHealth(Amulet):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.AMULET_HEALTH,
+            name="Amulet of Health",
+            description="+10 Max HP",
+            effect='max_health',
+            effect_value=10,
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class AmuletOfResistance(Amulet):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.AMULET_RESISTANCE,
+            name="Amulet of Resistance",
+            description="25% status resist",
+            effect='resistance',
+            effect_value=25,
+            rarity=ItemRarity.RARE
+        )
+
+
+class AmuletOfVision(Amulet):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.AMULET_VISION,
+            name="Amulet of Vision",
+            description="+2 Vision Range",
+            effect='vision',
+            effect_value=2,
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class RangedWeapon(Item):
+    """Ranged weapon for attacking from distance."""
+
+    def __init__(self, x: int, y: int, item_type: ItemType, name: str,
+                 description: str, damage: int, range: int, rarity):
+        from ..core.constants import EquipmentSlot
+        super().__init__(
+            x=x, y=y,
+            item_type=item_type,
+            name=name,
+            symbol='}',
+            description=description,
+            rarity=rarity,
+            equip_slot=EquipmentSlot.WEAPON
+        )
+        self.damage = damage
+        self.range = range
+        self.is_ranged = True
+
+    def use(self, player: 'Player') -> str:
+        return "Use [E] to equip, [f] to fire."
+
+
+class Shortbow(RangedWeapon):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.WEAPON_SHORTBOW,
+            name="Shortbow",
+            description="3 DMG, Range 4",
+            damage=3,
+            range=4,
+            rarity=ItemRarity.COMMON
+        )
+
+
+class Longbow(RangedWeapon):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.WEAPON_LONGBOW,
+            name="Longbow",
+            description="5 DMG, Range 6",
+            damage=5,
+            range=6,
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class Crossbow(RangedWeapon):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.WEAPON_CROSSBOW,
+            name="Crossbow",
+            description="7 DMG, Range 5",
+            damage=7,
+            range=5,
+            rarity=ItemRarity.RARE
+        )
+
+
+class Throwable(Item):
+    """Single-use thrown item."""
+
+    def __init__(self, x: int, y: int, item_type: ItemType, name: str,
+                 description: str, damage: int, range: int, effect=None, rarity=None):
+        from ..core.constants import ItemRarity as IR
+        super().__init__(
+            x=x, y=y,
+            item_type=item_type,
+            name=name,
+            symbol='*',
+            description=description,
+            rarity=rarity or IR.COMMON
+        )
+        self.damage = damage
+        self.range = range
+        self.effect = effect  # StatusEffectType or None
+
+    def use(self, player: 'Player') -> str:
+        return "Use [t] to throw at a target."
+
+
+class ThrowingKnife(Throwable):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.THROWING_KNIFE,
+            name="Throwing Knife",
+            description="5 DMG, Range 4",
+            damage=5,
+            range=4,
+            rarity=ItemRarity.COMMON
+        )
+
+
+class Bomb(Throwable):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity, StatusEffectType
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.BOMB,
+            name="Bomb",
+            description="10 DMG AOE, Range 3",
+            damage=10,
+            range=3,
+            effect=StatusEffectType.STUN,
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class PoisonVial(Throwable):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity, StatusEffectType
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.POISON_VIAL,
+            name="Poison Vial",
+            description="3 DMG + Poison, Range 4",
+            damage=3,
+            range=4,
+            effect=StatusEffectType.POISON,
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class Key(Item):
+    """Key item for opening locked doors."""
+
+    def __init__(self, x: int, y: int, item_type: ItemType, name: str,
+                 description: str, key_level: int, rarity):
+        super().__init__(
+            x=x, y=y,
+            item_type=item_type,
+            name=name,
+            symbol='k',
+            description=description,
+            rarity=rarity
+        )
+        self.key_level = key_level  # Bronze=1, Silver=2, Gold=3
+
+    def use(self, player: 'Player') -> str:
+        return "Walk into a locked door to use this key."
+
+
+class BronzeKey(Key):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.KEY_BRONZE,
+            name="Bronze Key",
+            description="Opens bronze doors",
+            key_level=1,
+            rarity=ItemRarity.COMMON
+        )
+
+
+class SilverKey(Key):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.KEY_SILVER,
+            name="Silver Key",
+            description="Opens silver doors",
+            key_level=2,
+            rarity=ItemRarity.UNCOMMON
+        )
+
+
+class GoldKey(Key):
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.KEY_GOLD,
+            name="Gold Key",
+            description="Opens gold doors",
+            key_level=3,
+            rarity=ItemRarity.RARE
+        )
+
+
 def create_lore_item(lore_id: str, x: int, y: int) -> Item:
     """Create a lore item (scroll or book) from story data."""
     from ..story import get_lore_entry
@@ -383,6 +787,48 @@ def create_item(item_type: ItemType, x: int, y: int) -> Item:
         return PlateArmor(x, y)
     elif item_type == ItemType.ARMOR_DRAGON_SCALE:
         return DragonScaleArmor(x, y)
+    # v4.0 Shields
+    elif item_type == ItemType.SHIELD_WOODEN:
+        return WoodenShield(x, y)
+    elif item_type == ItemType.SHIELD_IRON:
+        return IronShield(x, y)
+    elif item_type == ItemType.SHIELD_TOWER:
+        return TowerShield(x, y)
+    # v4.0 Rings
+    elif item_type == ItemType.RING_STRENGTH:
+        return RingOfStrength(x, y)
+    elif item_type == ItemType.RING_DEFENSE:
+        return RingOfDefense(x, y)
+    elif item_type == ItemType.RING_SPEED:
+        return RingOfSpeed(x, y)
+    # v4.0 Amulets
+    elif item_type == ItemType.AMULET_HEALTH:
+        return AmuletOfHealth(x, y)
+    elif item_type == ItemType.AMULET_RESISTANCE:
+        return AmuletOfResistance(x, y)
+    elif item_type == ItemType.AMULET_VISION:
+        return AmuletOfVision(x, y)
+    # v4.0 Ranged weapons
+    elif item_type == ItemType.WEAPON_SHORTBOW:
+        return Shortbow(x, y)
+    elif item_type == ItemType.WEAPON_LONGBOW:
+        return Longbow(x, y)
+    elif item_type == ItemType.WEAPON_CROSSBOW:
+        return Crossbow(x, y)
+    # v4.0 Throwables
+    elif item_type == ItemType.THROWING_KNIFE:
+        return ThrowingKnife(x, y)
+    elif item_type == ItemType.BOMB:
+        return Bomb(x, y)
+    elif item_type == ItemType.POISON_VIAL:
+        return PoisonVial(x, y)
+    # v4.0 Keys
+    elif item_type == ItemType.KEY_BRONZE:
+        return BronzeKey(x, y)
+    elif item_type == ItemType.KEY_SILVER:
+        return SilverKey(x, y)
+    elif item_type == ItemType.KEY_GOLD:
+        return GoldKey(x, y)
     else:
         raise ValueError(f"Unknown item type: {item_type}")
 
@@ -403,6 +849,46 @@ CONSUMABLE_TYPES = [
     ItemType.STRENGTH_POTION,
     ItemType.SCROLL_TELEPORT,
 ]
+
+# v4.0 New item type lists for spawning
+SHIELD_TYPES = [
+    ItemType.SHIELD_WOODEN,
+    ItemType.SHIELD_IRON,
+    ItemType.SHIELD_TOWER,
+]
+
+RING_TYPES = [
+    ItemType.RING_STRENGTH,
+    ItemType.RING_DEFENSE,
+    ItemType.RING_SPEED,
+]
+
+AMULET_TYPES = [
+    ItemType.AMULET_HEALTH,
+    ItemType.AMULET_RESISTANCE,
+    ItemType.AMULET_VISION,
+]
+
+RANGED_WEAPON_TYPES = [
+    ItemType.WEAPON_SHORTBOW,
+    ItemType.WEAPON_LONGBOW,
+    ItemType.WEAPON_CROSSBOW,
+]
+
+THROWABLE_TYPES = [
+    ItemType.THROWING_KNIFE,
+    ItemType.BOMB,
+    ItemType.POISON_VIAL,
+]
+
+KEY_TYPES = [
+    ItemType.KEY_BRONZE,
+    ItemType.KEY_SILVER,
+    ItemType.KEY_GOLD,
+]
+
+# All v4.0 equipment (for mixed spawning)
+V4_EQUIPMENT_TYPES = SHIELD_TYPES + RING_TYPES + AMULET_TYPES + RANGED_WEAPON_TYPES
 
 
 class Inventory:

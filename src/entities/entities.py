@@ -1,13 +1,15 @@
 """Game entities: Player and Enemy classes."""
-from dataclasses import dataclass
-from typing import Tuple
+from dataclasses import dataclass, field
+from typing import Tuple, List, Optional
 import math
 
 from ..core.constants import (
     PLAYER_SYMBOL, PLAYER_MAX_HEALTH, PLAYER_ATTACK_DAMAGE,
-    ENEMY_SYMBOL, ENEMY_MAX_HEALTH, ENEMY_ATTACK_DAMAGE, ENEMY_CHASE_RANGE
+    ENEMY_SYMBOL, ENEMY_MAX_HEALTH, ENEMY_ATTACK_DAMAGE, ENEMY_CHASE_RANGE,
+    StatusEffectType
 )
 from ..items import Inventory
+from .status_effects import StatusEffectManager
 
 
 @dataclass
@@ -19,6 +21,7 @@ class Entity:
     max_health: int
     health: int
     attack_damage: int
+    status_effects: StatusEffectManager = field(default_factory=StatusEffectManager)
 
     def is_alive(self) -> bool:
         """Check if entity is still alive."""
@@ -33,6 +36,37 @@ class Entity:
     def distance_to(self, x: int, y: int) -> float:
         """Calculate Euclidean distance to a position."""
         return math.sqrt((self.x - x) ** 2 + (self.y - y) ** 2)
+
+    # v4.0 Status effect methods
+    def apply_status_effect(self, effect_type: StatusEffectType, source: Optional[str] = None) -> str:
+        """Apply a status effect to this entity."""
+        return self.status_effects.apply_effect(effect_type, source)
+
+    def has_status_effect(self, effect_type: StatusEffectType) -> bool:
+        """Check if entity has a specific status effect."""
+        return self.status_effects.has_effect(effect_type)
+
+    def process_status_effects(self) -> List[dict]:
+        """Process all status effects for one turn. Returns list of results."""
+        results = self.status_effects.tick()
+        # Apply damage from effects
+        for result in results:
+            if result['damage'] > 0:
+                self.health -= result['damage']
+                self.health = max(0, self.health)
+        return results
+
+    def is_stunned(self) -> bool:
+        """Check if entity is currently stunned."""
+        return self.status_effects.is_stunned()
+
+    def get_movement_penalty(self) -> float:
+        """Get movement penalty from status effects."""
+        return self.status_effects.get_movement_penalty()
+
+    def clear_status_effects(self):
+        """Remove all status effects."""
+        self.status_effects.clear_all()
 
 
 class Player(Entity):
@@ -55,6 +89,12 @@ class Player(Entity):
         self.equipped_weapon = None
         self.equipped_armor = None
         self.defense = 0  # Defense reduces incoming damage
+
+        # v4.0 New equipment slots
+        self.equipped_off_hand = None  # Shield
+        self.equipped_ring = None      # Ring
+        self.equipped_amulet = None    # Amulet
+        self.block_chance = 0.0        # Shield block chance
 
         # XP and leveling
         self.level = 1
@@ -115,15 +155,34 @@ class Player(Entity):
         if item.equip_slot == EquipmentSlot.WEAPON:
             old_item = self.equipped_weapon
             self.equipped_weapon = item
-            # Update attack damage
-            self.attack_damage = self.base_attack + item.attack_bonus
-            message = f"Equipped {item.name} (+{item.attack_bonus} ATK)"
+            # Update attack damage (ranged weapons use damage, melee use attack_bonus)
+            if hasattr(item, 'is_ranged') and item.is_ranged:
+                self.attack_damage = self.base_attack  # Ranged uses separate damage
+            else:
+                self.attack_damage = self.base_attack + getattr(item, 'attack_bonus', 0)
+            message = f"Equipped {item.name}"
         elif item.equip_slot == EquipmentSlot.ARMOR:
             old_item = self.equipped_armor
             self.equipped_armor = item
             # Update defense
-            self.defense = item.defense_bonus
+            self._recalculate_defense()
             message = f"Equipped {item.name} (+{item.defense_bonus} DEF)"
+        elif item.equip_slot == EquipmentSlot.OFF_HAND:
+            old_item = self.equipped_off_hand
+            self.equipped_off_hand = item
+            self._recalculate_defense()
+            self.block_chance = getattr(item, 'block_chance', 0.0)
+            message = f"Equipped {item.name} (+{item.defense_bonus} DEF, {int(item.block_chance * 100)}% block)"
+        elif item.equip_slot == EquipmentSlot.RING:
+            old_item = self.equipped_ring
+            self.equipped_ring = item
+            self._apply_ring_bonuses()
+            message = f"Equipped {item.name}"
+        elif item.equip_slot == EquipmentSlot.AMULET:
+            old_item = self.equipped_amulet
+            self.equipped_amulet = item
+            self._apply_amulet_effect()
+            message = f"Equipped {item.name}"
 
         # Remove equipped item from inventory
         if item in self.inventory.items:
@@ -135,6 +194,34 @@ class Player(Entity):
             message += f", unequipped {old_item.name}"
 
         return message
+
+    def _recalculate_defense(self):
+        """Recalculate total defense from armor and shield."""
+        self.defense = 0
+        if self.equipped_armor:
+            self.defense += self.equipped_armor.defense_bonus
+        if self.equipped_off_hand:
+            self.defense += getattr(self.equipped_off_hand, 'defense_bonus', 0)
+        # Ring defense bonus
+        if self.equipped_ring:
+            self.defense += self.equipped_ring.stat_bonuses.get('defense', 0)
+
+    def _apply_ring_bonuses(self):
+        """Apply stat bonuses from equipped ring."""
+        self._recalculate_defense()
+        if self.equipped_ring:
+            # Attack bonus
+            atk_bonus = self.equipped_ring.stat_bonuses.get('attack', 0)
+            self.attack_damage = self.base_attack + atk_bonus
+            if self.equipped_weapon and hasattr(self.equipped_weapon, 'attack_bonus'):
+                self.attack_damage += self.equipped_weapon.attack_bonus
+
+    def _apply_amulet_effect(self):
+        """Apply passive effect from equipped amulet."""
+        if self.equipped_amulet:
+            if self.equipped_amulet.effect == 'max_health':
+                # This would be handled separately when taking damage
+                pass
 
     def unequip(self, slot) -> str:
         """
@@ -151,6 +238,7 @@ class Player(Entity):
             item = self.equipped_weapon
             self.equipped_weapon = None
             self.attack_damage = self.base_attack
+            self._apply_ring_bonuses()  # Reapply ring bonuses
             self.inventory.add_item(item)
             return f"Unequipped {item.name}"
         elif slot == EquipmentSlot.ARMOR:
@@ -160,7 +248,38 @@ class Player(Entity):
                 return "Inventory full, cannot unequip!"
             item = self.equipped_armor
             self.equipped_armor = None
-            self.defense = 0
+            self._recalculate_defense()
+            self.inventory.add_item(item)
+            return f"Unequipped {item.name}"
+        elif slot == EquipmentSlot.OFF_HAND:
+            if self.equipped_off_hand is None:
+                return "No off-hand item equipped!"
+            if self.inventory.is_full():
+                return "Inventory full, cannot unequip!"
+            item = self.equipped_off_hand
+            self.equipped_off_hand = None
+            self._recalculate_defense()
+            self.block_chance = 0.0
+            self.inventory.add_item(item)
+            return f"Unequipped {item.name}"
+        elif slot == EquipmentSlot.RING:
+            if self.equipped_ring is None:
+                return "No ring equipped!"
+            if self.inventory.is_full():
+                return "Inventory full, cannot unequip!"
+            item = self.equipped_ring
+            self.equipped_ring = None
+            self._recalculate_defense()
+            self._apply_ring_bonuses()
+            self.inventory.add_item(item)
+            return f"Unequipped {item.name}"
+        elif slot == EquipmentSlot.AMULET:
+            if self.equipped_amulet is None:
+                return "No amulet equipped!"
+            if self.inventory.is_full():
+                return "Inventory full, cannot unequip!"
+            item = self.equipped_amulet
+            self.equipped_amulet = None
             self.inventory.add_item(item)
             return f"Unequipped {item.name}"
 
@@ -180,7 +299,7 @@ class Enemy(Entity):
     def __init__(self, x: int, y: int, enemy_type=None, is_elite: bool = False):
         from ..core.constants import (
             ELITE_HP_MULTIPLIER, ELITE_DAMAGE_MULTIPLIER,
-            ENEMY_STATS, EnemyType
+            ENEMY_STATS, EnemyType, AIBehavior, ElementType
         )
 
         # Default to SKELETON if no type specified (for backward compatibility)
@@ -219,11 +338,23 @@ class Enemy(Entity):
         # Boss attributes (set by make_boss())
         self.is_boss = False
         self.boss_type = None
-        self.abilities = []
-        self.ability_cooldowns = {}
         self.buff_turns = {}  # Active buffs with remaining turns
         self.base_attack_damage = damage  # Store base for buff calculations
         self.buffed_damage = None  # Damage when buffed
+
+        # v4.0 AI and ability attributes
+        self.ai_type = stats.get('ai_type', AIBehavior.CHASE)
+        self.abilities = stats.get('abilities', [])
+        self.ability_cooldowns = {a: 0 for a in self.abilities}
+        self.element = stats.get('element', ElementType.NONE)
+        self.resistances = stats.get('resistances', {})
+
+        # v4.0 Stealth attributes
+        self.is_invisible = False
+
+        # Level restrictions for spawning
+        self.min_level = stats.get('min_level', 1)
+        self.max_level = stats.get('max_level', 5)
 
     def make_boss(self, boss_type):
         """Configure this enemy as a boss."""
