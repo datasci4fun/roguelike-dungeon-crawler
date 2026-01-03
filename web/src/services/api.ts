@@ -320,6 +320,21 @@ export const achievementsApi = {
   get: (achievementId: string) => request(`/api/achievements/${achievementId}`),
 };
 
+// Spectator API
+export const spectatorApi = {
+  getActiveGames: () =>
+    request<{
+      games: Array<{
+        session_id: string;
+        username: string;
+        level: number;
+        turn_count: number;
+        spectator_count: number;
+        started_at: string;
+      }>;
+    }>('/api/game/active'),
+};
+
 // WebSocket URLs
 export const getGameWsUrl = (token: string) => {
   const wsBase = API_BASE_URL.replace('http', 'ws');
@@ -329,6 +344,12 @@ export const getGameWsUrl = (token: string) => {
 export const getChatWsUrl = (token: string) => {
   const wsBase = API_BASE_URL.replace('http', 'ws');
   return `${wsBase}/api/chat/ws?token=${token}`;
+};
+
+export const getSpectateWsUrl = (sessionId: string, token?: string) => {
+  const wsBase = API_BASE_URL.replace('http', 'ws');
+  const tokenParam = token ? `?token=${token}` : '';
+  return `${wsBase}/api/game/ws/spectate/${sessionId}${tokenParam}`;
 };
 
 export { ApiError };

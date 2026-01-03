@@ -263,3 +263,86 @@ async def game_status():
         "active_connections": manager.get_connected_count(),
         "active_sessions": session_manager.get_active_session_count(),
     }
+
+
+@router.get("/active")
+async def get_active_games():
+    """Get list of active games available for spectating."""
+    return {
+        "games": session_manager.get_active_games()
+    }
+
+
+@router.websocket("/ws/spectate/{session_id}")
+async def spectate_websocket(
+    websocket: WebSocket,
+    session_id: str,
+    token: str = Query(None, description="Optional JWT token for authenticated spectating"),
+):
+    """
+    WebSocket endpoint for spectating a game.
+
+    Connect with: ws://localhost:8000/api/game/ws/spectate/{session_id}
+
+    Spectators receive game state updates but cannot send commands.
+    """
+    # Optional authentication (spectating can be anonymous)
+    user_id = None
+    username = "Anonymous"
+    if token:
+        user_info = await get_user_from_token(token)
+        if user_info:
+            user_id, username = user_info
+
+    # Find the session
+    session = await session_manager.get_session_by_id(session_id)
+    if not session:
+        await websocket.close(code=4004, reason="Game session not found")
+        return
+
+    if not session.allow_spectators:
+        await websocket.close(code=4005, reason="This game does not allow spectators")
+        return
+
+    # Accept the connection
+    await websocket.accept()
+
+    # Add as spectator
+    await session_manager.add_spectator(session_id, websocket)
+
+    try:
+        # Send welcome message
+        await websocket.send_json({
+            "type": "spectate_connected",
+            "message": f"Now spectating {session.username}'s game",
+            "session_id": session_id,
+            "player_username": session.username,
+        })
+
+        # Send current game state
+        state = session_manager.serialize_game_state(session)
+        state["type"] = "spectate_state"
+        await websocket.send_json(state)
+
+        # Keep connection alive and wait for disconnect
+        while True:
+            try:
+                # We only receive pings from spectators
+                data = await websocket.receive_json()
+                if data.get("action") == "ping":
+                    await websocket.send_json({"type": "pong"})
+            except json.JSONDecodeError:
+                pass
+
+    except WebSocketDisconnect:
+        await session_manager.remove_spectator(session_id, websocket)
+
+    except Exception as e:
+        try:
+            await websocket.send_json({
+                "type": "error",
+                "message": f"Spectator error: {str(e)}"
+            })
+        except:
+            pass
+        await session_manager.remove_spectator(session_id, websocket)

@@ -48,10 +48,24 @@ class GameSession:
     last_activity: datetime = field(default_factory=datetime.utcnow)
     turn_count: int = 0
     last_action: str = ""  # Last action taken for ghost recording
+    allow_spectators: bool = True  # Whether this session allows spectators
+    spectator_websockets: List[Any] = field(default_factory=list)  # WebSocket connections
 
     def update_activity(self):
         """Update last activity timestamp."""
         self.last_activity = datetime.utcnow()
+
+    async def broadcast_to_spectators(self, state: dict):
+        """Send game state to all spectators."""
+        disconnected = []
+        for ws in self.spectator_websockets:
+            try:
+                await ws.send_json(state)
+            except Exception:
+                disconnected.append(ws)
+        # Remove disconnected spectators
+        for ws in disconnected:
+            self.spectator_websockets.remove(ws)
 
 
 class GameSessionManager:
@@ -275,7 +289,13 @@ class GameSessionManager:
             )
 
         # Build and return state update
-        return self.serialize_game_state(session, events)
+        state = self.serialize_game_state(session, events)
+
+        # Broadcast to spectators
+        if session.spectator_websockets:
+            await session.broadcast_to_spectators(state)
+
+        return state
 
     def serialize_game_state(
         self, session: GameSession, events: List = None
@@ -422,6 +442,42 @@ class GameSessionManager:
     def get_active_session_count(self) -> int:
         """Get the number of active game sessions."""
         return len(self.sessions)
+
+    def get_active_games(self) -> List[dict]:
+        """Get list of active games available for spectating."""
+        games = []
+        for user_id, session in self.sessions.items():
+            if session.allow_spectators:
+                games.append({
+                    "session_id": session.session_id,
+                    "username": session.username,
+                    "level": session.engine.current_level if session.engine else 1,
+                    "turn_count": session.turn_count,
+                    "spectator_count": len(session.spectator_websockets),
+                    "started_at": session.created_at.isoformat(),
+                })
+        return games
+
+    async def get_session_by_id(self, session_id: str) -> Optional[GameSession]:
+        """Get a session by its session_id (for spectators)."""
+        for session in self.sessions.values():
+            if session.session_id == session_id:
+                return session
+        return None
+
+    async def add_spectator(self, session_id: str, websocket: Any) -> Optional[GameSession]:
+        """Add a spectator to a game session."""
+        session = await self.get_session_by_id(session_id)
+        if session and session.allow_spectators:
+            session.spectator_websockets.append(websocket)
+            return session
+        return None
+
+    async def remove_spectator(self, session_id: str, websocket: Any):
+        """Remove a spectator from a game session."""
+        session = await self.get_session_by_id(session_id)
+        if session and websocket in session.spectator_websockets:
+            session.spectator_websockets.remove(websocket)
 
 
 # Global session manager instance
