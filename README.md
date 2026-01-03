@@ -166,6 +166,26 @@ npm run dev
 
 Access at `http://localhost:5173`. Requires the backend server to be running.
 
+#### Mobile Access (v3.4.0)
+To play on your phone or tablet:
+
+```bash
+cd web
+npm run dev -- --host
+```
+
+This exposes the server on your local network. Look for output like:
+```
+Local:   http://localhost:5173/
+Network: http://192.168.x.x:5173/
+```
+
+Open the **Network** URL on your mobile device (must be on same WiFi).
+
+**Testing in browser:** Press F12 → Toggle Device Toolbar (Ctrl+Shift+M) → Select phone preset → Refresh.
+
+**Install as App:** On your phone, use "Add to Home Screen" from the browser menu for an app-like experience.
+
 #### Production Build
 ```bash
 cd web
