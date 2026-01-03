@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-02
-**Branch:** feature/player-profiles-achievements
-**Version:** v3.1.0 (Player Profiles & Achievements)
+**Branch:** master
+**Version:** v3.1.0 (Player Profiles & Achievements) - Released
 
 ---
 
@@ -12,7 +12,7 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 
 **v3.1.0 adds Player Profiles and an Achievements system** with 20 achievements across 5 categories (combat, progression, efficiency, collection, special) and 4 rarity tiers.
 
-### v3.1.0 Player Profiles & Achievements (In Progress)
+### v3.1.0 Player Profiles & Achievements (Complete)
 
 | Component | Status |
 |-----------|--------|
@@ -27,7 +27,6 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 | Profile page (stats, games, achievements) | ✅ Done |
 | Achievements page (categories, filtering) | ✅ Done |
 | Achievement toast notifications | ✅ Done |
-| Integration testing | ⏳ Pending |
 
 ### v3.0.0 Web Frontend (Complete)
 
@@ -351,15 +350,11 @@ npm run build
 - **v2.2.1** - Bug fixes for lore items and victory screen
 - **v3.0.0-backend** - Complete multiplayer backend (6 phases)
 - **v3.0.0** - Full stack with React web frontend
-- **v3.1.0** - Player profiles & achievements system (in progress)
+- **v3.1.0** - Player profiles & achievements system
 
 ---
 
 ## What's Next
-
-### v3.1.0 Remaining Tasks
-- Integration testing with running server
-- Database migration testing
 
 ### Future Enhancements
 
