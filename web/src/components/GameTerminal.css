@@ -5,6 +5,11 @@
   background-color: #1a1a2e;
   border-radius: 8px;
   overflow: hidden;
+  /* Prevent zoom on double-tap */
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .game-terminal .xterm {
@@ -19,4 +24,23 @@
 /* Hide scrollbar */
 .game-terminal .xterm-viewport::-webkit-scrollbar {
   display: none;
+}
+
+/* Mobile adjustments */
+@media (pointer: coarse) {
+  .game-terminal {
+    min-height: 200px;
+    border-radius: 0;
+  }
+
+  .game-terminal .xterm {
+    padding: 4px;
+  }
+}
+
+/* Smaller font on very small screens */
+@media (max-width: 380px) {
+  .game-terminal .xterm {
+    font-size: 12px !important;
+  }
 }

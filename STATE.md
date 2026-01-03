@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
-**Last Updated:** 2026-01-02
-**Branch:** develop
-**Version:** v3.3.0 (Spectator Mode) - In Development
+**Last Updated:** 2026-01-03
+**Branch:** feature/mobile-support
+**Version:** v3.4.0 (Mobile Support) - In Development
 
 ---
 
@@ -15,6 +15,24 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 **v3.2.0 adds Boss Monsters** with 5 unique bosses (one per level), 10 special abilities, and guaranteed loot drops.
 
 **v3.3.0 adds Spectator Mode, Boss Achievements, and Legendary Items.**
+
+**v3.4.0 adds Mobile Support** with touch controls, responsive layout, and PWA installability.
+
+### v3.4.0 Mobile Support (In Progress)
+
+| Component | Status |
+|-----------|--------|
+| TouchControls component (D-pad + action buttons) | ✅ Done |
+| UI mode-aware controls (game, inventory, dialog) | ✅ Done |
+| Portrait/landscape orientation support | ✅ Done |
+| Mobile chat toggle with unread badge | ✅ Done |
+| Mobile chat modal overlay | ✅ Done |
+| Responsive CSS breakpoints (pointer: coarse) | ✅ Done |
+| GameTerminal touch-action/orientation handling | ✅ Done |
+| PWA manifest | ✅ Done |
+| App icon (SVG placeholder) | ✅ Done |
+| Service worker for asset caching | ✅ Done |
+| iOS PWA meta tags | ✅ Done |
 
 ### v3.3.0 Spectator Mode (Complete)
 
@@ -441,8 +459,12 @@ npm run build
 ## What's Next
 
 ### Immediate Tasks
-- Tag v3.3.0 release
-- Update README.md for v3.3.0
+- ✅ v3.3.0 tagged and released
+- ✅ README.md updated for v3.3.0
+- ✅ Terminal client verified working
+- ✅ v3.4.0 mobile support implemented
+- Merge feature/mobile-support to develop
+- Update README.md for v3.4.0
 
 ### Future Enhancements
 
@@ -459,7 +481,7 @@ npm run build
 - Player search/friends
 
 **Polish:**
-- Mobile responsiveness improvements
+- ~~Mobile responsiveness improvements~~ ✅ Done in v3.4.0
 - Sound effects
 - Better animations
 - Localization
