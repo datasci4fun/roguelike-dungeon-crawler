@@ -12,6 +12,8 @@ from ..core.constants import (
     BOX_H_ASCII, BOX_V_ASCII, BOX_LEFT_ASCII, BOX_RIGHT_ASCII
 )
 from ..world import Dungeon
+from ..world.traps import Trap
+from ..world.hazards import Hazard
 from ..entities import Player, Enemy
 from ..items import Item
 
@@ -144,7 +146,8 @@ class Renderer:
             # No good break point, just hard truncate
             return text[:truncate_at] + "..."
 
-    def render(self, dungeon: Dungeon, player: Player, enemies: List[Enemy], items: List[Item], messages: List[str]):
+    def render(self, dungeon: Dungeon, player: Player, enemies: List[Enemy], items: List[Item], messages: List[str],
+                visible_traps: List[Trap] = None, hazards: List[Hazard] = None):
         """Render the entire game state."""
         # Clean up expired animations
         self._cleanup_animations()
@@ -160,8 +163,16 @@ class Renderer:
         # Render terrain features (water, blood, grass)
         self._render_terrain(dungeon, vp_x, vp_y, vp_w, vp_h)
 
+        # v4.0: Render hazards (lava, ice, poison gas, deep water)
+        if hazards:
+            self._render_hazards(hazards, dungeon, vp_x, vp_y, vp_w, vp_h)
+
         # Render decorations (after dungeon, before entities)
         self._render_decorations(dungeon, vp_x, vp_y, vp_w, vp_h)
+
+        # v4.0: Render visible traps (before items/enemies)
+        if visible_traps:
+            self._render_traps(visible_traps, dungeon, vp_x, vp_y, vp_w, vp_h)
 
         # Render items (before enemies and player) - only visible
         self._render_items(items, dungeon, vp_x, vp_y, vp_w, vp_h)
@@ -372,6 +383,71 @@ class Renderer:
                         self.stdscr.addstr(screen_y, screen_x, char, curses.color_pair(7))
                     else:
                         self.stdscr.addstr(screen_y, screen_x, char)
+            except curses.error:
+                pass
+
+    def _render_hazards(self, hazards: List[Hazard], dungeon: Dungeon, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
+        """Render environmental hazards (lava, ice, poison gas, deep water)."""
+        for hazard in hazards:
+            world_x, world_y = hazard.x, hazard.y
+
+            # Only render in explored tiles
+            if not (0 <= world_y < dungeon.height and 0 <= world_x < dungeon.width):
+                continue
+
+            if not dungeon.explored[world_y][world_x]:
+                continue
+
+            # Check if in viewport
+            if not self._is_in_viewport(world_x, world_y, vp_x, vp_y, vp_w, vp_h):
+                continue
+
+            screen_x, screen_y = self._world_to_screen(world_x, world_y, vp_x, vp_y)
+
+            try:
+                symbol = hazard.symbol
+                color_pair = hazard.color
+
+                # Render dim if not visible
+                if dungeon.visible[world_y][world_x]:
+                    if curses.has_colors():
+                        self.stdscr.addstr(screen_y, screen_x, symbol, curses.color_pair(color_pair))
+                    else:
+                        self.stdscr.addstr(screen_y, screen_x, symbol)
+                else:
+                    # Dim rendering for explored but not visible
+                    if curses.has_colors():
+                        self.stdscr.addstr(screen_y, screen_x, symbol, curses.color_pair(7))
+                    else:
+                        self.stdscr.addstr(screen_y, screen_x, symbol)
+            except curses.error:
+                pass
+
+    def _render_traps(self, visible_traps: List[Trap], dungeon: Dungeon, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
+        """Render visible (detected) traps."""
+        for trap in visible_traps:
+            world_x, world_y = trap.x, trap.y
+
+            # Only render in visible tiles
+            if not (0 <= world_y < dungeon.height and 0 <= world_x < dungeon.width):
+                continue
+
+            if not dungeon.visible[world_y][world_x]:
+                continue
+
+            # Check if in viewport
+            if not self._is_in_viewport(world_x, world_y, vp_x, vp_y, vp_w, vp_h):
+                continue
+
+            screen_x, screen_y = self._world_to_screen(world_x, world_y, vp_x, vp_y)
+
+            try:
+                symbol = trap.symbol  # Gets visible symbol since trap is not hidden
+                # Traps render in red (dangerous)
+                if curses.has_colors():
+                    self.stdscr.addstr(screen_y, screen_x, symbol, curses.color_pair(3))
+                else:
+                    self.stdscr.addstr(screen_y, screen_x, symbol)
             except curses.error:
                 pass
 
@@ -822,7 +898,7 @@ class Renderer:
             List of (status_text, color_pair) tuples
         """
         import time
-        from ..core.constants import PLAYER_ATTACK_DAMAGE, ATK_GAIN_PER_LEVEL
+        from ..core.constants import PLAYER_ATTACK_DAMAGE, ATK_GAIN_PER_LEVEL, StatusEffectType
 
         indicators = []
 
@@ -855,6 +931,30 @@ class Renderer:
                 indicators.append(("[STRONG]", curses.color_pair(4) | curses.A_BOLD))
             else:
                 indicators.append(("[STRONG]", curses.A_BOLD))
+
+        # v4.0: Status effects
+        if hasattr(player, 'status_effects') and player.status_effects:
+            for effect in player.status_effects.effects:
+                if effect.effect_type == StatusEffectType.POISON:
+                    if curses.has_colors():
+                        indicators.append(("[POISON]", curses.color_pair(4)))  # Green
+                    else:
+                        indicators.append(("[POISON]", curses.A_NORMAL))
+                elif effect.effect_type == StatusEffectType.BURN:
+                    if curses.has_colors():
+                        indicators.append(("[BURN]", curses.color_pair(3)))  # Red
+                    else:
+                        indicators.append(("[BURN]", curses.A_NORMAL))
+                elif effect.effect_type == StatusEffectType.FREEZE:
+                    if curses.has_colors():
+                        indicators.append(("[FREEZE]", curses.color_pair(5)))  # Cyan
+                    else:
+                        indicators.append(("[FREEZE]", curses.A_NORMAL))
+                elif effect.effect_type == StatusEffectType.STUN:
+                    if curses.has_colors():
+                        indicators.append(("[STUN]", curses.color_pair(2)))  # Yellow
+                    else:
+                        indicators.append(("[STUN]", curses.A_NORMAL))
 
         return indicators
 

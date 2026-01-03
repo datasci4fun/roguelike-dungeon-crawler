@@ -25,9 +25,23 @@ class EntityManager:
         self.enemies.clear()
         num_enemies = min(len(dungeon.rooms) * 2, 15)  # 2 enemies per room, max 15
 
-        # Get weighted list of enemy types
-        enemy_types = list(ENEMY_STATS.keys())
-        weights = [ENEMY_STATS[t]['weight'] for t in enemy_types]
+        # Get weighted list of enemy types filtered by dungeon level
+        current_level = dungeon.level
+        enemy_types = []
+        weights = []
+
+        for enemy_type, stats in ENEMY_STATS.items():
+            min_lvl = stats.get('min_level', 1)
+            max_lvl = stats.get('max_level', 5)
+            # Only include enemies appropriate for this dungeon level
+            if min_lvl <= current_level <= max_lvl:
+                enemy_types.append(enemy_type)
+                weights.append(stats['weight'])
+
+        if not enemy_types:
+            # Fallback to basic enemies if none match
+            enemy_types = [EnemyType.GOBLIN, EnemyType.SKELETON]
+            weights = [40, 30]
 
         for _ in range(num_enemies):
             pos = dungeon.get_random_floor_position()

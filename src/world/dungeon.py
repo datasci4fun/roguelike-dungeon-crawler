@@ -4,13 +4,15 @@ from dataclasses import dataclass
 from typing import List, Tuple
 
 from ..core.constants import (
-    TileType, DungeonTheme, RoomType,
+    TileType, DungeonTheme, RoomType, TrapType, HazardType,
     DUNGEON_WIDTH, DUNGEON_HEIGHT,
     MIN_ROOM_SIZE, MAX_ROOM_SIZE, MAX_BSP_DEPTH,
     LEVEL_THEMES, THEME_TILES, THEME_TILES_ASCII,
     THEME_DECORATIONS, THEME_DECORATIONS_ASCII,
     THEME_TERRAIN, TERRAIN_BLOOD
 )
+from .traps import Trap, TrapManager
+from .hazards import Hazard, HazardManager
 
 
 @dataclass
@@ -508,3 +510,189 @@ class Dungeon:
             if 0 <= x < self.width and 0 <= y < self.height:
                 self.visible[y][x] = True
                 self.explored[y][x] = True
+
+    # =========================================================================
+    # v4.0: Trap and Hazard Generation
+    # =========================================================================
+
+    def generate_traps(self, trap_manager: TrapManager, player_x: int, player_y: int):
+        """
+        Generate traps for this dungeon level.
+
+        Args:
+            trap_manager: The TrapManager to add traps to
+            player_x, player_y: Player position to avoid placing traps there
+        """
+        # Number of traps scales with dungeon level (3-6 per level)
+        num_traps = 2 + self.level
+
+        # Available trap types based on level
+        available_traps = []
+        if self.level >= 1:
+            available_traps.append(TrapType.SPIKE)
+        if self.level >= 2:
+            available_traps.append(TrapType.ARROW)
+        if self.level >= 3:
+            available_traps.append(TrapType.FIRE)
+            available_traps.append(TrapType.POISON)
+
+        if not available_traps:
+            return
+
+        # Positions to avoid (player, stairs)
+        avoid_positions = {(player_x, player_y)}
+        if self.stairs_up_pos:
+            avoid_positions.add(self.stairs_up_pos)
+        if self.stairs_down_pos:
+            avoid_positions.add(self.stairs_down_pos)
+
+        placed = 0
+        attempts = 0
+        max_attempts = num_traps * 20
+
+        while placed < num_traps and attempts < max_attempts:
+            attempts += 1
+
+            # Get random floor position
+            pos = self.get_random_floor_position()
+
+            # Avoid player and stairs
+            if pos in avoid_positions:
+                continue
+
+            # Avoid placing too close to player start
+            if abs(pos[0] - player_x) <= 3 and abs(pos[1] - player_y) <= 3:
+                continue
+
+            # Avoid placing on decorations
+            if any(dx == pos[0] and dy == pos[1] for dx, dy, _, _ in self.decorations):
+                continue
+
+            # Prefer corridors and doorways for traps
+            # (positions with fewer adjacent floor tiles)
+            adjacent_floors = sum(
+                1 for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0)]
+                if self.is_walkable(pos[0] + dx, pos[1] + dy)
+            )
+
+            # 70% chance for corridor placement (2-3 adjacent floors)
+            # 30% chance for room placement
+            if adjacent_floors > 3 and random.random() > 0.3:
+                continue
+
+            # Create and place trap
+            trap_type = random.choice(available_traps)
+            trap = Trap(x=pos[0], y=pos[1], trap_type=trap_type)
+            trap_manager.add_trap(trap)
+            avoid_positions.add(pos)
+            placed += 1
+
+    def generate_hazards(self, hazard_manager: HazardManager, player_x: int, player_y: int):
+        """
+        Generate environmental hazards for this dungeon level.
+
+        Args:
+            hazard_manager: The HazardManager to add hazards to
+            player_x, player_y: Player position to avoid placing hazards there
+        """
+        # Hazards based on dungeon theme and level
+        hazard_config = self._get_hazard_config()
+        if not hazard_config:
+            return
+
+        for hazard_type, (min_count, max_count) in hazard_config.items():
+            num_hazards = random.randint(min_count, max_count)
+            self._place_hazard_zone(hazard_manager, hazard_type, num_hazards, player_x, player_y)
+
+    def _get_hazard_config(self) -> dict:
+        """Get hazard configuration based on theme and level."""
+        config = {}
+
+        # Ice hazards in crypt (levels 2-3)
+        if self.theme == DungeonTheme.CRYPT:
+            config[HazardType.ICE] = (2, 4)
+
+        # Lava in deep dungeon (levels 4-5)
+        if self.level >= 4:
+            config[HazardType.LAVA] = (2, 4)
+
+        # Poison gas can appear anywhere after level 2
+        if self.level >= 2:
+            if random.random() < 0.3:  # 30% chance
+                config[HazardType.POISON_GAS] = (1, 2)
+
+        # Deep water can appear in any theme
+        if random.random() < 0.2:  # 20% chance
+            config[HazardType.DEEP_WATER] = (3, 6)
+
+        return config
+
+    def _place_hazard_zone(
+        self,
+        hazard_manager: HazardManager,
+        hazard_type: HazardType,
+        count: int,
+        player_x: int,
+        player_y: int
+    ):
+        """Place a zone of hazards of a specific type."""
+        # Choose a random room for the hazard zone
+        if not self.rooms:
+            return
+
+        # Avoid the room with stairs down for hazards
+        valid_rooms = [r for r in self.rooms if r.center() != self.stairs_down_pos]
+        if not valid_rooms:
+            valid_rooms = self.rooms
+
+        room = random.choice(valid_rooms)
+
+        # Positions to avoid
+        avoid_positions = {(player_x, player_y)}
+        if self.stairs_up_pos:
+            avoid_positions.add(self.stairs_up_pos)
+        if self.stairs_down_pos:
+            avoid_positions.add(self.stairs_down_pos)
+
+        placed = 0
+        attempts = 0
+        max_attempts = count * 10
+
+        # Start position for the zone (cluster hazards together)
+        start_x = random.randint(room.x + 1, room.x + room.width - 2)
+        start_y = random.randint(room.y + 1, room.y + room.height - 2)
+
+        while placed < count and attempts < max_attempts:
+            attempts += 1
+
+            # Spread from start position
+            offset_x = random.randint(-2, 2)
+            offset_y = random.randint(-2, 2)
+            pos = (start_x + offset_x, start_y + offset_y)
+
+            # Check bounds
+            if not (0 <= pos[0] < self.width and 0 <= pos[1] < self.height):
+                continue
+
+            # Must be walkable
+            if not self.is_walkable(pos[0], pos[1]):
+                continue
+
+            # Avoid player and stairs
+            if pos in avoid_positions:
+                continue
+
+            # Avoid too close to player
+            if abs(pos[0] - player_x) <= 2 and abs(pos[1] - player_y) <= 2:
+                continue
+
+            # Check not already a hazard there
+            if hazard_manager.has_hazard_at(pos[0], pos[1]):
+                continue
+
+            # Create hazard
+            intensity = 3 if hazard_type == HazardType.POISON_GAS else 1
+            hazard = Hazard(x=pos[0], y=pos[1], hazard_type=hazard_type, intensity=intensity)
+            hazard_manager.add_hazard(hazard)
+            avoid_positions.add(pos)
+            placed += 1

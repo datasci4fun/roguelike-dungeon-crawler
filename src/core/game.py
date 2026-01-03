@@ -324,12 +324,17 @@ class Game:
         self._process_events()
 
         # Normal game rendering
+        # v4.0: Pass visible traps and hazards for rendering
+        visible_traps = self.engine.trap_manager.get_visible_traps()
+        hazards = self.engine.hazard_manager.hazards
         self.renderer.render(
             self.engine.dungeon,
             self.engine.player,
             self.engine.enemies,
             self.engine.items,
-            self.engine.messages
+            self.engine.messages,
+            visible_traps=visible_traps,
+            hazards=hazards
         )
 
         # Handle input
@@ -390,12 +395,16 @@ class Game:
         use_unicode = self.renderer.use_unicode
 
         # Render the game behind the dialog first
+        visible_traps = self.engine.trap_manager.get_visible_traps()
+        hazards = self.engine.hazard_manager.hazards
         self.renderer.render(
             self.engine.dungeon,
             self.engine.player,
             self.engine.enemies,
             self.engine.items,
-            self.engine.messages
+            self.engine.messages,
+            visible_traps=visible_traps,
+            hazards=hazards
         )
 
         # Render dialog on top

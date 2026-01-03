@@ -1,8 +1,10 @@
 """Combat orchestration and damage flow."""
-from typing import TYPE_CHECKING
+import random
+from typing import TYPE_CHECKING, Optional
 
 from ..entities import attack, get_combat_message
-from ..core.constants import GameState, ELITE_XP_MULTIPLIER, BOSS_LOOT
+from ..entities.ai_behaviors import get_ai_action, tick_enemy_cooldowns
+from ..core.constants import GameState, ELITE_XP_MULTIPLIER, BOSS_LOOT, AIBehavior
 from ..core.events import EventType, EventQueue
 from ..items import ItemType, create_item
 
@@ -173,7 +175,28 @@ class CombatManager:
             if not enemy.is_alive():
                 continue
 
-            # Boss enemies try to use abilities first
+            # v4.0: Process status effects first
+            effect_results = enemy.process_status_effects()
+            for result in effect_results:
+                if result.get('message'):
+                    enemy_name = self._get_enemy_name(enemy)
+                    self.game.add_message(f"{enemy_name}: {result['message']}")
+
+            # Check if enemy died from status effects
+            if not enemy.is_alive():
+                self.game.player.kills += 1
+                self.game.add_message(f"{self._get_enemy_name(enemy)} succumbed to their wounds!")
+                continue
+
+            # v4.0: Check if stunned (skip turn)
+            if enemy.is_stunned():
+                self.game.add_message(f"{self._get_enemy_name(enemy)} is stunned!")
+                continue
+
+            # Tick ability cooldowns
+            tick_enemy_cooldowns(enemy)
+
+            # Boss enemies use their own turn processing
             if enemy.is_boss:
                 ability_result = enemy.process_boss_turn(
                     self.game.player,
@@ -193,8 +216,43 @@ class CombatManager:
                         return
 
                     continue  # Boss used ability, skip normal movement
+            else:
+                # v4.0: Use AI behavior system for non-boss enemies
+                move, ability_used, ability_message = get_ai_action(
+                    enemy,
+                    self.game.player,
+                    self.game.dungeon,
+                    self.game.entity_manager
+                )
 
-            # Get move toward player
+                # Handle ability usage
+                if ability_used and ability_message:
+                    self.game.add_message(ability_message)
+
+                    # Check if player died from ability damage
+                    if not self.game.player.is_alive():
+                        self.game.last_attacker_name = self._get_enemy_name(enemy)
+                        self.game.last_damage_taken = 0  # Damage tracked by ability
+                        self.game.state = GameState.DEAD
+                        return
+
+                # Apply movement from AI
+                if move:
+                    dx, dy = move
+                    if dx != 0 or dy != 0:
+                        new_x = enemy.x + dx
+                        new_y = enemy.y + dy
+
+                        # Check if moving into player
+                        if new_x == self.game.player.x and new_y == self.game.player.y:
+                            self._enemy_attack_player(enemy)
+                        else:
+                            # Check if another enemy is at target position
+                            if not self.game.entity_manager.get_enemy_at(new_x, new_y):
+                                enemy.move(dx, dy)
+                continue
+
+            # Fallback for bosses that didn't use ability - standard movement
             dx, dy = enemy.get_move_toward_player(
                 self.game.player.x,
                 self.game.player.y,
@@ -215,9 +273,33 @@ class CombatManager:
                 if not self.game.entity_manager.get_enemy_at(new_x, new_y):
                     enemy.move(dx, dy)
 
+    def _get_enemy_name(self, enemy) -> str:
+        """Get display name for an enemy."""
+        if enemy.is_boss:
+            return f"The {enemy.name}"
+        elif enemy.is_elite:
+            return f"Elite {enemy.name}"
+        return enemy.name
+
     def _enemy_attack_player(self, enemy):
         """Handle an enemy attacking the player."""
         player = self.game.player
+
+        # Use enemy name (with "Elite" prefix for elites, "The" for bosses)
+        if enemy.is_boss:
+            enemy_name = f"The {enemy.name}"
+        elif enemy.is_elite:
+            enemy_name = f"Elite {enemy.name}"
+        else:
+            enemy_name = enemy.name
+
+        # v4.0: Check for shield block
+        if player.block_chance > 0 and random.random() < player.block_chance:
+            self.game.add_message(f"You block {enemy_name}'s attack with your shield!")
+            # Emit blocked event (no damage)
+            if self.events is not None:
+                self.events.emit_attack(enemy, player, 0, False)
+            return
 
         # Use effective_damage for bosses (may have buffs)
         if enemy.is_boss:
@@ -227,13 +309,6 @@ class CombatManager:
         else:
             damage, player_died = attack(enemy, player)
 
-        # Use enemy name (with "Elite" prefix for elites, "The" for bosses)
-        if enemy.is_boss:
-            enemy_name = f"The {enemy.name}"
-        elif enemy.is_elite:
-            enemy_name = f"Elite {enemy.name}"
-        else:
-            enemy_name = enemy.name
         message = get_combat_message(enemy_name, "you", damage, player_died)
         self.game.add_message(message)
 

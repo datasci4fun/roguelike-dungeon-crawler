@@ -61,6 +61,20 @@ class LevelManager:
         self.game.entity_manager.spawn_items(self.game.dungeon, self.game.player)
         self.game.entity_manager.spawn_boss(self.game.dungeon, self.game.player)
 
+        # v4.0: Clear and generate traps/hazards for new level
+        self.game.trap_manager.clear()
+        self.game.hazard_manager.clear()
+        self.game.dungeon.generate_traps(
+            self.game.trap_manager,
+            self.game.player.x,
+            self.game.player.y
+        )
+        self.game.dungeon.generate_hazards(
+            self.game.hazard_manager,
+            self.game.player.x,
+            self.game.player.y
+        )
+
         self.game.add_message("The air grows colder...")
         if self.game.entity_manager.boss:
             boss_name = self.game.entity_manager.boss.name
@@ -89,3 +103,17 @@ class LevelManager:
         self.game.entity_manager.spawn_enemies(self.game.dungeon, self.game.player)
         self.game.entity_manager.spawn_items(self.game.dungeon, self.game.player)
         self.game.entity_manager.spawn_boss(self.game.dungeon, self.game.player)
+
+        # v4.0: Clear and generate traps/hazards for new level
+        self.game.trap_manager.clear()
+        self.game.hazard_manager.clear()
+        self.game.dungeon.generate_traps(
+            self.game.trap_manager,
+            self.game.player.x,
+            self.game.player.y
+        )
+        self.game.dungeon.generate_hazards(
+            self.game.hazard_manager,
+            self.game.player.x,
+            self.game.player.y
+        )

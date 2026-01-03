@@ -14,7 +14,7 @@ from .commands import (
     MOVEMENT_COMMANDS, ITEM_COMMANDS, SCROLL_COMMANDS,
     get_movement_delta, get_item_index
 )
-from ..world import Dungeon
+from ..world import Dungeon, TrapManager, HazardManager
 from ..entities import Player
 from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
 from ..story import StoryManager
@@ -68,6 +68,10 @@ class GameEngine:
         self.save_manager = SaveManager(self)
         self.story_manager = StoryManager()
 
+        # v4.0: Trap and hazard managers
+        self.trap_manager = TrapManager()
+        self.hazard_manager = HazardManager()
+
         # Death tracking for recap
         self.last_attacker_name = None
         self.last_damage_taken = 0
@@ -119,6 +123,12 @@ class GameEngine:
         # Spawn entities
         self.entity_manager.spawn_enemies(self.dungeon, self.player)
         self.entity_manager.spawn_items(self.dungeon, self.player)
+
+        # v4.0: Clear and generate traps/hazards
+        self.trap_manager.clear()
+        self.hazard_manager.clear()
+        self.dungeon.generate_traps(self.trap_manager, self.player.x, self.player.y)
+        self.dungeon.generate_hazards(self.hazard_manager, self.player.x, self.player.y)
 
         # Welcome messages
         self.add_message("Welcome to the dungeon!")
@@ -196,7 +206,23 @@ class GameEngine:
             player_moved = self.combat_manager.try_move_or_attack(dx, dy)
 
             if player_moved:
+                # v4.0: Check for traps at new position
+                self._process_traps()
+
+                # v4.0: Process hazards at new position
+                self._process_hazards()
+
+                # v4.0: Process player status effects
+                self._process_player_status_effects()
+
                 self._process_enemy_turns()
+
+                # v4.0: Tick spreading hazards
+                if self.dungeon:
+                    new_hazards = self.hazard_manager.tick_spreading(self.dungeon.is_walkable)
+                    for hazard in new_hazards:
+                        self.add_message(f"The {hazard.name.lower()} spreads!")
+
                 self._check_auto_save()
                 self._check_player_death()
 
@@ -255,6 +281,64 @@ class GameEngine:
             from ..data import delete_save
             delete_save()
             self.state = GameState.DEAD
+
+    def _process_traps(self):
+        """Process traps at player's current position."""
+        if not self.player:
+            return
+
+        # Get trap at position first to get its name
+        trap = self.trap_manager.get_trap_at(self.player.x, self.player.y)
+        if not trap or not trap.is_active:
+            return
+
+        result = trap.trigger(self.player)
+        if result:
+            if result.get('message'):
+                self.add_message(result['message'])
+
+            # Track damage for death recap
+            if result.get('damage', 0) > 0:
+                self.last_attacker_name = f"a {trap.name}"
+                self.last_damage_taken = result['damage']
+
+        # Tick all trap cooldowns
+        self.trap_manager.tick_all()
+
+    def _process_hazards(self):
+        """Process hazards at player's current position."""
+        if not self.player:
+            return
+
+        result = self.hazard_manager.process_entity_at(
+            self.player, self.player.x, self.player.y
+        )
+        if result:
+            if result.get('message'):
+                self.add_message(result['message'])
+
+            # Handle drowning
+            if result.get('drown'):
+                self.last_attacker_name = "deep water"
+                self.last_damage_taken = self.player.health
+                self.player.health = 0
+            elif result.get('damage', 0) > 0:
+                self.last_attacker_name = "environmental hazard"
+                self.last_damage_taken = result['damage']
+
+    def _process_player_status_effects(self):
+        """Process player's active status effects."""
+        if not self.player:
+            return
+
+        effect_results = self.player.process_status_effects()
+        for result in effect_results:
+            if result.get('message'):
+                self.add_message(result['message'])
+
+            if result.get('damage', 0) > 0:
+                self.last_attacker_name = result.get('source', 'status effect')
+                self.last_damage_taken = result['damage']
 
     # =========================================================================
     # Command Processing - Inventory
