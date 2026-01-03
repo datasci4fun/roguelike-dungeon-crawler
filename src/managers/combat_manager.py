@@ -19,8 +19,8 @@ LOOT_TYPE_MAP = {
     'plate_armor': ItemType.ARMOR_PLATE,
     'health_potion': ItemType.HEALTH_POTION,
     'teleport_scroll': ItemType.SCROLL_TELEPORT,
-    'dragon_slayer': ItemType.WEAPON_AXE,  # Legendary version of axe
-    'dragon_scale': ItemType.ARMOR_PLATE,  # Legendary version of plate
+    'dragon_slayer': ItemType.WEAPON_DRAGON_SLAYER,  # Legendary weapon (+8 ATK)
+    'dragon_scale': ItemType.ARMOR_DRAGON_SCALE,     # Legendary armor (+8 DEF)
 }
 
 

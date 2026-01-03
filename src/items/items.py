@@ -17,10 +17,12 @@ class ItemType(Enum):
     WEAPON_DAGGER = auto()
     WEAPON_SWORD = auto()
     WEAPON_AXE = auto()
+    WEAPON_DRAGON_SLAYER = auto()  # Legendary weapon
     # Armor
     ARMOR_LEATHER = auto()
     ARMOR_CHAIN = auto()
     ARMOR_PLATE = auto()
+    ARMOR_DRAGON_SCALE = auto()    # Legendary armor
     # Story/Lore items
     SCROLL_LORE = auto()
     BOOK = auto()
@@ -187,6 +189,21 @@ class Axe(Weapon):
         )
 
 
+class DragonSlayer(Weapon):
+    """Legendary weapon dropped by the Dragon Emperor."""
+
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.WEAPON_DRAGON_SLAYER,
+            name="Dragon Slayer",
+            description="+8 ATK, Legendary",
+            attack_bonus=8,
+            rarity=ItemRarity.LEGENDARY
+        )
+
+
 class Armor(Item):
     """Base class for armor items."""
 
@@ -252,6 +269,21 @@ class PlateArmor(Armor):
             description="+5 DEF",
             defense_bonus=5,
             rarity=ItemRarity.RARE
+        )
+
+
+class DragonScaleArmor(Armor):
+    """Legendary armor dropped by the Dragon Emperor."""
+
+    def __init__(self, x: int, y: int):
+        from ..core.constants import ItemRarity
+        super().__init__(
+            x=x, y=y,
+            item_type=ItemType.ARMOR_DRAGON_SCALE,
+            name="Dragon Scale Armor",
+            description="+8 DEF, Legendary",
+            defense_bonus=8,
+            rarity=ItemRarity.LEGENDARY
         )
 
 
@@ -340,6 +372,8 @@ def create_item(item_type: ItemType, x: int, y: int) -> Item:
         return Sword(x, y)
     elif item_type == ItemType.WEAPON_AXE:
         return Axe(x, y)
+    elif item_type == ItemType.WEAPON_DRAGON_SLAYER:
+        return DragonSlayer(x, y)
     # Armor
     elif item_type == ItemType.ARMOR_LEATHER:
         return LeatherArmor(x, y)
@@ -347,6 +381,8 @@ def create_item(item_type: ItemType, x: int, y: int) -> Item:
         return ChainMail(x, y)
     elif item_type == ItemType.ARMOR_PLATE:
         return PlateArmor(x, y)
+    elif item_type == ItemType.ARMOR_DRAGON_SCALE:
+        return DragonScaleArmor(x, y)
     else:
         raise ValueError(f"Unknown item type: {item_type}")
 
