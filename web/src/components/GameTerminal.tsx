@@ -4,7 +4,7 @@
  * Renders the roguelike game state to a terminal emulator and
  * captures keyboard input for game commands.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
@@ -94,6 +94,64 @@ export function GameTerminal({
   const terminalRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+
+  // Track previous state for animations
+  const prevStateRef = useRef<{
+    level: number;
+    xp: number;
+    health: number;
+  } | null>(null);
+
+  // Animation state
+  const [animationClass, setAnimationClass] = useState('');
+
+  // Detect state changes for animations
+  useEffect(() => {
+    if (!gameState?.player) {
+      prevStateRef.current = null;
+      return;
+    }
+
+    const { player } = gameState;
+    const prev = prevStateRef.current;
+
+    if (prev) {
+      // Level up - gold flash
+      if (player.level > prev.level) {
+        setAnimationClass('level-up');
+        setTimeout(() => setAnimationClass(''), 800);
+      }
+      // XP gain - subtle green flash
+      else if (player.xp > prev.xp) {
+        setAnimationClass('xp-gain');
+        setTimeout(() => setAnimationClass(''), 400);
+      }
+      // Damage taken - red flash
+      else if (player.health < prev.health) {
+        setAnimationClass('damage-taken');
+        setTimeout(() => setAnimationClass(''), 300);
+      }
+    }
+
+    // Update previous state
+    prevStateRef.current = {
+      level: player.level,
+      xp: player.xp,
+      health: player.health,
+    };
+  }, [gameState?.player?.level, gameState?.player?.xp, gameState?.player?.health]);
+
+  // Compute persistent classes based on game state
+  const persistentClasses: string[] = [];
+  if (gameState?.player) {
+    const healthPercent = gameState.player.health / gameState.player.max_health;
+    if (healthPercent <= 0.2 && healthPercent > 0) {
+      persistentClasses.push('health-critical');
+    }
+  }
+  if (gameState?.game_state === 'VICTORY') {
+    persistentClasses.push('victory');
+  }
 
   // Initialize terminal
   useEffect(() => {
@@ -215,7 +273,13 @@ export function GameTerminal({
     }
   }, [gameState, isConnected, isSpectator]);
 
-  return <div ref={terminalRef} className="game-terminal" />;
+  const terminalClasses = [
+    'game-terminal',
+    animationClass,
+    ...persistentClasses,
+  ].filter(Boolean).join(' ');
+
+  return <div ref={terminalRef} className={terminalClasses} />;
 }
 
 function mapKeyToCommand(key: string, uiMode: string): string | null {

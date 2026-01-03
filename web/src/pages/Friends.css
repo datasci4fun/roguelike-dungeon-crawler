@@ -1,0 +1,392 @@
+.friends {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.friends h1 {
+  font-size: 1.75rem;
+  margin: 0 0 1.5rem;
+  color: #fff;
+}
+
+.loading,
+.error-message {
+  text-align: center;
+  padding: 3rem;
+  color: #888;
+}
+
+.error-message {
+  color: #ef4444;
+}
+
+.action-message {
+  background: rgba(74, 222, 128, 0.2);
+  border: 1px solid #4ade80;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  color: #4ade80;
+  text-align: center;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.5rem;
+}
+
+.tab {
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  color: #888;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab.active {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  border-bottom: 2px solid #6366f1;
+}
+
+.tab .badge {
+  background: #ef4444;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #888;
+}
+
+.empty-state .btn-primary {
+  margin-top: 1rem;
+  background: #6366f1;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.empty-state .btn-primary:hover {
+  background: #5558e3;
+}
+
+/* Friend Card */
+.friend-card,
+.request-card,
+.player-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid #333;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-indicator.online {
+  background: #4ade80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+}
+
+.status-indicator.offline {
+  background: #4b5563;
+}
+
+.friend-info,
+.request-info,
+.player-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.friend-name,
+.request-name,
+.player-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #fff;
+  text-decoration: none;
+}
+
+.friend-name:hover,
+.request-name:hover,
+.player-name:hover {
+  color: #6366f1;
+}
+
+.friend-meta,
+.request-meta,
+.player-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 0.25rem;
+}
+
+.friend-meta .username,
+.request-meta span:first-child {
+  color: #666;
+}
+
+.friend-meta .high-score {
+  color: #f59e0b;
+}
+
+.friend-meta .victories {
+  color: #4ade80;
+}
+
+/* Action Buttons */
+.friend-actions,
+.request-actions,
+.player-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-small {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.btn-small:hover {
+  transform: translateY(-1px);
+}
+
+.btn-watch {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-watch:hover {
+  background: #2563eb;
+}
+
+.btn-danger {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-accept {
+  background: #4ade80;
+  color: #000;
+}
+
+.btn-accept:hover {
+  background: #22c55e;
+}
+
+.btn-reject,
+.btn-cancel {
+  background: transparent;
+  color: #888;
+  border: 1px solid #555;
+}
+
+.btn-reject:hover,
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: #888;
+}
+
+.btn-add {
+  background: #6366f1;
+  color: white;
+}
+
+.btn-add:hover {
+  background: #5558e3;
+}
+
+/* Badges */
+.friend-badge,
+.pending-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.friend-badge {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+
+.pending-badge {
+  background: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+/* Requests Section */
+.requests-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.requests-group h3 {
+  font-size: 1rem;
+  color: #888;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #333;
+}
+
+.no-requests {
+  color: #666;
+  font-style: italic;
+  padding: 1rem;
+  text-align: center;
+}
+
+.request-card.outgoing {
+  opacity: 0.8;
+}
+
+/* Search Section */
+.search-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.search-bar {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.search-bar input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  background: rgba(26, 26, 46, 0.8);
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.search-bar input::placeholder {
+  color: #666;
+}
+
+.btn-search {
+  padding: 0.75rem 1.5rem;
+  background: #6366f1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-search:hover {
+  background: #5558e3;
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+}
+
+.no-results {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    flex: 1;
+    justify-content: center;
+    min-width: 100px;
+  }
+
+  .friend-card,
+  .request-card,
+  .player-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .friend-actions,
+  .request-actions,
+  .player-actions {
+    width: 100%;
+    margin-top: 0.75rem;
+  }
+
+  .btn-small {
+    flex: 1;
+    text-align: center;
+  }
+
+  .search-bar {
+    flex-direction: column;
+  }
+
+  .status-indicator {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+  }
+
+  .friend-card,
+  .player-card {
+    position: relative;
+  }
+}

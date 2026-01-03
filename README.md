@@ -10,6 +10,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v3.4.0 adds Mobile Support!** Play on your phone with touch controls, responsive layout, and installable PWA.
 
+**v3.5.0 adds Friends & Social!** Search for players, send friend requests, and track your social connections. Plus 10 new achievements and visual polish.
+
 ## Features
 
 ### Core Gameplay
@@ -124,6 +126,34 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **PWA Installable**: Add to home screen for app-like experience on iOS and Android
 - **Service Worker**: Caches static assets for faster loading
 - **Responsive Design**: Optimized for touch devices with `pointer: coarse` media queries
+
+### Friends & Social System (v3.5.0)
+- **Player Search**: Find other players by username or display name
+- **Friend Requests**: Send, accept, or reject friend requests
+- **Friends List**: View friends with online status indicators
+- **Online Status**: See which friends are currently playing
+- **Quick Actions**: View friend profiles, spectate online friends, remove friends
+- **Social Achievements**: Unlock achievements for making friends
+
+### New Achievements (v3.5.0)
+Expanded from 24 to 34 total achievements:
+- **Social Butterfly** (Common): Add your first friend
+- **Popular** (Rare): Have 10 friends
+- **Explorer** (Common): Visit all 5 dungeon levels in one run
+- **Treasure Hunter** (Rare): Collect 100+ gold in a single run
+- **Survivor** (Rare): Win with less than 5 HP remaining
+- **Pacifist** (Epic): Win with 5 or fewer kills
+- **One Shot** (Rare): Deal 50+ damage in a single hit
+- **Genocide** (Epic): Kill 50+ enemies in a single run
+- **Speed Demon** (Epic): Win in under 300 turns
+- **Completionist** (Legendary, Hidden): Unlock all other achievements
+
+### Visual Polish (v3.5.0)
+- **Level Up Flash**: Gold radial flash effect when gaining a level
+- **XP Gain Flash**: Subtle green flash when gaining experience
+- **Damage Flash**: Red screen flash when taking damage
+- **Critical Health Pulse**: Pulsing red glow when HP below 20%
+- **Victory Glow**: Celebratory green glow on victory screen
 
 ## Installation
 
@@ -322,7 +352,8 @@ server/                 # Multiplayer backend (v3.0.0+)
 │   │   ├── ghost.py    # Ghost replays
 │   │   ├── chat.py     # Real-time chat
 │   │   ├── profile.py  # Player profiles (v3.1.0)
-│   │   └── achievements.py  # Achievements (v3.1.0)
+│   │   ├── achievements.py  # Achievements (v3.1.0)
+│   │   └── friends.py       # Friends system (v3.5.0)
 │   ├── config/         # Configuration (v3.1.0)
 │   │   └── achievements.py  # Achievement definitions
 │   ├── core/           # Core utilities
@@ -334,10 +365,12 @@ server/                 # Multiplayer backend (v3.0.0+)
 │   │   ├── user.py
 │   │   ├── game_result.py
 │   │   ├── chat_message.py
-│   │   └── user_achievement.py  # (v3.1.0)
+│   │   ├── user_achievement.py  # (v3.1.0)
+│   │   └── friendship.py        # (v3.5.0)
 │   ├── schemas/        # Pydantic schemas
 │   │   ├── achievement.py  # (v3.1.0)
-│   │   └── profile.py      # (v3.1.0)
+│   │   ├── profile.py      # (v3.1.0)
+│   │   └── friend.py       # (v3.5.0)
 │   └── services/       # Business logic
 │       ├── auth_service.py
 │       ├── game_session.py
@@ -347,7 +380,8 @@ server/                 # Multiplayer backend (v3.0.0+)
 │       ├── chat_service.py
 │       ├── chat_manager.py
 │       ├── achievement_service.py  # (v3.1.0)
-│       └── profile_service.py      # (v3.1.0)
+│       ├── profile_service.py      # (v3.1.0)
+│       └── friend_service.py       # (v3.5.0)
 ├── alembic/            # Database migrations (v3.1.0)
 ├── Dockerfile
 └── requirements.txt
@@ -384,7 +418,8 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── Ghosts.tsx        # Ghost list + viewer
     │   ├── Profile.tsx       # Player profiles (v3.1.0)
     │   ├── Achievements.tsx  # Achievement browser (v3.1.0)
-    │   └── Spectate.tsx      # Live game spectator (v3.3.0)
+    │   ├── Spectate.tsx      # Live game spectator (v3.3.0)
+    │   └── Friends.tsx       # Friends system (v3.5.0)
     ├── services/
     │   └── api.ts            # REST + WebSocket client
     └── types/

@@ -22,6 +22,7 @@ export function Layout() {
             <Link to="/leaderboard">Leaderboard</Link>
             <Link to="/ghosts">Ghosts</Link>
             <Link to="/spectate">Spectate</Link>
+            {isAuthenticated && <Link to="/friends">Friends</Link>}
             {isAuthenticated && <Link to="/play">Play</Link>}
           </nav>
         </div>

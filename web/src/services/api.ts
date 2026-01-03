@@ -320,6 +320,82 @@ export const achievementsApi = {
   get: (achievementId: string) => request(`/api/achievements/${achievementId}`),
 };
 
+// Friends API
+export const friendsApi = {
+  list: () =>
+    request<{
+      friends: Array<{
+        user_id: number;
+        username: string;
+        display_name?: string;
+        high_score: number;
+        victories: number;
+        is_online: boolean;
+        since: string;
+      }>;
+      total: number;
+    }>('/api/friends'),
+
+  getRequests: () =>
+    request<{
+      incoming: Array<{
+        id: number;
+        user_id: number;
+        username: string;
+        display_name?: string;
+        high_score: number;
+        created_at: string;
+      }>;
+      outgoing: Array<{
+        id: number;
+        user_id: number;
+        username: string;
+        display_name?: string;
+        high_score: number;
+        created_at: string;
+      }>;
+    }>('/api/friends/requests'),
+
+  search: (query: string, limit = 20) =>
+    request<{
+      results: Array<{
+        user_id: number;
+        username: string;
+        display_name?: string;
+        high_score: number;
+        victories: number;
+        games_played: number;
+        is_friend: boolean;
+        is_pending: boolean;
+        is_online: boolean;
+      }>;
+      total: number;
+    }>(`/api/friends/search?q=${encodeURIComponent(query)}&limit=${limit}`),
+
+  sendRequest: (userId: number) =>
+    request<{ success: boolean; message: string }>(
+      `/api/friends/request/${userId}`,
+      { method: 'POST' }
+    ),
+
+  acceptRequest: (userId: number) =>
+    request<{ success: boolean; message: string }>(
+      `/api/friends/accept/${userId}`,
+      { method: 'POST' }
+    ),
+
+  rejectRequest: (userId: number) =>
+    request<{ success: boolean; message: string }>(
+      `/api/friends/reject/${userId}`,
+      { method: 'POST' }
+    ),
+
+  remove: (userId: number) =>
+    request<{ success: boolean; message: string }>(`/api/friends/${userId}`, {
+      method: 'DELETE',
+    }),
+};
+
 // Spectator API
 export const spectatorApi = {
   getActiveGames: () =>

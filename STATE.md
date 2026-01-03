@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-03
-**Branch:** master
-**Version:** v3.4.0 (Mobile Support) - Released
+**Branch:** feature/v3.5-friends-achievements
+**Version:** v3.5.0 (Friends & Social) - In Progress
 
 ---
 
@@ -17,6 +17,51 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 **v3.3.0 adds Spectator Mode, Boss Achievements, and Legendary Items.**
 
 **v3.4.0 adds Mobile Support** with touch controls, responsive layout, and PWA installability.
+
+**v3.5.0 adds Friends & Social** with player search, friend requests, and 10 new achievements plus visual polish.
+
+### v3.5.0 Friends & Social (In Progress)
+
+| Component | Status |
+|-----------|--------|
+| Friendship database model | ✅ Done |
+| Friend service (search, requests, list) | ✅ Done |
+| Friend schemas (Pydantic) | ✅ Done |
+| Friends API endpoints | ✅ Done |
+| Register router in main.py | ✅ Done |
+| Frontend types (Friend, FriendRequest, etc.) | ✅ Done |
+| friendsApi in api.ts | ✅ Done |
+| Friends.tsx page (3 tabs) | ✅ Done |
+| Friends route and nav link | ✅ Done |
+| 10 new achievements | ✅ Done |
+| Terminal animation polish | ✅ Done |
+| Documentation updates | ✅ Done |
+| Git merge and tag | ⏳ Pending |
+
+### New Achievements in v3.5.0
+
+| Achievement | Category | Rarity | Condition |
+|-------------|----------|--------|-----------|
+| Social Butterfly | Special | Common | Add first friend |
+| Popular | Special | Rare | Have 10 friends |
+| Explorer | Progression | Common | Visit all 5 dungeon levels |
+| Treasure Hunter | Collection | Rare | Collect 100+ gold in one run |
+| Survivor | Efficiency | Rare | Win with <5 HP |
+| Pacifist | Efficiency | Epic | Win with 5 or fewer kills |
+| One Shot | Combat | Rare | Deal 50+ damage in single hit |
+| Genocide | Combat | Epic | Kill 50+ enemies in one run |
+| Speed Demon | Efficiency | Epic | Win in <300 turns |
+| Completionist | Special | Legendary | Unlock all other achievements |
+
+### Visual Polish in v3.5.0
+
+| Effect | Trigger | Duration |
+|--------|---------|----------|
+| Gold flash | Level up | 800ms |
+| Green flash | XP gain | 400ms |
+| Red flash | Damage taken | 300ms |
+| Red pulse | HP below 20% | Continuous |
+| Green glow | Victory screen | Continuous |
 
 ### v3.4.0 Mobile Support (Complete)
 
@@ -453,6 +498,8 @@ npm run build
 - **v3.1.0** - Player profiles & achievements system
 - **v3.2.0** - Boss monster system (5 bosses, 10 abilities)
 - **v3.3.0** - Spectator mode, boss achievements, legendary items
+- **v3.4.0** - Mobile support with touch controls and PWA
+- **v3.5.0** - Friends system, 10 new achievements, visual polish
 
 ---
 
@@ -467,6 +514,11 @@ npm run build
 - ✅ Tagged v3.4.0 release
 - ✅ README.md updated for v3.4.0
 - ✅ Mobile tested and verified
+- ✅ v3.5.0 friends system implemented
+- ✅ 10 new achievements added
+- ✅ Visual animation polish added
+- ⏳ Merge to develop and master
+- ⏳ Tag v3.5.0 release
 
 ### Future Enhancements
 
@@ -474,18 +526,19 @@ npm run build
 - More enemy types (Necromancer, Demon)
 - ~~Boss encounters~~ ✅ Done in v3.2.0
 - ~~Legendary items~~ ✅ Done in v3.3.0
-- More achievements (unlock tiers, seasonal)
+- ~~More achievements~~ ✅ Done in v3.5.0 (34 total)
+- Seasonal achievements
 
 **Multiplayer:**
 - ~~Spectator mode~~ ✅ Done in v3.3.0
+- ~~Player search/friends~~ ✅ Done in v3.5.0
 - Guilds/clans
 - Tournaments
-- Player search/friends
 
 **Polish:**
 - ~~Mobile responsiveness improvements~~ ✅ Done in v3.4.0
+- ~~Better animations~~ ✅ Done in v3.5.0
 - Sound effects
-- Better animations
 - Localization
 
 ---

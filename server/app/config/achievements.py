@@ -145,6 +145,67 @@ def check_high_roller(game_result: Any, user_stats: Any) -> bool:
     return game_result.score >= 50000 or user_stats.high_score >= 50000
 
 
+def check_social_butterfly(game_result: Any, user_stats: Any) -> bool:
+    """Add first friend - checked via friend count."""
+    friend_count = getattr(user_stats, 'friend_count', 0)
+    return friend_count >= 1
+
+
+def check_popular(game_result: Any, user_stats: Any) -> bool:
+    """Have 10 friends."""
+    friend_count = getattr(user_stats, 'friend_count', 0)
+    return friend_count >= 10
+
+
+def check_explorer(game_result: Any, user_stats: Any) -> bool:
+    """Visit all 5 dungeon levels in one run."""
+    return game_result.level_reached >= 5
+
+
+def check_treasure_hunter(game_result: Any, user_stats: Any) -> bool:
+    """Collect 100+ gold in one run."""
+    gold_collected = getattr(game_result, 'gold_collected', 0)
+    return gold_collected >= 100
+
+
+def check_survivor(game_result: Any, user_stats: Any) -> bool:
+    """Escape (win) with less than 5 HP."""
+    if not game_result.victory:
+        return False
+    final_hp = getattr(game_result, 'final_hp', 0)
+    return final_hp > 0 and final_hp < 5
+
+
+def check_pacifist_level(game_result: Any, user_stats: Any) -> bool:
+    """Win with very few kills (pacifist-ish run)."""
+    return game_result.victory and game_result.kills <= 5
+
+
+def check_one_shot(game_result: Any, user_stats: Any) -> bool:
+    """Kill an enemy in a single hit (high damage dealer)."""
+    max_damage = getattr(game_result, 'max_single_hit', 0)
+    return max_damage >= 50
+
+
+def check_genocide(game_result: Any, user_stats: Any) -> bool:
+    """Kill 50+ enemies in one run."""
+    return game_result.kills >= 50
+
+
+def check_speed_demon(game_result: Any, user_stats: Any) -> bool:
+    """Win in under 300 turns."""
+    return game_result.victory and game_result.turns_taken < 300
+
+
+def check_completionist(game_result: Any, user_stats: Any) -> bool:
+    """Unlock all other achievements - checked via achievement count."""
+    # This needs to be checked separately against total achievements
+    achievement_count = getattr(user_stats, 'achievement_count', 0)
+    # Total achievements minus this one
+    total_achievements = len(ACHIEVEMENTS) - 1
+    return achievement_count >= total_achievements
+
+
 # Boss achievement checkers
 def check_boss_slayer(game_result: Any, user_stats: Any) -> bool:
     """Defeat first boss."""
@@ -262,8 +323,35 @@ ACHIEVEMENTS: dict[str, AchievementDef] = {
         icon="gem",
         points=200,
     ),
+    "one_shot": AchievementDef(
+        id="one_shot",
+        name="One Shot",
+        description="Deal 50+ damage in a single hit",
+        category=AchievementCategory.COMBAT,
+        rarity=AchievementRarity.RARE,
+        icon="target",
+        points=30,
+    ),
+    "genocide": AchievementDef(
+        id="genocide",
+        name="Genocide",
+        description="Kill 50+ enemies in a single run",
+        category=AchievementCategory.COMBAT,
+        rarity=AchievementRarity.EPIC,
+        icon="skull-pile",
+        points=75,
+    ),
 
-    # Progression (5)
+    # Progression (6)
+    "explorer": AchievementDef(
+        id="explorer",
+        name="Explorer",
+        description="Visit all 5 dungeon levels in one run",
+        category=AchievementCategory.PROGRESSION,
+        rarity=AchievementRarity.COMMON,
+        icon="compass",
+        points=15,
+    ),
     "first_victory": AchievementDef(
         id="first_victory",
         name="Champion",
@@ -318,7 +406,34 @@ ACHIEVEMENTS: dict[str, AchievementDef] = {
         cumulative_field="games_played",
     ),
 
-    # Efficiency (4)
+    # Efficiency (7)
+    "survivor": AchievementDef(
+        id="survivor",
+        name="Survivor",
+        description="Win with less than 5 HP remaining",
+        category=AchievementCategory.EFFICIENCY,
+        rarity=AchievementRarity.RARE,
+        icon="heart-crack",
+        points=40,
+    ),
+    "pacifist_level": AchievementDef(
+        id="pacifist_level",
+        name="Pacifist",
+        description="Win with 5 or fewer kills",
+        category=AchievementCategory.EFFICIENCY,
+        rarity=AchievementRarity.EPIC,
+        icon="dove",
+        points=100,
+    ),
+    "speed_demon": AchievementDef(
+        id="speed_demon",
+        name="Speed Demon",
+        description="Win in under 300 turns",
+        category=AchievementCategory.EFFICIENCY,
+        rarity=AchievementRarity.EPIC,
+        icon="rocket",
+        points=100,
+    ),
     "speedrunner": AchievementDef(
         id="speedrunner",
         name="Speedrunner",
@@ -356,7 +471,16 @@ ACHIEVEMENTS: dict[str, AchievementDef] = {
         points=50,
     ),
 
-    # Collection (3)
+    # Collection (4)
+    "treasure_hunter": AchievementDef(
+        id="treasure_hunter",
+        name="Treasure Hunter",
+        description="Collect 100+ gold in a single run",
+        category=AchievementCategory.COLLECTION,
+        rarity=AchievementRarity.RARE,
+        icon="coins",
+        points=40,
+    ),
     "collector": AchievementDef(
         id="collector",
         name="Collector",
@@ -389,7 +513,35 @@ ACHIEVEMENTS: dict[str, AchievementDef] = {
         cumulative_field="games_played",
     ),
 
-    # Special (3)
+    # Special (6)
+    "social_butterfly": AchievementDef(
+        id="social_butterfly",
+        name="Social Butterfly",
+        description="Add your first friend",
+        category=AchievementCategory.SPECIAL,
+        rarity=AchievementRarity.COMMON,
+        icon="handshake",
+        points=10,
+    ),
+    "popular": AchievementDef(
+        id="popular",
+        name="Popular",
+        description="Have 10 friends",
+        category=AchievementCategory.SPECIAL,
+        rarity=AchievementRarity.RARE,
+        icon="users",
+        points=50,
+    ),
+    "completionist": AchievementDef(
+        id="completionist",
+        name="Completionist",
+        description="Unlock all other achievements",
+        category=AchievementCategory.SPECIAL,
+        rarity=AchievementRarity.LEGENDARY,
+        icon="trophy-star",
+        points=500,
+        hidden=True,
+    ),
     "welcome": AchievementDef(
         id="welcome",
         name="Welcome",
@@ -448,6 +600,16 @@ ACHIEVEMENT_CHECKERS: dict[str, Callable[[Any, Any], bool]] = {
     "welcome": check_welcome,
     "comeback": check_comeback,
     "high_roller": check_high_roller,
+    "social_butterfly": check_social_butterfly,
+    "popular": check_popular,
+    "explorer": check_explorer,
+    "treasure_hunter": check_treasure_hunter,
+    "survivor": check_survivor,
+    "pacifist_level": check_pacifist_level,
+    "one_shot": check_one_shot,
+    "genocide": check_genocide,
+    "speed_demon": check_speed_demon,
+    "completionist": check_completionist,
 }
 
 

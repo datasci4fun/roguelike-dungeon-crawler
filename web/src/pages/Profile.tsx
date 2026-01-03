@@ -231,6 +231,17 @@ function getAchievementIcon(iconName: string): string {
     door: '🚪',
     heart: '❤️',
     coins: '🪙',
+    handshake: '🤝',
+    users: '👥',
+    'trophy-star': '🌟',
+    compass: '🧭',
+    target: '🎯',
+    'skull-pile': '☠️',
+    'heart-crack': '💔',
+    dove: '🕊️',
+    rocket: '🚀',
+    gem: '💎',
+    'skull-crossbones': '☠️',
   };
   return icons[iconName] || '🏅';
 }

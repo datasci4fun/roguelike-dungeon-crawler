@@ -294,3 +294,55 @@ export interface PublicProfile {
   achievement_count: number;
   total_achievements: number;
 }
+
+// Friend types
+export interface Friend {
+  user_id: number;
+  username: string;
+  display_name?: string;
+  high_score: number;
+  victories: number;
+  is_online: boolean;
+  since: string;
+}
+
+export interface FriendRequest {
+  id: number;
+  user_id: number;
+  username: string;
+  display_name?: string;
+  high_score: number;
+  created_at: string;
+}
+
+export interface PlayerSearchResult {
+  user_id: number;
+  username: string;
+  display_name?: string;
+  high_score: number;
+  victories: number;
+  games_played: number;
+  is_friend: boolean;
+  is_pending: boolean;
+  is_online: boolean;
+}
+
+export interface FriendsListResponse {
+  friends: Friend[];
+  total: number;
+}
+
+export interface FriendRequestsResponse {
+  incoming: FriendRequest[];
+  outgoing: FriendRequest[];
+}
+
+export interface PlayerSearchResponse {
+  results: PlayerSearchResult[];
+  total: number;
+}
+
+export interface FriendActionResponse {
+  success: boolean;
+  message: string;
+}

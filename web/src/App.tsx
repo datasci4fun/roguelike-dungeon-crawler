@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Home, Login, Register, Play, Leaderboard, Ghosts, Profile, Achievements, Spectate } from './pages';
+import { Home, Login, Register, Play, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends } from './pages';
 
 function App() {
   return (
@@ -16,6 +16,7 @@ function App() {
         <Route path="profile" element={<Profile />} />
         <Route path="profile/:userId" element={<Profile />} />
         <Route path="achievements" element={<Achievements />} />
+        <Route path="friends" element={<Friends />} />
       </Route>
     </Routes>
   );

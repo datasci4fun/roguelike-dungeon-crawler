@@ -10,6 +10,103 @@
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  position: relative;
+}
+
+/* Animation overlay container */
+.game-terminal::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.1s ease-out;
+}
+
+/* Level up gold flash effect */
+.game-terminal.level-up::after {
+  background: radial-gradient(ellipse at center, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
+  animation: level-up-flash 0.8s ease-out forwards;
+}
+
+@keyframes level-up-flash {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* XP gain flash effect (subtle green) */
+.game-terminal.xp-gain::after {
+  background: radial-gradient(ellipse at center, rgba(74, 222, 128, 0.2) 0%, transparent 60%);
+  animation: xp-flash 0.4s ease-out forwards;
+}
+
+@keyframes xp-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Damage taken flash (red) */
+.game-terminal.damage-taken::after {
+  background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.3) 0%, transparent 70%);
+  animation: damage-flash 0.3s ease-out forwards;
+}
+
+@keyframes damage-flash {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Health critical pulse */
+.game-terminal.health-critical {
+  animation: critical-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes critical-pulse {
+  0%, 100% {
+    box-shadow: inset 0 0 20px rgba(239, 68, 68, 0);
+  }
+  50% {
+    box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.3);
+  }
+}
+
+/* Victory celebration */
+.game-terminal.victory::after {
+  background: radial-gradient(ellipse at center, rgba(74, 222, 128, 0.3) 0%, transparent 70%);
+  animation: victory-glow 1s ease-in-out infinite;
+}
+
+@keyframes victory-glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .game-terminal .xterm {
