@@ -4,3 +4,5 @@ export { Register } from './Register';
 export { Play } from './Play';
 export { Leaderboard } from './Leaderboard';
 export { Ghosts } from './Ghosts';
+export { Profile } from './Profile';
+export { Achievements } from './Achievements';

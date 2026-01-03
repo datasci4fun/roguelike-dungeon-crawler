@@ -222,6 +222,104 @@ export const healthApi = {
   ready: () => request('/api/health/ready'),
 };
 
+// Profile API
+export const profileApi = {
+  getMyProfile: () =>
+    request<{
+      user_id: number;
+      username: string;
+      display_name?: string;
+      created_at: string;
+      rank?: number;
+      high_score: number;
+      games_played: number;
+      victories: number;
+      total_deaths: number;
+      total_kills: number;
+      max_level_reached: number;
+      win_rate: number;
+      avg_score: number;
+      avg_kills_per_game: number;
+      favorite_death_cause?: string;
+      recent_games: Array<{
+        id: number;
+        victory: boolean;
+        score: number;
+        level_reached: number;
+        kills: number;
+        player_level: number;
+        turns_taken: number;
+        cause_of_death?: string;
+        killed_by?: string;
+        ended_at: string;
+      }>;
+      achievements: Array<{
+        achievement_id: string;
+        name: string;
+        description: string;
+        category: string;
+        rarity: string;
+        icon: string;
+        points: number;
+        unlocked_at: string;
+        game_id?: number;
+      }>;
+      achievement_points: number;
+      achievement_count: number;
+      total_achievements: number;
+    }>('/api/profile/me'),
+
+  getProfile: (userId: number) => request(`/api/profile/${userId}`),
+
+  getProfileByUsername: (username: string) =>
+    request(`/api/profile/username/${username}`),
+};
+
+// Achievements API
+export const achievementsApi = {
+  getAll: () =>
+    request<{
+      achievements: Array<{
+        id: string;
+        name: string;
+        description: string;
+        category: string;
+        rarity: string;
+        icon: string;
+        points: number;
+        hidden: boolean;
+      }>;
+      total: number;
+    }>('/api/achievements'),
+
+  getMine: () =>
+    request<{
+      unlocked: Array<{
+        achievement_id: string;
+        name: string;
+        description: string;
+        category: string;
+        rarity: string;
+        icon: string;
+        points: number;
+        unlocked_at: string;
+        game_id?: number;
+      }>;
+      total_unlocked: number;
+      total_points: number;
+      total_achievements: number;
+      completion_percentage: number;
+    }>('/api/achievements/me'),
+
+  getForUser: (userId: number) => request(`/api/achievements/user/${userId}`),
+
+  getRecent: (limit = 20) => request(`/api/achievements/recent?limit=${limit}`),
+
+  getStats: () => request('/api/achievements/stats'),
+
+  get: (achievementId: string) => request(`/api/achievements/${achievementId}`),
+};
+
 // WebSocket URLs
 export const getGameWsUrl = (token: string) => {
   const wsBase = API_BASE_URL.replace('http', 'ws');

@@ -1,12 +1,15 @@
 """Leaderboard service for querying game results and rankings."""
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from sqlalchemy import select, func, desc, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from ..models.user import User
 from ..models.game_result import GameResult
+
+if TYPE_CHECKING:
+    from .achievement_service import AchievementService
 
 
 class LeaderboardService:
@@ -91,6 +94,62 @@ class LeaderboardService:
         await self.db.refresh(result)
 
         return result
+
+    async def record_game_result_with_achievements(
+        self,
+        user_id: int,
+        victory: bool,
+        level_reached: int,
+        kills: int,
+        damage_dealt: int,
+        damage_taken: int,
+        final_hp: int,
+        max_hp: int,
+        player_level: int,
+        potions_used: int = 0,
+        items_collected: int = 0,
+        gold_collected: int = 0,
+        cause_of_death: Optional[str] = None,
+        killed_by: Optional[str] = None,
+        game_duration_seconds: int = 0,
+        turns_taken: int = 0,
+        ghost_data: Optional[str] = None,
+        started_at: Optional[datetime] = None,
+    ) -> tuple[GameResult, List[str]]:
+        """Record a game and check for new achievements.
+
+        Returns tuple of (game_result, list of newly unlocked achievement IDs).
+        """
+        # Record the game
+        result = await self.record_game_result(
+            user_id=user_id,
+            victory=victory,
+            level_reached=level_reached,
+            kills=kills,
+            damage_dealt=damage_dealt,
+            damage_taken=damage_taken,
+            final_hp=final_hp,
+            max_hp=max_hp,
+            player_level=player_level,
+            potions_used=potions_used,
+            items_collected=items_collected,
+            gold_collected=gold_collected,
+            cause_of_death=cause_of_death,
+            killed_by=killed_by,
+            game_duration_seconds=game_duration_seconds,
+            turns_taken=turns_taken,
+            ghost_data=ghost_data,
+            started_at=started_at,
+        )
+
+        # Check for achievements
+        from .achievement_service import AchievementService
+        achievement_service = AchievementService(self.db)
+        new_achievements = await achievement_service.check_and_award_achievements(
+            user_id, result
+        )
+
+        return result, new_achievements
 
     async def get_top_scores(
         self,

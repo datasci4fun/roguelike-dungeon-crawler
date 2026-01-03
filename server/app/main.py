@@ -10,6 +10,8 @@ from .api.game import router as game_router
 from .api.leaderboard import router as leaderboard_router
 from .api.ghost import router as ghost_router
 from .api.chat import router as chat_router
+from .api.achievements import router as achievements_router
+from .api.profile import router as profile_router
 
 
 @asynccontextmanager
@@ -53,6 +55,8 @@ def create_app() -> FastAPI:
     app.include_router(leaderboard_router)
     app.include_router(ghost_router)
     app.include_router(chat_router)
+    app.include_router(achievements_router)
+    app.include_router(profile_router)
 
     return app
 

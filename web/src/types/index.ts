@@ -186,3 +186,111 @@ export interface GhostDetail extends GhostSummary {
   dungeon_seed?: number;
   frames: GhostFrame[];
 }
+
+// Achievement types
+export type AchievementCategory = 'combat' | 'progression' | 'efficiency' | 'collection' | 'special';
+export type AchievementRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+export interface AchievementDef {
+  id: string;
+  name: string;
+  description: string;
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+  icon: string;
+  points: number;
+  hidden: boolean;
+}
+
+export interface UserAchievement {
+  achievement_id: string;
+  name: string;
+  description: string;
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+  icon: string;
+  points: number;
+  unlocked_at: string;
+  game_id?: number;
+}
+
+export interface UserAchievementsResponse {
+  unlocked: UserAchievement[];
+  total_unlocked: number;
+  total_points: number;
+  total_achievements: number;
+  completion_percentage: number;
+}
+
+export interface RecentAchievement {
+  achievement_id: string;
+  name: string;
+  description: string;
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+  icon: string;
+  points: number;
+  unlocked_at: string;
+  user_id: number;
+  username: string;
+  display_name?: string;
+}
+
+// Profile types
+export interface UserGameHistory {
+  id: number;
+  victory: boolean;
+  score: number;
+  level_reached: number;
+  kills: number;
+  player_level: number;
+  turns_taken: number;
+  cause_of_death?: string;
+  killed_by?: string;
+  ended_at: string;
+}
+
+export interface UserProfile {
+  user_id: number;
+  username: string;
+  display_name?: string;
+  created_at: string;
+  rank?: number;
+  high_score: number;
+  games_played: number;
+  victories: number;
+  total_deaths: number;
+  total_kills: number;
+  max_level_reached: number;
+  win_rate: number;
+  avg_score: number;
+  avg_kills_per_game: number;
+  favorite_death_cause?: string;
+  recent_games: UserGameHistory[];
+  achievements: UserAchievement[];
+  achievement_points: number;
+  achievement_count: number;
+  total_achievements: number;
+}
+
+export interface PublicProfile {
+  user_id: number;
+  username: string;
+  display_name?: string;
+  created_at: string;
+  rank?: number;
+  high_score: number;
+  games_played: number;
+  victories: number;
+  total_deaths: number;
+  total_kills: number;
+  max_level_reached: number;
+  win_rate: number;
+  avg_score: number;
+  avg_kills_per_game: number;
+  favorite_death_cause?: string;
+  achievements: UserAchievement[];
+  achievement_points: number;
+  achievement_count: number;
+  total_achievements: number;
+}

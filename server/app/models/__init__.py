@@ -2,5 +2,6 @@
 from .user import User
 from .game_result import GameResult
 from .chat_message import ChatMessage, ChatChannel
+from .user_achievement import UserAchievement
 
-__all__ = ["User", "GameResult", "ChatMessage", "ChatChannel"]
+__all__ = ["User", "GameResult", "ChatMessage", "ChatChannel", "UserAchievement"]

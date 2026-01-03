@@ -27,7 +27,9 @@ export function Layout() {
         <div className="header-right">
           {isAuthenticated ? (
             <>
-              <span className="username">{user?.display_name || user?.username}</span>
+              <Link to="/profile" className="username-link">
+                {user?.display_name || user?.username}
+              </Link>
               <button onClick={handleLogout} className="btn btn-secondary">
                 Logout
               </button>

@@ -1,0 +1,253 @@
+.achievements-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.loading,
+.error-message,
+.no-achievements {
+  text-align: center;
+  padding: 3rem;
+  color: #888;
+}
+
+.error-message {
+  color: #ef4444;
+}
+
+/* Header */
+.achievements-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.achievements-header h1 {
+  font-size: 1.75rem;
+  margin: 0;
+  color: #fff;
+}
+
+.achievements-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #4ade80;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+/* Category Tabs */
+.category-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: 0.5rem 1rem;
+  background: rgba(26, 26, 46, 0.6);
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #888;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  border-color: #555;
+  color: #ccc;
+}
+
+.tab.active {
+  background: #4ade80;
+  border-color: #4ade80;
+  color: #0a0a0a;
+  font-weight: 600;
+}
+
+/* Achievements Grid */
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+/* Achievement Card */
+.achievement-card {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(26, 26, 46, 0.6);
+  border-radius: 8px;
+  border: 1px solid #333;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.achievement-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.achievement-card.common {
+  border-left: 3px solid #9ca3af;
+}
+
+.achievement-card.rare {
+  border-left: 3px solid #3b82f6;
+}
+
+.achievement-card.epic {
+  border-left: 3px solid #a855f7;
+}
+
+.achievement-card.legendary {
+  border-left: 3px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.achievement-card.locked {
+  opacity: 0.6;
+}
+
+.locked-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(0, 0, 0, 0.05) 10px,
+    rgba(0, 0, 0, 0.05) 20px
+  );
+  pointer-events: none;
+}
+
+.achievement-icon {
+  font-size: 2rem;
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #333;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.achievement-card.locked .achievement-icon {
+  filter: grayscale(1);
+}
+
+.achievement-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.achievement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.achievement-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: #fff;
+}
+
+.achievement-card.locked .achievement-name {
+  color: #888;
+}
+
+.achievement-rarity {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.achievement-description {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin: 0 0 0.5rem;
+  line-height: 1.4;
+}
+
+.achievement-card.locked .achievement-description {
+  color: #666;
+}
+
+.achievement-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.achievement-points {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.achievement-card.locked .achievement-points {
+  color: #666;
+}
+
+.achievement-date {
+  color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .achievements-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .achievements-stats {
+    width: 100%;
+    justify-content: space-around;
+  }
+
+  .achievements-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .category-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.5rem;
+  }
+
+  .tab {
+    flex-shrink: 0;
+  }
+}
