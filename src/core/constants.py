@@ -76,6 +76,7 @@ class ItemRarity(Enum):
     UNCOMMON = auto()  # Cyan
     RARE = auto()      # Blue
     EPIC = auto()      # Magenta
+    LEGENDARY = auto() # Yellow/Gold
 
 
 class EquipmentSlot(Enum):
@@ -369,4 +370,5 @@ ITEM_RARITY_COLORS = {
     ItemRarity.UNCOMMON: 5,    # Cyan (color_pair 5)
     ItemRarity.RARE: 11,       # Blue (color_pair 11, to be added)
     ItemRarity.EPIC: 6,        # Magenta (color_pair 6)
+    ItemRarity.LEGENDARY: 2,   # Yellow/Gold (color_pair 2)
 }

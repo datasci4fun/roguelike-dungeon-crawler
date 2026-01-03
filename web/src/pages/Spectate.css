@@ -1,0 +1,110 @@
+.spectate-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.spectate-page h1 {
+  color: #00ff00;
+  margin-bottom: 0.5rem;
+}
+
+.spectate-page .subtitle {
+  color: #888;
+  margin-bottom: 2rem;
+}
+
+.spectate-page .error-message {
+  background: rgba(255, 0, 0, 0.2);
+  border: 1px solid #ff0000;
+  color: #ff6666;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.spectate-page .loading,
+.spectate-page .no-games {
+  text-align: center;
+  padding: 3rem;
+  color: #888;
+}
+
+.spectate-page .no-games p {
+  margin: 0.5rem 0;
+}
+
+.spectate-page .games-list {
+  margin-bottom: 1rem;
+}
+
+.spectate-page table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #333;
+}
+
+.spectate-page th,
+.spectate-page td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #333;
+}
+
+.spectate-page th {
+  background: rgba(0, 255, 0, 0.1);
+  color: #00ff00;
+  font-weight: normal;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.spectate-page tbody tr:hover {
+  background: rgba(0, 255, 0, 0.05);
+}
+
+.spectate-page .player-name {
+  color: #00ff00;
+  font-weight: bold;
+}
+
+.spectate-page .refresh-btn {
+  margin-top: 1rem;
+}
+
+/* Spectator view */
+.spectate-view {
+  height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+}
+
+.spectate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid #333;
+}
+
+.spectate-header h2 {
+  color: #00ff00;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.spectate-terminal {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+/* Button styles */
+.btn-small {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}

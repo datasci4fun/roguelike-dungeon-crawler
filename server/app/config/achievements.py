@@ -145,6 +145,33 @@ def check_high_roller(game_result: Any, user_stats: Any) -> bool:
     return game_result.score >= 50000 or user_stats.high_score >= 50000
 
 
+# Boss achievement checkers
+def check_boss_slayer(game_result: Any, user_stats: Any) -> bool:
+    """Defeat first boss."""
+    bosses_killed = getattr(game_result, 'bosses_killed', 0)
+    total_bosses = getattr(user_stats, 'total_bosses_killed', 0)
+    return bosses_killed >= 1 or total_bosses >= 1
+
+
+def check_kingslayer(game_result: Any, user_stats: Any) -> bool:
+    """Defeat the Goblin King (level 1 boss)."""
+    # Check if player got past level 1 (means they killed the boss)
+    return game_result.level_reached >= 2
+
+
+def check_dragon_emperor_slain(game_result: Any, user_stats: Any) -> bool:
+    """Defeat the Dragon Emperor (final boss on level 5)."""
+    # Victory means defeating the final boss
+    return game_result.victory
+
+
+def check_dungeon_master(game_result: Any, user_stats: Any) -> bool:
+    """Defeat all 5 bosses in one run."""
+    bosses_killed = getattr(game_result, 'bosses_killed', 0)
+    # Victory with all 5 bosses killed
+    return game_result.victory and bosses_killed >= 5
+
+
 # All achievement definitions
 ACHIEVEMENTS: dict[str, AchievementDef] = {
     # Combat (5)
@@ -198,6 +225,42 @@ ACHIEVEMENTS: dict[str, AchievementDef] = {
         points=50,
         threshold=50,
         cumulative_field="total_kills",
+    ),
+    "boss_slayer": AchievementDef(
+        id="boss_slayer",
+        name="Boss Slayer",
+        description="Defeat your first boss",
+        category=AchievementCategory.COMBAT,
+        rarity=AchievementRarity.COMMON,
+        icon="skull-crossbones",
+        points=15,
+    ),
+    "kingslayer": AchievementDef(
+        id="kingslayer",
+        name="Kingslayer",
+        description="Defeat the Goblin King",
+        category=AchievementCategory.COMBAT,
+        rarity=AchievementRarity.RARE,
+        icon="crown",
+        points=25,
+    ),
+    "dragon_emperor_slain": AchievementDef(
+        id="dragon_emperor_slain",
+        name="Dragon Emperor Slain",
+        description="Defeat the Dragon Emperor, the final boss",
+        category=AchievementCategory.COMBAT,
+        rarity=AchievementRarity.EPIC,
+        icon="dragon",
+        points=100,
+    ),
+    "dungeon_master": AchievementDef(
+        id="dungeon_master",
+        name="Dungeon Master",
+        description="Defeat all 5 bosses in a single run",
+        category=AchievementCategory.COMBAT,
+        rarity=AchievementRarity.LEGENDARY,
+        icon="gem",
+        points=200,
     ),
 
     # Progression (5)
@@ -366,6 +429,10 @@ ACHIEVEMENT_CHECKERS: dict[str, Callable[[Any, Any], bool]] = {
     "dragon_slayer": check_dragon_slayer,
     "overkill": check_overkill,
     "elite_hunter": check_elite_hunter,
+    "boss_slayer": check_boss_slayer,
+    "kingslayer": check_kingslayer,
+    "dragon_emperor_slain": check_dragon_emperor_slain,
+    "dungeon_master": check_dungeon_master,
     "first_victory": check_first_victory,
     "victories_10": check_victories_10,
     "deep_delver": check_deep_delver,

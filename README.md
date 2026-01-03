@@ -6,6 +6,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v3.2.0 adds Boss Monsters!** Each dungeon level now features a unique boss with special abilities and guaranteed loot drops.
 
+**v3.3.0 adds Spectator Mode!** Watch other players' live games in real-time, plus new boss achievements and legendary items.
+
 ## Features
 
 ### Core Gameplay
@@ -24,7 +26,7 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Weighted Spawning**: Common enemies frequent, rare enemies (Dragons) scarce
 - **Dungeon Decorations**: Pillars, statues, furniture, braziers - varies by theme
 - **Terrain Features**: Water, grass, blood stains (persist where enemies die)
-- **Item Rarity Colors**: Common (white), Uncommon (cyan), Rare (blue), Epic (magenta)
+- **Item Rarity Colors**: Common (white), Uncommon (cyan), Rare (blue), Epic (magenta), Legendary (yellow)
 
 ### Enhanced UI (v2.1.0)
 - **Full-Screen Inventory**: Dedicated inventory management screen with equipment display
@@ -94,6 +96,23 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 - **Guaranteed Loot**: Each boss drops rare equipment on death
 - **Boss Health Bar**: UI panel shows boss name and HP when boss is alive on the level
 - **Visual Distinction**: Bosses render in bright magenta with bold styling
+
+### Spectator Mode (v3.3.0)
+- **Watch Live Games**: Browse active games and spectate other players in real-time
+- **Real-time Updates**: See every move, combat, and item pickup as it happens
+- **Spectator View**: GameTerminal with [SPECTATING] indicator, read-only mode
+- **Active Games List**: View player name, level, turn count, and spectator count
+- **WebSocket Streaming**: Low-latency state broadcasting to all spectators
+
+### Boss Achievements & Legendary Items (v3.3.0)
+- **4 New Boss Achievements** (24 total):
+  - **Boss Slayer** (Common): Defeat your first boss
+  - **Kingslayer** (Rare): Defeat the Goblin King
+  - **Dragon Emperor Slain** (Epic): Defeat the final boss
+  - **Dungeon Master** (Legendary): Defeat all 5 bosses in one run
+- **Legendary Item Tier**: New highest rarity tier (yellow/gold)
+- **Dragon Slayer** (Weapon): +8 ATK, dropped by Dragon Emperor
+- **Dragon Scale Armor** (Armor): +8 DEF, dropped by Dragon Emperor
 
 ## Installation
 
@@ -318,7 +337,8 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── Leaderboard.tsx
     │   ├── Ghosts.tsx        # Ghost list + viewer
     │   ├── Profile.tsx       # Player profiles (v3.1.0)
-    │   └── Achievements.tsx  # Achievement browser (v3.1.0)
+    │   ├── Achievements.tsx  # Achievement browser (v3.1.0)
+    │   └── Spectate.tsx      # Live game spectator (v3.3.0)
     ├── services/
     │   └── api.ts            # REST + WebSocket client
     └── types/
