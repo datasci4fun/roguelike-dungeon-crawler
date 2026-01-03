@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-02
-**Branch:** feature/boss-monsters
-**Version:** v3.2.0 (Boss Monsters) - In Development
+**Branch:** develop
+**Version:** v3.3.0 (Spectator Mode) - In Development
 
 ---
 
@@ -14,7 +14,37 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 
 **v3.2.0 adds Boss Monsters** with 5 unique bosses (one per level), 10 special abilities, and guaranteed loot drops.
 
-### v3.2.0 Boss Monster System (In Progress)
+**v3.3.0 adds Spectator Mode, Boss Achievements, and Legendary Items.**
+
+### v3.3.0 Spectator Mode (Complete)
+
+| Component | Status |
+|-----------|--------|
+| GameSession spectator tracking | ✅ Done |
+| GameSessionManager spectator methods | ✅ Done |
+| GET /api/game/active endpoint | ✅ Done |
+| WebSocket /ws/spectate/{session_id} | ✅ Done |
+| State broadcasting to spectators | ✅ Done |
+| Spectate page (active games list) | ✅ Done |
+| GameTerminal spectator mode | ✅ Done |
+
+### v3.3.0 Boss Achievements (Complete)
+
+| Achievement | Rarity | Points | Condition |
+|-------------|--------|--------|-----------|
+| Boss Slayer | Common | 15 | Defeat your first boss |
+| Kingslayer | Rare | 25 | Defeat the Goblin King |
+| Dragon Emperor Slain | Epic | 100 | Defeat the Dragon Emperor |
+| Dungeon Master | Legendary | 200 | Defeat all 5 bosses in one run |
+
+### v3.3.0 Legendary Items (Complete)
+
+| Item | Type | Bonus | Drop Source |
+|------|------|-------|-------------|
+| Dragon Slayer | Weapon | +8 ATK | Dragon Emperor |
+| Dragon Scale Armor | Armor | +8 DEF | Dragon Emperor |
+
+### v3.2.0 Boss Monster System (Complete)
 
 | Component | Status |
 |-----------|--------|
@@ -27,7 +57,7 @@ The roguelike dungeon crawler now has a **complete multiplayer stack**: backend 
 | Boss health bar in UI panel | ✅ Done |
 | Boss-specific message coloring | ✅ Done |
 | Boss tutorial hint | ✅ Done |
-| Boss achievements | ⏳ Todo |
+| Boss achievements | ✅ Done |
 
 ### The 5 Bosses
 
@@ -403,26 +433,27 @@ npm run build
 - **v3.0.0-backend** - Complete multiplayer backend (6 phases)
 - **v3.0.0** - Full stack with React web frontend
 - **v3.1.0** - Player profiles & achievements system
+- **v3.2.0** - Boss monster system (5 bosses, 10 abilities)
+- **v3.3.0** - Spectator mode, boss achievements, legendary items
 
 ---
 
 ## What's Next
 
-### Immediate Tasks (v3.2.0)
-- Add boss-related achievements (Boss Slayer, Kingslayer, Dragon Emperor Slain, Dungeon Master)
-- Test boss encounters in gameplay
-- Merge feature branch to develop
+### Immediate Tasks
+- Tag v3.3.0 release
+- Update README.md for v3.3.0
 
 ### Future Enhancements
 
 **Gameplay:**
 - More enemy types (Necromancer, Demon)
 - ~~Boss encounters~~ ✅ Done in v3.2.0
-- More equipment variety (legendary items)
+- ~~Legendary items~~ ✅ Done in v3.3.0
 - More achievements (unlock tiers, seasonal)
 
 **Multiplayer:**
-- Spectator mode
+- ~~Spectator mode~~ ✅ Done in v3.3.0
 - Guilds/clans
 - Tournaments
 - Player search/friends
