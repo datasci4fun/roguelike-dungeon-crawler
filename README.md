@@ -4,6 +4,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **Now with full multiplayer stack!** v3.0.0 adds a complete FastAPI backend with user accounts, leaderboards, ghost replays, real-time chat, **plus a React web frontend** with xterm.js game terminal.
 
+**v3.2.0 adds Boss Monsters!** Each dungeon level now features a unique boss with special abilities and guaranteed loot drops.
+
 ## Features
 
 ### Core Gameplay
@@ -80,6 +82,18 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
   - **Special**: Welcome, Comeback, High Roller
 - **Rarity Tiers**: Common, Rare, Epic, Legendary with point values
 - **Achievement Browser**: Filter by category, track progress, view unlock dates
+
+### Boss Monster System (v3.2.0)
+- **5 Unique Bosses**: One boss per dungeon level, each with distinct abilities
+  - **Level 1 - Goblin King** (K): Summons goblin minions, War Cry buff (+50% damage)
+  - **Level 2 - Cave Troll** (T): Ground Slam AOE attack, Regenerates when low HP
+  - **Level 3 - Lich Lord** (L): Raises skeleton minions, Life Drain (damages you, heals itself)
+  - **Level 4 - Arcane Keeper** (A): Arcane Bolt ranged attack, Teleports when low HP
+  - **Level 5 - Dragon Emperor** (E): Fire Breath cone AOE, Tail Sweep melee AOE
+- **Boss Abilities**: 10 unique abilities with cooldowns and intelligent AI
+- **Guaranteed Loot**: Each boss drops rare equipment on death
+- **Boss Health Bar**: UI panel shows boss name and HP when boss is alive on the level
+- **Visual Distinction**: Bosses render in bright magenta with bold styling
 
 ## Installation
 
@@ -172,8 +186,9 @@ Same controls work in the web terminal. Additional:
   - **Orcs** (o): Tough warriors (12 HP, 3 DMG, 20 XP)
   - **Wraiths** (W): Dangerous spirits (10 HP, 4 DMG, 25 XP)
   - **Trolls** (T): Powerful brutes (20 HP, 5 DMG, 35 XP)
-  - **Dragons** (D): Rare bosses (50 HP, 10 DMG, 100 XP)
+  - **Dragons** (D): Rare encounters (50 HP, 10 DMG, 100 XP)
 - Elite enemies (uppercase symbols) have double stats and rewards
+- **Boss monsters** guard each level with special abilities and guaranteed loot drops
 - Combat features visual feedback: hit flashes, damage numbers, direction arrows
 - Blood stains mark where enemies fell
 - Level up by defeating enemies to gain +10 max HP and +1 ATK
@@ -220,6 +235,7 @@ src/                    # Game client
 │   └── serialization.py
 ├── entities/           # Game entities
 │   ├── entities.py     # Player, Enemy classes
+│   ├── abilities.py    # Boss ability system (v3.2.0)
 │   └── combat.py       # Combat calculations
 ├── world/              # World generation
 │   ├── dungeon.py      # BSP dungeon generation
