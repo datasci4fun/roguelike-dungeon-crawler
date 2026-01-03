@@ -12,6 +12,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v3.5.0 adds Friends & Social!** Search for players, send friend requests, and track your social connections. Plus 10 new achievements and visual polish.
 
+**v4.0.0 adds Expanded Gameplay!** 6 new enemy types with unique AI behaviors, 4 status effects, traps and environmental hazards, plus new equipment types (shields, rings, amulets).
+
 ## Features
 
 ### Core Gameplay
@@ -154,6 +156,56 @@ Expanded from 24 to 34 total achievements:
 - **Damage Flash**: Red screen flash when taking damage
 - **Critical Health Pulse**: Pulsing red glow when HP below 20%
 - **Victory Glow**: Celebratory green glow on victory screen
+
+### Expanded Gameplay (v4.0.0)
+
+#### New Enemy Types (6)
+- **Necromancer** (N): Ranged kiter AI, raises skeleton minions and fires dark bolts (Level 3+)
+- **Demon** (D): Aggressive rusher AI, devastating fire strikes with burn effect (Level 4+)
+- **Assassin** (a): Stealth AI, vanishes and backstabs for triple damage (Level 2+)
+- **Fire Elemental** (F): Elemental AI, ranged fire bolts that burn (Level 3+)
+- **Ice Elemental** (I): Elemental AI, ice shards that freeze (Level 3+)
+- **Lightning Elemental** (L): Elemental AI, chain lightning hits multiple targets (Level 4+)
+
+#### Status Effects System
+- **Poison**: 2 damage/turn for 5 turns, stacks intensity up to 3x
+- **Burn**: 3 damage/turn for 3 turns, refreshes duration on reapplication
+- **Freeze**: Slows movement by 50% for 3 turns, no stacking
+- **Stun**: Skip next turn, no stacking
+
+#### Dungeon Traps
+- **Spike Trap** (^): 5-10 damage, 3 turn cooldown
+- **Fire Trap** (~): 3-6 damage + Burn effect, 5 turn cooldown
+- **Poison Trap** (~): 2-4 damage + Poison effect, 4 turn cooldown
+- **Arrow Trap** (>): 6-10 damage, directional, 2 turn cooldown
+- Traps are hidden until detected or triggered, prefer corridor placement
+
+#### Environmental Hazards
+- **Lava** (~): 5 damage/turn + Burn effect, appears on deeper levels
+- **Ice** (=): Causes sliding movement, appears in Crypt theme
+- **Poison Gas** (*): Applies Poison, spreads over time
+- **Deep Water** (~): Slows movement, drowning risk when low HP
+
+#### New Equipment Types
+- **Shields** (Off-hand): Wooden Shield, Iron Shield, Tower Shield - adds defense and block chance
+- **Rings** (Ring slot): Ring of Strength (+ATK), Ring of Defense (+DEF), Ring of Speed
+- **Amulets** (Amulet slot): Amulet of Health (+HP), Amulet of Resistance, Amulet of Vision
+- **Ranged Weapons**: Shortbow, Longbow, Crossbow - attack from distance
+- **Throwables**: Throwing Knife, Bomb (AOE), Poison Vial - single-use items
+- **Keys**: Bronze, Silver, Gold - unlock matching locked doors
+
+#### AI Behavior System
+- **Chase**: Standard pathfinding toward player (existing enemies)
+- **Ranged Kite**: Maintains distance, uses ranged abilities (Necromancer)
+- **Aggressive**: Rushes player, spams abilities when in range (Demon)
+- **Stealth**: Enters invisibility, ambushes with backstab (Assassin)
+- **Elemental**: Element-based tactics with resistances (Elementals)
+
+#### Combat Enhancements
+- **Shield Blocking**: Equipped shields provide chance to completely block attacks
+- **Status Effect Processing**: Effects tick each turn for both player and enemies
+- **Stun Mechanics**: Stunned entities skip their turn
+- **Enemy Level Restrictions**: New enemies only spawn on appropriate dungeon levels
 
 ## Installation
 
@@ -325,11 +377,15 @@ src/                    # Game client
 │   └── serialization.py
 ├── entities/           # Game entities
 │   ├── entities.py     # Player, Enemy classes
-│   ├── abilities.py    # Boss ability system (v3.2.0)
-│   └── combat.py       # Combat calculations
+│   ├── abilities.py    # Boss + enemy abilities (v3.2.0, v4.0.0)
+│   ├── combat.py       # Combat calculations
+│   ├── status_effects.py  # Status effect system (v4.0.0)
+│   └── ai_behaviors.py    # Enemy AI dispatch (v4.0.0)
 ├── world/              # World generation
 │   ├── dungeon.py      # BSP dungeon generation
-│   └── fov.py          # Field of view
+│   ├── fov.py          # Field of view
+│   ├── traps.py        # Trap mechanics (v4.0.0)
+│   └── hazards.py      # Environmental hazards (v4.0.0)
 ├── items/              # Item system
 │   └── items.py        # Items, inventory, equipment
 ├── ui/                 # Rendering
