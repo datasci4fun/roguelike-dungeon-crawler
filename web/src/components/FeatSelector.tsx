@@ -1,4 +1,4 @@
-import { PlayerFeat, FeatCategory } from '../hooks/useGameSocket';
+import type { PlayerFeat, FeatCategory } from '../hooks/useGameSocket';
 import './FeatSelector.css';
 
 interface FeatSelectorProps {

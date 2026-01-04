@@ -4,7 +4,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useGameSocket, RaceId, ClassId, CharacterConfig } from '../hooks/useGameSocket';
+import { useGameSocket } from '../hooks/useGameSocket';
+import type { RaceId, ClassId, CharacterConfig } from '../hooks/useGameSocket';
 import { RACES, CLASSES, ABILITY_DESCRIPTIONS, calculateStats } from '../data/characterData';
 import './CharacterCreation.css';
 

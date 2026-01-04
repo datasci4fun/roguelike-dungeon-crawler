@@ -1,7 +1,7 @@
 /**
  * Character creation data - races and classes with their stats and abilities.
  */
-import { RaceId, ClassId, RaceDefinition, ClassDefinition } from '../types';
+import type { RaceId, ClassId, RaceDefinition, ClassDefinition } from '../types';
 
 export const RACES: Record<RaceId, RaceDefinition> = {
   HUMAN: {
