@@ -136,3 +136,40 @@ class AuthService:
             user.total_deaths += 1
 
         await self.db.flush()
+
+    async def ensure_demo_account(self) -> User:
+        """
+        Ensure the demo account exists, creating it if necessary.
+
+        Demo account credentials:
+        - Username: demo
+        - Password: DemoPass123
+        - Email: demo@example.com
+
+        Returns:
+            The demo User object
+        """
+        demo_username = "demo"
+        demo_email = "demo@example.com"
+        demo_password = "DemoPass123"
+        demo_display_name = "Demo Player"
+
+        # Check if demo account exists
+        user = await self.get_user_by_username(demo_username)
+        if user:
+            return user
+
+        # Create demo account
+        user = User(
+            username=demo_username,
+            email=demo_email,
+            hashed_password=User.hash_password(demo_password),
+            display_name=demo_display_name,
+        )
+
+        self.db.add(user)
+        await self.db.flush()
+        await self.db.refresh(user)
+
+        print(f"Demo account created: {demo_username}")
+        return user

@@ -4,7 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
-from .core.database import init_db, close_db
+from .core.database import init_db, close_db, async_session_maker
+from .services.auth_service import AuthService
 from .api.auth import router as auth_router
 from .api.game import router as game_router
 from .api.leaderboard import router as leaderboard_router
@@ -24,6 +25,15 @@ async def lifespan(app: FastAPI):
     print("Initializing database...")
     await init_db()
     print("Database initialized.")
+
+    # Seed demo account
+    print("Ensuring demo account exists...")
+    async with async_session_maker() as db:
+        auth_service = AuthService(db)
+        await auth_service.ensure_demo_account()
+        await db.commit()
+    print("Demo account ready (username: demo, password: DemoPass123)")
+
     yield
     # Shutdown
     print("Closing database connections...")
