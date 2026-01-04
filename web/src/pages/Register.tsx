@@ -39,7 +39,7 @@ export function Register() {
         password,
         display_name: displayName || undefined,
       });
-      navigate('/play');
+      navigate('/character-creation');
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

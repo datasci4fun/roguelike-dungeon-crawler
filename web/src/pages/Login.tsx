@@ -25,7 +25,7 @@ export function Login() {
 
     try {
       await login(username, password);
-      navigate('/play');
+      navigate('/character-creation');
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -43,7 +43,7 @@ export function Login() {
 
     try {
       await login(DEMO_USERNAME, DEMO_PASSWORD);
-      navigate('/play');
+      navigate('/character-creation');
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
