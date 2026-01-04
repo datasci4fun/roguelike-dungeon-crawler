@@ -8,3 +8,5 @@ export { Profile } from './Profile';
 export { Achievements } from './Achievements';
 export { Spectate } from './Spectate';
 export { Friends } from './Friends';
+export { PlayScene } from './PlayScene';
+export { SceneDemo } from './SceneDemo';

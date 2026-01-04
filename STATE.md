@@ -1,12 +1,75 @@
 # Project State Checkpoint
 
-**Last Updated:** 2026-01-03
-**Branch:** master
-**Version:** v4.0.0 (Expanded Gameplay) - Released
+**Last Updated:** 2026-01-04
+**Branch:** develop
+**Version:** v4.0.0 + Scene Renderer (in development)
 
 ---
 
 ## Current Status
+
+**Scene Renderer merged to develop** - First-person 3D dungeon view with directional FOV.
+
+### Scene Renderer Feature (Complete - In Develop)
+
+| Component | Status |
+|-----------|--------|
+| Directional FOV system (player facing) | ✅ Done |
+| Perspective projection utilities | ✅ Done |
+| Corridor wall rendering | ✅ Done |
+| Floor/ceiling with depth | ✅ Done |
+| Front wall rendering with doors | ✅ Done |
+| Enemy rendering (9 types, elite variants) | ✅ Done |
+| Item rendering (potions, scrolls, weapons, gold) | ✅ Done |
+| Torch lighting with flickering | ✅ Done |
+| Distance fog effect | ✅ Done |
+| Entity animations (breathing, bobbing) | ✅ Done |
+| Demo page for testing | ✅ Done |
+| Integration with Play page | ✅ Done |
+| Modular refactor (walls/, entities/) | ✅ Done |
+
+### Scene Renderer Files
+
+```
+web/src/components/SceneRenderer/
+├── FirstPersonRenderer.tsx   (292 lines - main component)
+├── projection.ts             (62 lines - perspective math)
+├── colors.ts                 (53 lines - color palette)
+├── walls/
+│   ├── index.ts
+│   ├── drawCorridorWall.ts   (92 lines)
+│   ├── drawFloorCeiling.ts   (151 lines)
+│   └── drawFrontWall.ts      (143 lines)
+├── entities/
+│   ├── index.ts
+│   ├── drawEnemy.ts          (307 lines)
+│   ├── drawItem.ts           (348 lines)
+│   └── entityColors.ts       (86 lines)
+└── index.ts
+```
+
+### Backend Changes for Scene Renderer
+
+| File | Changes |
+|------|---------|
+| src/entities/entities.py | Added `facing` direction to Player |
+| src/world/fov.py | Added `get_tiles_in_front()` for directional FOV |
+| src/managers/combat_manager.py | Updates player facing on move/attack |
+| server/app/services/game_session.py | Serializes first-person view data |
+
+### New Routes
+
+| Route | Purpose |
+|-------|---------|
+| /first-person-demo | Test first-person renderer without backend |
+| /scene-demo | Test top-down scene renderer |
+| /play-scene | Alternative play page with scene renderer |
+
+### Play Page Integration
+
+The `/play` page now includes a toggleable first-person view alongside the terminal. The checkbox "First-Person View" shows/hides the 3D renderer.
+
+---
 
 **v4.0.0 adds Expanded Gameplay** with new enemy types, dungeon mechanics, status effects, and new equipment.
 
@@ -595,6 +658,8 @@ npm run build
 - **v3.3.0** - Spectator mode, boss achievements, legendary items
 - **v3.4.0** - Mobile support with touch controls and PWA
 - **v3.5.0** - Friends system, 10 new achievements, visual polish
+- **v4.0.0** - Expanded gameplay (6 enemies, traps, hazards, status effects)
+- **develop** - Scene renderer (first-person 3D view, directional FOV)
 
 ---
 
@@ -618,7 +683,7 @@ npm run build
 ### Future Enhancements
 
 **Gameplay:**
-- More enemy types (Necromancer, Demon)
+- ~~More enemy types (Necromancer, Demon)~~ ✅ Done in v4.0.0
 - ~~Boss encounters~~ ✅ Done in v3.2.0
 - ~~Legendary items~~ ✅ Done in v3.3.0
 - ~~More achievements~~ ✅ Done in v3.5.0 (34 total)
@@ -630,7 +695,8 @@ npm run build
 - Guilds/clans
 - Tournaments
 
-**Polish:**
+**Visual:**
+- ~~First-person 3D renderer~~ ✅ Done (Scene Renderer)
 - ~~Mobile responsiveness improvements~~ ✅ Done in v3.4.0
 - ~~Better animations~~ ✅ Done in v3.5.0
 - Sound effects
