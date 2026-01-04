@@ -44,3 +44,6 @@ savegame.pkl
 
 # Virtual environments (Windows)
 .venv/
+
+# Claude Code
+.claude/
