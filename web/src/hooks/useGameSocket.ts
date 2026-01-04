@@ -7,6 +7,11 @@ import { getGameWsUrl } from '../services/api';
 export type GameState = 'PLAYING' | 'DEAD' | 'VICTORY' | 'TITLE' | 'INTRO';
 export type UIMode = 'GAME' | 'INVENTORY' | 'CHARACTER' | 'HELP' | 'MESSAGE_LOG' | 'DIALOG' | 'READING';
 
+export interface FacingDirection {
+  dx: number;
+  dy: number;
+}
+
 export interface Player {
   x: number;
   y: number;
@@ -18,6 +23,7 @@ export interface Player {
   xp: number;
   xp_to_level: number;
   kills: number;
+  facing?: FacingDirection;
 }
 
 export interface Enemy {
@@ -55,6 +61,35 @@ export interface GameEvent {
   data: Record<string, unknown>;
 }
 
+export interface FirstPersonTile {
+  tile: string;
+  x: number;
+  y: number;
+  visible: boolean;
+  walkable: boolean;
+  has_entity: boolean;
+}
+
+export interface FirstPersonEntity {
+  type: 'enemy' | 'item';
+  name: string;
+  symbol: string;
+  distance: number;
+  offset: number;
+  x: number;
+  y: number;
+  health?: number;
+  max_health?: number;
+  is_elite?: boolean;
+}
+
+export interface FirstPersonView {
+  rows: FirstPersonTile[][];
+  entities: FirstPersonEntity[];
+  facing: FacingDirection;
+  depth: number;
+}
+
 export interface NewAchievement {
   id: string;
   name: string;
@@ -84,6 +119,7 @@ export interface FullGameState {
     title: string;
     message: string;
   };
+  first_person_view?: FirstPersonView;
 }
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';

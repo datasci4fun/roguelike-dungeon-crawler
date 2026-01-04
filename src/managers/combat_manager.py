@@ -47,11 +47,16 @@ class CombatManager:
         # Check for enemy at target position
         enemy = self.game.entity_manager.get_enemy_at(new_x, new_y)
         if enemy:
+            # Update facing direction when attacking
+            player.facing = (dx, dy)
             self._player_attack_enemy(enemy)
             return True
 
         # Check if position is walkable
         if self.game.dungeon.is_walkable(new_x, new_y):
+            # Update facing direction before moving
+            player.facing = (dx, dy)
+
             player.move(dx, dy)
 
             # Update FOV after movement

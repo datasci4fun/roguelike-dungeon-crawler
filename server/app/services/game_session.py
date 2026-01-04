@@ -323,6 +323,8 @@ class GameSessionManager:
 
         # Add player data if available
         if engine.player:
+            # Get facing direction (default to south if not set)
+            facing = getattr(engine.player, 'facing', (0, 1))
             state["player"] = {
                 "x": engine.player.x,
                 "y": engine.player.y,
@@ -334,7 +336,11 @@ class GameSessionManager:
                 "xp": engine.player.xp,
                 "xp_to_level": engine.player.xp_to_level,
                 "kills": engine.player.kills,
+                "facing": {"dx": facing[0], "dy": facing[1]},
             }
+
+            # Add first-person view data (tiles in front of player)
+            state["first_person_view"] = self._serialize_first_person_view(engine, facing)
 
         # Add dungeon data if available
         if engine.dungeon:
@@ -438,6 +444,129 @@ class GameSessionManager:
         if 0 <= x < engine.dungeon.width and 0 <= y < engine.dungeon.height:
             return engine.dungeon.visible[y][x]
         return False
+
+    def _serialize_first_person_view(self, engine, facing: tuple) -> dict:
+        """
+        Serialize tiles and entities in front of the player for first-person rendering.
+
+        Args:
+            engine: The game engine
+            facing: Player facing direction (dx, dy)
+
+        Returns:
+            Dictionary with rows of tiles and entities in front of player
+        """
+        if not engine.dungeon or not engine.player:
+            return {"rows": [], "entities": []}
+
+        player = engine.player
+        dungeon = engine.dungeon
+        facing_dx, facing_dy = facing
+
+        # Calculate perpendicular direction for width
+        perp_dx = -facing_dy
+        perp_dy = facing_dx
+
+        # View parameters
+        depth = 8  # How far ahead to look
+        base_width = 5  # Width at far end
+
+        rows = []
+        entities_in_view = []
+
+        for d in range(1, depth + 1):
+            row = []
+            # Calculate center of this row
+            row_center_x = player.x + facing_dx * d
+            row_center_y = player.y + facing_dy * d
+
+            # Width at this depth (perspective - wider at distance)
+            half_width = (base_width * d) // depth + 1
+
+            for w in range(-half_width, half_width + 1):
+                tile_x = row_center_x + perp_dx * w
+                tile_y = row_center_y + perp_dy * w
+
+                # Check bounds and visibility
+                in_bounds = 0 <= tile_x < dungeon.width and 0 <= tile_y < dungeon.height
+
+                if in_bounds and dungeon.visible[tile_y][tile_x]:
+                    tile = dungeon.tiles[tile_y][tile_x]
+                    tile_char = tile.value if hasattr(tile, 'value') else str(tile)
+
+                    # Check for entity at this position
+                    entity_here = None
+
+                    # Check for enemy
+                    if engine.entity_manager:
+                        for enemy in engine.entity_manager.enemies:
+                            if enemy.is_alive() and enemy.x == tile_x and enemy.y == tile_y:
+                                entity_here = {
+                                    "type": "enemy",
+                                    "name": enemy.name,
+                                    "symbol": enemy.symbol,
+                                    "health": enemy.health,
+                                    "max_health": enemy.max_health,
+                                    "is_elite": enemy.is_elite,
+                                    "distance": d,
+                                    "offset": w,
+                                    "x": tile_x,
+                                    "y": tile_y,
+                                }
+                                entities_in_view.append(entity_here)
+                                break
+
+                        # Check for item
+                        if not entity_here:
+                            for item in engine.entity_manager.items:
+                                if item.x == tile_x and item.y == tile_y:
+                                    entity_here = {
+                                        "type": "item",
+                                        "name": item.name,
+                                        "symbol": getattr(item, 'symbol', '?'),
+                                        "distance": d,
+                                        "offset": w,
+                                        "x": tile_x,
+                                        "y": tile_y,
+                                    }
+                                    entities_in_view.append(entity_here)
+                                    break
+
+                    row.append({
+                        "tile": tile_char,
+                        "x": tile_x,
+                        "y": tile_y,
+                        "visible": True,
+                        "walkable": dungeon.is_walkable(tile_x, tile_y),
+                        "has_entity": entity_here is not None,
+                    })
+                elif in_bounds and dungeon.explored[tile_y][tile_x]:
+                    row.append({
+                        "tile": "~",  # Explored but not visible
+                        "x": tile_x,
+                        "y": tile_y,
+                        "visible": False,
+                        "walkable": False,
+                        "has_entity": False,
+                    })
+                else:
+                    row.append({
+                        "tile": "#",  # Unknown or out of bounds
+                        "x": tile_x if in_bounds else -1,
+                        "y": tile_y if in_bounds else -1,
+                        "visible": False,
+                        "walkable": False,
+                        "has_entity": False,
+                    })
+
+            rows.append(row)
+
+        return {
+            "rows": rows,
+            "entities": entities_in_view,
+            "facing": {"dx": facing_dx, "dy": facing_dy},
+            "depth": depth,
+        }
 
     def get_active_session_count(self) -> int:
         """Get the number of active game sessions."""

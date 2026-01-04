@@ -85,6 +85,10 @@ class Player(Entity):
         self.kills = 0
         self.inventory = Inventory(max_size=10)
 
+        # Facing direction for directional FOV (dx, dy)
+        # (0, -1) = North, (0, 1) = South, (1, 0) = East, (-1, 0) = West
+        self.facing = (0, 1)  # Default: facing south (down)
+
         # Equipment slots (None = nothing equipped)
         self.equipped_weapon = None
         self.equipped_armor = None

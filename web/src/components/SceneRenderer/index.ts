@@ -5,6 +5,7 @@
  */
 
 export { SceneRenderer, default } from './SceneRenderer';
+export { FirstPersonRenderer } from './FirstPersonRenderer';
 export { useSceneFrame, gameStateToSceneFrame } from './useSceneRenderer';
 export { SpriteManager } from './SpriteManager';
 export * from './animations';

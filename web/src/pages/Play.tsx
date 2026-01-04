@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGameSocket } from '../hooks/useGameSocket';
 import { useChatSocket } from '../hooks/useChatSocket';
 import { GameTerminal } from '../components/GameTerminal';
-import { SceneRenderer, useSceneFrame } from '../components/SceneRenderer';
+import { FirstPersonRenderer } from '../components/SceneRenderer';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
@@ -43,9 +43,6 @@ export function Play() {
     sendMessage,
     sendWhisper,
   } = useChatSocket(token);
-
-  // Transform game state for scene renderer
-  const sceneFrame = useSceneFrame(gameState, 20, 15, 32);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -156,10 +153,12 @@ export function Play() {
               />
             </div>
 
-            {showSceneView && sceneFrame && (
+            {showSceneView && (
               <div className="scene-wrapper">
-                <SceneRenderer
-                  frame={sceneFrame}
+                <FirstPersonRenderer
+                  view={gameState?.first_person_view}
+                  width={400}
+                  height={300}
                   enableAnimations={true}
                 />
               </div>
@@ -173,7 +172,7 @@ export function Play() {
                 checked={showSceneView}
                 onChange={(e) => setShowSceneView(e.target.checked)}
               />
-              Scene View
+              First-Person View
             </label>
           </div>
 
