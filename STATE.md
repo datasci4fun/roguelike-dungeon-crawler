@@ -2,11 +2,113 @@
 
 **Last Updated:** 2026-01-04
 **Branch:** develop
-**Version:** v4.0.0 + Scene Renderer (in development)
+**Version:** v4.1.0 + Character Creation & Feats (in development)
 
 ---
 
 ## Current Status
+
+**Character Creation & Feat System merged to develop** - Full RPG character customization with races, classes, abilities, and feats.
+
+### Character Creation System (Complete - In Develop)
+
+| Component | Status |
+|-----------|--------|
+| 5 Races with unique traits | ✅ Done |
+| 3 Classes with abilities | ✅ Done |
+| Race + Class stat calculations | ✅ Done |
+| CharacterCreation page UI | ✅ Done |
+| CharacterHUD component | ✅ Done |
+| Backend race/class support | ✅ Done |
+
+### The 5 Races
+
+| Race | HP | ATK | DEF | Trait | Trait Effect |
+|------|-----|-----|-----|-------|--------------|
+| Human | +0 | +0 | +0 | Adaptive | +10% XP gain, +1 starting feat |
+| Elf | -2 | +1 | +0 | Keen Sight | +2 vision range |
+| Dwarf | +4 | -1 | +2 | Poison Resist | 50% poison resistance |
+| Halfling | -4 | +0 | +0 | Lucky | 15% dodge chance |
+| Orc | +6 | +2 | -1 | Rage | +50% damage below 25% HP |
+
+### The 3 Classes
+
+| Class | HP | ATK | DEF | Active Abilities | Passive |
+|-------|-----|-----|-----|------------------|---------|
+| Warrior | +5 | +1 | +1 | Power Strike, Shield Wall | Combat Mastery (+15% melee) |
+| Mage | -3 | -1 | +0 | Fireball, Frost Nova | Mana Shield (25% damage reduction) |
+| Rogue | +0 | +2 | -1 | Backstab, Smoke Bomb | Critical Strike (20% crit chance) |
+
+### Feat System (Complete - In Develop)
+
+| Component | Status |
+|-----------|--------|
+| 18 feats across 4 categories | ✅ Done |
+| Feat selection at levels 3, 5, 7, 9 | ✅ Done |
+| Human starting feat choice | ✅ Done |
+| FeatSelector modal UI | ✅ Done |
+| Combat integration (damage, crit, life steal, thorns) | ✅ Done |
+| Potion healing bonus | ✅ Done |
+
+### The 18 Feats
+
+| Category | Feat | Effect |
+|----------|------|--------|
+| **Combat** | Mighty Blow | +2 Attack damage |
+| | Weapon Master | +15% damage with all attacks |
+| | Deadly Precision | +10% critical hit chance |
+| | Berserker | +25% damage, -1 Defense |
+| | Life Leech | Heal 10% of damage dealt |
+| | Quick Strike | Always attack before enemies |
+| **Defense** | Tough | +5 Maximum HP |
+| | Iron Skin | +2 Defense |
+| | Evasion | +8% dodge chance |
+| | Shield Expert | +15% block chance with shields |
+| | Resilient | Take 10% less damage from all sources |
+| | Thorns | Reflect 25% of melee damage back |
+| **Utility** | Fast Learner | +20% XP gain |
+| | Eagle Eye | +1 vision range |
+| | Healer | Potions heal 50% more |
+| | Second Wind | +3 HP on level up |
+| **Special** | Survivor | +3 HP, +1 Defense, +5% dodge |
+| | Warrior Spirit | +1 Attack, +1 Defense, +2 HP |
+| | Glass Cannon | +3 Attack, -3 HP |
+
+### Character Creation Files
+
+```
+src/entities/
+├── feats.py              (233 lines - feat definitions)
+├── player_abilities.py   (148 lines - class abilities)
+└── entities.py           (updated with race/class/feats)
+
+web/src/
+├── components/
+│   ├── CharacterHUD.tsx     (168 lines - race/class display)
+│   ├── CharacterHUD.css     (188 lines)
+│   ├── FeatSelector.tsx     (81 lines - feat selection modal)
+│   └── FeatSelector.css     (156 lines)
+├── pages/
+│   ├── CharacterCreation.tsx (212 lines)
+│   └── CharacterCreation.css (315 lines)
+└── data/
+    └── characterData.ts     (160 lines - race/class definitions)
+```
+
+### Backend Changes for Character Creation
+
+| File | Changes |
+|------|---------|
+| src/core/constants.py | Race, PlayerClass enums, RACE_STATS, CLASS_STATS |
+| src/core/commands.py | SELECT_FEAT command type |
+| src/entities/entities.py | Player race/class/feats, feat bonus methods |
+| src/entities/combat.py | Feat damage multiplier, life steal, thorns |
+| src/managers/combat_manager.py | Thorns handling, feat block bonus |
+| src/items/items.py | Healer feat bonus for potions |
+| server/app/services/game_session.py | Race/class config, feat serialization |
+| server/app/api/game.py | Race/class in new_game action |
+
+---
 
 **Scene Renderer merged to develop** - First-person 3D dungeon view with directional FOV.
 
@@ -659,7 +761,8 @@ npm run build
 - **v3.4.0** - Mobile support with touch controls and PWA
 - **v3.5.0** - Friends system, 10 new achievements, visual polish
 - **v4.0.0** - Expanded gameplay (6 enemies, traps, hazards, status effects)
-- **develop** - Scene renderer (first-person 3D view, directional FOV)
+- **v4.1.0** - Scene renderer (first-person 3D view, directional FOV)
+- **develop** - Character creation (5 races, 3 classes, 18 feats)
 
 ---
 
@@ -679,6 +782,10 @@ npm run build
 - ✅ Visual animation polish added
 - ✅ Merged to develop and master
 - ✅ Tagged v3.5.0 release
+- ✅ v4.0.0 expanded gameplay (enemies, traps, hazards)
+- ✅ v4.1.0 scene renderer (first-person 3D view)
+- ✅ Character creation system (5 races, 3 classes)
+- ✅ Feat system (18 feats, level-up choices)
 
 ### Future Enhancements
 
@@ -687,7 +794,11 @@ npm run build
 - ~~Boss encounters~~ ✅ Done in v3.2.0
 - ~~Legendary items~~ ✅ Done in v3.3.0
 - ~~More achievements~~ ✅ Done in v3.5.0 (34 total)
+- ~~Character classes~~ ✅ Done (Warrior, Mage, Rogue)
+- ~~Race selection~~ ✅ Done (Human, Elf, Dwarf, Halfling, Orc)
+- ~~Feat/perk system~~ ✅ Done (18 feats)
 - Seasonal achievements
+- Skill trees
 
 **Multiplayer:**
 - ~~Spectator mode~~ ✅ Done in v3.3.0
