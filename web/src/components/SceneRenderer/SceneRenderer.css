@@ -1,0 +1,69 @@
+/**
+ * SceneRenderer Component Styles
+ *
+ * Canvas-based scene renderer for the roguelike game.
+ */
+
+.scene-renderer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.scene-renderer__canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* Loading state */
+.scene-renderer--loading {
+  min-width: 640px;
+  min-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scene-renderer__loading-text {
+  color: #666;
+  font-family: monospace;
+  font-size: 16px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Container variants */
+.scene-renderer--fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+.scene-renderer--bordered {
+  border: 2px solid #333;
+}
+
+/* Focus styles for keyboard navigation */
+.scene-renderer:focus {
+  outline: 2px solid #4a9eff;
+  outline-offset: 2px;
+}
+
+.scene-renderer:focus:not(:focus-visible) {
+  outline: none;
+}
