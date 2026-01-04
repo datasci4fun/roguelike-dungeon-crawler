@@ -16,6 +16,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v4.1.0 adds Scene Renderer!** First-person 3D dungeon view with directional FOV, perspective rendering, and animated entities. Toggle between terminal and 3D view on the Play page.
 
+**v4.2.0 adds Character Creation!** Choose from 5 races (Human, Elf, Dwarf, Halfling, Orc) and 3 classes (Warrior, Mage, Rogue) with unique abilities and traits. Plus a feat system with 18 feats to customize your character as you level up.
+
 ## Features
 
 ### Core Gameplay
@@ -234,6 +236,66 @@ Expanded from 24 to 34 total achievements:
 - **Demo Pages**: `/first-person-demo`, `/scene-demo`, `/play-scene` for testing
 - **Real-time Sync**: 3D view updates with every game action
 
+### Character Creation System (v4.2.0)
+
+#### 5 Playable Races
+Each race has unique stat modifiers and a special racial trait:
+
+| Race | HP | ATK | DEF | Trait | Effect |
+|------|-----|-----|-----|-------|--------|
+| **Human** | +0 | +0 | +0 | Adaptive | +10% XP gain, choose 1 starting feat |
+| **Elf** | -2 | +1 | +0 | Keen Sight | +2 vision range |
+| **Dwarf** | +4 | -1 | +2 | Poison Resist | 50% poison resistance |
+| **Halfling** | -4 | +0 | +0 | Lucky | 15% dodge chance |
+| **Orc** | +6 | +2 | -1 | Rage | +50% damage when below 25% HP |
+
+#### 3 Character Classes
+Each class provides stat bonuses, active abilities, and a passive bonus:
+
+| Class | HP | ATK | DEF | Active Abilities | Passive |
+|-------|-----|-----|-----|------------------|---------|
+| **Warrior** | +5 | +1 | +1 | Power Strike (2x damage), Shield Wall (block all) | Combat Mastery (+15% melee damage) |
+| **Mage** | -3 | -1 | +0 | Fireball (ranged AOE), Frost Nova (freeze nearby) | Mana Shield (25% damage reduction) |
+| **Rogue** | +0 | +2 | -1 | Backstab (3x if unaware), Smoke Bomb (invisibility) | Critical Strike (20% crit chance) |
+
+#### Feat System
+Earn feats at levels 3, 5, 7, and 9. Humans also choose one feat at character creation.
+
+**Combat Feats:**
+- **Mighty Blow**: +2 Attack damage
+- **Weapon Master**: +15% damage with all attacks
+- **Deadly Precision**: +10% critical hit chance
+- **Berserker**: +25% damage, but -1 Defense
+- **Life Leech**: Heal 10% of damage dealt
+- **Quick Strike**: Always attack before enemies
+
+**Defense Feats:**
+- **Tough**: +5 Maximum HP
+- **Iron Skin**: +2 Defense
+- **Evasion**: +8% dodge chance
+- **Shield Expert**: +15% block chance with shields
+- **Resilient**: Take 10% less damage from all sources
+- **Thorns**: Reflect 25% of melee damage back to attackers
+
+**Utility Feats:**
+- **Fast Learner**: +20% XP gain
+- **Eagle Eye**: +1 vision range
+- **Healer**: Potions heal 50% more
+- **Second Wind**: Gain +3 HP when leveling up
+
+**Special Feats:**
+- **Survivor**: +3 HP, +1 Defense, +5% dodge (balanced)
+- **Warrior Spirit**: +1 Attack, +1 Defense, +2 HP (balanced)
+- **Glass Cannon**: +3 Attack, but -3 HP (high risk/reward)
+
+#### Character HUD
+The Play page displays your race and class with:
+- Race/class badges with distinct colors
+- Racial trait indicator
+- Active ability cooldown tracking
+- Passive ability display
+- Health bar with current/max HP
+
 ## Installation
 
 ### Terminal Client (Single Player)
@@ -403,9 +465,11 @@ src/                    # Game client
 │   ├── level_manager.py
 │   └── serialization.py
 ├── entities/           # Game entities
-│   ├── entities.py     # Player, Enemy classes
+│   ├── entities.py     # Player, Enemy classes (race/class support v4.2.0)
 │   ├── abilities.py    # Boss + enemy abilities (v3.2.0, v4.0.0)
-│   ├── combat.py       # Combat calculations
+│   ├── player_abilities.py  # Class abilities (v4.2.0)
+│   ├── feats.py        # Feat definitions (v4.2.0)
+│   ├── combat.py       # Combat calculations (feat integration v4.2.0)
 │   ├── status_effects.py  # Status effect system (v4.0.0)
 │   └── ai_behaviors.py    # Enemy AI dispatch (v4.0.0)
 ├── world/              # World generation
@@ -487,6 +551,8 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── ChatPanel.tsx     # Real-time chat
     │   ├── TouchControls.tsx # Mobile touch controls (v3.4.0)
     │   ├── GhostReplayViewer.tsx  # Replay viewer
+    │   ├── CharacterHUD.tsx  # Race/class/ability display (v4.2.0)
+    │   ├── FeatSelector.tsx  # Feat selection modal (v4.2.0)
     │   └── SceneRenderer/    # First-person 3D view (v4.1.0)
     │       ├── FirstPersonRenderer.tsx  # Main canvas component
     │       ├── projection.ts    # Perspective math utilities
@@ -503,6 +569,7 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── Login.tsx
     │   ├── Register.tsx
     │   ├── Play.tsx          # Game + Chat page (mobile layout v3.4.0)
+    │   ├── CharacterCreation.tsx  # Race/class selection (v4.2.0)
     │   ├── Leaderboard.tsx
     │   ├── Ghosts.tsx        # Ghost list + viewer
     │   ├── Profile.tsx       # Player profiles (v3.1.0)
@@ -512,6 +579,8 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── FirstPersonDemo.tsx  # Scene renderer test (v4.1.0)
     │   ├── SceneDemo.tsx     # Top-down scene test (v4.1.0)
     │   └── PlayScene.tsx     # Alternative play page (v4.1.0)
+    ├── data/
+    │   └── characterData.ts  # Race/class definitions (v4.2.0)
     ├── services/
     │   └── api.ts            # REST + WebSocket client
     └── types/
