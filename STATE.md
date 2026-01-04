@@ -1,16 +1,30 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-04
-**Branch:** develop
-**Version:** v4.1.0 + Character Creation & Feats (in development)
+**Branch:** master
+**Version:** v4.2.0 (Character Creation & Feats)
+
+---
+
+## Demo Account
+
+For quick testing without registration:
+
+| Field | Value |
+|-------|-------|
+| **Username** | `demo` |
+| **Password** | `DemoPass123` |
+| **URL** | http://localhost:5176/login |
+
+The demo account is auto-created on server startup. Click **"Try Demo"** on the login page for one-click access.
 
 ---
 
 ## Current Status
 
-**Character Creation & Feat System merged to develop** - Full RPG character customization with races, classes, abilities, and feats.
+**Character Creation & Feat System released as v4.2.0** - Full RPG character customization with races, classes, abilities, and feats.
 
-### Character Creation System (Complete - In Develop)
+### Character Creation System (Complete)
 
 | Component | Status |
 |-----------|--------|
@@ -39,7 +53,7 @@
 | Mage | -3 | -1 | +0 | Fireball, Frost Nova | Mana Shield (25% damage reduction) |
 | Rogue | +0 | +2 | -1 | Backstab, Smoke Bomb | Critical Strike (20% crit chance) |
 
-### Feat System (Complete - In Develop)
+### Feat System (Complete)
 
 | Component | Status |
 |-----------|--------|
@@ -762,7 +776,7 @@ npm run build
 - **v3.5.0** - Friends system, 10 new achievements, visual polish
 - **v4.0.0** - Expanded gameplay (6 enemies, traps, hazards, status effects)
 - **v4.1.0** - Scene renderer (first-person 3D view, directional FOV)
-- **develop** - Character creation (5 races, 3 classes, 18 feats)
+- **v4.2.0** - Character creation (5 races, 3 classes, 18 feats) + demo account
 
 ---
 
