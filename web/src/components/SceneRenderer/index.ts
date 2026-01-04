@@ -6,6 +6,8 @@
 
 export { SceneRenderer, default } from './SceneRenderer';
 export { useSceneFrame, gameStateToSceneFrame } from './useSceneRenderer';
+export { SpriteManager } from './SpriteManager';
+export * from './animations';
 export {
   RenderLayers,
   PlaceholderColors,

@@ -79,6 +79,7 @@ export function SceneDemo() {
   const [playerPos, setPlayerPos] = useState({ x: 10, y: 5 });
   const [showGrid, setShowGrid] = useState(false);
   const [showDebug, setShowDebug] = useState(true);
+  const [enableAnimations, setEnableAnimations] = useState(true);
 
   // Create mock game state with current player position
   const mockGameState = createMockGameState(playerPos.x, playerPos.y);
@@ -139,6 +140,14 @@ export function SceneDemo() {
             />
             Show Grid
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={enableAnimations}
+              onChange={(e) => setEnableAnimations(e.target.checked)}
+            />
+            Animations
+          </label>
         </div>
       </div>
 
@@ -148,6 +157,7 @@ export function SceneDemo() {
             frame={sceneFrame}
             showGrid={showGrid}
             showCoords={showDebug}
+            enableAnimations={enableAnimations}
             className="play-scene__canvas"
           />
         </div>
