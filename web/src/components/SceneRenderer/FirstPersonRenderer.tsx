@@ -277,7 +277,7 @@ export function FirstPersonRenderer({
     const edgeWidth = Math.max(2, segmentWidth * 0.08);
 
     // Left edge (darker - shadow side)
-    if (isLeftEdge || colIdx === 0) {
+    if (isLeftEdge) {
       const leftEdgeGrad = ctx.createLinearGradient(x, wallTop, x + edgeWidth, wallTop);
       leftEdgeGrad.addColorStop(0, `rgba(0, 0, 0, ${0.5 * shadeFactor})`);
       leftEdgeGrad.addColorStop(1, `rgba(0, 0, 0, 0)`);
@@ -353,6 +353,296 @@ export function FirstPersonRenderer({
       ctx.fillRect(x, wallTop, segmentWidth + 1, wallHeight);
     }
   }, [isDoor, isStairsUp, isStairsDown, enableAnimations, seededRandom]);
+
+  // Calculate perspective projection for a point at given depth
+  const getProjection = useCallback((
+    canvasWidth: number,
+    canvasHeight: number,
+    depth: number,
+    xOffset: number = 0  // -1 to 1, where 0 is center
+  ) => {
+    // Perspective projection
+    const fov = 0.8; // Field of view factor
+    const horizon = canvasHeight / 2;
+    const scale = 1 / (depth * fov + 0.5);
+
+    const wallHeight = canvasHeight * 0.7 * scale;
+    const wallTop = horizon - wallHeight / 2;
+    const wallBottom = horizon + wallHeight / 2;
+
+    // X position based on offset and depth
+    const centerX = canvasWidth / 2;
+    const spread = canvasWidth * 0.5 * scale;
+    const x = centerX + xOffset * spread;
+
+    return { wallTop, wallBottom, x, scale, horizon };
+  }, []);
+
+  // Draw a corridor segment (side wall connecting two depths)
+  const drawCorridorWall = useCallback((
+    ctx: CanvasRenderingContext2D,
+    side: 'left' | 'right',
+    nearDepth: number,
+    farDepth: number,
+    canvasWidth: number,
+    canvasHeight: number,
+    _time: number
+  ) => {
+    const xOffset = side === 'left' ? -1 : 1;
+
+    const near = getProjection(canvasWidth, canvasHeight, nearDepth, xOffset);
+    const far = getProjection(canvasWidth, canvasHeight, farDepth, xOffset);
+
+    // Side wall is darker on left, lighter on right
+    const baseBrightness = side === 'left' ? 50 : 70;
+    const avgDepth = (nearDepth + farDepth) / 2;
+    const depthFade = Math.max(0.3, 1 - avgDepth * 0.1);
+    const brightness = Math.floor(baseBrightness * depthFade);
+
+    // Draw the wall quad
+    ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness + 15})`;
+    ctx.beginPath();
+    ctx.moveTo(near.x, near.wallTop);
+    ctx.lineTo(far.x, far.wallTop);
+    ctx.lineTo(far.x, far.wallBottom);
+    ctx.lineTo(near.x, near.wallBottom);
+    ctx.closePath();
+    ctx.fill();
+
+    // Add stone brick texture
+    const numBricks = Math.max(2, Math.floor(5 - avgDepth * 0.5));
+    const brickHeight = (near.wallBottom - near.wallTop) / numBricks;
+
+    for (let i = 0; i < numBricks; i++) {
+      const t = i / numBricks;
+      const nearY = near.wallTop + brickHeight * i;
+      const farY = far.wallTop + (far.wallBottom - far.wallTop) * t;
+      const nearYBottom = near.wallTop + brickHeight * (i + 1);
+      const farYBottom = far.wallTop + (far.wallBottom - far.wallTop) * ((i + 1) / numBricks);
+
+      // Brick variation
+      const seed = i * 100 + (side === 'left' ? 0 : 500) + Math.floor(nearDepth * 10);
+      const variation = seededRandom(seed) * 20 - 10;
+      const brickBrightness = brightness + variation;
+
+      ctx.fillStyle = `rgb(${brickBrightness}, ${brickBrightness}, ${brickBrightness + 12})`;
+      ctx.beginPath();
+      ctx.moveTo(near.x + (side === 'left' ? 2 : -2), nearY + 2);
+      ctx.lineTo(far.x + (side === 'left' ? 2 : -2), farY + 2);
+      ctx.lineTo(far.x + (side === 'left' ? 2 : -2), farYBottom - 2);
+      ctx.lineTo(near.x + (side === 'left' ? 2 : -2), nearYBottom - 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Mortar line
+      ctx.strokeStyle = `rgba(20, 20, 30, ${0.5 * depthFade})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(near.x, nearYBottom);
+      ctx.lineTo(far.x, farYBottom);
+      ctx.stroke();
+    }
+
+    // Edge highlight
+    ctx.strokeStyle = side === 'left'
+      ? `rgba(0, 0, 0, ${0.3 * depthFade})`
+      : `rgba(255, 255, 255, ${0.1 * depthFade})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(near.x, near.wallTop);
+    ctx.lineTo(near.x, near.wallBottom);
+    ctx.stroke();
+
+    // Fog overlay
+    const fogAmount = Math.min(0.6, avgDepth * 0.08);
+    if (fogAmount > 0) {
+      ctx.fillStyle = `rgba(10, 10, 20, ${fogAmount})`;
+      ctx.beginPath();
+      ctx.moveTo(near.x, near.wallTop);
+      ctx.lineTo(far.x, far.wallTop);
+      ctx.lineTo(far.x, far.wallBottom);
+      ctx.lineTo(near.x, near.wallBottom);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }, [getProjection, seededRandom]);
+
+  // Draw floor segment between two depths
+  const drawFloorSegment = useCallback((
+    ctx: CanvasRenderingContext2D,
+    nearDepth: number,
+    farDepth: number,
+    leftOffset: number,
+    rightOffset: number,
+    canvasWidth: number,
+    canvasHeight: number,
+    isFloor: boolean = true
+  ) => {
+    const nearLeft = getProjection(canvasWidth, canvasHeight, nearDepth, leftOffset);
+    const nearRight = getProjection(canvasWidth, canvasHeight, nearDepth, rightOffset);
+    const farLeft = getProjection(canvasWidth, canvasHeight, farDepth, leftOffset);
+    const farRight = getProjection(canvasWidth, canvasHeight, farDepth, rightOffset);
+
+    const avgDepth = (nearDepth + farDepth) / 2;
+    const depthFade = Math.max(0.3, 1 - avgDepth * 0.1);
+
+    // Floor is darker, ceiling is lighter
+    const baseBrightness = isFloor ? 35 : 25;
+    const brightness = Math.floor(baseBrightness * depthFade);
+
+    const yNearLeft = isFloor ? nearLeft.wallBottom : nearLeft.wallTop;
+    const yNearRight = isFloor ? nearRight.wallBottom : nearRight.wallTop;
+    const yFarLeft = isFloor ? farLeft.wallBottom : farLeft.wallTop;
+    const yFarRight = isFloor ? farRight.wallBottom : farRight.wallTop;
+
+    ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness + 10})`;
+    ctx.beginPath();
+    ctx.moveTo(nearLeft.x, yNearLeft);
+    ctx.lineTo(nearRight.x, yNearRight);
+    ctx.lineTo(farRight.x, yFarRight);
+    ctx.lineTo(farLeft.x, yFarLeft);
+    ctx.closePath();
+    ctx.fill();
+
+    // Grid lines for floor
+    if (isFloor) {
+      ctx.strokeStyle = `rgba(60, 60, 80, ${0.2 * depthFade})`;
+      ctx.lineWidth = 1;
+
+      // Horizontal line
+      ctx.beginPath();
+      ctx.moveTo(nearLeft.x, yNearLeft);
+      ctx.lineTo(nearRight.x, yNearRight);
+      ctx.stroke();
+    }
+
+    // Fog
+    const fogAmount = Math.min(0.5, avgDepth * 0.07);
+    if (fogAmount > 0) {
+      ctx.fillStyle = `rgba(10, 10, 20, ${fogAmount})`;
+      ctx.beginPath();
+      ctx.moveTo(nearLeft.x, yNearLeft);
+      ctx.lineTo(nearRight.x, yNearRight);
+      ctx.lineTo(farRight.x, yFarRight);
+      ctx.lineTo(farLeft.x, yFarLeft);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }, [getProjection]);
+
+  // Draw front-facing wall at a specific depth
+  const drawFrontWall = useCallback((
+    ctx: CanvasRenderingContext2D,
+    depth: number,
+    leftOffset: number,
+    rightOffset: number,
+    canvasWidth: number,
+    canvasHeight: number,
+    tile: string,
+    time: number
+  ) => {
+    const left = getProjection(canvasWidth, canvasHeight, depth, leftOffset);
+    const right = getProjection(canvasWidth, canvasHeight, depth, rightOffset);
+
+    const depthFade = Math.max(0.3, 1 - depth * 0.1);
+    const baseBrightness = 60;
+    const brightness = Math.floor(baseBrightness * depthFade);
+
+    // Main wall
+    const gradient = ctx.createLinearGradient(left.x, left.wallTop, left.x, left.wallBottom);
+    gradient.addColorStop(0, `rgb(${brightness + 15}, ${brightness + 15}, ${brightness + 25})`);
+    gradient.addColorStop(0.5, `rgb(${brightness}, ${brightness}, ${brightness + 10})`);
+    gradient.addColorStop(1, `rgb(${brightness - 10}, ${brightness - 10}, ${brightness})`);
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(left.x, left.wallTop, right.x - left.x, left.wallBottom - left.wallTop);
+
+    // Stone texture
+    const wallWidth = right.x - left.x;
+    const wallHeight = left.wallBottom - left.wallTop;
+    const brickRows = Math.max(2, Math.floor(4 - depth * 0.3));
+    const brickCols = Math.max(1, Math.floor(wallWidth / 30));
+    const brickH = wallHeight / brickRows;
+    const brickW = wallWidth / brickCols;
+
+    for (let row = 0; row < brickRows; row++) {
+      const rowOffset = (row % 2) * (brickW / 2);
+      for (let col = 0; col < brickCols + 1; col++) {
+        const bx = left.x + col * brickW - rowOffset;
+        const by = left.wallTop + row * brickH;
+
+        if (bx < left.x || bx + brickW > right.x) continue;
+
+        const seed = row * 10 + col + Math.floor(depth * 100);
+        const variation = seededRandom(seed) * 15 - 7;
+        const stoneBrightness = brightness + variation;
+
+        ctx.fillStyle = `rgb(${stoneBrightness}, ${stoneBrightness}, ${stoneBrightness + 8})`;
+        ctx.fillRect(bx + 2, by + 2, brickW - 4, brickH - 4);
+      }
+
+      // Mortar line
+      ctx.fillStyle = `rgba(20, 20, 30, ${0.4 * depthFade})`;
+      ctx.fillRect(left.x, left.wallTop + (row + 1) * brickH - 1, wallWidth, 2);
+    }
+
+    // Door handling
+    if (tile === 'D' || tile === 'd') {
+      const doorWidth = wallWidth * 0.6;
+      const doorHeight = wallHeight * 0.85;
+      const doorX = left.x + (wallWidth - doorWidth) / 2;
+      const doorY = left.wallBottom - doorHeight;
+
+      ctx.fillStyle = `rgb(${80 * depthFade}, ${50 * depthFade}, ${30 * depthFade})`;
+      ctx.fillRect(doorX, doorY, doorWidth, doorHeight);
+
+      // Door frame
+      ctx.strokeStyle = `rgb(${50 * depthFade}, ${30 * depthFade}, ${20 * depthFade})`;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(doorX, doorY, doorWidth, doorHeight);
+
+      // Door handle
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(doorX + doorWidth * 0.8, doorY + doorHeight * 0.5, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Torch on walls (closer only)
+    if (depth <= 4 && tile === '#' && wallWidth > 40) {
+      const torchX = (left.x + right.x) / 2;
+      const torchY = left.wallTop + wallHeight * 0.3;
+
+      // Torch glow
+      const flicker = enableAnimations ? Math.sin(time * 8) * 0.15 + 0.85 : 1;
+      const glowGrad = ctx.createRadialGradient(torchX, torchY, 0, torchX, torchY, wallHeight * 0.4);
+      glowGrad.addColorStop(0, `rgba(255, 150, 50, ${0.3 * flicker * depthFade})`);
+      glowGrad.addColorStop(1, 'rgba(255, 100, 30, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(left.x, left.wallTop, wallWidth, wallHeight);
+
+      // Torch bracket
+      ctx.fillStyle = '#3a3a3a';
+      ctx.fillRect(torchX - 3, torchY, 6, 15);
+
+      // Flame
+      if (enableAnimations) {
+        const flameH = 10 + Math.sin(time * 12) * 3;
+        ctx.fillStyle = `rgba(255, 200, 50, ${flicker})`;
+        ctx.beginPath();
+        ctx.moveTo(torchX - 5, torchY);
+        ctx.quadraticCurveTo(torchX, torchY - flameH, torchX + 5, torchY);
+        ctx.fill();
+      }
+    }
+
+    // Fog overlay
+    const fogAmount = Math.min(0.6, depth * 0.08);
+    if (fogAmount > 0) {
+      ctx.fillStyle = `rgba(10, 10, 20, ${fogAmount})`;
+      ctx.fillRect(left.x, left.wallTop, wallWidth, wallHeight);
+    }
+  }, [getProjection, seededRandom, enableAnimations]);
 
   // Draw floor and ceiling with perspective depth
   const drawFloorAndCeiling = useCallback((
@@ -432,6 +722,72 @@ export function FirstPersonRenderer({
     }
   }, [enableAnimations]);
 
+  // Get enemy color scheme based on symbol/name
+  const getEnemyColors = useCallback((symbol: string, name: string, isElite: boolean) => {
+    const lowerName = name.toLowerCase();
+    const lowerSymbol = symbol.toLowerCase();
+
+    // Base colors for different enemy types
+    if (lowerSymbol === 'g' || lowerName.includes('goblin')) {
+      return { primary: '#4a7c4e', secondary: '#2d4d2f', accent: '#8bc34a', eye: '#ffeb3b' };
+    } else if (lowerSymbol === 'o' || lowerName.includes('orc')) {
+      return { primary: '#5d8a5d', secondary: '#3d5a3d', accent: '#7cb342', eye: '#ff5722' };
+    } else if (lowerSymbol === 's' || lowerName.includes('skeleton')) {
+      return { primary: '#e0e0e0', secondary: '#9e9e9e', accent: '#ffffff', eye: '#ff1744' };
+    } else if (lowerSymbol === 'r' || lowerName.includes('rat')) {
+      return { primary: '#8d6e63', secondary: '#5d4037', accent: '#a1887f', eye: '#ff5252' };
+    } else if (lowerSymbol === 'b' || lowerName.includes('bat')) {
+      return { primary: '#37474f', secondary: '#263238', accent: '#546e7a', eye: '#ff1744' };
+    } else if (lowerSymbol === 'd' || lowerName.includes('demon')) {
+      return { primary: '#b71c1c', secondary: '#7f0000', accent: '#ff5252', eye: '#ffeb3b' };
+    } else if (lowerSymbol === 'z' || lowerName.includes('zombie')) {
+      return { primary: '#558b2f', secondary: '#33691e', accent: '#8bc34a', eye: '#fff176' };
+    } else if (lowerSymbol === 't' || lowerName.includes('troll')) {
+      return { primary: '#6d4c41', secondary: '#4e342e', accent: '#8d6e63', eye: '#ffc107' };
+    } else if (lowerName.includes('boss') || lowerName.includes('dragon')) {
+      return { primary: '#4a148c', secondary: '#311b92', accent: '#7c4dff', eye: '#ff1744' };
+    }
+
+    // Default/elite colors
+    if (isElite) {
+      return { primary: '#ff8f00', secondary: '#ff6f00', accent: '#ffc107', eye: '#ffffff' };
+    }
+    return { primary: '#c62828', secondary: '#8e0000', accent: '#ff5252', eye: '#ffeb3b' };
+  }, []);
+
+  // Get item color and shape based on symbol
+  const getItemStyle = useCallback((symbol: string, name: string) => {
+    const lowerName = name.toLowerCase();
+
+    if (symbol === '!' || lowerName.includes('potion')) {
+      if (lowerName.includes('health')) {
+        return { color: '#ff5252', glowColor: 'rgba(255, 82, 82, 0.5)', shape: 'potion' };
+      } else if (lowerName.includes('mana')) {
+        return { color: '#448aff', glowColor: 'rgba(68, 138, 255, 0.5)', shape: 'potion' };
+      } else if (lowerName.includes('strength')) {
+        return { color: '#ff9800', glowColor: 'rgba(255, 152, 0, 0.5)', shape: 'potion' };
+      }
+      return { color: '#e040fb', glowColor: 'rgba(224, 64, 251, 0.5)', shape: 'potion' };
+    } else if (symbol === '?' || lowerName.includes('scroll')) {
+      return { color: '#fff9c4', glowColor: 'rgba(255, 249, 196, 0.5)', shape: 'scroll' };
+    } else if (symbol === '/' || symbol === '|' || lowerName.includes('sword') || lowerName.includes('weapon')) {
+      return { color: '#b0bec5', glowColor: 'rgba(176, 190, 197, 0.5)', shape: 'weapon' };
+    } else if (symbol === ']' || symbol === '[' || lowerName.includes('armor') || lowerName.includes('shield')) {
+      return { color: '#78909c', glowColor: 'rgba(120, 144, 156, 0.5)', shape: 'armor' };
+    } else if (symbol === '=' || lowerName.includes('ring') || lowerName.includes('amulet')) {
+      return { color: '#ffd700', glowColor: 'rgba(255, 215, 0, 0.5)', shape: 'ring' };
+    } else if (symbol === '%' || lowerName.includes('food') || lowerName.includes('ration')) {
+      return { color: '#8d6e63', glowColor: 'rgba(141, 110, 99, 0.5)', shape: 'food' };
+    } else if (symbol === '$' || lowerName.includes('gold') || lowerName.includes('coin')) {
+      return { color: '#ffd700', glowColor: 'rgba(255, 215, 0, 0.6)', shape: 'gold' };
+    } else if (symbol === '*' || lowerName.includes('key')) {
+      return { color: '#ffab00', glowColor: 'rgba(255, 171, 0, 0.5)', shape: 'key' };
+    }
+
+    // Default
+    return { color: '#f1fa8c', glowColor: 'rgba(241, 250, 140, 0.5)', shape: 'default' };
+  }, []);
+
   // Draw an entity (enemy or item)
   const drawEntity = useCallback((
     ctx: CanvasRenderingContext2D,
@@ -442,103 +798,494 @@ export function FirstPersonRenderer({
   ) => {
     const { distance, offset, type, name, symbol, health, max_health, is_elite } = entity;
 
-    // Calculate screen position based on distance and offset
-    const scale = Math.max(0.2, 1 - (distance - 1) * 0.12);
-    const entityHeight = canvasHeight * 0.4 * scale;
-    const entityWidth = entityHeight * 0.6;
+    // Use projection system for proper floor placement
+    const projection = getProjection(canvasWidth, canvasHeight, distance, offset * 0.3);
 
-    // Center position
-    const centerX = canvasWidth / 2 + (offset * canvasWidth * 0.1 * scale);
-    const baseY = canvasHeight / 2 + canvasHeight * 0.15 * scale;
+    // Entity sits on the floor
+    const baseY = projection.wallBottom;
+    const scale = projection.scale * 1.5;
+    const entityHeight = canvasHeight * 0.35 * scale;
+    const entityWidth = entityHeight * 0.5;
+    const centerX = projection.x;
 
-    // Animation
+    // Distance-based opacity for fog effect
+    const fogAlpha = Math.min(0.6, distance * 0.08);
+
+    // Animation values
     let bobY = 0;
+    let breathe = 1;
+    let sway = 0;
     if (enableAnimations) {
-      bobY = Math.sin(time * 2 + distance) * 3 * scale;
+      bobY = Math.sin(time * 2.5 + distance + offset) * 4 * scale;
+      breathe = 1 + Math.sin(time * 3 + offset) * 0.05;
+      sway = Math.sin(time * 1.5 + offset * 2) * 2 * scale;
     }
 
     const y = baseY - entityHeight + bobY;
 
     // Draw entity based on type
     if (type === 'enemy') {
-      // Enemy body
-      ctx.fillStyle = is_elite ? Colors.enemyElite : Colors.enemy;
+      const colors = getEnemyColors(symbol, name, is_elite || false);
+
+      // Ground shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
       ctx.beginPath();
-      ctx.ellipse(centerX, y + entityHeight * 0.6, entityWidth / 2, entityHeight / 2, 0, 0, Math.PI * 2);
+      ctx.ellipse(centerX, baseY + 5, entityWidth * 0.6, entityHeight * 0.1, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Enemy head
+      // Elite aura/glow
+      if (is_elite) {
+        const auraSize = entityHeight * 0.8;
+        const auraPulse = enableAnimations ? Math.sin(time * 4) * 0.2 + 0.6 : 0.6;
+        const auraGrad = ctx.createRadialGradient(centerX, y + entityHeight * 0.5, 0, centerX, y + entityHeight * 0.5, auraSize);
+        auraGrad.addColorStop(0, `rgba(255, 215, 0, ${auraPulse * 0.3})`);
+        auraGrad.addColorStop(0.5, `rgba(255, 140, 0, ${auraPulse * 0.15})`);
+        auraGrad.addColorStop(1, 'rgba(255, 100, 0, 0)');
+        ctx.fillStyle = auraGrad;
+        ctx.beginPath();
+        ctx.arc(centerX, y + entityHeight * 0.5, auraSize, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Body - darker base layer for depth
+      ctx.fillStyle = colors.secondary;
       ctx.beginPath();
-      ctx.arc(centerX, y + entityHeight * 0.25, entityWidth * 0.35, 0, Math.PI * 2);
+      ctx.ellipse(centerX + 2, y + entityHeight * 0.62, entityWidth * 0.42 * breathe, entityHeight * 0.38, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Eyes (menacing)
-      ctx.fillStyle = '#fff';
+      // Body - main shape
+      const bodyGrad = ctx.createRadialGradient(
+        centerX - entityWidth * 0.15, y + entityHeight * 0.5,
+        0,
+        centerX, y + entityHeight * 0.6,
+        entityWidth * 0.5
+      );
+      bodyGrad.addColorStop(0, colors.accent);
+      bodyGrad.addColorStop(0.5, colors.primary);
+      bodyGrad.addColorStop(1, colors.secondary);
+      ctx.fillStyle = bodyGrad;
       ctx.beginPath();
-      ctx.arc(centerX - entityWidth * 0.12, y + entityHeight * 0.22, entityWidth * 0.08, 0, Math.PI * 2);
-      ctx.arc(centerX + entityWidth * 0.12, y + entityHeight * 0.22, entityWidth * 0.08, 0, Math.PI * 2);
+      ctx.ellipse(centerX + sway * 0.3, y + entityHeight * 0.6, entityWidth * 0.4 * breathe, entityHeight * 0.36, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Pupils
+      // Arms/appendages
+      ctx.fillStyle = colors.primary;
+      // Left arm
+      ctx.beginPath();
+      ctx.ellipse(centerX - entityWidth * 0.45, y + entityHeight * 0.55, entityWidth * 0.12, entityHeight * 0.2, -0.3 + sway * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+      // Right arm
+      ctx.beginPath();
+      ctx.ellipse(centerX + entityWidth * 0.45, y + entityHeight * 0.55, entityWidth * 0.12, entityHeight * 0.2, 0.3 - sway * 0.05, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head - shadow
+      ctx.fillStyle = colors.secondary;
+      ctx.beginPath();
+      ctx.arc(centerX + 2 + sway * 0.5, y + entityHeight * 0.27, entityWidth * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head - main
+      const headGrad = ctx.createRadialGradient(
+        centerX - entityWidth * 0.1, y + entityHeight * 0.2,
+        0,
+        centerX + sway * 0.5, y + entityHeight * 0.25,
+        entityWidth * 0.35
+      );
+      headGrad.addColorStop(0, colors.accent);
+      headGrad.addColorStop(0.6, colors.primary);
+      headGrad.addColorStop(1, colors.secondary);
+      ctx.fillStyle = headGrad;
+      ctx.beginPath();
+      ctx.arc(centerX + sway * 0.5, y + entityHeight * 0.25, entityWidth * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes - glowing effect
+      const eyeGlow = enableAnimations ? Math.sin(time * 5 + offset) * 0.3 + 0.7 : 1;
+      const eyeY = y + entityHeight * 0.23;
+      const eyeSpacing = entityWidth * 0.15;
+      const eyeSize = entityWidth * 0.1;
+
+      // Eye glow
+      const eyeGlowGrad = ctx.createRadialGradient(centerX, eyeY, 0, centerX, eyeY, eyeSize * 3);
+      eyeGlowGrad.addColorStop(0, `rgba(255, 100, 100, ${0.3 * eyeGlow})`);
+      eyeGlowGrad.addColorStop(1, 'rgba(255, 100, 100, 0)');
+      ctx.fillStyle = eyeGlowGrad;
+      ctx.fillRect(centerX - eyeSize * 3, eyeY - eyeSize * 2, eyeSize * 6, eyeSize * 4);
+
+      // Left eye
+      ctx.fillStyle = colors.eye;
+      ctx.shadowColor = colors.eye;
+      ctx.shadowBlur = 8 * scale * eyeGlow;
+      ctx.beginPath();
+      ctx.ellipse(centerX - eyeSpacing + sway * 0.3, eyeY, eyeSize, eyeSize * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Right eye
+      ctx.beginPath();
+      ctx.ellipse(centerX + eyeSpacing + sway * 0.3, eyeY, eyeSize, eyeSize * 0.7, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Pupils (tracking player)
       ctx.fillStyle = '#000';
+      const pupilOffset = Math.sin(time * 0.5) * eyeSize * 0.2;
       ctx.beginPath();
-      ctx.arc(centerX - entityWidth * 0.1, y + entityHeight * 0.22, entityWidth * 0.04, 0, Math.PI * 2);
-      ctx.arc(centerX + entityWidth * 0.1, y + entityHeight * 0.22, entityWidth * 0.04, 0, Math.PI * 2);
+      ctx.arc(centerX - eyeSpacing + pupilOffset + sway * 0.3, eyeY, eyeSize * 0.4, 0, Math.PI * 2);
+      ctx.arc(centerX + eyeSpacing + pupilOffset + sway * 0.3, eyeY, eyeSize * 0.4, 0, Math.PI * 2);
       ctx.fill();
+
+      // Elite crown
+      if (is_elite) {
+        const crownY = y + entityHeight * 0.02;
+        const crownWidth = entityWidth * 0.4;
+        const crownHeight = entityHeight * 0.12;
+
+        // Crown glow
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 10 * scale;
+
+        // Crown base
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.moveTo(centerX - crownWidth, crownY + crownHeight);
+        ctx.lineTo(centerX - crownWidth * 0.8, crownY);
+        ctx.lineTo(centerX - crownWidth * 0.4, crownY + crownHeight * 0.5);
+        ctx.lineTo(centerX, crownY - crownHeight * 0.3);
+        ctx.lineTo(centerX + crownWidth * 0.4, crownY + crownHeight * 0.5);
+        ctx.lineTo(centerX + crownWidth * 0.8, crownY);
+        ctx.lineTo(centerX + crownWidth, crownY + crownHeight);
+        ctx.closePath();
+        ctx.fill();
+
+        // Crown gems
+        ctx.fillStyle = '#ff1744';
+        ctx.beginPath();
+        ctx.arc(centerX, crownY + crownHeight * 0.3, crownHeight * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // Mouth/teeth for close enemies
+      if (distance <= 3) {
+        const mouthY = y + entityHeight * 0.32;
+        ctx.fillStyle = '#1a1a1a';
+        ctx.beginPath();
+        ctx.ellipse(centerX + sway * 0.3, mouthY, entityWidth * 0.15, entityHeight * 0.04, 0, 0, Math.PI);
+        ctx.fill();
+
+        // Teeth
+        ctx.fillStyle = '#fff';
+        const teethCount = 4;
+        const teethWidth = entityWidth * 0.06;
+        for (let i = 0; i < teethCount; i++) {
+          const tx = centerX - entityWidth * 0.1 + i * teethWidth + sway * 0.3;
+          ctx.beginPath();
+          ctx.moveTo(tx, mouthY - entityHeight * 0.015);
+          ctx.lineTo(tx + teethWidth * 0.5, mouthY + entityHeight * 0.025);
+          ctx.lineTo(tx + teethWidth, mouthY - entityHeight * 0.015);
+          ctx.fill();
+        }
+      }
 
       // Health bar (only if close enough)
-      if (distance <= 4 && health !== undefined && max_health !== undefined) {
-        const barWidth = entityWidth;
-        const barHeight = 6 * scale;
+      if (distance <= 5 && health !== undefined && max_health !== undefined) {
+        const barWidth = entityWidth * 1.2;
+        const barHeight = 8 * scale;
         const barX = centerX - barWidth / 2;
-        const barY = y - barHeight - 5;
+        const barY = y - barHeight - 10 * scale;
 
-        // Background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fillRect(barX, barY, barWidth, barHeight);
+        // Bar background with border
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
 
-        // Health fill
+        // Health fill with gradient
         const healthPercent = health / max_health;
-        ctx.fillStyle = healthPercent > 0.5 ? '#50fa7b' : healthPercent > 0.25 ? '#ffb86c' : '#ff5555';
+        const healthColor = healthPercent > 0.5 ? '#50fa7b' : healthPercent > 0.25 ? '#ffb86c' : '#ff5555';
+        const healthGrad = ctx.createLinearGradient(barX, barY, barX, barY + barHeight);
+        healthGrad.addColorStop(0, healthColor);
+        healthGrad.addColorStop(1, colors.secondary);
+        ctx.fillStyle = healthGrad;
         ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
 
+        // Health bar shine
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight * 0.4);
+
         // Border
-        ctx.strokeStyle = '#fff';
+        ctx.strokeStyle = healthColor;
         ctx.lineWidth = 1;
         ctx.strokeRect(barX, barY, barWidth, barHeight);
       }
 
       // Name label (close enemies)
       if (distance <= 3) {
-        ctx.fillStyle = '#fff';
-        ctx.font = `${Math.floor(12 * scale)}px monospace`;
+        const labelY = y - 25 * scale;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(centerX - entityWidth * 0.8, labelY - 10, entityWidth * 1.6, 16);
+
+        ctx.fillStyle = is_elite ? '#ffd700' : '#fff';
+        ctx.font = `bold ${Math.floor(11 * scale)}px monospace`;
         ctx.textAlign = 'center';
-        ctx.fillText(name, centerX, y - 15);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(is_elite ? `★ ${name}` : name, centerX, labelY - 2);
       }
-    } else if (type === 'item') {
-      // Item glow
-      if (enableAnimations) {
-        const glow = Math.sin(time * 3) * 0.2 + 0.5;
-        ctx.fillStyle = `rgba(241, 250, 140, ${glow})`;
+
+      // Distance fog overlay
+      if (fogAlpha > 0) {
+        ctx.fillStyle = `rgba(10, 10, 20, ${fogAlpha * 0.5})`;
         ctx.beginPath();
-        ctx.arc(centerX, y + entityHeight * 0.5, entityWidth * 0.6, 0, Math.PI * 2);
+        ctx.ellipse(centerX, y + entityHeight * 0.5, entityWidth * 0.6, entityHeight * 0.5, 0, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Item shape (simple treasure/item look)
-      ctx.fillStyle = Colors.item;
+    } else if (type === 'item') {
+      const itemStyle = getItemStyle(symbol, name);
+      const itemY = y + entityHeight * 0.5;
+
+      // Floating animation
+      const floatY = enableAnimations ? Math.sin(time * 3 + offset * 2) * 5 * scale : 0;
+
+      // Ground shadow
+      const shadowScale = 1 - floatY / (20 * scale);
+      ctx.fillStyle = `rgba(0, 0, 0, ${0.3 * shadowScale})`;
       ctx.beginPath();
-      ctx.arc(centerX, y + entityHeight * 0.5, entityWidth * 0.4, 0, Math.PI * 2);
+      ctx.ellipse(centerX, baseY + 5, entityWidth * 0.4 * shadowScale, entityHeight * 0.08, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      // Symbol on item
-      ctx.fillStyle = '#000';
-      ctx.font = `bold ${Math.floor(14 * scale)}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(symbol, centerX, y + entityHeight * 0.5);
+      // Item glow
+      const glowPulse = enableAnimations ? Math.sin(time * 4 + offset) * 0.3 + 0.7 : 0.7;
+      const glowGrad = ctx.createRadialGradient(centerX, itemY - floatY, 0, centerX, itemY - floatY, entityWidth * 0.8);
+      glowGrad.addColorStop(0, itemStyle.glowColor.replace('0.5', String(0.4 * glowPulse)));
+      glowGrad.addColorStop(0.5, itemStyle.glowColor.replace('0.5', String(0.15 * glowPulse)));
+      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(centerX, itemY - floatY, entityWidth * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Draw item based on shape
+      if (itemStyle.shape === 'potion') {
+        // Potion bottle
+        const bottleWidth = entityWidth * 0.35;
+        const bottleHeight = entityHeight * 0.4;
+        const bottleY = itemY - floatY;
+
+        // Bottle body
+        ctx.fillStyle = itemStyle.color;
+        ctx.beginPath();
+        ctx.moveTo(centerX - bottleWidth * 0.3, bottleY - bottleHeight * 0.2);
+        ctx.quadraticCurveTo(centerX - bottleWidth * 0.5, bottleY, centerX - bottleWidth * 0.4, bottleY + bottleHeight * 0.4);
+        ctx.quadraticCurveTo(centerX, bottleY + bottleHeight * 0.5, centerX + bottleWidth * 0.4, bottleY + bottleHeight * 0.4);
+        ctx.quadraticCurveTo(centerX + bottleWidth * 0.5, bottleY, centerX + bottleWidth * 0.3, bottleY - bottleHeight * 0.2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Bottle neck
+        ctx.fillStyle = '#666';
+        ctx.fillRect(centerX - bottleWidth * 0.15, bottleY - bottleHeight * 0.4, bottleWidth * 0.3, bottleHeight * 0.25);
+
+        // Cork
+        ctx.fillStyle = '#8d6e63';
+        ctx.fillRect(centerX - bottleWidth * 0.12, bottleY - bottleHeight * 0.5, bottleWidth * 0.24, bottleHeight * 0.12);
+
+        // Liquid shine
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(centerX - bottleWidth * 0.15, bottleY + bottleHeight * 0.1, bottleWidth * 0.1, bottleHeight * 0.15, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Bubbles (animated)
+        if (enableAnimations) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+          for (let i = 0; i < 3; i++) {
+            const bubbleY = bottleY + bottleHeight * 0.2 - ((time * 30 + i * 20) % 40) * scale * 0.5;
+            const bubbleX = centerX + Math.sin(time * 2 + i) * bottleWidth * 0.2;
+            ctx.beginPath();
+            ctx.arc(bubbleX, bubbleY, 2 * scale, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+
+      } else if (itemStyle.shape === 'scroll') {
+        // Scroll
+        const scrollWidth = entityWidth * 0.5;
+        const scrollHeight = entityHeight * 0.35;
+        const scrollY = itemY - floatY;
+
+        // Scroll body
+        ctx.fillStyle = itemStyle.color;
+        ctx.fillRect(centerX - scrollWidth * 0.4, scrollY - scrollHeight * 0.3, scrollWidth * 0.8, scrollHeight * 0.6);
+
+        // Scroll ends
+        ctx.fillStyle = '#d4a574';
+        ctx.beginPath();
+        ctx.ellipse(centerX - scrollWidth * 0.4, scrollY, scrollWidth * 0.1, scrollHeight * 0.35, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(centerX + scrollWidth * 0.4, scrollY, scrollWidth * 0.1, scrollHeight * 0.35, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Magic runes (animated glow)
+        if (enableAnimations) {
+          const runeGlow = Math.sin(time * 3) * 0.3 + 0.7;
+          ctx.fillStyle = `rgba(100, 200, 255, ${runeGlow})`;
+          ctx.font = `${Math.floor(8 * scale)}px serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText('✧ ⚝ ✧', centerX, scrollY);
+        }
+
+      } else if (itemStyle.shape === 'weapon') {
+        // Sword
+        const swordLength = entityHeight * 0.5;
+        const swordY = itemY - floatY;
+
+        // Blade
+        ctx.fillStyle = '#b0bec5';
+        ctx.beginPath();
+        ctx.moveTo(centerX, swordY - swordLength * 0.5);
+        ctx.lineTo(centerX - entityWidth * 0.08, swordY + swordLength * 0.2);
+        ctx.lineTo(centerX + entityWidth * 0.08, swordY + swordLength * 0.2);
+        ctx.closePath();
+        ctx.fill();
+
+        // Blade shine
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.moveTo(centerX, swordY - swordLength * 0.45);
+        ctx.lineTo(centerX - entityWidth * 0.02, swordY + swordLength * 0.15);
+        ctx.lineTo(centerX + entityWidth * 0.02, swordY + swordLength * 0.15);
+        ctx.closePath();
+        ctx.fill();
+
+        // Guard
+        ctx.fillStyle = '#ffd700';
+        ctx.fillRect(centerX - entityWidth * 0.2, swordY + swordLength * 0.15, entityWidth * 0.4, swordLength * 0.08);
+
+        // Handle
+        ctx.fillStyle = '#5d4037';
+        ctx.fillRect(centerX - entityWidth * 0.06, swordY + swordLength * 0.2, entityWidth * 0.12, swordLength * 0.25);
+
+        // Pommel
+        ctx.fillStyle = '#ffd700';
+        ctx.beginPath();
+        ctx.arc(centerX, swordY + swordLength * 0.48, entityWidth * 0.08, 0, Math.PI * 2);
+        ctx.fill();
+
+      } else if (itemStyle.shape === 'gold') {
+        // Gold coins
+        const coinSize = entityWidth * 0.25;
+        const coinY = itemY - floatY;
+
+        // Stack of coins
+        for (let i = 0; i < 3; i++) {
+          const cx = centerX + (i - 1) * coinSize * 0.6;
+          const cy = coinY + (2 - i) * coinSize * 0.3;
+
+          // Coin shadow
+          ctx.fillStyle = '#b8860b';
+          ctx.beginPath();
+          ctx.ellipse(cx, cy + 2, coinSize, coinSize * 0.4, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Coin face
+          ctx.fillStyle = '#ffd700';
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, coinSize, coinSize * 0.4, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Coin shine
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+          ctx.beginPath();
+          ctx.ellipse(cx - coinSize * 0.2, cy - coinSize * 0.1, coinSize * 0.3, coinSize * 0.15, -0.3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Sparkles
+        if (enableAnimations) {
+          const sparkleTime = time * 5;
+          ctx.fillStyle = '#fff';
+          for (let i = 0; i < 4; i++) {
+            const sparklePhase = (sparkleTime + i * 1.5) % 6;
+            if (sparklePhase < 1) {
+              const sx = centerX + Math.cos(i * 1.5) * coinSize * 1.5;
+              const sy = coinY + Math.sin(i * 1.5) * coinSize;
+              const sparkleSize = (1 - sparklePhase) * 3 * scale;
+              ctx.beginPath();
+              ctx.arc(sx, sy, sparkleSize, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+
+      } else {
+        // Default item (glowing orb)
+        const orbY = itemY - floatY;
+        const orbSize = entityWidth * 0.35;
+
+        // Outer glow
+        ctx.fillStyle = itemStyle.color;
+        ctx.shadowColor = itemStyle.color;
+        ctx.shadowBlur = 15 * scale * glowPulse;
+        ctx.beginPath();
+        ctx.arc(centerX, orbY, orbSize, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Inner shine
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+        ctx.beginPath();
+        ctx.arc(centerX - orbSize * 0.3, orbY - orbSize * 0.3, orbSize * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Symbol
+        ctx.fillStyle = '#000';
+        ctx.font = `bold ${Math.floor(14 * scale)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(symbol, centerX, orbY);
+      }
+
+      // Sparkle particles
+      if (enableAnimations) {
+        const particleCount = 5;
+        for (let i = 0; i < particleCount; i++) {
+          const angle = (time * 0.5 + i * (Math.PI * 2 / particleCount)) % (Math.PI * 2);
+          const radius = entityWidth * 0.5 + Math.sin(time * 3 + i) * entityWidth * 0.2;
+          const px = centerX + Math.cos(angle) * radius;
+          const py = itemY - floatY + Math.sin(angle) * radius * 0.5;
+          const particleAlpha = Math.sin(time * 4 + i * 2) * 0.3 + 0.4;
+
+          ctx.fillStyle = `rgba(255, 255, 255, ${particleAlpha})`;
+          ctx.beginPath();
+          ctx.arc(px, py, 2 * scale, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Item name on hover/close
+      if (distance <= 2) {
+        const labelY = itemY - floatY - entityHeight * 0.4;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        const textWidth = ctx.measureText(name).width + 10;
+        ctx.fillRect(centerX - textWidth / 2, labelY - 8, textWidth, 16);
+
+        ctx.fillStyle = itemStyle.color;
+        ctx.font = `${Math.floor(10 * scale)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(name, centerX, labelY);
+      }
+
+      // Distance fog
+      if (fogAlpha > 0) {
+        ctx.fillStyle = `rgba(10, 10, 20, ${fogAlpha * 0.4})`;
+        ctx.beginPath();
+        ctx.arc(centerX, itemY - floatY, entityWidth * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
-  }, [enableAnimations]);
+  }, [enableAnimations, getEnemyColors, getItemStyle, getProjection]);
 
   // Main render function
   const render = useCallback((time: number) => {
@@ -570,71 +1317,119 @@ export function FirstPersonRenderer({
       return;
     }
 
-    // Draw walls from back to front (painter's algorithm)
+    // Analyze the view to find corridor boundaries
     const rows = view.rows;
+    const maxDepth = rows.length;
 
-    for (let rowIdx = rows.length - 1; rowIdx >= 0; rowIdx--) {
-      const row = rows[rowIdx];
-      const distance = rowIdx + 1;
-      const wallHeight = (height * 0.8) / (distance * 0.5 + 0.5);
+    // Find the corridor width at each depth (where walls are on each side)
+    const corridorInfo: { leftWall: boolean; rightWall: boolean; hasFloor: boolean; frontWall: string | null }[] = [];
 
-      const rowWidth = row.length;
-      const segmentWidth = width / rowWidth;
-
-      // Track wall edges for 3D effect
-      let prevWasWall = false;
-
-      for (let colIdx = 0; colIdx < row.length; colIdx++) {
-        const tile = row[colIdx];
-        const x = colIdx * segmentWidth;
-        const currentIsWall = isWall(tile.tile) || isDoor(tile.tile);
-        const nextTile = row[colIdx + 1];
-        const nextIsWall = nextTile ? (isWall(nextTile.tile) || isDoor(nextTile.tile)) : false;
-
-        // Determine if this is an edge
-        const isLeftEdge = currentIsWall && !prevWasWall;
-        const isRightEdge = currentIsWall && !nextIsWall;
-
-        if (currentIsWall) {
-          drawWall(
-            ctx,
-            x,
-            wallHeight,
-            distance,
-            tile.tile,
-            width,
-            height,
-            segmentWidth,
-            timeRef.current,
-            colIdx,
-            isLeftEdge,
-            isRightEdge
-          );
-        } else if (isStairsUp(tile.tile) || isStairsDown(tile.tile)) {
-          // Draw stairs indicator on floor
-          drawWall(
-            ctx,
-            x,
-            wallHeight * 0.3,
-            distance,
-            tile.tile,
-            width,
-            height,
-            segmentWidth,
-            timeRef.current,
-            colIdx,
-            false,
-            false
-          );
-        }
-
-        prevWasWall = currentIsWall;
+    for (let d = 0; d < maxDepth; d++) {
+      const row = rows[d];
+      if (!row || row.length === 0) {
+        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: '#' });
+        continue;
       }
+
+      const centerIdx = Math.floor(row.length / 2);
+      const centerTile = row[centerIdx];
+
+      // Check if center is blocked (front wall)
+      const centerIsWall = isWall(centerTile?.tile || '#') || isDoor(centerTile?.tile || '');
+      const frontWall = centerIsWall ? (centerTile?.tile || '#') : null;
+
+      // Check for walls on left and right of the walkable path
+      let leftWall = true;
+      let rightWall = true;
+
+      // Find edges of walkable area
+      for (let i = 0; i < row.length; i++) {
+        if (!isWall(row[i].tile) && !isDoor(row[i].tile)) {
+          if (i === 0) leftWall = false;
+          if (i === row.length - 1) rightWall = false;
+        }
+      }
+
+      corridorInfo.push({
+        leftWall,
+        rightWall,
+        hasFloor: !centerIsWall,
+        frontWall
+      });
+    }
+
+    // Draw from back to front (painter's algorithm)
+    for (let d = maxDepth - 1; d >= 0; d--) {
+      const depth = d + 1;
+      const nextDepth = d + 2;
+      const info = corridorInfo[d];
+
+      // Draw ceiling segment
+      drawFloorSegment(ctx, depth, nextDepth, -1, 1, width, height, false);
+
+      // Draw floor segment
+      drawFloorSegment(ctx, depth, nextDepth, -1, 1, width, height, true);
+
+      // Draw left corridor wall if there's a wall on the left
+      if (info.leftWall) {
+        drawCorridorWall(ctx, 'left', depth, nextDepth, width, height, timeRef.current);
+      }
+
+      // Draw right corridor wall if there's a wall on the right
+      if (info.rightWall) {
+        drawCorridorWall(ctx, 'right', depth, nextDepth, width, height, timeRef.current);
+      }
+
+      // Draw front wall if this depth is blocked
+      if (info.frontWall) {
+        drawFrontWall(ctx, depth, -1, 1, width, height, info.frontWall, timeRef.current);
+      }
+    }
+
+    // Draw the immediate area (depth 0 to 1)
+    drawFloorSegment(ctx, 0.3, 1, -1, 1, width, height, false); // ceiling
+    drawFloorSegment(ctx, 0.3, 1, -1, 1, width, height, true);  // floor
+    if (corridorInfo[0]?.leftWall) {
+      drawCorridorWall(ctx, 'left', 0.3, 1, width, height, timeRef.current);
+    }
+    if (corridorInfo[0]?.rightWall) {
+      drawCorridorWall(ctx, 'right', 0.3, 1, width, height, timeRef.current);
     }
 
     // Draw entities (sorted by distance, far to near)
     if (view.entities && view.entities.length > 0) {
-      const sortedEntities = [...view.entities].sort((a, b) => b.distance - a.distance);
+      // Clone entities so we can modify offsets
+      const sortedEntities = [...view.entities]
+        .map(e => ({ ...e }))
+        .sort((a, b) => b.distance - a.distance);
+
+      // Group entities by distance to distribute them horizontally
+      const entitiesByDistance = new Map<number, FirstPersonEntity[]>();
+      for (const entity of sortedEntities) {
+        const dist = entity.distance;
+        if (!entitiesByDistance.has(dist)) {
+          entitiesByDistance.set(dist, []);
+        }
+        entitiesByDistance.get(dist)!.push(entity);
+      }
+
+      // Redistribute entities at same distance to avoid overlap
+      for (const [distance, entities] of entitiesByDistance) {
+        if (entities.length > 1) {
+          // Calculate available width at this distance (narrower as you get closer)
+          const availableSlots = Math.max(3, Math.floor(7 - distance * 0.5));
+          const slotWidth = availableSlots > 1 ? 4 / (availableSlots - 1) : 0;
+
+          // Distribute entities evenly across available slots
+          for (let i = 0; i < entities.length; i++) {
+            const slot = i % availableSlots;
+            const centerSlot = (availableSlots - 1) / 2;
+            entities[i].offset = (slot - centerSlot) * slotWidth * 0.8;
+          }
+        }
+      }
+
+      // Draw all entities
       for (const entity of sortedEntities) {
         drawEntity(ctx, entity, width, height, timeRef.current);
       }
@@ -658,7 +1453,7 @@ export function FirstPersonRenderer({
     if (enableAnimations) {
       animationRef.current = requestAnimationFrame(render);
     }
-  }, [view, width, height, enableAnimations, drawFloorAndCeiling, drawWall, drawEntity, isWall, isDoor, isStairsUp, isStairsDown]);
+  }, [view, width, height, enableAnimations, drawFloorAndCeiling, drawFloorSegment, drawCorridorWall, drawFrontWall, drawEntity, isWall, isDoor]);
 
   // Start/stop animation loop
   useEffect(() => {

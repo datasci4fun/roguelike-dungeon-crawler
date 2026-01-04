@@ -5,20 +5,75 @@ import { useState, useEffect } from 'react';
 import { FirstPersonRenderer } from '../components/SceneRenderer';
 import type { FirstPersonView } from '../hooks/useGameSocket';
 
+// Enemy types for demo
+const ENEMY_TYPES = [
+  { name: 'Goblin', symbol: 'g', maxHealth: 15 },
+  { name: 'Orc', symbol: 'O', maxHealth: 30 },
+  { name: 'Skeleton', symbol: 's', maxHealth: 20 },
+  { name: 'Rat', symbol: 'r', maxHealth: 8 },
+  { name: 'Bat', symbol: 'b', maxHealth: 6 },
+  { name: 'Demon', symbol: 'd', maxHealth: 40 },
+  { name: 'Zombie', symbol: 'z', maxHealth: 25 },
+  { name: 'Troll', symbol: 't', maxHealth: 50 },
+  { name: 'Dragon Boss', symbol: 'D', maxHealth: 100 },
+];
+
+// Item types for demo
+const ITEM_TYPES = [
+  { name: 'Health Potion', symbol: '!' },
+  { name: 'Mana Potion', symbol: '!' },
+  { name: 'Strength Potion', symbol: '!' },
+  { name: 'Scroll of Fire', symbol: '?' },
+  { name: 'Iron Sword', symbol: '/' },
+  { name: 'Steel Shield', symbol: ']' },
+  { name: 'Gold Ring', symbol: '=' },
+  { name: 'Gold Coins', symbol: '$' },
+  { name: 'Rusty Key', symbol: '*' },
+  { name: 'Food Ration', symbol: '%' },
+];
+
 // Generate mock first-person view data
-function generateMockView(facing: { dx: number; dy: number }): FirstPersonView {
+function generateMockView(facing: { dx: number; dy: number }, entityDensity: number = 0.5): FirstPersonView {
   const rows = [];
   const entities = [];
   const depth = 8;
 
+  // Corridor width pattern - creates more realistic dungeon corridors
+  // Options: 'corridor' (narrow), 'room' (wide), 'junction' (opening up)
+  const sceneType = Math.random();
+  const isCorridor = sceneType < 0.4;
+  const isJunction = sceneType >= 0.4 && sceneType < 0.7;
+
   for (let d = 1; d <= depth; d++) {
     const row = [];
-    const halfWidth = Math.floor((5 * d) / depth) + 1;
+
+    // Calculate corridor width based on scene type
+    let halfWidth: number;
+    if (isCorridor) {
+      // Narrow corridor - width of 1-2 tiles
+      halfWidth = Math.min(2, Math.floor((3 * d) / depth) + 1);
+    } else if (isJunction) {
+      // Junction - starts narrow, gets wider
+      halfWidth = Math.floor((4 * d) / depth) + 1;
+    } else {
+      // Room - wider from the start
+      halfWidth = Math.floor((5 * d) / depth) + 2;
+    }
 
     for (let w = -halfWidth; w <= halfWidth; w++) {
-      // Random tile generation
-      const isWall = Math.abs(w) === halfWidth || (Math.random() < 0.15 && d > 2);
-      const isDoor = !isWall && Math.random() < 0.05;
+      // Corridor walls should be at edges
+      const atEdge = Math.abs(w) === halfWidth;
+
+      // Occasional pillars or obstacles in rooms
+      const isPillar = !isCorridor && !atEdge && Math.random() < 0.08 && d > 2 && Math.abs(w) > 1;
+
+      // Walls at edges and occasional pillars
+      const isWall = atEdge || isPillar;
+
+      // Doors - more likely in corridors at certain depths
+      const isDoor = !isWall && Math.random() < (isCorridor ? 0.08 : 0.03) && d > 1 && d < depth;
+
+      // Stairs at the back
       const isStairs = !isWall && !isDoor && d === depth && w === 0 && Math.random() < 0.3;
 
       let tile = '.';
@@ -38,47 +93,37 @@ function generateMockView(facing: { dx: number; dy: number }): FirstPersonView {
     rows.push(row);
   }
 
-  // Add some enemies
-  if (Math.random() < 0.7) {
+  // Add enemies based on density
+  const numEnemies = Math.floor(Math.random() * 3 * entityDensity) + (entityDensity > 0.3 ? 1 : 0);
+  for (let i = 0; i < numEnemies; i++) {
+    const enemyType = ENEMY_TYPES[Math.floor(Math.random() * ENEMY_TYPES.length)];
+    const isElite = Math.random() < 0.2;
     entities.push({
       type: 'enemy' as const,
-      name: 'Goblin',
-      symbol: 'g',
-      distance: Math.floor(Math.random() * 4) + 2,
-      offset: Math.floor(Math.random() * 3) - 1,
-      x: 10,
-      y: 12,
-      health: Math.floor(Math.random() * 10) + 5,
-      max_health: 15,
-      is_elite: false,
-    });
-  }
-
-  if (Math.random() < 0.4) {
-    entities.push({
-      type: 'enemy' as const,
-      name: 'Orc',
-      symbol: 'O',
-      distance: Math.floor(Math.random() * 3) + 3,
+      name: enemyType.name,
+      symbol: enemyType.symbol,
+      distance: Math.floor(Math.random() * 5) + 1,
       offset: Math.floor(Math.random() * 5) - 2,
-      x: 11,
-      y: 14,
-      health: Math.floor(Math.random() * 20) + 10,
-      max_health: 30,
-      is_elite: Math.random() < 0.3,
+      x: 10 + i,
+      y: 12 + i,
+      health: Math.floor(Math.random() * enemyType.maxHealth * 0.5) + enemyType.maxHealth * 0.5,
+      max_health: enemyType.maxHealth * (isElite ? 1.5 : 1),
+      is_elite: isElite,
     });
   }
 
-  // Add items
-  if (Math.random() < 0.5) {
+  // Add items based on density
+  const numItems = Math.floor(Math.random() * 2 * entityDensity) + (entityDensity > 0.5 ? 1 : 0);
+  for (let i = 0; i < numItems; i++) {
+    const itemType = ITEM_TYPES[Math.floor(Math.random() * ITEM_TYPES.length)];
     entities.push({
       type: 'item' as const,
-      name: 'Health Potion',
-      symbol: '!',
-      distance: Math.floor(Math.random() * 5) + 1,
-      offset: Math.floor(Math.random() * 3) - 1,
-      x: 9,
-      y: 11,
+      name: itemType.name,
+      symbol: itemType.symbol,
+      distance: Math.floor(Math.random() * 6) + 1,
+      offset: Math.floor(Math.random() * 5) - 2,
+      x: 9 + i,
+      y: 11 + i,
     });
   }
 
@@ -92,13 +137,14 @@ function generateMockView(facing: { dx: number; dy: number }): FirstPersonView {
 
 export function FirstPersonDemo() {
   const [facing, setFacing] = useState({ dx: 0, dy: 1 });
-  const [view, setView] = useState<FirstPersonView>(() => generateMockView(facing));
+  const [entityDensity, setEntityDensity] = useState(0.7);
+  const [view, setView] = useState<FirstPersonView>(() => generateMockView(facing, 0.7));
   const [autoRotate, setAutoRotate] = useState(false);
 
   // Regenerate view when facing changes
   useEffect(() => {
-    setView(generateMockView(facing));
-  }, [facing]);
+    setView(generateMockView(facing, entityDensity));
+  }, [facing, entityDensity]);
 
   // Auto-rotate effect
   useEffect(() => {
@@ -139,7 +185,7 @@ export function FirstPersonDemo() {
         setFacing({ dx: 1, dy: 0 });
         break;
       case 'r':
-        setView(generateMockView(facing));
+        setView(generateMockView(facing, entityDensity));
         break;
     }
   };
@@ -242,7 +288,7 @@ export function FirstPersonDemo() {
 
           <div style={{ marginBottom: '1rem' }}>
             <button
-              onClick={() => setView(generateMockView(facing))}
+              onClick={() => setView(generateMockView(facing, entityDensity))}
               style={{
                 ...buttonStyle(false),
                 width: '100%',
@@ -251,6 +297,20 @@ export function FirstPersonDemo() {
             >
               Regenerate View (R)
             </button>
+          </div>
+
+          <div style={{ marginBottom: '1rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>
+              Entity Density: {Math.round(entityDensity * 100)}%
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={entityDensity * 100}
+              onChange={(e) => setEntityDensity(Number(e.target.value) / 100)}
+              style={{ width: '100%' }}
+            />
           </div>
 
           <div>
