@@ -485,10 +485,15 @@ class Dungeon:
             return True
         return self.tiles[y][x] == TileType.WALL
 
-    def update_fov(self, center_x: int, center_y: int):
+    def update_fov(self, center_x: int, center_y: int, vision_bonus: int = 0):
         """
         Update the visible array based on player position.
         Also marks visible tiles as explored.
+
+        Args:
+            center_x: Player X position
+            center_y: Player Y position
+            vision_bonus: Additional vision range (e.g., from Elf's Keen Sight)
         """
         from .fov import calculate_fov
         from ..core.constants import FOV_RADIUS
@@ -498,9 +503,10 @@ class Dungeon:
             for x in range(self.width):
                 self.visible[y][x] = False
 
-        # Calculate new FOV
+        # Calculate new FOV with bonus
+        effective_radius = FOV_RADIUS + vision_bonus
         visible_tiles = calculate_fov(
-            center_x, center_y, FOV_RADIUS,
+            center_x, center_y, effective_radius,
             self.is_blocking_sight,
             self.width, self.height
         )

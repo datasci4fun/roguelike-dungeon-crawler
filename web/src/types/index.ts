@@ -29,6 +29,80 @@ export interface RegisterData {
   display_name?: string;
 }
 
+// Character Creation types
+export type RaceId = 'HUMAN' | 'ELF' | 'DWARF' | 'HALFLING' | 'ORC';
+export type ClassId = 'WARRIOR' | 'MAGE' | 'ROGUE';
+
+export interface RaceDefinition {
+  id: RaceId;
+  name: string;
+  description: string;
+  hp_modifier: number;
+  atk_modifier: number;
+  def_modifier: number;
+  trait: string;
+  trait_name: string;
+  trait_description: string;
+}
+
+export interface ClassDefinition {
+  id: ClassId;
+  name: string;
+  description: string;
+  hp_modifier: number;
+  atk_modifier: number;
+  def_modifier: number;
+  active_abilities: string[];
+  passive_abilities: string[];
+}
+
+export interface PlayerAbility {
+  id: string;
+  name: string;
+  description: string;
+  cooldown: number;
+  cooldown_remaining: number;
+  is_ready: boolean;
+  target_type: 'SELF' | 'SINGLE' | 'AOE' | 'DIRECTIONAL';
+  range: number;
+}
+
+export interface PlayerPassive {
+  id: string;
+  name: string;
+  description: string;
+  bonus: number;
+}
+
+// Feat types
+export type FeatCategory = 'COMBAT' | 'DEFENSE' | 'UTILITY' | 'SPECIAL';
+
+export interface PlayerFeat {
+  id: string;
+  name: string;
+  description: string;
+  category: FeatCategory;
+}
+
+export interface CharacterConfig {
+  race: RaceId;
+  class: ClassId;
+}
+
+export interface PlayerRace {
+  id: RaceId;
+  name: string;
+  trait: string;
+  trait_name: string;
+  trait_description: string;
+}
+
+export interface PlayerClass {
+  id: ClassId;
+  name: string;
+  description: string;
+}
+
 // Game types
 export interface Player {
   x: number;
@@ -41,6 +115,14 @@ export interface Player {
   xp: number;
   xp_to_level: number;
   kills: number;
+  facing?: { dx: number; dy: number };
+  race?: PlayerRace;
+  class?: PlayerClass;
+  abilities?: PlayerAbility[];
+  passives?: PlayerPassive[];
+  feats?: PlayerFeat[];
+  pending_feat_selection?: boolean;
+  available_feats?: PlayerFeat[];
 }
 
 export interface Enemy {

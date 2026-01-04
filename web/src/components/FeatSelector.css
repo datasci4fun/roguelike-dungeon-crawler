@@ -1,0 +1,156 @@
+.feat-selector-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.feat-selector-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #ffd700;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.feat-selector-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.feat-selector-header h2 {
+  color: #ffd700;
+  font-size: 1.5rem;
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.feat-selector-subtitle {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.feat-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.feat-category {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.category-title {
+  font-size: 1rem;
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.feat-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.feat-card {
+  background: rgba(26, 26, 46, 0.8);
+  border: 2px solid;
+  border-radius: 8px;
+  padding: 0.75rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.feat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: rgba(26, 26, 46, 1);
+}
+
+.feat-card:active {
+  transform: translateY(0);
+}
+
+.feat-name {
+  color: #f0f0f0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+}
+
+.feat-description {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* Scrollbar styling */
+.feat-selector-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.feat-selector-modal::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+.feat-selector-modal::-webkit-scrollbar-thumb {
+  background: #ffd700;
+  border-radius: 4px;
+}
+
+.feat-selector-modal::-webkit-scrollbar-thumb:hover {
+  background: #ffed4a;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .feat-selector-modal {
+    margin: 1rem;
+    padding: 1rem;
+  }
+
+  .feat-list {
+    grid-template-columns: 1fr;
+  }
+
+  .feat-selector-header h2 {
+    font-size: 1.25rem;
+  }
+}

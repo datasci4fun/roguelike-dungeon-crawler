@@ -96,10 +96,17 @@ class HealthPotion(Item):
     def use(self, player: 'Player') -> str:
         """Heal the player."""
         old_health = player.health
-        player.health = min(player.health + self.heal_amount, player.max_health)
+
+        # Apply healer feat bonus (+50% potion effectiveness)
+        heal_bonus = player.get_heal_bonus() if hasattr(player, 'get_heal_bonus') else 0
+        total_heal = int(self.heal_amount * (1 + heal_bonus))
+
+        player.health = min(player.health + total_heal, player.max_health)
         actual_heal = player.health - old_health
 
         if actual_heal > 0:
+            if heal_bonus > 0:
+                return f"Healed {actual_heal} HP! (Healer bonus!)"
             return f"Healed {actual_heal} HP!"
         else:
             return "Already at full health!"

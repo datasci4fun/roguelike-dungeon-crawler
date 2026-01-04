@@ -1,0 +1,187 @@
+.character-hud {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-family: monospace;
+  min-width: 100px;
+  z-index: 10;
+}
+
+.character-hud.compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  min-width: auto;
+}
+
+.hud-identity {
+  display: flex;
+  gap: 4px;
+}
+
+.hud-badge {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 2px solid;
+}
+
+.character-hud.compact .hud-badge {
+  width: 24px;
+  height: 24px;
+}
+
+.badge-symbol {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.character-hud.compact .badge-symbol {
+  font-size: 14px;
+}
+
+.hud-name {
+  color: #ffd700;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.hud-trait {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.trait-icon {
+  font-weight: bold;
+}
+
+.trait-name {
+  font-style: italic;
+}
+
+.hud-health {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.health-bar-container {
+  flex: 1;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 60px;
+}
+
+.health-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+}
+
+.health-text {
+  font-size: 10px;
+  color: #e0e0e0;
+  white-space: nowrap;
+}
+
+.hud-abilities {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.character-hud.compact .hud-abilities {
+  margin-top: 0;
+}
+
+.ability-slot {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px solid #4a4a4a;
+  border-radius: 4px;
+  position: relative;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.character-hud.compact .ability-slot {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+
+.ability-slot.ready {
+  border-color: #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.ability-slot.ready .ability-icon {
+  color: #ffd700;
+}
+
+.ability-slot.on-cooldown {
+  border-color: #4a4a4a;
+  opacity: 0.7;
+}
+
+.ability-slot.on-cooldown .ability-icon {
+  color: #6b7280;
+}
+
+.cooldown-number {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  padding: 0 4px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.hud-passives {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 4px;
+}
+
+.passive-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.passive-icon {
+  color: #8b5cf6;
+  font-weight: bold;
+}
+
+.passive-name {
+  color: #a78bfa;
+}

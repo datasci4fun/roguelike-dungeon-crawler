@@ -2,7 +2,7 @@
 import random
 from typing import TYPE_CHECKING, Optional
 
-from ..entities import attack, get_combat_message
+from ..entities import attack, get_combat_message, player_attack, enemy_attack_player
 from ..entities.ai_behaviors import get_ai_action, tick_enemy_cooldowns
 from ..core.constants import GameState, ELITE_XP_MULTIPLIER, BOSS_LOOT, AIBehavior
 from ..core.events import EventType, EventQueue
@@ -59,8 +59,9 @@ class CombatManager:
 
             player.move(dx, dy)
 
-            # Update FOV after movement
-            self.game.dungeon.update_fov(player.x, player.y)
+            # Update FOV after movement (with vision bonus from race traits)
+            vision_bonus = player.get_vision_bonus() if hasattr(player, 'get_vision_bonus') else 0
+            self.game.dungeon.update_fov(player.x, player.y, vision_bonus=vision_bonus)
 
             # Check for level transitions and item pickups
             self.game.level_manager.check_stairs()
@@ -93,7 +94,8 @@ class CombatManager:
         if enemy.is_boss:
             self.game.show_hint("first_boss")
 
-        damage, enemy_died = attack(player, enemy)
+        # Use new player_attack with ability bonuses
+        damage, enemy_died, bonus_message = player_attack(player, enemy)
 
         # Use enemy name (with "Elite" prefix for elites, boss uses full name)
         if enemy.is_boss:
@@ -102,7 +104,10 @@ class CombatManager:
             enemy_name = f"Elite {enemy.name}"
         else:
             enemy_name = enemy.name
-        message = get_combat_message("You", enemy_name, damage, enemy_died)
+
+        # Prepend bonus message (RAGE!, CRITICAL!, etc.)
+        base_message = get_combat_message("You", enemy_name, damage, enemy_died)
+        message = bonus_message + base_message if bonus_message else base_message
         self.game.add_message(message)
 
         # Emit combat events (renderer will consume these)
@@ -121,6 +126,11 @@ class CombatManager:
             else:
                 # Award XP (2x for elites) and check for level up
                 xp_award = enemy.xp_reward * ELITE_XP_MULTIPLIER if enemy.is_elite else enemy.xp_reward
+
+                # Apply Human's Adaptive trait (+10% XP)
+                xp_mult = player.get_xp_multiplier() if hasattr(player, 'get_xp_multiplier') else 1.0
+                xp_award = int(xp_award * xp_mult)
+
                 leveled_up = player.gain_xp(xp_award)
 
                 if leveled_up:
@@ -137,6 +147,11 @@ class CombatManager:
 
         # Award XP (bosses have large XP built into BOSS_STATS)
         xp_award = boss.xp_reward
+
+        # Apply Human's Adaptive trait (+10% XP)
+        xp_mult = player.get_xp_multiplier() if hasattr(player, 'get_xp_multiplier') else 1.0
+        xp_award = int(xp_award * xp_mult)
+
         self.game.add_message(f"You gained {xp_award} XP!")
         leveled_up = player.gain_xp(xp_award)
 
@@ -298,24 +313,40 @@ class CombatManager:
         else:
             enemy_name = enemy.name
 
-        # v4.0: Check for shield block
-        if player.block_chance > 0 and random.random() < player.block_chance:
+        # v4.0: Check for shield block (includes feat block bonus)
+        total_block_chance = player.block_chance
+        feat_block_bonus = player.get_total_block_bonus() if hasattr(player, 'get_total_block_bonus') else 0
+        total_block_chance += feat_block_bonus
+        if total_block_chance > 0 and random.random() < total_block_chance:
             self.game.add_message(f"You block {enemy_name}'s attack with your shield!")
             # Emit blocked event (no damage)
             if self.events is not None:
                 self.events.emit_attack(enemy, player, 0, False)
             return
 
-        # Use effective_damage for bosses (may have buffs)
+        # Use new enemy_attack_player with defense bonuses (dodge, mana shield, feat effects)
         if enemy.is_boss:
-            actual_damage = enemy.effective_damage
-            damage = player.take_damage(actual_damage)
-            player_died = not player.is_alive()
+            # Bosses use effective_damage (may have buffs)
+            damage, player_died, defense_message, thorns_damage = enemy_attack_player(
+                type('Enemy', (), {'attack_damage': enemy.effective_damage, 'take_damage': lambda d: enemy.take_damage(d)})(),
+                player
+            )
         else:
-            damage, player_died = attack(enemy, player)
+            damage, player_died, defense_message, thorns_damage = enemy_attack_player(enemy, player)
 
-        message = get_combat_message(enemy_name, "you", damage, player_died)
-        self.game.add_message(message)
+        # Build message
+        if damage == 0 and defense_message:
+            # Dodged!
+            self.game.add_message(f"{defense_message}{enemy_name}'s attack missed!")
+        else:
+            base_message = get_combat_message(enemy_name, "you", damage, player_died)
+            message = defense_message + base_message if defense_message else base_message
+            self.game.add_message(message)
+
+        # Check if thorns damage killed the enemy
+        if thorns_damage > 0 and not enemy.is_alive():
+            self.game.add_message(f"{enemy_name} was killed by thorns damage!")
+            player.kills += 1
 
         # Track damage for death recap
         self.game.last_attacker_name = enemy_name

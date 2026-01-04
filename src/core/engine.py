@@ -6,7 +6,7 @@ and emits Events, making it usable by terminal, web, or any other client.
 """
 from typing import List, Optional, Tuple, Callable
 
-from .constants import GameState, UIMode, AUTO_SAVE_INTERVAL, MAX_DUNGEON_LEVELS
+from .constants import GameState, UIMode, AUTO_SAVE_INTERVAL, MAX_DUNGEON_LEVELS, Race, PlayerClass, RACE_STATS, CLASS_STATS
 from .messages import MessageLog, MessageCategory, MessageImportance
 from .events import EventType, EventQueue
 from .commands import (
@@ -103,8 +103,13 @@ class GameEngine:
     # Public API
     # =========================================================================
 
-    def start_new_game(self):
-        """Initialize a new game."""
+    def start_new_game(self, race: Race = None, player_class: PlayerClass = None):
+        """Initialize a new game with optional character configuration.
+
+        Args:
+            race: Player race (Human, Elf, Dwarf, Halfling, Orc)
+            player_class: Player class (Warrior, Mage, Rogue)
+        """
         self.current_level = 1
         self.max_level_reached = 1
         self.kills_count = 0
@@ -113,12 +118,13 @@ class GameEngine:
         # Generate first dungeon
         self.dungeon = Dungeon(level=self.current_level, has_stairs_up=False)
 
-        # Spawn player
+        # Spawn player with race/class
         player_pos = self.dungeon.get_random_floor_position()
-        self.player = Player(player_pos[0], player_pos[1])
+        self.player = Player(player_pos[0], player_pos[1], race=race, player_class=player_class)
 
-        # Initialize FOV
-        self.dungeon.update_fov(self.player.x, self.player.y)
+        # Initialize FOV (with potential vision bonus from Elf's Keen Sight)
+        vision_bonus = self.player.get_vision_bonus() if self.player else 0
+        self.dungeon.update_fov(self.player.x, self.player.y, vision_bonus=vision_bonus)
 
         # Spawn entities
         self.entity_manager.spawn_enemies(self.dungeon, self.player)
@@ -130,8 +136,15 @@ class GameEngine:
         self.dungeon.generate_traps(self.trap_manager, self.player.x, self.player.y)
         self.dungeon.generate_hazards(self.hazard_manager, self.player.x, self.player.y)
 
-        # Welcome messages
-        self.add_message("Welcome to the dungeon!")
+        # Welcome messages with character info
+        if race and player_class:
+            race_name = RACE_STATS[race]['name']
+            class_name = CLASS_STATS[player_class]['name']
+            self.add_message(f"You are a {race_name} {class_name}!")
+            trait_name = RACE_STATS[race]['trait_name']
+            self.add_message(f"Trait: {trait_name}")
+        else:
+            self.add_message("Welcome to the dungeon!")
         self.add_message("Find the stairs (>) to descend deeper")
         self.add_message("Use arrow keys or WASD to move")
 
@@ -214,6 +227,10 @@ class GameEngine:
 
                 # v4.0: Process player status effects
                 self._process_player_status_effects()
+
+                # Tick player ability cooldowns
+                if hasattr(self.player, 'tick_cooldowns'):
+                    self.player.tick_cooldowns()
 
                 self._process_enemy_turns()
 
@@ -606,7 +623,8 @@ class GameEngine:
         if isinstance(item, ScrollTeleport) and self.dungeon:
             new_pos = self.dungeon.get_random_floor_position()
             self.player.x, self.player.y = new_pos
-            self.dungeon.update_fov(self.player.x, self.player.y)
+            vision_bonus = self.player.get_vision_bonus() if hasattr(self.player, 'get_vision_bonus') else 0
+            self.dungeon.update_fov(self.player.x, self.player.y, vision_bonus=vision_bonus)
 
         # Remove item from inventory
         self.player.inventory.remove_item(item_index)

@@ -53,8 +53,9 @@ class LevelManager:
             player_pos = self.game.dungeon.get_random_floor_position()
             self.game.player.x, self.game.player.y = player_pos
 
-        # Update FOV for new level
-        self.game.dungeon.update_fov(self.game.player.x, self.game.player.y)
+        # Update FOV for new level (with vision bonus from race traits)
+        vision_bonus = self.game.player.get_vision_bonus() if hasattr(self.game.player, 'get_vision_bonus') else 0
+        self.game.dungeon.update_fov(self.game.player.x, self.game.player.y, vision_bonus=vision_bonus)
 
         # Spawn new entities
         self.game.entity_manager.spawn_enemies(self.game.dungeon, self.game.player)
@@ -96,8 +97,9 @@ class LevelManager:
         player_pos = self.game.dungeon.get_random_floor_position()
         self.game.player.x, self.game.player.y = player_pos
 
-        # Initialize FOV
-        self.game.dungeon.update_fov(self.game.player.x, self.game.player.y)
+        # Initialize FOV (with vision bonus from race traits)
+        vision_bonus = self.game.player.get_vision_bonus() if hasattr(self.game.player, 'get_vision_bonus') else 0
+        self.game.dungeon.update_fov(self.game.player.x, self.game.player.y, vision_bonus=vision_bonus)
 
         # Spawn entities
         self.game.entity_manager.spawn_enemies(self.game.dungeon, self.game.player)

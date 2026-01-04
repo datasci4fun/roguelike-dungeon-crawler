@@ -12,6 +12,56 @@ export interface FacingDirection {
   dy: number;
 }
 
+// Character creation types
+export type RaceId = 'HUMAN' | 'ELF' | 'DWARF' | 'HALFLING' | 'ORC';
+export type ClassId = 'WARRIOR' | 'MAGE' | 'ROGUE';
+
+export interface CharacterConfig {
+  race: RaceId;
+  class: ClassId;
+}
+
+export interface PlayerRace {
+  id: RaceId;
+  name: string;
+  trait: string;
+  trait_name: string;
+  trait_description: string;
+}
+
+export interface PlayerClass {
+  id: ClassId;
+  name: string;
+  description: string;
+}
+
+export interface PlayerAbility {
+  id: string;
+  name: string;
+  description: string;
+  cooldown: number;
+  cooldown_remaining: number;
+  is_ready: boolean;
+  target_type: 'SELF' | 'SINGLE' | 'AOE' | 'DIRECTIONAL';
+  range: number;
+}
+
+export interface PlayerPassive {
+  id: string;
+  name: string;
+  description: string;
+  bonus: number;
+}
+
+export type FeatCategory = 'COMBAT' | 'DEFENSE' | 'UTILITY' | 'SPECIAL';
+
+export interface PlayerFeat {
+  id: string;
+  name: string;
+  description: string;
+  category: FeatCategory;
+}
+
 export interface Player {
   x: number;
   y: number;
@@ -24,6 +74,13 @@ export interface Player {
   xp_to_level: number;
   kills: number;
   facing?: FacingDirection;
+  race?: PlayerRace;
+  class?: PlayerClass;
+  abilities?: PlayerAbility[];
+  passives?: PlayerPassive[];
+  feats?: PlayerFeat[];
+  pending_feat_selection?: boolean;
+  available_feats?: PlayerFeat[];
 }
 
 export interface Enemy {
@@ -132,9 +189,10 @@ export interface UseGameSocketResult {
   connect: () => void;
   disconnect: () => void;
   sendCommand: (command: string) => void;
-  newGame: () => void;
+  newGame: (config?: CharacterConfig) => void;
   quit: () => void;
   clearAchievements: () => void;
+  selectFeat: (featId: string) => void;
 }
 
 export function useGameSocket(token: string | null): UseGameSocketResult {
@@ -219,15 +277,30 @@ export function useGameSocket(token: string | null): UseGameSocketResult {
     }
   }, []);
 
-  const newGame = useCallback(() => {
+  const newGame = useCallback((config?: CharacterConfig) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ action: 'new_game' }));
+      const message: { action: string; race?: string; class?: string } = { action: 'new_game' };
+      if (config) {
+        message.race = config.race;
+        message.class = config.class;
+      }
+      wsRef.current.send(JSON.stringify(message));
     }
   }, []);
 
   const quit = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ action: 'quit' }));
+    }
+  }, []);
+
+  const selectFeat = useCallback((featId: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        action: 'command',
+        command: 'SELECT_FEAT',
+        data: { feat_id: featId },
+      }));
     }
   }, []);
 
@@ -255,5 +328,6 @@ export function useGameSocket(token: string | null): UseGameSocketResult {
     newGame,
     quit,
     clearAchievements,
+    selectFeat,
   };
 }

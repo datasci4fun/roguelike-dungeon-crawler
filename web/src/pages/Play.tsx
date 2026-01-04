@@ -6,9 +6,11 @@ import { useChatSocket } from '../hooks/useChatSocket';
 import { useAudioManager } from '../hooks/useAudioManager';
 import { GameTerminal } from '../components/GameTerminal';
 import { FirstPersonRenderer } from '../components/SceneRenderer';
+import { CharacterHUD } from '../components/CharacterHUD';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
+import { FeatSelector } from '../components/FeatSelector';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
 
@@ -36,6 +38,7 @@ export function Play() {
     newGame,
     quit,
     clearAchievements,
+    selectFeat,
   } = useGameSocket(token);
 
   // Chat WebSocket
@@ -190,6 +193,19 @@ export function Play() {
                   height={300}
                   enableAnimations={true}
                 />
+                {/* Character HUD overlay */}
+                {gameState?.player?.race && (
+                  <CharacterHUD
+                    race={gameState.player.race}
+                    playerClass={gameState.player.class}
+                    abilities={gameState.player.abilities}
+                    passives={gameState.player.passives}
+                    health={gameState.player.health}
+                    maxHealth={gameState.player.max_health}
+                    showAbilities={true}
+                    compact={false}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -278,6 +294,15 @@ export function Play() {
             />
           </div>
         </div>
+      )}
+
+      {/* Feat Selection Modal */}
+      {gameState?.player?.pending_feat_selection && gameState?.player?.available_feats && (
+        <FeatSelector
+          availableFeats={gameState.player.available_feats}
+          onSelectFeat={selectFeat}
+          isStartingFeat={gameState.player.level === 1}
+        />
       )}
 
       {/* Achievement Toast */}

@@ -26,14 +26,14 @@ try:
     # Docker: src is mounted as game_src
     from game_src.core.engine import GameEngine
     from game_src.core.commands import Command, CommandType
-    from game_src.core.constants import GameState, UIMode
+    from game_src.core.constants import GameState, UIMode, Race, PlayerClass, RACE_STATS, CLASS_STATS
     GAME_ENGINE_AVAILABLE = True
 except ImportError:
     try:
         # Local: use src directly
         from src.core.engine import GameEngine
         from src.core.commands import Command, CommandType
-        from src.core.constants import GameState, UIMode
+        from src.core.constants import GameState, UIMode, Race, PlayerClass, RACE_STATS, CLASS_STATS
         GAME_ENGINE_AVAILABLE = True
     except ImportError as e:
         print(f"Warning: Could not import game engine: {e}")
@@ -43,6 +43,10 @@ except ImportError:
         CommandType = None
         GameState = None
         UIMode = None
+        Race = None
+        PlayerClass = None
+        RACE_STATS = {}
+        CLASS_STATS = {}
 
 
 @dataclass
@@ -92,7 +96,8 @@ class GameSessionManager:
         self._lock = asyncio.Lock()
 
     async def create_session(
-        self, user_id: int, username: str = "Unknown"
+        self, user_id: int, username: str = "Unknown",
+        race: str = None, player_class: str = None
     ) -> Optional[GameSession]:
         """
         Create a new game session for a user.
@@ -100,6 +105,8 @@ class GameSessionManager:
         Args:
             user_id: The user's ID
             username: The user's username for ghost recording
+            race: Player race name (HUMAN, ELF, DWARF, HALFLING, ORC)
+            player_class: Player class name (WARRIOR, MAGE, ROGUE)
 
         Returns:
             The created GameSession, or None if engine not available
@@ -112,9 +119,25 @@ class GameSessionManager:
             if user_id in self.sessions:
                 del self.sessions[user_id]
 
+            # Parse race and class from strings
+            parsed_race = None
+            parsed_class = None
+
+            if race and Race:
+                try:
+                    parsed_race = Race[race.upper()]
+                except (KeyError, AttributeError):
+                    pass  # Invalid race, use defaults
+
+            if player_class and PlayerClass:
+                try:
+                    parsed_class = PlayerClass[player_class.upper()]
+                except (KeyError, AttributeError):
+                    pass  # Invalid class, use defaults
+
             # Create new engine and session
             engine = GameEngine()
-            engine.start_new_game()
+            engine.start_new_game(race=parsed_race, player_class=parsed_class)
 
             # Get dungeon seed if available
             dungeon_seed = getattr(engine.dungeon, 'seed', None) if engine.dungeon else None
@@ -241,6 +264,23 @@ class GameSessionManager:
         except (KeyError, AttributeError):
             return {"error": f"Unknown command: {command_type}"}
 
+        # Handle feat selection
+        if cmd_type == CommandType.SELECT_FEAT:
+            feat_id = data.get("feat_id") if data else None
+            if feat_id and engine.player and engine.player.pending_feat_selection:
+                # Get feat name from player's available feats list
+                available = engine.player.get_available_feats_info()
+                feat_name = feat_id
+                for f in available:
+                    if f['id'] == feat_id:
+                        feat_name = f['name']
+                        break
+                if engine.player.add_feat(feat_id):
+                    engine.add_message(f"You learned the {feat_name} feat!")
+                else:
+                    return {"error": f"Cannot select feat: {feat_id}"}
+            return self.serialize_game_state(session, [])
+
         command = Command(cmd_type)
 
         # Process based on current game state
@@ -332,21 +372,54 @@ class GameSessionManager:
 
         # Add player data if available
         if engine.player:
+            player = engine.player
             # Get facing direction (default to south if not set)
-            facing = getattr(engine.player, 'facing', (0, 1))
+            facing = getattr(player, 'facing', (0, 1))
             state["player"] = {
-                "x": engine.player.x,
-                "y": engine.player.y,
-                "health": engine.player.health,
-                "max_health": engine.player.max_health,
-                "attack": engine.player.attack_damage,
-                "defense": engine.player.defense,
-                "level": engine.player.level,
-                "xp": engine.player.xp,
-                "xp_to_level": engine.player.xp_to_next_level,
-                "kills": engine.player.kills,
+                "x": player.x,
+                "y": player.y,
+                "health": player.health,
+                "max_health": player.max_health,
+                "attack": player.attack_damage,
+                "defense": player.defense,
+                "level": player.level,
+                "xp": player.xp,
+                "xp_to_level": player.xp_to_next_level,
+                "kills": player.kills,
                 "facing": {"dx": facing[0], "dy": facing[1]},
             }
+
+            # Add race/class info if character has them
+            if hasattr(player, 'race') and player.race:
+                race_data = RACE_STATS.get(player.race, {})
+                state["player"]["race"] = {
+                    "id": player.race.name,
+                    "name": race_data.get('name', 'Unknown'),
+                    "trait": player.race_trait,
+                    "trait_name": player.race_trait_name,
+                    "trait_description": player.race_trait_description,
+                }
+
+            if hasattr(player, 'player_class') and player.player_class:
+                class_data = CLASS_STATS.get(player.player_class, {})
+                state["player"]["class"] = {
+                    "id": player.player_class.name,
+                    "name": class_data.get('name', 'Unknown'),
+                    "description": class_data.get('description', ''),
+                }
+
+            # Add abilities info
+            if hasattr(player, 'get_ability_info'):
+                state["player"]["abilities"] = player.get_ability_info()
+            if hasattr(player, 'get_passive_info'):
+                state["player"]["passives"] = player.get_passive_info()
+
+            # Add feats info
+            if hasattr(player, 'feats'):
+                state["player"]["feats"] = player.get_feat_info()
+                state["player"]["pending_feat_selection"] = player.pending_feat_selection
+                if player.pending_feat_selection:
+                    state["player"]["available_feats"] = player.get_available_feats_info()
 
             # Add first-person view data (tiles in front of player)
             state["first_person_view"] = self._serialize_first_person_view(engine, facing)

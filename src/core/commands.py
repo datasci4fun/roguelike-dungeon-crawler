@@ -64,6 +64,9 @@ class CommandType(Enum):
     ANY_KEY = auto()   # Any key pressed (for "press any key" prompts)
     NONE = auto()      # No command (no input or unrecognized)
 
+    # Feat selection
+    SELECT_FEAT = auto()  # Select a feat (data contains feat_id)
+
 
 @dataclass
 class Command:

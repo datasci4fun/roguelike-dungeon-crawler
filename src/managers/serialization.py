@@ -78,8 +78,9 @@ class SaveManager:
             self.game.entity_manager.items = [item for item in (self._deserialize_item(i) for i in game_state['items']) if item is not None]
             self.game.dungeon = self._deserialize_dungeon(game_state['dungeon'])
 
-            # Update FOV after loading
-            self.game.dungeon.update_fov(self.game.player.x, self.game.player.y)
+            # Update FOV after loading (with vision bonus from race traits)
+            vision_bonus = self.game.player.get_vision_bonus() if hasattr(self.game.player, 'get_vision_bonus') else 0
+            self.game.dungeon.update_fov(self.game.player.x, self.game.player.y, vision_bonus=vision_bonus)
 
             return True
         except Exception as e:

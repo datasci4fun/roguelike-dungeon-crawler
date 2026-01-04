@@ -167,8 +167,12 @@ async def game_websocket(
                 action = data.get("action")
 
                 if action == "new_game":
-                    # Start a new game session
-                    session = await session_manager.create_session(user_id, username)
+                    # Start a new game session with optional race/class
+                    race = data.get("race")  # e.g., "HUMAN", "ELF", "DWARF"
+                    player_class = data.get("class")  # e.g., "WARRIOR", "MAGE", "ROGUE"
+                    session = await session_manager.create_session(
+                        user_id, username, race=race, player_class=player_class
+                    )
                     if session:
                         state = session_manager.serialize_game_state(session)
                         await websocket.send_json(state)
