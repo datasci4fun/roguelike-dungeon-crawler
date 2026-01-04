@@ -9,31 +9,40 @@ import uuid
 
 from .ghost_recorder import GhostRecorder
 
-# Add game source to path for importing engine
-# In Docker: /app/game_src, Local: ../../../src
-game_src_paths = [
-    "/app/game_src",
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "src"),
+# Add game source parent to path for importing engine as a package
+# In Docker: /app (parent of game_src), Local: ../../../.. (parent of src)
+# The src directory is mounted as game_src, so we import from game_src.core
+game_parent_paths = [
+    "/app",  # Docker: game_src is mounted here
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", ".."),  # Local dev
 ]
-for path in game_src_paths:
+for path in game_parent_paths:
     abs_path = os.path.abspath(path)
     if os.path.exists(abs_path) and abs_path not in sys.path:
         sys.path.insert(0, abs_path)
 
-# Import game engine components
+# Import game engine components - try both package names
 try:
-    from core.engine import GameEngine
-    from core.commands import Command, CommandType
-    from core.constants import GameState, UIMode
+    # Docker: src is mounted as game_src
+    from game_src.core.engine import GameEngine
+    from game_src.core.commands import Command, CommandType
+    from game_src.core.constants import GameState, UIMode
     GAME_ENGINE_AVAILABLE = True
-except ImportError as e:
-    print(f"Warning: Could not import game engine: {e}")
-    GAME_ENGINE_AVAILABLE = False
-    GameEngine = None
-    Command = None
-    CommandType = None
-    GameState = None
-    UIMode = None
+except ImportError:
+    try:
+        # Local: use src directly
+        from src.core.engine import GameEngine
+        from src.core.commands import Command, CommandType
+        from src.core.constants import GameState, UIMode
+        GAME_ENGINE_AVAILABLE = True
+    except ImportError as e:
+        print(f"Warning: Could not import game engine: {e}")
+        GAME_ENGINE_AVAILABLE = False
+        GameEngine = None
+        Command = None
+        CommandType = None
+        GameState = None
+        UIMode = None
 
 
 @dataclass
@@ -334,7 +343,7 @@ class GameSessionManager:
                 "defense": engine.player.defense,
                 "level": engine.player.level,
                 "xp": engine.player.xp,
-                "xp_to_level": engine.player.xp_to_level,
+                "xp_to_level": engine.player.xp_to_next_level,
                 "kills": engine.player.kills,
                 "facing": {"dx": facing[0], "dy": facing[1]},
             }

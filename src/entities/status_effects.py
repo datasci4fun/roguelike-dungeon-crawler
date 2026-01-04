@@ -5,10 +5,10 @@ Handles poison, burn, freeze, stun and other status effects.
 from dataclasses import dataclass, field
 from typing import List, Optional, TYPE_CHECKING
 
-from src.core.constants import StatusEffectType, STATUS_EFFECT_STATS
+from ..core.constants import StatusEffectType, STATUS_EFFECT_STATS
 
 if TYPE_CHECKING:
-    from src.entities.entities import Entity
+    from .entities import Entity
 
 
 @dataclass
