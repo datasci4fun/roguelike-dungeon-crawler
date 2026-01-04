@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGameSocket } from '../hooks/useGameSocket';
 import { useChatSocket } from '../hooks/useChatSocket';
 import { GameTerminal } from '../components/GameTerminal';
+import { SceneRenderer, useSceneFrame } from '../components/SceneRenderer';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
@@ -15,6 +16,7 @@ export function Play() {
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showSceneView, setShowSceneView] = useState(true);
 
   // Game WebSocket
   const {
@@ -41,6 +43,9 @@ export function Play() {
     sendMessage,
     sendWhisper,
   } = useChatSocket(token);
+
+  // Transform game state for scene renderer
+  const sceneFrame = useSceneFrame(gameState, 20, 15, 32);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -140,14 +145,36 @@ export function Play() {
             </div>
           )}
 
-          <div className="terminal-wrapper">
-            <GameTerminal
-              gameState={gameState}
-              onCommand={handleCommand}
-              onNewGame={handleNewGame}
-              onQuit={quit}
-              isConnected={gameStatus === 'connected'}
-            />
+          <div className="game-views">
+            <div className="terminal-wrapper">
+              <GameTerminal
+                gameState={gameState}
+                onCommand={handleCommand}
+                onNewGame={handleNewGame}
+                onQuit={quit}
+                isConnected={gameStatus === 'connected'}
+              />
+            </div>
+
+            {showSceneView && sceneFrame && (
+              <div className="scene-wrapper">
+                <SceneRenderer
+                  frame={sceneFrame}
+                  enableAnimations={true}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="game-controls">
+            <label className="scene-toggle">
+              <input
+                type="checkbox"
+                checked={showSceneView}
+                onChange={(e) => setShowSceneView(e.target.checked)}
+              />
+              Scene View
+            </label>
           </div>
 
           <div className="game-status">

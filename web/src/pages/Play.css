@@ -83,13 +83,49 @@
   color: #1a1a2e;
 }
 
+.game-views {
+  flex: 1;
+  display: flex;
+  gap: 1rem;
+  min-height: 0;
+}
+
 .terminal-wrapper {
   flex: 1;
   min-height: 0;
+  min-width: 0;
   border: 1px solid #333;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.scene-wrapper {
+  flex-shrink: 0;
+  border: 1px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  background: #000;
+}
+
+.game-controls {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem 0;
+}
+
+.scene-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #888;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.scene-toggle input {
+  cursor: pointer;
 }
 
 .game-status {
@@ -148,6 +184,16 @@
 }
 
 /* Responsive adjustments */
+@media (max-width: 1200px) {
+  .game-views {
+    flex-direction: column;
+  }
+
+  .scene-wrapper {
+    max-height: 300px;
+  }
+}
+
 @media (max-width: 1024px) {
   .play-layout {
     flex-direction: column;
@@ -156,6 +202,15 @@
 
   .chat-container {
     height: 250px;
+  }
+
+  /* Hide scene view on smaller screens */
+  .scene-wrapper {
+    display: none;
+  }
+
+  .game-controls {
+    display: none;
   }
 }
 
