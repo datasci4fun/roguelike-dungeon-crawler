@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Home, Login, Register, Play, PlayScene, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends } from './pages';
+import { Home, Login, Register, Play, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends } from './pages';
 
 function App() {
   return (
@@ -11,6 +11,7 @@ function App() {
         <Route path="register" element={<Register />} />
         <Route path="play" element={<Play />} />
         <Route path="play-scene" element={<PlayScene />} />
+        <Route path="scene-demo" element={<SceneDemo />} />
         <Route path="spectate" element={<Spectate />} />
         <Route path="leaderboard" element={<Leaderboard />} />
         <Route path="ghosts" element={<Ghosts />} />
