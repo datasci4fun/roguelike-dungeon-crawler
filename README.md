@@ -14,6 +14,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v4.0.0 adds Expanded Gameplay!** 6 new enemy types with unique AI behaviors, 4 status effects, traps and environmental hazards, plus new equipment types (shields, rings, amulets).
 
+**v4.1.0 adds Scene Renderer!** First-person 3D dungeon view with directional FOV, perspective rendering, and animated entities. Toggle between terminal and 3D view on the Play page.
+
 ## Features
 
 ### Core Gameplay
@@ -206,6 +208,31 @@ Expanded from 24 to 34 total achievements:
 - **Status Effect Processing**: Effects tick each turn for both player and enemies
 - **Stun Mechanics**: Stunned entities skip their turn
 - **Enemy Level Restrictions**: New enemies only spawn on appropriate dungeon levels
+
+### Scene Renderer (v4.1.0)
+
+#### First-Person 3D View
+- **Directional FOV**: View changes based on player facing direction (N/S/E/W)
+- **Perspective Projection**: Proper 3D depth with walls receding into distance
+- **Corridor Rendering**: Side walls connect seamlessly between depth levels
+- **Floor & Ceiling**: Gradient backgrounds with perspective grid lines
+- **Distance Fog**: Entities and walls fade with depth for atmosphere
+
+#### Entity Rendering
+- **9 Enemy Types**: Unique visual styles for Rat, Bat, Goblin, Skeleton, Orc, Troll, Wraith, Dragon, Demon
+- **Elite Variants**: Glowing effects distinguish elite enemies
+- **Item Rendering**: Distinct visuals for potions, scrolls, weapons, armor, gold
+- **Animations**: Breathing/bobbing effects for living entities
+
+#### Visual Effects
+- **Torch Lighting**: Flickering flame animations on walls
+- **Stone Brick Textures**: Procedural wall texturing with mortar lines
+- **Door Rendering**: Wooden doors with handles on passable tiles
+
+#### Integration
+- **Play Page Toggle**: Checkbox to show/hide first-person view alongside terminal
+- **Demo Pages**: `/first-person-demo`, `/scene-demo`, `/play-scene` for testing
+- **Real-time Sync**: 3D view updates with every game action
 
 ## Installation
 
@@ -459,7 +486,13 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── GameTerminal.tsx  # xterm.js game renderer
     │   ├── ChatPanel.tsx     # Real-time chat
     │   ├── TouchControls.tsx # Mobile touch controls (v3.4.0)
-    │   └── GhostReplayViewer.tsx  # Replay viewer
+    │   ├── GhostReplayViewer.tsx  # Replay viewer
+    │   └── SceneRenderer/    # First-person 3D view (v4.1.0)
+    │       ├── FirstPersonRenderer.tsx  # Main canvas component
+    │       ├── projection.ts    # Perspective math utilities
+    │       ├── colors.ts        # Color palette
+    │       ├── walls/           # Wall rendering (corridor, floor, front)
+    │       └── entities/        # Enemy and item rendering
     ├── contexts/
     │   └── AuthContext.tsx   # JWT auth state
     ├── hooks/
@@ -475,7 +508,10 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── Profile.tsx       # Player profiles (v3.1.0)
     │   ├── Achievements.tsx  # Achievement browser (v3.1.0)
     │   ├── Spectate.tsx      # Live game spectator (v3.3.0)
-    │   └── Friends.tsx       # Friends system (v3.5.0)
+    │   ├── Friends.tsx       # Friends system (v3.5.0)
+    │   ├── FirstPersonDemo.tsx  # Scene renderer test (v4.1.0)
+    │   ├── SceneDemo.tsx     # Top-down scene test (v4.1.0)
+    │   └── PlayScene.tsx     # Alternative play page (v4.1.0)
     ├── services/
     │   └── api.ts            # REST + WebSocket client
     └── types/
