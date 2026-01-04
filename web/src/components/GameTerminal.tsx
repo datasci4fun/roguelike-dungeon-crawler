@@ -241,6 +241,9 @@ export function GameTerminal({
           onNewGame?.();
         } else if (command === 'QUIT' && !gameState) {
           onQuit?.();
+        } else if ((command === 'ANY_KEY' || command === 'CONFIRM') && !gameState) {
+          // Start new game when pressing Enter/Space with no active game
+          onNewGame?.();
         } else {
           onCommand?.(command);
         }
