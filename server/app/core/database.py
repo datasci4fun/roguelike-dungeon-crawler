@@ -25,6 +25,9 @@ async_session_maker = async_sessionmaker(
     expire_on_commit=False,
 )
 
+# Alias for backward compatibility
+AsyncSessionLocal = async_session_maker
+
 
 class Base(DeclarativeBase):
     """Base class for all database models."""

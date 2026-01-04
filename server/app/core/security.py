@@ -118,6 +118,33 @@ async def get_current_user(
     return user
 
 
+async def get_current_user_optional(
+    token: Optional[str] = Depends(OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)),
+    db: AsyncSession = Depends(get_db),
+) -> Optional[User]:
+    """
+    Dependency that extracts the current user from JWT if present.
+    Returns None if no token or invalid token.
+    """
+    if token is None:
+        return None
+
+    token_data = decode_token(token)
+    if token_data is None:
+        return None
+
+    # Fetch user from database
+    result = await db.execute(
+        select(User).where(User.id == token_data.user_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None or not user.is_active:
+        return None
+
+    return user
+
+
 async def get_current_active_superuser(
     current_user: User = Depends(get_current_user),
 ) -> User:
