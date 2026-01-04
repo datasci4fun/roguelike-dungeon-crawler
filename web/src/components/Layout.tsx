@@ -1,15 +1,35 @@
+import { useState, useRef, useEffect } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { VolumeControls } from './VolumeControls';
 import './Layout.css';
 
 export function Layout() {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const [showVolumePanel, setShowVolumePanel] = useState(false);
+  const volumePanelRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
+
+  // Close volume panel when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (volumePanelRef.current && !volumePanelRef.current.contains(event.target as Node)) {
+        setShowVolumePanel(false);
+      }
+    };
+
+    if (showVolumePanel) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showVolumePanel]);
 
   return (
     <div className="layout">
@@ -27,6 +47,20 @@ export function Layout() {
           </nav>
         </div>
         <div className="header-right">
+          <div className="volume-toggle-container" ref={volumePanelRef}>
+            <button
+              className="volume-toggle-btn"
+              onClick={() => setShowVolumePanel(!showVolumePanel)}
+              title="Audio Settings"
+            >
+              {'\u{1F50A}'}
+            </button>
+            {showVolumePanel && (
+              <div className="volume-panel">
+                <VolumeControls compact showSfx={false} />
+              </div>
+            )}
+          </div>
           {isAuthenticated ? (
             <>
               <Link to="/profile" className="username-link">

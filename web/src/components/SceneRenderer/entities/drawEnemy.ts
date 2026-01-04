@@ -256,7 +256,7 @@ function drawHealthBar(
   centerX: number,
   y: number,
   entityWidth: number,
-  entityHeight: number,
+  _entityHeight: number,
   scale: number,
   health: number,
   maxHealth: number,

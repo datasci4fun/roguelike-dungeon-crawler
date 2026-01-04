@@ -1,18 +1,38 @@
+import { useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useAudioManager } from '../hooks';
 import './Home.css';
 
 export function Home() {
   const { isAuthenticated } = useAuth();
+  const { playMusic, isUnlocked, unlockAudio } = useAudioManager();
+
+  // Unlock audio and start menu music on first user interaction
+  const handleInteraction = useCallback(() => {
+    if (!isUnlocked) {
+      unlockAudio();
+    }
+  }, [isUnlocked, unlockAudio]);
+
+  // Play menu music once unlocked
+  useEffect(() => {
+    if (isUnlocked) {
+      playMusic('menu');
+    }
+  }, [isUnlocked, playMusic]);
 
   return (
-    <div className="home">
+    <div className="home" onClick={handleInteraction}>
       <div className="hero">
         <h1>Roguelike Dungeon Crawler</h1>
         <p className="tagline">
           Explore procedurally generated dungeons, battle fierce enemies, and
           compete for the highest score.
         </p>
+        {!isUnlocked && (
+          <p className="audio-hint">Click anywhere to enable music</p>
+        )}
         <div className="hero-actions">
           {isAuthenticated ? (
             <Link to="/play" className="btn btn-primary btn-large">

@@ -1,13 +1,15 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGameSocket } from '../hooks/useGameSocket';
 import { useChatSocket } from '../hooks/useChatSocket';
+import { useAudioManager } from '../hooks/useAudioManager';
 import { GameTerminal } from '../components/GameTerminal';
 import { FirstPersonRenderer } from '../components/SceneRenderer';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
+import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
 
 export function Play() {
@@ -17,6 +19,10 @@ export function Play() {
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSceneView, setShowSceneView] = useState(true);
+
+  // Audio management
+  const { crossfadeTo, isUnlocked, unlockAudio } = useAudioManager();
+  const lastLevelRef = useRef<number | null>(null);
 
   // Game WebSocket
   const {
@@ -70,6 +76,29 @@ export function Play() {
       disconnectChat();
     };
   }, [disconnectGame, disconnectChat]);
+
+  // Unlock audio on first interaction
+  const handleAudioUnlock = useCallback(() => {
+    if (!isUnlocked) {
+      unlockAudio();
+    }
+  }, [isUnlocked, unlockAudio]);
+
+  // Play level-appropriate music based on dungeon level
+  useEffect(() => {
+    if (!isUnlocked || !gameState?.dungeon) return;
+
+    const level = gameState.dungeon.level;
+    if (level === lastLevelRef.current) return;
+
+    lastLevelRef.current = level;
+    const trackKey = `dungeon-${level}`;
+    const trackId = GAME_STATE_MUSIC[trackKey] || GAME_STATE_MUSIC['dungeon-1'];
+
+    if (trackId) {
+      crossfadeTo(trackId);
+    }
+  }, [gameState?.dungeon?.level, isUnlocked, crossfadeTo]);
 
   // Handle new game - also handles "press enter to play again"
   const handleNewGame = useCallback(() => {
@@ -129,7 +158,7 @@ export function Play() {
   }
 
   return (
-    <div className="play">
+    <div className="play" onClick={handleAudioUnlock}>
       <div className="play-layout">
         <div className="game-container">
           {gameError && (
