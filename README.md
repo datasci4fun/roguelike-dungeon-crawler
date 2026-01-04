@@ -337,6 +337,17 @@ npm run dev
 
 Access at `http://localhost:5173`. Requires the backend server to be running.
 
+#### Demo Account (Quick Start)
+
+For instant access without registration, use the demo account:
+
+| Field | Value |
+|-------|-------|
+| **Username** | `demo` |
+| **Password** | `DemoPass123` |
+
+Or simply click the **"Try Demo"** button on the login page for one-click access. The demo account is automatically created when the server starts.
+
 #### Mobile Access (v3.4.0)
 To play on your phone or tablet:
 
