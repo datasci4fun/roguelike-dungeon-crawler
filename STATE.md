@@ -120,6 +120,51 @@ Fixed navigation so new games always go through character creation:
 
 ---
 
+### WebSocket Connection Stability Fixes (Post v4.4.0)
+
+Fixed WebSocket connection issues causing duplicate connections and message failures:
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| Game WebSocket duplicates | React StrictMode double-mounting | Added `connectingRef` guard in GameContext |
+| Chat WebSocket duplicates | Same StrictMode issue | Added `connectingRef` guard in useChatSocket |
+| Chat messages not posting | Unstable connection state | Connection stability fix |
+| Keyboard shortcuts in chat | Events bubbling to game | Added `stopPropagation()` on chat input |
+
+**GameContext (Shared WebSocket):**
+- Created `web/src/contexts/GameContext.tsx` to share game WebSocket across routes
+- Prevents disconnection when navigating between CharacterCreation and Play
+- Connection persists throughout the authenticated session
+
+**Connection Guard Pattern:**
+```typescript
+const connectingRef = useRef(false);
+
+const connect = useCallback(() => {
+  if (connectingRef.current) return;
+  if (wsRef.current?.readyState === WebSocket.OPEN ||
+      wsRef.current?.readyState === WebSocket.CONNECTING) return;
+
+  connectingRef.current = true;
+  // ... create WebSocket
+  ws.onopen = () => { connectingRef.current = false; };
+  ws.onerror = () => { connectingRef.current = false; };
+  ws.onclose = () => { connectingRef.current = false; };
+}, []);
+```
+
+**Files Created:**
+- `web/src/contexts/GameContext.tsx` - Shared game WebSocket context
+
+**Files Modified:**
+- `web/src/hooks/useChatSocket.ts` - Added connectingRef pattern
+- `web/src/components/ChatPanel.tsx` - Added event stopPropagation
+- `web/src/main.tsx` - Added GameProvider wrapper
+- `web/src/pages/CharacterCreation.tsx` - Uses useGame() context
+- `web/src/pages/Play.tsx` - Uses useGame() context
+
+---
+
 **Previous: First-Person Visual Overhaul** - Complete rendering system upgrade with proper darkness, torch lighting, and developer tools.
 
 ### v4.3.0 Visual Overhaul (Complete)
