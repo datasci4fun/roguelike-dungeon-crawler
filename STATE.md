@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-05
-**Branch:** master
-**Version:** v4.4.0 (Atmosphere & Exploration)
+**Branch:** feature/wall-variety
+**Version:** v4.5.0 (Wall Variety) - In Progress
 
 ---
 
@@ -22,7 +22,62 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 
 ## Current Status
 
-**Atmosphere & Exploration** - Compass navigation, trap visualization, secret doors, and atmospheric particle effects.
+**Wall Variety** - Visual enhancements with moss, cracks, cobwebs on dungeon walls plus FOV cone filtering fix.
+
+### v4.5.0 Wall Variety (In Progress)
+
+| Component | Status |
+|-----------|--------|
+| Wall decorations (moss, cracks, cobwebs) | ✅ Done |
+| Corridor wall decorations | ✅ Done |
+| Front wall decorations | ✅ Done |
+| FOV cone filtering for first-person entities | ✅ Done |
+| Water reflections | ⬜ Planned |
+| Weather effects | ⬜ Planned |
+| Ambient sounds | ⬜ Planned |
+
+### Wall Decorations
+
+Added procedural wall variety to the first-person renderer:
+
+| Decoration | Placement | Visual |
+|------------|-----------|--------|
+| Moss | Lower wall portions | Green patches with varied shades |
+| Cracks | Random wall sections | Dark lines/fissures |
+| Cobwebs | Upper corners | Delicate web patterns |
+
+- Uses seeded randomness for deterministic placement (same walls have same decorations)
+- Decorations fade with depth (distant walls have more subtle details)
+- ~30-40% chance for each decoration type on qualifying walls
+
+### FOV Cone Filtering Fix
+
+Fixed a bug where entities (enemies, items, traps) were visible in the first-person view regardless of player facing direction:
+
+| Before | After |
+|--------|-------|
+| 360° entity visibility | 120° cone based on facing |
+| Items visible behind player | Only entities in front visible |
+
+- Added `_is_in_fov_cone()` method using dot product calculation
+- Applied to enemies, items, and traps in `_serialize_first_person_view`
+- Cone threshold: cos(60°) = 0.5 for 120° total cone
+
+### Files Created (v4.5.0)
+
+| File | Purpose |
+|------|---------|
+| web/src/components/SceneRenderer/walls/drawWallDecor.ts | Wall decoration rendering (280 lines) |
+
+### Files Modified (v4.5.0)
+
+| File | Changes |
+|------|---------|
+| web/src/components/SceneRenderer/walls/drawCorridorWall.ts | Import and call wall decorations |
+| web/src/components/SceneRenderer/walls/drawFrontWall.ts | Import and call wall decorations |
+| server/app/services/game_session.py | Added FOV cone filtering for entities |
+
+---
 
 ### v4.4.0 Atmosphere & Exploration (Complete)
 
@@ -1107,14 +1162,15 @@ npm run build
 - ✅ v4.4.0 secret door system with search command
 - ✅ v4.4.0 atmospheric visual effects (dust, fog)
 
-### Planned for v4.5.0
+### Planned for v4.5.0 (In Progress)
 
-| Feature | Description |
-|---------|-------------|
-| Wall variety | Moss, cracks, cobwebs on dungeon walls |
-| Water reflections | Animated water tiles in first-person |
-| Weather effects | Rain/dripping in certain areas |
-| Ambient sounds | Background audio for atmosphere |
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Wall variety | Moss, cracks, cobwebs on dungeon walls | ✅ Done |
+| FOV cone filtering | Entities only visible in facing direction | ✅ Done |
+| Water reflections | Animated water tiles in first-person | ⬜ Planned |
+| Weather effects | Rain/dripping in certain areas | ⬜ Planned |
+| Ambient sounds | Background audio for atmosphere | ⬜ Planned |
 
 ### Future Enhancements
 
