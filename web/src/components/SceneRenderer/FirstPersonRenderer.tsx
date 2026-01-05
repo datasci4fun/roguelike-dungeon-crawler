@@ -11,6 +11,7 @@ import { getProjection, getFogAmount } from './projection';
 import { drawCorridorWall, drawFloorSegment, drawFloorAndCeiling, drawFrontWall, drawSecretHints } from './walls';
 import { drawEnemy, drawItem, drawTrap } from './entities';
 import { drawCompass } from './compass';
+import { drawDustParticles, drawFogWisps } from './effects';
 
 interface FirstPersonRendererProps {
   view: FirstPersonView | undefined;
@@ -354,6 +355,10 @@ export function FirstPersonRenderer({
         renderEntity(ctx, entity, width, height, timeRef.current);
       }
     }
+
+    // Draw atmospheric effects
+    drawFogWisps(ctx, width, height, timeRef.current, enableAnimations);
+    drawDustParticles(ctx, width, height, timeRef.current, enableAnimations);
 
     // Draw compass at top center
     const facing = view.facing;
