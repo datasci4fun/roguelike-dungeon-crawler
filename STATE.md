@@ -99,6 +99,27 @@ Medieval-style compass strip at top center of first-person view:
 
 ---
 
+### Character Creation Flow Fix (Post v4.4.0)
+
+Fixed navigation so new games always go through character creation:
+
+| Change | Before | After |
+|--------|--------|-------|
+| Home "Play Now" | `/play` | `/character-creation` |
+| Death/Victory "Play Again" | `newGame()` directly | Redirect to `/character-creation` |
+
+**New Game Flow:**
+1. User clicks "Play Now" → Character Creation page
+2. User selects race + class → clicks "Begin Adventure"
+3. Game starts with configured character → Play page
+4. On death/victory, press Enter → back to Character Creation
+
+**Files Modified:**
+- `web/src/pages/Home.tsx` - Link to `/character-creation`
+- `web/src/pages/Play.tsx` - Redirect to character creation on game over
+
+---
+
 **Previous: First-Person Visual Overhaul** - Complete rendering system upgrade with proper darkness, torch lighting, and developer tools.
 
 ### v4.3.0 Visual Overhaul (Complete)
