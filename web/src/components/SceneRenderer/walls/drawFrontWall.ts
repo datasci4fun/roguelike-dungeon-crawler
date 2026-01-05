@@ -2,6 +2,7 @@
  * Draw front-facing walls that block the corridor
  */
 import { getProjection, seededRandom, getDepthFade, getFogAmount } from '../projection';
+import { drawMoss, drawCracks, drawCobwebs } from './drawWallDecor';
 
 export function drawFrontWall(
   ctx: CanvasRenderingContext2D,
@@ -57,6 +58,30 @@ export function drawFrontWall(
     // Mortar line
     ctx.fillStyle = `rgba(20, 20, 30, ${0.4 * depthFade})`;
     ctx.fillRect(left.x, left.wallTop + (row + 1) * brickH - 1, wallWidth, 2);
+  }
+
+  // Wall decorations (moss, cracks, cobwebs)
+  const decorSeed = Math.floor(depth * 1000) + Math.floor(leftOffset * 100);
+  const wallBounds = {
+    x: left.x,
+    y: left.wallTop,
+    width: wallWidth,
+    height: wallHeight,
+  };
+
+  // Moss on lower parts of walls (not on doors)
+  if (tile !== 'D' && tile !== 'd' && seededRandom(decorSeed + 1) > 0.55) {
+    drawMoss(ctx, wallBounds, depth, decorSeed + 100);
+  }
+
+  // Cracks on some walls
+  if (seededRandom(decorSeed + 2) > 0.6) {
+    drawCracks(ctx, wallBounds, depth, decorSeed + 200);
+  }
+
+  // Cobwebs in upper corners
+  if (seededRandom(decorSeed + 3) > 0.65) {
+    drawCobwebs(ctx, wallBounds, depth, decorSeed + 300, ['topLeft', 'topRight']);
   }
 
   // Door handling

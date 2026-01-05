@@ -2,6 +2,7 @@
  * Draw corridor side walls (perspective walls extending toward viewer)
  */
 import { getProjection, seededRandom, getDepthFade, getFogAmount } from '../projection';
+import { drawMossCorridor, drawCracksCorridor, drawCobwebsCorridor } from './drawWallDecor';
 
 export function drawCorridorWall(
   ctx: CanvasRenderingContext2D,
@@ -76,6 +77,32 @@ export function drawCorridorWall(
   ctx.moveTo(near.x, near.wallTop);
   ctx.lineTo(near.x, near.wallBottom);
   ctx.stroke();
+
+  // Wall decorations (moss, cracks, cobwebs)
+  const decorSeed = Math.floor(nearDepth * 1000) + (side === 'left' ? 0 : 5000);
+  const corridorBounds = {
+    nearX: near.x,
+    farX: far.x,
+    nearTop: near.wallTop,
+    nearBottom: near.wallBottom,
+    farTop: far.wallTop,
+    farBottom: far.wallBottom,
+  };
+
+  // Moss on lower parts of walls
+  if (seededRandom(decorSeed + 1) > 0.6) {
+    drawMossCorridor(ctx, corridorBounds, side, avgDepth, decorSeed + 100);
+  }
+
+  // Cracks on some walls
+  if (seededRandom(decorSeed + 2) > 0.65) {
+    drawCracksCorridor(ctx, corridorBounds, side, avgDepth, decorSeed + 200);
+  }
+
+  // Cobwebs in upper corners
+  if (seededRandom(decorSeed + 3) > 0.7) {
+    drawCobwebsCorridor(ctx, corridorBounds, side, avgDepth, decorSeed + 300);
+  }
 
   // Fog overlay
   const fogAmount = getFogAmount(avgDepth);
