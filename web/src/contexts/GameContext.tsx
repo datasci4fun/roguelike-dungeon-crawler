@@ -26,6 +26,7 @@ const GameContext = createContext<GameContextValue | null>(null);
 export function GameProvider({ children }: { children: ReactNode }) {
   const { token } = useAuth();
   const wsRef = useRef<WebSocket | null>(null);
+  const connectingRef = useRef(false);
   const [status, setStatus] = useState<ConnectionStatus>('disconnected');
   const [gameState, setGameState] = useState<FullGameState | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,17 +35,16 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const connect = useCallback(() => {
     if (!token) return;
 
-    // Don't connect if already connected or connecting
+    // Prevent duplicate connection attempts
+    if (connectingRef.current) return;
+
+    // Don't connect if already connected
     const currentWs = wsRef.current;
-    if (currentWs && (currentWs.readyState === WebSocket.OPEN || currentWs.readyState === WebSocket.CONNECTING)) {
+    if (currentWs && currentWs.readyState === WebSocket.OPEN) {
       return;
     }
 
-    // Close stale connection if any
-    if (currentWs && currentWs.readyState !== WebSocket.CLOSED) {
-      currentWs.close();
-    }
-
+    connectingRef.current = true;
     setStatus('connecting');
     setError(null);
 
@@ -52,6 +52,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     wsRef.current = ws;
 
     ws.onopen = () => {
+      connectingRef.current = false;
       setStatus('connected');
     };
 
@@ -80,11 +81,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
 
     ws.onerror = () => {
+      connectingRef.current = false;
       setStatus('error');
       setError('WebSocket connection error');
     };
 
     ws.onclose = (event) => {
+      connectingRef.current = false;
       setStatus('disconnected');
       wsRef.current = null;
       if (event.code === 4001) {
@@ -158,9 +161,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
   }, [token, connect]);
 
   // Cleanup only on unmount of the provider (app-level)
+  // Only close if connection is actually established to avoid StrictMode warnings
   useEffect(() => {
     return () => {
-      if (wsRef.current) {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.close();
       }
     };
