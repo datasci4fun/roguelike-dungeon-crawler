@@ -125,6 +125,7 @@ export interface FirstPersonTile {
   visible: boolean;
   walkable: boolean;
   has_entity: boolean;
+  has_secret?: boolean;  // Hidden secret door at this tile
 }
 
 export interface FirstPersonEntity {

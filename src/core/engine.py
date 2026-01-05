@@ -17,7 +17,7 @@ from .commands import (
 
 # Turn commands set
 TURN_COMMANDS = {CommandType.TURN_LEFT, CommandType.TURN_RIGHT}
-from ..world import Dungeon, TrapManager, HazardManager
+from ..world import Dungeon, TrapManager, HazardManager, SecretDoorManager
 from ..entities import Player
 from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
 from ..story import StoryManager
@@ -74,6 +74,9 @@ class GameEngine:
         # v4.0: Trap and hazard managers
         self.trap_manager = TrapManager()
         self.hazard_manager = HazardManager()
+
+        # v4.3: Secret door manager
+        self.secret_door_manager = SecretDoorManager()
 
         # Death tracking for recap
         self.last_attacker_name = None
@@ -138,6 +141,10 @@ class GameEngine:
         self.hazard_manager.clear()
         self.dungeon.generate_traps(self.trap_manager, self.player.x, self.player.y)
         self.dungeon.generate_hazards(self.hazard_manager, self.player.x, self.player.y)
+
+        # v4.3: Generate secret doors
+        self.secret_door_manager.clear()
+        self.dungeon.generate_secret_doors(self.secret_door_manager, self.player.x, self.player.y)
 
         # Welcome messages with character info
         if race and player_class:
@@ -258,6 +265,16 @@ class GameEngine:
                 return True
             return False
 
+        # Search command (reveal hidden secrets)
+        if cmd_type == CommandType.SEARCH:
+            if self._handle_search():
+                # Searching costs a turn
+                self._process_enemy_turns()
+                self._check_auto_save()
+                self._check_player_death()
+                return True
+            return False
+
         # Item use commands
         if cmd_type in ITEM_COMMANDS:
             item_index = get_item_index(cmd_type)
@@ -335,6 +352,45 @@ class GameEngine:
         }
         direction = direction_names.get(new_facing, "unknown")
         self.add_message(f"You turn to face {direction}.")
+
+        return True
+
+    def _handle_search(self) -> bool:
+        """
+        Handle search command - look for hidden secrets nearby.
+
+        Searches for hidden traps and secret doors within range.
+        Returns True if successful (always costs a turn).
+        """
+        if not self.player or not self.dungeon:
+            return False
+
+        found_something = False
+        perception = 10  # Base perception, could be modified by character stats
+
+        # Search for hidden traps
+        if self.trap_manager:
+            detected_traps = self.trap_manager.detect_nearby(
+                self.player.x, self.player.y, perception, radius=1
+            )
+            for trap in detected_traps:
+                self.add_message(f"You found a hidden {trap.name}!", important=True)
+                found_something = True
+
+        # Search for secret doors
+        if self.secret_door_manager:
+            detected_doors = self.secret_door_manager.search_nearby(
+                self.player.x, self.player.y, perception, radius=1
+            )
+            for door in detected_doors:
+                self.add_message("You found a secret door!", important=True)
+                # Reveal the secret door on the map - change wall to floor
+                from .constants import TileType
+                self.dungeon.tiles[door.y][door.x] = TileType.FLOOR
+                found_something = True
+
+        if not found_something:
+            self.add_message("You search the area but find nothing.")
 
         return True
 

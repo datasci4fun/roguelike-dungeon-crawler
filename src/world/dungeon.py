@@ -13,6 +13,7 @@ from ..core.constants import (
 )
 from .traps import Trap, TrapManager
 from .hazards import Hazard, HazardManager
+from .secrets import SecretDoor, SecretDoorManager
 
 
 @dataclass
@@ -701,4 +702,79 @@ class Dungeon:
             hazard = Hazard(x=pos[0], y=pos[1], hazard_type=hazard_type, intensity=intensity)
             hazard_manager.add_hazard(hazard)
             avoid_positions.add(pos)
+            placed += 1
+
+    # =========================================================================
+    # v4.3: Secret Door Generation
+    # =========================================================================
+
+    def generate_secret_doors(self, secret_door_manager: SecretDoorManager, player_x: int, player_y: int):
+        """
+        Generate secret doors for this dungeon level.
+
+        Secret doors are placed on wall tiles adjacent to floor tiles, creating
+        hidden passages that can be discovered through searching.
+
+        Args:
+            secret_door_manager: The SecretDoorManager to add doors to
+            player_x, player_y: Player position to avoid placing doors there
+        """
+        # Number of secret doors scales slightly with level (0-2 per level)
+        num_doors = min(self.level // 2, 2)
+        if num_doors == 0 and self.level >= 2:
+            num_doors = 1  # At least 1 on level 2+
+
+        if num_doors == 0:
+            return
+
+        # Find valid wall positions for secret doors
+        # A valid position is a wall tile with exactly one adjacent floor tile
+        # (forms a connection through a wall)
+        valid_positions = []
+
+        for y in range(1, self.height - 1):
+            for x in range(1, self.width - 1):
+                if self.tiles[y][x] != TileType.WALL:
+                    continue
+
+                # Count adjacent floor tiles and track which direction
+                adjacent_floors = []
+                for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                        if self.tiles[ny][nx] == TileType.FLOOR:
+                            adjacent_floors.append((dx, dy))
+
+                # Want exactly 2 adjacent floors on opposite sides (passage through wall)
+                if len(adjacent_floors) == 2:
+                    d1, d2 = adjacent_floors
+                    # Check if they're opposite directions
+                    if d1[0] == -d2[0] and d1[1] == -d2[1]:
+                        # This is a valid secret door position
+                        valid_positions.append((x, y, d1[0], d1[1]))
+
+        if not valid_positions:
+            return
+
+        # Shuffle and pick positions
+        random.shuffle(valid_positions)
+
+        # Avoid positions too close to player start
+        avoid_near_player = []
+        for pos in valid_positions:
+            x, y = pos[0], pos[1]
+            if abs(x - player_x) <= 4 and abs(y - player_y) <= 4:
+                continue
+            avoid_near_player.append(pos)
+
+        valid_positions = avoid_near_player if avoid_near_player else valid_positions[:1]
+
+        # Place secret doors
+        placed = 0
+        for pos in valid_positions:
+            if placed >= num_doors:
+                break
+
+            x, y, dx, dy = pos
+            secret_door_manager.add_at(x, y, dx, dy)
             placed += 1

@@ -416,6 +416,12 @@ function mapKeyToCommand(key: string, uiMode: string): string | null {
     case 'E':
       return 'TURN_RIGHT';
 
+    // Search for hidden secrets
+    case 'f':
+    case 'F':
+    case '/':
+      return 'SEARCH';
+
     // For "press any key" prompts
     case 'Enter':
     case ' ':

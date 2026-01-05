@@ -660,6 +660,13 @@ class GameSessionManager:
                             }
                             entities_in_view.append(trap_entity)
 
+                    # Check for hidden secret door (for visual hints)
+                    has_secret = False
+                    if engine.secret_door_manager:
+                        secret_door = engine.secret_door_manager.get_door_at(tile_x, tile_y)
+                        if secret_door and secret_door.hidden:
+                            has_secret = True
+
                     row.append({
                         "tile": tile_char,
                         "x": tile_x,
@@ -667,6 +674,7 @@ class GameSessionManager:
                         "visible": True,
                         "walkable": dungeon.is_walkable(tile_x, tile_y),
                         "has_entity": entity_here is not None,
+                        "has_secret": has_secret,
                     })
                 elif in_bounds and dungeon.explored[tile_y][tile_x]:
                     row.append({
