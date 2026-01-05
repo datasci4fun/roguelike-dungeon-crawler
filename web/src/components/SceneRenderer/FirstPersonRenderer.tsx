@@ -8,7 +8,7 @@ import { useRef, useEffect, useCallback } from 'react';
 import type { FirstPersonView, FirstPersonEntity } from '../../hooks/useGameSocket';
 import { Colors } from './colors';
 import { getProjection, getFogAmount } from './projection';
-import { drawCorridorWall, drawFloorSegment, drawFloorAndCeiling, drawFrontWall } from './walls';
+import { drawCorridorWall, drawFloorSegment, drawFloorAndCeiling, drawFrontWall, drawSecretHints } from './walls';
 import { drawEnemy, drawItem } from './entities';
 
 interface FirstPersonRendererProps {
@@ -135,12 +135,14 @@ export function FirstPersonRenderer({
       frontWall: string | null;
       // For open rooms: track positions of all walls in this row
       wallPositions: { offset: number; tile: string }[];
+      // Track hidden secret door positions for visual hints
+      secretPositions: { offset: number }[];
     }[] = [];
 
     for (let d = 0; d < maxDepth; d++) {
       const row = rows[d];
       if (!row || row.length === 0) {
-        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: '#', wallPositions: [] });
+        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: '#', wallPositions: [], secretPositions: [] });
         continue;
       }
 
@@ -160,6 +162,8 @@ export function FirstPersonRenderer({
 
       // Track ALL wall positions in this row for open room rendering
       const wallPositions: { offset: number; tile: string }[] = [];
+      // Track positions with hidden secrets for visual hints
+      const secretPositions: { offset: number }[] = [];
 
       if (row.length > 0) {
         const leftTile = row[0].tile;
@@ -172,11 +176,17 @@ export function FirstPersonRenderer({
 
         // Scan all tiles for wall positions (for open room rendering)
         for (let i = 0; i < row.length; i++) {
-          const tile = row[i].tile;
+          const tileData = row[i];
+          const tile = tileData.tile;
           if (isWallTile(tile) || isDoorTile(tile)) {
             // Calculate offset from center (-half to +half)
             const offset = i - centerIdx;
             wallPositions.push({ offset, tile });
+
+            // Check for hidden secret door
+            if (tileData.has_secret) {
+              secretPositions.push({ offset });
+            }
           }
         }
       }
@@ -186,7 +196,8 @@ export function FirstPersonRenderer({
         rightWall,
         hasFloor: !centerIsWall,
         frontWall,
-        wallPositions
+        wallPositions,
+        secretPositions
       });
     }
 
@@ -256,6 +267,21 @@ export function FirstPersonRenderer({
             // Most of the row is walls - draw a full back wall
             drawFrontWall(ctx, depth, leftMostWall, rightMostWall, width, height, '#', timeRef.current, enableAnimations);
           }
+        }
+      }
+
+      // Draw secret hints for hidden secret doors in this row
+      if (info.secretPositions.length > 0) {
+        for (const secret of info.secretPositions) {
+          drawSecretHints({
+            ctx,
+            depth,
+            offset: secret.offset * 0.3,
+            canvasWidth: width,
+            canvasHeight: height,
+            time: timeRef.current,
+            enableAnimations,
+          });
         }
       }
     }

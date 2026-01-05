@@ -63,6 +63,9 @@ class CommandType(Enum):
     TURN_LEFT = auto()   # Rotate counterclockwise
     TURN_RIGHT = auto()  # Rotate clockwise
 
+    # Searching
+    SEARCH = auto()      # Search for hidden secrets (X key)
+
     # Special
     SKIP = auto()      # Skip intro/cutscene
     ANY_KEY = auto()   # Any key pressed (for "press any key" prompts)
