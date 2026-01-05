@@ -18,6 +18,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v4.2.0 adds Character Creation!** Choose from 5 races (Human, Elf, Dwarf, Halfling, Orc) and 3 classes (Warrior, Mage, Rogue) with unique abilities and traits. Plus a feat system with 18 feats to customize your character as you level up.
 
+**v4.2.1 adds Sound Effects!** 24 procedural sounds via Web Audio API for movement, combat, items, UI, and more. No audio files needed - all sounds are synthesized in real-time.
+
 ## Features
 
 ### Core Gameplay
@@ -296,6 +298,27 @@ The Play page displays your race and class with:
 - Passive ability display
 - Health bar with current/max HP
 
+### Sound Effects System (v4.2.1)
+
+Procedural audio feedback using Web Audio API - no audio files required!
+
+#### Sound Categories
+| Category | Sounds |
+|----------|--------|
+| **Movement** | footstep, bump_wall |
+| **Combat** | attack_hit, attack_miss, player_hurt, enemy_death, critical_hit |
+| **Items** | item_pickup, gold_pickup, potion_drink, scroll_use, equip_weapon, equip_armor |
+| **UI** | menu_select, menu_confirm, menu_back, level_up, feat_unlock |
+| **Environment** | door_open, stairs_descend, trap_trigger |
+| **Abilities** | ability_ready, ability_use, ability_fail |
+
+#### Features
+- **Procedural Generation**: All 24 sounds synthesized using Web Audio API oscillators
+- **ADSR Envelopes**: Natural attack/decay/sustain/release shaping for realistic sounds
+- **Automatic Triggers**: Sounds play automatically on game events (damage, kills, pickups, level ups)
+- **Volume Control**: Respects master and SFX volume settings
+- **Test Button**: Preview sounds in VolumeControls panel without playing
+
 ## Installation
 
 ### Terminal Client (Single Player)
@@ -572,9 +595,13 @@ web/                    # Web frontend (v3.0.0+)
     │       └── entities/        # Enemy and item rendering
     ├── contexts/
     │   └── AuthContext.tsx   # JWT auth state
+    ├── config/
+    │   └── sfxConfig.ts      # Sound effect definitions (v4.2.1)
     ├── hooks/
     │   ├── useGameSocket.ts  # Game WebSocket hook
-    │   └── useChatSocket.ts  # Chat WebSocket hook
+    │   ├── useChatSocket.ts  # Chat WebSocket hook
+    │   ├── useSoundEffect.ts # Web Audio API SFX hook (v4.2.1)
+    │   └── useSfxGameEvents.ts  # Automatic SFX triggers (v4.2.1)
     ├── pages/
     │   ├── Home.tsx
     │   ├── Login.tsx
