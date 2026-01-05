@@ -20,6 +20,10 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v4.2.1 adds Sound Effects!** 24 procedural sounds via Web Audio API for movement, combat, items, UI, and more. No audio files needed - all sounds are synthesized in real-time.
 
+**v4.3.0 adds Visual Overhaul!** Pure black dungeon darkness, aggressive fog system, torch lighting that pierces darkness, FOV cone visualization, and a visual test page for developers.
+
+**v4.4.0 adds Atmosphere & Exploration!** Medieval compass HUD, trap rendering with animations, secret door system with search command (F key), and atmospheric particle effects.
+
 ## Features
 
 ### Core Gameplay
@@ -319,6 +323,68 @@ Procedural audio feedback using Web Audio API - no audio files required!
 - **Volume Control**: Respects master and SFX volume settings
 - **Test Button**: Preview sounds in VolumeControls panel without playing
 
+### Turn Commands & View Fixes (v4.2.2)
+
+- **Q/E Turn Controls**: Rotate facing direction without moving (Q = left, E = right)
+- **Manual Facing**: Movement no longer auto-turns; you control what you see
+- **X to Quit**: Changed quit key from Q to X to free up Q for turning
+- **Open Room Fix**: First-person view now renders correctly in large open rooms
+
+### First-Person Visual Overhaul (v4.3.0)
+
+#### Dungeon Atmosphere
+- **Pure Black Darkness**: True dungeon feel with no gradient vignette
+- **Aggressive Fog System**: Exponential falloff reaching 95%+ opacity at depth 5
+- **Darker Color Palette**: Walls and floors emerge from shadow
+
+#### Torch Lighting System
+- **Light Pierces Darkness**: Flames stay bright regardless of distance
+- **Proper Render Order**: Torches drawn after fog overlay
+- **Side Wall Torches**: Corridor lights at depths 1, 3, 5
+- **Floor Light Pools**: Warm glow cast beneath each torch
+- **Spark Effects**: Particles for close-up torches
+
+#### FOV Cone Visualization
+- **Directional Player Symbol**: Shows facing with ▲▼◄► arrows on minimap
+- **Highlighted FOV Tiles**: Tiles in 120° view cone get bright background
+- **6-Tile Range**: Clear indication of what you can see
+
+#### Developer Tools
+- **Visual Test Page**: `/first-person-test` with 10 preset scenarios
+- **Parameter Customization**: Tweak any rendering parameter in real-time
+
+### Atmosphere & Exploration (v4.4.0)
+
+#### Compass HUD
+Medieval-style compass strip at top center of first-person view:
+- **Cardinal Directions**: N/E/S/W with intercardinal (NE/SE/SW/NW)
+- **180° View**: Centered on player facing direction
+- **Color Coding**: North highlighted in gold, South in red
+- **Precision Ticks**: Marks every 15° for accurate navigation
+
+#### Trap Rendering
+Visual representation of dungeon traps in first-person view:
+| Trap | Visual | Animation |
+|------|--------|-----------|
+| **Spike** | Metal spikes | Rise/fall on trigger |
+| **Fire** | Flame jets | Flickering flames |
+| **Poison** | Gas vents | Green mist particles |
+| **Arrow** | Wall launcher | Projectile animation |
+
+- Warning indicators for active traps within 3 tiles
+
+#### Secret Door System
+- **Hidden Passages**: 1-2 secret doors per level (starting level 2)
+- **Visual Hints**: Subtle cracks in walls hint at secrets
+- **Search Command (F key)**: Reveals hidden doors and traps
+- **Room Connections**: Secret doors link adjacent rooms
+
+#### Atmospheric Effects
+- **Dust Particles**: Float in torchlight for ambiance
+- **Fog Wisps**: Drift through the dungeon
+- **Depth Scaling**: Effects fade with distance
+- **Animation-Based**: Disabled in static rendering mode
+
 ## Installation
 
 ### Terminal Client (Single Player)
@@ -402,13 +468,15 @@ npm run build
 ### Controls
 
 - **Arrow Keys** or **WASD**: Move your character (@)
+- **Q/E**: Turn left/right (rotate facing direction)
+- **F**: Search for secrets (reveals hidden doors and traps)
 - **I**: Open full-screen inventory (equip/use/drop items)
 - **C**: Open character stats screen
 - **M**: Open message log (scrollable history)
 - **?**: Open help screen
 - **1-3**: Quick-use items from sidebar
 - **>**: Descend stairs (when standing on >)
-- **Q**: Save and quit game (with confirmation)
+- **X**: Save and quit game (with confirmation)
 
 ### Inventory Controls (when open)
 - **Arrow Keys**: Navigate items
@@ -510,7 +578,8 @@ src/                    # Game client
 │   ├── dungeon.py      # BSP dungeon generation
 │   ├── fov.py          # Field of view
 │   ├── traps.py        # Trap mechanics (v4.0.0)
-│   └── hazards.py      # Environmental hazards (v4.0.0)
+│   ├── hazards.py      # Environmental hazards (v4.0.0)
+│   └── secrets.py      # Secret door system (v4.4.0)
 ├── items/              # Item system
 │   └── items.py        # Items, inventory, equipment
 ├── ui/                 # Rendering
@@ -587,12 +656,14 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── GhostReplayViewer.tsx  # Replay viewer
     │   ├── CharacterHUD.tsx  # Race/class/ability display (v4.2.0)
     │   ├── FeatSelector.tsx  # Feat selection modal (v4.2.0)
-    │   └── SceneRenderer/    # First-person 3D view (v4.1.0)
+    │   └── SceneRenderer/    # First-person 3D view (v4.1.0+)
     │       ├── FirstPersonRenderer.tsx  # Main canvas component
     │       ├── projection.ts    # Perspective math utilities
     │       ├── colors.ts        # Color palette
-    │       ├── walls/           # Wall rendering (corridor, floor, front)
-    │       └── entities/        # Enemy and item rendering
+    │       ├── compass.ts       # Compass HUD element (v4.4.0)
+    │       ├── walls/           # Wall rendering + secret hints (v4.4.0)
+    │       ├── entities/        # Enemy, item, trap rendering (v4.4.0)
+    │       └── effects/         # Atmospheric particles (v4.4.0)
     ├── contexts/
     │   └── AuthContext.tsx   # JWT auth state
     ├── config/
@@ -615,6 +686,7 @@ web/                    # Web frontend (v3.0.0+)
     │   ├── Spectate.tsx      # Live game spectator (v3.3.0)
     │   ├── Friends.tsx       # Friends system (v3.5.0)
     │   ├── FirstPersonDemo.tsx  # Scene renderer test (v4.1.0)
+    │   ├── FirstPersonTestPage.tsx  # Visual test scenarios (v4.3.0)
     │   ├── SceneDemo.tsx     # Top-down scene test (v4.1.0)
     │   └── PlayScene.tsx     # Alternative play page (v4.1.0)
     ├── data/
