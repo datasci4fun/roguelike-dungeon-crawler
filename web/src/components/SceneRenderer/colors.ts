@@ -1,40 +1,44 @@
 /**
  * Color palette for first-person renderer
+ * Dark dungeon aesthetic with torch lighting
  */
 
 export const Colors = {
-  // Sky/ceiling gradient
+  // Sky/ceiling gradient - very dark, barely visible
   ceilingNear: '#1a1a2e',
-  ceilingFar: '#0a0a14',
+  ceilingFar: '#0a0a18',
 
-  // Floor gradient
+  // Floor gradient - dark stone
   floorNear: '#2a2a3e',
-  floorFar: '#1a1a28',
+  floorFar: '#0f0f1a',
 
-  // Walls by tile type
-  wall: '#5a5a6e',
-  wallDark: '#3a3a4e',
-  wallLight: '#6a6a7e',
-  wallHighlight: '#7a7a8e',
+  // Walls by tile type - muted, dark
+  wall: '#4a4a5e',
+  wallDark: '#2a2a3e',
+  wallLight: '#5a5a6e',
+  wallHighlight: '#6a6a7e',
 
-  // Stone colors for texture
-  stone1: '#4a4a5a',
-  stone2: '#555565',
-  stone3: '#454555',
-  mortar: '#3a3a4a',
+  // Stone colors for texture - darker
+  stone1: '#3a3a4a',
+  stone2: '#454555',
+  stone3: '#353545',
+  mortar: '#2a2a3a',
 
   // Door
-  door: '#8b4513',
-  doorFrame: '#654321',
-  doorHighlight: '#a55a23',
+  door: '#6b3510',
+  doorFrame: '#4a2815',
+  doorHighlight: '#8b4520',
 
   // Stairs
-  stairsUp: '#50fa7b',
-  stairsDown: '#ff79c6',
+  stairsUp: '#40da6b',
+  stairsDown: '#df69b6',
 
-  // Fog/darkness
-  fog: 'rgba(10, 10, 20, 0.8)',
-  darkness: '#0a0a14',
+  // Fog/darkness - true black fog
+  fog: 'rgba(0, 0, 0, 0.9)',
+  darkness: '#000000',
+
+  // Ambient darkness overlay
+  ambientDark: 'rgba(0, 0, 8, 0.85)',
 
   // Entity colors
   enemy: '#ff5555',
@@ -42,12 +46,17 @@ export const Colors = {
   item: '#f1fa8c',
 
   // Floor tiles
-  floor: '#252535',
-  explored: '#1a1a28',
+  floor: '#1a1a2a',
+  explored: '#0f0f18',
 
-  // Torch light
-  torchLight: '#ffaa44',
-  torchGlow: 'rgba(255, 170, 68, 0.15)',
+  // Torch light - warm orange glow
+  torchLight: '#ff9933',
+  torchGlow: 'rgba(255, 150, 50, 0.25)',
+  torchFlicker: 'rgba(255, 120, 30, 0.3)',
+
+  // Player's torch - carried light source
+  playerLight: 'rgba(255, 180, 80, 0.4)',
+  playerLightCore: 'rgba(255, 200, 100, 0.6)',
 } as const;
 
 export type ColorKey = keyof typeof Colors;

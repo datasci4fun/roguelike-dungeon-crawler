@@ -19,8 +19,11 @@ interface FirstPersonRendererProps {
 }
 
 // Tile type checks
-const isWallTile = (tile: string) => tile === '#' || tile === '+' || tile === '~';
-const isDoorTile = (tile: string) => tile === 'D' || tile === 'd';
+// Note: '~' is explored-but-not-visible (fog), not a wall - don't block view
+const isWallTile = (tile: string) => tile === '#';
+const isDoorTile = (tile: string) => tile === 'D' || tile === 'd' || tile === '+';
+const isFogTile = (tile: string) => tile === '~';
+const isFloorTile = (tile: string) => tile === '.' || tile === '>' || tile === '<';
 
 export function FirstPersonRenderer({
   view,
@@ -124,12 +127,20 @@ export function FirstPersonRenderer({
     const maxDepth = rows.length;
 
     // Find the corridor configuration at each depth
-    const corridorInfo: { leftWall: boolean; rightWall: boolean; hasFloor: boolean; frontWall: string | null }[] = [];
+    // Track: side walls, front walls, and any walls in the row for open room rendering
+    const corridorInfo: {
+      leftWall: boolean;
+      rightWall: boolean;
+      hasFloor: boolean;
+      frontWall: string | null;
+      // For open rooms: track positions of all walls in this row
+      wallPositions: { offset: number; tile: string }[];
+    }[] = [];
 
     for (let d = 0; d < maxDepth; d++) {
       const row = rows[d];
       if (!row || row.length === 0) {
-        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: '#' });
+        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: '#', wallPositions: [] });
         continue;
       }
 
@@ -147,6 +158,9 @@ export function FirstPersonRenderer({
       let leftWall = false;
       let rightWall = false;
 
+      // Track ALL wall positions in this row for open room rendering
+      const wallPositions: { offset: number; tile: string }[] = [];
+
       if (row.length > 0) {
         const leftTile = row[0].tile;
         const rightTile = row[row.length - 1].tile;
@@ -155,52 +169,110 @@ export function FirstPersonRenderer({
         leftWall = isWallTile(leftTile) || isDoorTile(leftTile);
         // Right wall exists if rightmost tile is a wall
         rightWall = isWallTile(rightTile) || isDoorTile(rightTile);
+
+        // Scan all tiles for wall positions (for open room rendering)
+        for (let i = 0; i < row.length; i++) {
+          const tile = row[i].tile;
+          if (isWallTile(tile) || isDoorTile(tile)) {
+            // Calculate offset from center (-half to +half)
+            const offset = i - centerIdx;
+            wallPositions.push({ offset, tile });
+          }
+        }
       }
 
       corridorInfo.push({
         leftWall,
         rightWall,
         hasFloor: !centerIsWall,
-        frontWall
+        frontWall,
+        wallPositions
       });
     }
 
+    // Row 0 is tiles beside player (depth 0) - use for immediate side wall detection
+    // Row 1+ is tiles in front of player (depth 1+) - use for corridor rendering
+    const playerSideInfo = corridorInfo[0]; // Tiles beside player
+
     // Draw from back to front (painter's algorithm)
-    for (let d = maxDepth - 1; d >= 0; d--) {
-      const depth = d + 1;
-      const nextDepth = d + 2;
+    // Start from row 1 (depth 1) since row 0 is beside player, not in front
+    for (let d = maxDepth - 1; d >= 1; d--) {
+      const depth = d;
+      const nextDepth = d + 1;
       const info = corridorInfo[d];
 
+      // Determine floor/ceiling width based on whether there are walls
+      // In open rooms (no walls), extend floor/ceiling to fill more of the view
+      const leftOffset = info.leftWall ? -1 : -2;
+      const rightOffset = info.rightWall ? 1 : 2;
+
       // Draw ceiling segment
-      drawFloorSegment(ctx, depth, nextDepth, -1, 1, width, height, false);
+      drawFloorSegment(ctx, depth, nextDepth, leftOffset, rightOffset, width, height, false);
 
       // Draw floor segment
-      drawFloorSegment(ctx, depth, nextDepth, -1, 1, width, height, true);
+      drawFloorSegment(ctx, depth, nextDepth, leftOffset, rightOffset, width, height, true);
 
       // Draw left corridor wall if there's a wall on the left
       if (info.leftWall) {
-        drawCorridorWall(ctx, 'left', depth, nextDepth, width, height, timeRef.current);
+        drawCorridorWall(ctx, 'left', depth, nextDepth, width, height, timeRef.current, enableAnimations);
       }
 
       // Draw right corridor wall if there's a wall on the right
       if (info.rightWall) {
-        drawCorridorWall(ctx, 'right', depth, nextDepth, width, height, timeRef.current);
+        drawCorridorWall(ctx, 'right', depth, nextDepth, width, height, timeRef.current, enableAnimations);
       }
 
-      // Draw front wall if this depth is blocked
+      // Draw front wall if this depth is blocked (center blocked)
       if (info.frontWall) {
-        drawFrontWall(ctx, depth, -1, 1, width, height, info.frontWall, timeRef.current, enableAnimations);
+        drawFrontWall(ctx, depth, leftOffset, rightOffset, width, height, info.frontWall, timeRef.current, enableAnimations);
+      }
+      // For open rooms: draw walls at edges even if center is not blocked
+      else if (info.wallPositions.length > 0 && !info.leftWall && !info.rightWall) {
+        // Find the leftmost and rightmost wall positions
+        const leftMostWall = Math.min(...info.wallPositions.map(w => w.offset));
+        const rightMostWall = Math.max(...info.wallPositions.map(w => w.offset));
+
+        // Draw left edge wall if there's one
+        if (leftMostWall < 0) {
+          const wallTile = info.wallPositions.find(w => w.offset === leftMostWall)?.tile || '#';
+          // Draw a partial front wall on the left side
+          drawFrontWall(ctx, depth, leftMostWall - 0.5, leftMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations);
+        }
+
+        // Draw right edge wall if there's one
+        if (rightMostWall > 0) {
+          const wallTile = info.wallPositions.find(w => w.offset === rightMostWall)?.tile || '#';
+          // Draw a partial front wall on the right side
+          drawFrontWall(ctx, depth, rightMostWall - 0.5, rightMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations);
+        }
+
+        // If there's a continuous wall across the back (all positions are walls), draw full back wall
+        if (info.wallPositions.length >= 3) {
+          // Check if walls span most of the view
+          const row = rows[d];
+          const totalTiles = row?.length || 0;
+          const wallCount = info.wallPositions.length;
+          if (wallCount >= totalTiles * 0.7) {
+            // Most of the row is walls - draw a full back wall
+            drawFrontWall(ctx, depth, leftMostWall, rightMostWall, width, height, '#', timeRef.current, enableAnimations);
+          }
+        }
       }
     }
 
     // Draw the immediate area (depth 0 to 1)
-    drawFloorSegment(ctx, 0.3, 1, -1, 1, width, height, false); // ceiling
-    drawFloorSegment(ctx, 0.3, 1, -1, 1, width, height, true);  // floor
-    if (corridorInfo[0]?.leftWall) {
-      drawCorridorWall(ctx, 'left', 0.3, 1, width, height, timeRef.current);
+    // Use playerSideInfo (row 0) for side walls - these are tiles beside the player
+    const nearLeftOffset = playerSideInfo?.leftWall ? -1 : -2;
+    const nearRightOffset = playerSideInfo?.rightWall ? 1 : 2;
+    drawFloorSegment(ctx, 0.3, 1, nearLeftOffset, nearRightOffset, width, height, false); // ceiling
+    drawFloorSegment(ctx, 0.3, 1, nearLeftOffset, nearRightOffset, width, height, true);  // floor
+
+    // Draw immediate side walls based on tiles beside player (not in front)
+    if (playerSideInfo?.leftWall) {
+      drawCorridorWall(ctx, 'left', 0.3, 1, width, height, timeRef.current, enableAnimations);
     }
-    if (corridorInfo[0]?.rightWall) {
-      drawCorridorWall(ctx, 'right', 0.3, 1, width, height, timeRef.current);
+    if (playerSideInfo?.rightWall) {
+      drawCorridorWall(ctx, 'right', 0.3, 1, width, height, timeRef.current, enableAnimations);
     }
 
     // Draw entities (sorted by distance, far to near)
