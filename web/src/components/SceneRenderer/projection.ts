@@ -49,14 +49,45 @@ export function seededRandom(seed: number): number {
 
 /**
  * Calculate depth-based fade factor for fog/lighting
+ * Simulates torch light falloff - bright near player, pitch black at distance
  */
-export function getDepthFade(depth: number, minFade: number = 0.3): number {
-  return Math.max(minFade, 1 - depth * 0.1);
+export function getDepthFade(depth: number, minFade: number = 0.08): number {
+  // Aggressive exponential falloff - darkness dominates
+  // Light barely reaches beyond 3-4 tiles
+  const falloff = Math.pow(0.6, depth);
+  return Math.max(minFade, falloff);
 }
 
 /**
  * Calculate fog amount for a given depth
+ * Pure black fog that swallows everything at distance
  */
-export function getFogAmount(depth: number, maxFog: number = 0.6): number {
-  return Math.min(maxFog, depth * 0.08);
+export function getFogAmount(depth: number, maxFog: number = 1.0): number {
+  // Aggressive fog - pitch black by depth 4-5
+  // depth 1: ~0.35, depth 2: ~0.58, depth 3: ~0.73, depth 4: ~0.83, depth 5+: ~0.9+
+  const fog = 1 - Math.pow(0.65, depth);
+  return Math.min(maxFog, fog);
+}
+
+/**
+ * Calculate torch light intensity at a given position
+ * @param depth - Distance from viewer
+ * @param torchDepth - Depth where torch is located
+ * @param torchOffset - Horizontal offset of torch (-1 to 1)
+ * @param viewOffset - Horizontal offset of the point being lit
+ */
+export function getTorchLight(
+  depth: number,
+  torchDepth: number,
+  torchOffset: number = 0,
+  viewOffset: number = 0
+): number {
+  // Distance from torch
+  const dz = depth - torchDepth;
+  const dx = viewOffset - torchOffset;
+  const distance = Math.sqrt(dz * dz + dx * dx);
+
+  // Light falloff with distance (inverse square-ish)
+  const intensity = Math.max(0, 1 - distance * 0.4);
+  return intensity * intensity; // Square for softer falloff
 }
