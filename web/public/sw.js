@@ -54,6 +54,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip Vite dev server requests (HMR, source files)
+  if (url.pathname.startsWith('/@') ||
+      url.pathname.startsWith('/src/') ||
+      url.pathname.startsWith('/node_modules/')) {
+    return;
+  }
+
   // For navigation requests, try network first
   if (request.mode === 'navigate') {
     event.respondWith(
