@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGameSocket } from '../hooks/useGameSocket';
-import type { RaceId, ClassId, CharacterConfig } from '../hooks/useGameSocket';
+import type { RaceId, ClassId } from '../hooks/useGameSocket';
 import { RACES, CLASSES, ABILITY_DESCRIPTIONS, calculateStats } from '../data/characterData';
 import './CharacterCreation.css';
 
@@ -18,9 +18,7 @@ export function CharacterCreation() {
 
   const {
     status,
-    gameState,
     connect,
-    newGame,
   } = useGameSocket(token);
 
   // Redirect to login if not authenticated
@@ -37,20 +35,15 @@ export function CharacterCreation() {
     }
   }, [isAuthenticated, token, status, connect]);
 
-  // Navigate to play page when game starts
-  useEffect(() => {
-    if (gameState?.game_state === 'PLAYING') {
-      navigate('/play');
-    }
-  }, [gameState, navigate]);
-
+  // Navigate to play page with character config (don't start game here)
   const handleStartGame = useCallback(() => {
-    const config: CharacterConfig = {
+    // Store config and navigate - Play page will start the game
+    sessionStorage.setItem('characterConfig', JSON.stringify({
       race: selectedRace,
       class: selectedClass,
-    };
-    newGame(config);
-  }, [selectedRace, selectedClass, newGame]);
+    }));
+    navigate('/play');
+  }, [selectedRace, selectedClass, navigate]);
 
   const stats = calculateStats(selectedRace, selectedClass);
   const race = RACES[selectedRace];

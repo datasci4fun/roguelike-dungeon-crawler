@@ -39,10 +39,14 @@ export function Play() {
     connect: connectGame,
     disconnect: disconnectGame,
     sendCommand,
+    newGame,
     quit,
     clearAchievements,
     selectFeat,
   } = useGameSocket(token);
+
+  // Track if we've started a game this session
+  const gameStartedRef = useRef(false);
 
   // Chat WebSocket
   const {
@@ -74,6 +78,28 @@ export function Play() {
       }
     }
   }, [isAuthenticated, token, gameStatus, chatStatus, connectGame, connectChat]);
+
+  // Start game with character config from sessionStorage when connected
+  useEffect(() => {
+    if (gameStatus === 'connected' && !gameState && !gameStartedRef.current) {
+      const configStr = sessionStorage.getItem('characterConfig');
+      if (configStr) {
+        try {
+          const config = JSON.parse(configStr);
+          newGame(config);
+          sessionStorage.removeItem('characterConfig');
+          gameStartedRef.current = true;
+        } catch (e) {
+          console.error('Failed to parse character config:', e);
+          // Redirect back to character creation
+          navigate('/character-creation');
+        }
+      } else {
+        // No config - redirect to character creation
+        navigate('/character-creation');
+      }
+    }
+  }, [gameStatus, gameState, newGame, navigate]);
 
   // Cleanup on unmount
   useEffect(() => {
