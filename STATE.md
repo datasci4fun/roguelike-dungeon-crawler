@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
-**Last Updated:** 2026-01-04
+**Last Updated:** 2026-01-05
 **Branch:** master
-**Version:** v4.2.2 (Turn Commands)
+**Version:** v4.3.0 (First-Person Visual Overhaul)
 
 ---
 
@@ -22,7 +22,80 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 
 ## Current Status
 
-**Turn Commands & First-Person View Fixes** - Added Q/E turn controls and fixed open room rendering.
+**First-Person Visual Overhaul** - Complete rendering system upgrade with proper darkness, torch lighting, and developer tools.
+
+### v4.3.0 Visual Overhaul (Complete)
+
+| Component | Status |
+|-----------|--------|
+| Pure black dungeon darkness | ✅ Done |
+| Exponential fog system | ✅ Done |
+| Torch lighting pierces darkness | ✅ Done |
+| Distance-based torch scaling | ✅ Done |
+| Side wall torches at intervals | ✅ Done |
+| FOV cone visualization | ✅ Done |
+| Open room wall rendering fix | ✅ Done |
+| Manual facing control (no auto-turn) | ✅ Done |
+| Visual test page | ✅ Done |
+
+### Darkness & Fog System
+
+- Pure black background (no gradient vignette)
+- Aggressive exponential fog: `1 - pow(0.65, depth)`
+- 95%+ opacity at depth 5+
+- `getDepthFade()` and `getFogAmount()` for consistent depth calculations
+
+### Torch Lighting
+
+| Element | Behavior |
+|---------|----------|
+| Flame | Stays bright regardless of distance |
+| Wall glow | Fades with depth (illuminates surroundings) |
+| Floor pool | Warm light cast beneath torch |
+| Sparks | Only visible for close torches (depth ≤ 3) |
+| Side wall torches | Appear at depths 1, 3, 5 |
+
+Key fix: Torches drawn AFTER fog overlay so light sources punch through darkness.
+
+### FOV Cone Visualization
+
+- Player symbol shows facing: ▲▼◄►
+- Tiles in 120° view cone highlighted with bright background
+- Uses dot product for cone detection
+- Max range of 6 tiles
+
+### Visual Test Page
+
+New route at `/first-person-test` with:
+- 10 preset scenarios (corridor, open room, dead end, etc.)
+- Torch depth comparison grid (depths 2, 3, 4, 5)
+- Parameter customization modal
+- Live renderer preview
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| web/src/components/SceneRenderer/projection.ts | Aggressive fog system |
+| web/src/components/SceneRenderer/colors.ts | Darker color palette |
+| web/src/components/SceneRenderer/walls/drawFloorCeiling.ts | Pure black background |
+| web/src/components/SceneRenderer/walls/drawFrontWall.ts | Torch after fog, bright flames |
+| web/src/components/SceneRenderer/walls/drawCorridorWall.ts | Side wall torches, bright flames |
+| web/src/components/SceneRenderer/FirstPersonRenderer.tsx | Open room wall tracking |
+| web/src/components/GameTerminal.tsx | FOV cone visualization |
+| server/app/services/game_session.py | Wider view sampling (9 tiles) |
+| src/managers/combat_manager.py | No auto-turn on move/attack |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| web/src/pages/FirstPersonTestPage.tsx | Visual test page (510 lines) |
+| web/src/pages/FirstPersonTestPage.css | Test page styles (369 lines) |
+
+---
+
+**Previous: Turn Commands & First-Person View Fixes** - Added Q/E turn controls and fixed open room rendering.
 
 ### Turn Commands (Complete)
 
@@ -856,6 +929,7 @@ npm run build
 - **v4.2.0** - Character creation (5 races, 3 classes, 18 feats) + demo account
 - **v4.2.1** - Sound effects system (24 procedural sounds via Web Audio API)
 - **v4.2.2** - Turn commands (Q/E to rotate facing) & first-person view fixes
+- **v4.3.0** - First-person visual overhaul (darkness, torch lighting, test page)
 
 ---
 
@@ -882,6 +956,16 @@ npm run build
 - ✅ Sound effects system (24 procedural sounds)
 - ✅ Turn commands (Q/E to rotate in place)
 - ✅ First-person view fix for open rooms
+- ✅ First-person visual overhaul (darkness, torches, test page)
+
+### Planned for v4.4.0
+
+| Feature | Description |
+|---------|-------------|
+| Traps | Visual spike traps, pressure plates in first-person |
+| Secret doors | Hidden passages with subtle visual cues |
+| Compass | Direction indicator at top of first-person view |
+| Visual effects | Particle dust, wall variety (moss, cracks, cobwebs) |
 
 ### Future Enhancements
 
