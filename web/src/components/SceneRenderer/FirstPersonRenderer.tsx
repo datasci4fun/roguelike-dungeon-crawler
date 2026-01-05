@@ -9,7 +9,7 @@ import type { FirstPersonView, FirstPersonEntity } from '../../hooks/useGameSock
 import { Colors } from './colors';
 import { getProjection, getFogAmount } from './projection';
 import { drawCorridorWall, drawFloorSegment, drawFloorAndCeiling, drawFrontWall } from './walls';
-import { drawEnemy, drawItem } from './entities';
+import { drawEnemy, drawItem, drawTrap } from './entities';
 
 interface FirstPersonRendererProps {
   view: FirstPersonView | undefined;
@@ -84,6 +84,22 @@ export function FirstPersonRenderer({
         scale,
         name,
         symbol,
+        distance,
+        time,
+        enableAnimations,
+        fogAlpha,
+      });
+    } else if (type === 'trap') {
+      drawTrap({
+        ctx,
+        centerX,
+        floorY: baseY,
+        width: entityWidth * 1.5,
+        height: entityHeight * 0.5,
+        scale,
+        trapType: entity.trap_type || 'spike',
+        triggered: entity.triggered || false,
+        isActive: entity.is_active !== false,
         distance,
         time,
         enableAnimations,

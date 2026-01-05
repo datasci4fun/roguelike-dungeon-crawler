@@ -642,6 +642,24 @@ class GameSessionManager:
                                     entities_in_view.append(entity_here)
                                     break
 
+                    # Check for visible trap (only in front, not beside)
+                    if d > 0 and engine.trap_manager:
+                        trap = engine.trap_manager.get_trap_at(tile_x, tile_y)
+                        if trap and not trap.hidden:
+                            trap_entity = {
+                                "type": "trap",
+                                "name": trap.name,
+                                "symbol": trap.symbol,
+                                "trap_type": trap.trap_type.name.lower(),  # spike, fire, poison, arrow
+                                "triggered": trap.triggered,
+                                "is_active": trap.is_active,
+                                "distance": d,
+                                "offset": w,
+                                "x": tile_x,
+                                "y": tile_y,
+                            }
+                            entities_in_view.append(trap_entity)
+
                     row.append({
                         "tile": tile_char,
                         "x": tile_x,
