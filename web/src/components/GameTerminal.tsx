@@ -39,6 +39,10 @@ const COLORS = {
   bgGreen: '\x1b[42m',
   bgYellow: '\x1b[43m',
   bgBlue: '\x1b[44m',
+  bgMagenta: '\x1b[45m',
+  bgCyan: '\x1b[46m',
+  // Bright backgrounds for FOV
+  bgBrightBlack: '\x1b[100m',  // Dark gray for FOV cone
 };
 
 // Map enemy symbols to colors
@@ -537,13 +541,30 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
 
   terminal.writeln('');
 
+  // Get player facing direction for FOV cone
+  const facing = player.facing || { dx: 0, dy: -1 }; // Default facing north
+
   // Render dungeon viewport
   for (let y = 0; y < viewportHeight; y++) {
     let line = ' ';
     for (let x = 0; x < viewportWidth; x++) {
-      // Check for player
+      // Calculate relative position for FOV cone
+      const relX = x - playerViewX;
+      const relY = y - playerViewY;
+      const inFovCone = isInFovCone(relX, relY, facing.dx, facing.dy, 6);
+
+      // FOV cone background highlight
+      const fovBg = inFovCone ? COLORS.bgBrightBlack : '';
+
+      // Check for player - render directional arrow
       if (x === playerViewX && y === playerViewY) {
-        line += `${COLORS.brightWhite}${COLORS.bold}@${COLORS.reset}`;
+        // Player symbol shows facing direction
+        let playerChar = '@';
+        if (facing.dy < 0) playerChar = '▲'; // North
+        else if (facing.dy > 0) playerChar = '▼'; // South
+        else if (facing.dx < 0) playerChar = '◄'; // West
+        else if (facing.dx > 0) playerChar = '►'; // East
+        line += `${COLORS.brightWhite}${COLORS.bold}${playerChar}${COLORS.reset}`;
         continue;
       }
 
@@ -551,7 +572,7 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
       const enemy = enemyMap.get(`${x},${y}`);
       if (enemy) {
         const color = ENEMY_COLORS[enemy.symbol] || COLORS.red;
-        line += `${color}${enemy.symbol}${COLORS.reset}`;
+        line += `${fovBg}${color}${enemy.symbol}${COLORS.reset}`;
         continue;
       }
 
@@ -559,14 +580,14 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
       const item = itemMap.get(`${x},${y}`);
       if (item) {
         const color = ITEM_COLORS[item.symbol] || COLORS.white;
-        line += `${color}${item.symbol}${COLORS.reset}`;
+        line += `${fovBg}${color}${item.symbol}${COLORS.reset}`;
         continue;
       }
 
       // Render tile
       const tile = dungeon.tiles[y]?.[x] || ' ';
       const tileColor = TILE_COLORS[tile] || COLORS.white;
-      line += `${tileColor}${tile}${COLORS.reset}`;
+      line += `${fovBg}${tileColor}${tile}${COLORS.reset}`;
     }
     terminal.writeln(line);
   }
@@ -696,4 +717,44 @@ function getRarityColor(rarity: string): string {
     default:
       return COLORS.white;
   }
+}
+
+/**
+ * Check if a tile position is within the player's FOV cone.
+ * The FOV cone is a ~90 degree arc in the facing direction.
+ *
+ * @param relX - X position relative to player (tile_x - player_x)
+ * @param relY - Y position relative to player (tile_y - player_y)
+ * @param facingDx - Player facing X direction
+ * @param facingDy - Player facing Y direction
+ * @param maxDistance - Maximum range of FOV cone (tiles)
+ * @returns true if in FOV cone
+ */
+function isInFovCone(
+  relX: number,
+  relY: number,
+  facingDx: number,
+  facingDy: number,
+  maxDistance: number = 6
+): boolean {
+  // Player's own position is always visible but not in "cone"
+  if (relX === 0 && relY === 0) return false;
+
+  // Calculate distance
+  const distance = Math.sqrt(relX * relX + relY * relY);
+  if (distance > maxDistance) return false;
+
+  // Normalize the direction to tile
+  const dirX = relX / distance;
+  const dirY = relY / distance;
+
+  // Dot product with facing direction
+  // Facing is already a unit vector: (1,0), (-1,0), (0,1), or (0,-1)
+  const dot = dirX * facingDx + dirY * facingDy;
+
+  // cos(45°) ≈ 0.707 for a 90° cone (45° on each side)
+  // Use a slightly wider threshold for better visibility
+  const coneThreshold = 0.5; // ~120° cone (60° on each side)
+
+  return dot >= coneThreshold;
 }
