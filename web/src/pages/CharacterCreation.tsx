@@ -4,22 +4,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useGameSocket } from '../hooks/useGameSocket';
+import { useGame } from '../contexts/GameContext';
 import type { RaceId, ClassId } from '../hooks/useGameSocket';
 import { RACES, CLASSES, ABILITY_DESCRIPTIONS, calculateStats } from '../data/characterData';
 import './CharacterCreation.css';
 
 export function CharacterCreation() {
-  const { isAuthenticated, isLoading, token } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const [selectedRace, setSelectedRace] = useState<RaceId>('HUMAN');
   const [selectedClass, setSelectedClass] = useState<ClassId>('WARRIOR');
+  const [isStarting, setIsStarting] = useState(false);
 
-  const {
-    status,
-    connect,
-  } = useGameSocket(token);
+  const { status, gameState, newGame } = useGame();
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -28,22 +26,19 @@ export function CharacterCreation() {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Connect to game server when authenticated
+  // Navigate to play once game is actually running
   useEffect(() => {
-    if (isAuthenticated && token && status === 'disconnected') {
-      connect();
+    if (isStarting && gameState?.game_state === 'PLAYING') {
+      navigate('/play');
     }
-  }, [isAuthenticated, token, status, connect]);
+  }, [isStarting, gameState, navigate]);
 
-  // Navigate to play page with character config (don't start game here)
+  // Start game here - only navigate once it's running
   const handleStartGame = useCallback(() => {
-    // Store config and navigate - Play page will start the game
-    sessionStorage.setItem('characterConfig', JSON.stringify({
-      race: selectedRace,
-      class: selectedClass,
-    }));
-    navigate('/play');
-  }, [selectedRace, selectedClass, navigate]);
+    if (status !== 'connected') return;
+    setIsStarting(true);
+    newGame({ race: selectedRace, class: selectedClass });
+  }, [status, selectedRace, selectedClass, newGame]);
 
   const stats = calculateStats(selectedRace, selectedClass);
   const race = RACES[selectedRace];
