@@ -72,14 +72,18 @@ export function useSoundEffect() {
     const noteVolume = (note.volume ?? 1) * masterVolume;
     const attackEnd = startTime + env.attack;
     const decayEnd = attackEnd + env.decay;
-    const releaseStart = startTime + note.duration - env.release;
+    const noteEnd = startTime + note.duration;
+    // Ensure releaseStart is never before decayEnd
+    const releaseStart = Math.max(decayEnd, noteEnd - env.release);
 
     // ADSR envelope
     gain.gain.setValueAtTime(0, startTime);
     gain.gain.linearRampToValueAtTime(noteVolume, attackEnd);
     gain.gain.linearRampToValueAtTime(noteVolume * env.sustain, decayEnd);
-    gain.gain.setValueAtTime(noteVolume * env.sustain, releaseStart);
-    gain.gain.linearRampToValueAtTime(0, startTime + note.duration);
+    if (releaseStart > decayEnd) {
+      gain.gain.setValueAtTime(noteVolume * env.sustain, releaseStart);
+    }
+    gain.gain.linearRampToValueAtTime(0, noteEnd);
 
     // Connect and schedule
     osc.connect(gain);

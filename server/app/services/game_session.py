@@ -465,7 +465,7 @@ class GameSessionManager:
 
         # Add events for animations
         state["events"] = [
-            {"type": e.type.name, "data": e.data}
+            {"type": e.type.name, "data": self._sanitize_event_data(e.data)}
             for e in events
         ]
 
@@ -490,6 +490,31 @@ class GameSessionManager:
             }
 
         return state
+
+    def _sanitize_event_data(self, data: dict) -> dict:
+        """Convert non-serializable objects in event data to JSON-safe values."""
+        result = {}
+        for key, value in data.items():
+            if hasattr(value, 'x') and hasattr(value, 'y'):
+                # Entity-like object - extract coordinates and name
+                result[key] = {
+                    'x': value.x,
+                    'y': value.y,
+                    'name': getattr(value, 'name', str(value)),
+                }
+            elif isinstance(value, (str, int, float, bool, type(None))):
+                result[key] = value
+            elif isinstance(value, dict):
+                result[key] = self._sanitize_event_data(value)
+            elif isinstance(value, list):
+                result[key] = [
+                    self._sanitize_event_data({'v': v})['v'] if isinstance(v, dict) or hasattr(v, 'x') else v
+                    for v in value
+                ]
+            else:
+                # Fallback - convert to string
+                result[key] = str(value)
+        return result
 
     def _serialize_visible_tiles(self, engine) -> List[List[str]]:
         """Serialize visible dungeon tiles around the player."""
