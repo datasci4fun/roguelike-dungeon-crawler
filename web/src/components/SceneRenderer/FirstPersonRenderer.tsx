@@ -10,6 +10,7 @@ import { Colors } from './colors';
 import { getProjection, getFogAmount } from './projection';
 import { drawCorridorWall, drawFloorSegment, drawFloorAndCeiling, drawFrontWall } from './walls';
 import { drawEnemy, drawItem } from './entities';
+import { drawCompass } from './compass';
 
 interface FirstPersonRendererProps {
   view: FirstPersonView | undefined;
@@ -312,18 +313,10 @@ export function FirstPersonRenderer({
       }
     }
 
-    // Draw direction indicator
+    // Draw compass at top center
     const facing = view.facing;
     if (facing) {
-      ctx.fillStyle = '#8be9fd';
-      ctx.font = '12px monospace';
-      ctx.textAlign = 'right';
-      let dirText = 'Facing: ';
-      if (facing.dy < 0) dirText += 'North';
-      else if (facing.dy > 0) dirText += 'South';
-      else if (facing.dx < 0) dirText += 'West';
-      else if (facing.dx > 0) dirText += 'East';
-      ctx.fillText(dirText, width - 10, 20);
+      drawCompass(ctx, width, facing.dx, facing.dy, timeRef.current, enableAnimations);
     }
 
     // Continue animation loop

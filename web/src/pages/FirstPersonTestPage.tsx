@@ -20,6 +20,7 @@ type ScenarioId =
   | 'door_ahead'
   | 'enemy_distances'
   | 'items_scattered'
+  | 'compass_test'
   | 'custom';
 
 interface ScenarioConfig {
@@ -38,8 +39,19 @@ const SCENARIOS: ScenarioConfig[] = [
   { id: 'door_ahead', name: 'Door Ahead', description: 'Door at depth 2' },
   { id: 'enemy_distances', name: 'Enemies at Distances', description: 'Enemies at depths 1,2,3,4' },
   { id: 'items_scattered', name: 'Items Scattered', description: 'Various items at different depths' },
+  { id: 'compass_test', name: 'Compass Test', description: 'View compass in all 4 directions' },
   { id: 'custom', name: 'Custom', description: 'Configure your own scene' },
 ];
+
+// Facing directions
+type FacingDirection = 'north' | 'east' | 'south' | 'west';
+
+const FACING_MAP: Record<FacingDirection, { dx: number; dy: number }> = {
+  north: { dx: 0, dy: -1 },
+  east: { dx: 1, dy: 0 },
+  south: { dx: 0, dy: 1 },
+  west: { dx: -1, dy: 0 },
+};
 
 // Custom parameters
 interface CustomParams {
@@ -53,6 +65,7 @@ interface CustomParams {
   canvasWidth: number;
   canvasHeight: number;
   enableAnimations: boolean;
+  facing: FacingDirection;
 }
 
 const DEFAULT_PARAMS: CustomParams = {
@@ -66,6 +79,7 @@ const DEFAULT_PARAMS: CustomParams = {
   canvasWidth: 500,
   canvasHeight: 400,
   enableAnimations: true,
+  facing: 'north',
 };
 
 // Generate mock tile data
@@ -190,6 +204,13 @@ function generateMockView(scenarioId: ScenarioId, params: CustomParams): FirstPe
       );
       break;
 
+    case 'compass_test':
+      // Simple corridor for compass testing - facing is controlled by params
+      for (let d = 0; d <= 5; d++) {
+        rows.push(generateRow(d, true, true, '.'));
+      }
+      break;
+
     case 'custom':
     default:
       for (let d = 0; d <= params.maxDepth; d++) {
@@ -229,10 +250,11 @@ function generateMockView(scenarioId: ScenarioId, params: CustomParams): FirstPe
       break;
   }
 
+  const facingDir = FACING_MAP[params.facing];
   return {
     rows,
     entities,
-    facing: { dx: 0, dy: -1 },
+    facing: facingDir,
     depth: maxDepth,
   };
 }
@@ -307,7 +329,24 @@ export function FirstPersonTestPage() {
               <li>Animations: {params.enableAnimations ? 'On' : 'Off'}</li>
               <li>Left Wall: {params.leftWall ? 'Yes' : 'No'}</li>
               <li>Right Wall: {params.rightWall ? 'Yes' : 'No'}</li>
+              <li>Facing: {params.facing.charAt(0).toUpperCase() + params.facing.slice(1)}</li>
             </ul>
+          </div>
+
+          {/* Quick facing selector */}
+          <div className="facing-selector">
+            <h3>Facing Direction</h3>
+            <div className="facing-buttons">
+              {(['north', 'east', 'south', 'west'] as FacingDirection[]).map((dir) => (
+                <button
+                  key={dir}
+                  className={`facing-btn ${params.facing === dir ? 'active' : ''}`}
+                  onClick={() => setParams({ ...params, facing: dir })}
+                >
+                  {dir === 'north' ? 'N' : dir === 'east' ? 'E' : dir === 'south' ? 'S' : 'W'}
+                </button>
+              ))}
+            </div>
           </div>
         </aside>
 
@@ -328,9 +367,39 @@ export function FirstPersonTestPage() {
             <div className="preview-info">
               <span>Rows: {mockView.rows.length}</span>
               <span>Entities: {mockView.entities.length}</span>
-              <span>Facing: North</span>
+              <span>Facing: {params.facing.charAt(0).toUpperCase() + params.facing.slice(1)}</span>
             </div>
           </div>
+
+          {/* Compass comparison for all 4 directions */}
+          {selectedScenario === 'compass_test' && (
+            <div className="torch-comparison">
+              <h3>Compass in All Directions</h3>
+              <div className="torch-grid">
+                {(['north', 'east', 'south', 'west'] as FacingDirection[]).map((dir) => {
+                  const compassView: FirstPersonView = {
+                    rows: Array.from({ length: 5 }, (_, d) =>
+                      generateRow(d, true, true, '.')
+                    ),
+                    entities: [],
+                    facing: FACING_MAP[dir],
+                    depth: 5,
+                  };
+                  return (
+                    <div key={dir} className="torch-sample">
+                      <div className="torch-label">{dir.charAt(0).toUpperCase() + dir.slice(1)}</div>
+                      <FirstPersonRenderer
+                        view={compassView}
+                        width={200}
+                        height={160}
+                        enableAnimations={params.enableAnimations}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Multi-view comparison for torch depths */}
           {selectedScenario === 'torch_depths' && (
