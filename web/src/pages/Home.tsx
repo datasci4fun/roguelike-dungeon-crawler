@@ -35,7 +35,7 @@ export function Home() {
         )}
         <div className="hero-actions">
           {isAuthenticated ? (
-            <Link to="/play" className="btn btn-primary btn-large">
+            <Link to="/character-creation" className="btn btn-primary btn-large">
               Play Now
             </Link>
           ) : (

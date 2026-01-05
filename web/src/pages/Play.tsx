@@ -28,7 +28,7 @@ export function Play() {
   const lastLevelRef = useRef<number | null>(null);
 
   // Sound effects
-  const { playMove, playMenuConfirm, playFeatUnlock } = useSfxCommands();
+  const { playMove, playMenuConfirm } = useSfxCommands();
 
   // Game WebSocket
   const {
@@ -39,7 +39,6 @@ export function Play() {
     connect: connectGame,
     disconnect: disconnectGame,
     sendCommand,
-    newGame,
     quit,
     clearAchievements,
     selectFeat,
@@ -110,21 +109,21 @@ export function Play() {
     }
   }, [gameState?.dungeon?.level, isUnlocked, crossfadeTo]);
 
-  // Handle new game - also handles "press enter to play again"
+  // Handle new game - redirect to character creation
   const handleNewGame = useCallback(() => {
     if (gameState?.game_state === 'DEAD' || gameState?.game_state === 'VICTORY' || !gameState) {
-      newGame();
+      navigate('/character-creation');
     }
-  }, [gameState, newGame]);
+  }, [gameState, navigate]);
 
   // Handle command from terminal
   const handleCommand = useCallback(
     (command: string) => {
-      // If dead or victory, treat any key as new game request
+      // If dead or victory, treat any key as new game request -> go to character creation
       if (gameState?.game_state === 'DEAD' || gameState?.game_state === 'VICTORY') {
         if (command === 'ANY_KEY' || command === 'CONFIRM') {
-          newGame();
           playMenuConfirm();
+          navigate('/character-creation');
           return;
         }
       }
@@ -136,7 +135,7 @@ export function Play() {
 
       sendCommand(command);
     },
-    [gameState, sendCommand, newGame, playMove, playMenuConfirm]
+    [gameState, sendCommand, navigate, playMove, playMenuConfirm]
   );
 
   // Toggle chat collapse
