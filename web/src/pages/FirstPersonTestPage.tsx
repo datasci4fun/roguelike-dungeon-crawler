@@ -21,6 +21,7 @@ type ScenarioId =
   | 'enemy_distances'
   | 'items_scattered'
   | 'compass_test'
+  | 'traps_test'
   | 'custom';
 
 interface ScenarioConfig {
@@ -40,6 +41,7 @@ const SCENARIOS: ScenarioConfig[] = [
   { id: 'enemy_distances', name: 'Enemies at Distances', description: 'Enemies at depths 1,2,3,4' },
   { id: 'items_scattered', name: 'Items Scattered', description: 'Various items at different depths' },
   { id: 'compass_test', name: 'Compass Test', description: 'View compass in all 4 directions' },
+  { id: 'traps_test', name: 'Traps', description: 'All 4 trap types at different depths' },
   { id: 'custom', name: 'Custom', description: 'Configure your own scene' },
 ];
 
@@ -209,6 +211,28 @@ function generateMockView(scenarioId: ScenarioId, params: CustomParams): FirstPe
       for (let d = 0; d <= 5; d++) {
         rows.push(generateRow(d, true, true, '.'));
       }
+      break;
+
+    case 'traps_test':
+      for (let d = 0; d <= 6; d++) {
+        rows.push(generateRow(d, true, true, '.'));
+      }
+      // Add all 4 trap types at different depths
+      const trapTypes: Array<'spike' | 'fire' | 'poison' | 'arrow'> = ['spike', 'fire', 'poison', 'arrow'];
+      trapTypes.forEach((trapType, i) => {
+        entities.push({
+          type: 'trap',
+          name: `${trapType.charAt(0).toUpperCase() + trapType.slice(1)} Trap`,
+          symbol: '^',
+          distance: i + 1,
+          offset: 0,
+          x: 0,
+          y: i + 1,
+          trap_type: trapType,
+          triggered: false,
+          is_active: true,
+        });
+      });
       break;
 
     case 'custom':
@@ -420,6 +444,47 @@ export function FirstPersonTestPage() {
                       <div className="torch-label">Depth {depth}</div>
                       <FirstPersonRenderer
                         view={singleWallView}
+                        width={200}
+                        height={160}
+                        enableAnimations={params.enableAnimations}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Trap type comparison */}
+          {selectedScenario === 'traps_test' && (
+            <div className="torch-comparison">
+              <h3>Trap Types Comparison</h3>
+              <div className="torch-grid">
+                {(['spike', 'fire', 'poison', 'arrow'] as const).map((trapType) => {
+                  const trapView: FirstPersonView = {
+                    rows: Array.from({ length: 4 }, (_, d) =>
+                      generateRow(d, true, true, '.')
+                    ),
+                    entities: [{
+                      type: 'trap',
+                      name: `${trapType.charAt(0).toUpperCase() + trapType.slice(1)} Trap`,
+                      symbol: '^',
+                      distance: 2,
+                      offset: 0,
+                      x: 0,
+                      y: 2,
+                      trap_type: trapType,
+                      triggered: false,
+                      is_active: true,
+                    }],
+                    facing: { dx: 0, dy: -1 },
+                    depth: 4,
+                  };
+                  return (
+                    <div key={trapType} className="torch-sample">
+                      <div className="torch-label">{trapType.charAt(0).toUpperCase() + trapType.slice(1)}</div>
+                      <FirstPersonRenderer
+                        view={trapView}
                         width={200}
                         height={160}
                         enableAnimations={params.enableAnimations}
