@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGameSocket } from '../hooks/useGameSocket';
 import { useChatSocket } from '../hooks/useChatSocket';
 import { useAudioManager } from '../hooks/useAudioManager';
+import { useSfxGameEvents, useSfxCommands } from '../hooks/useSfxGameEvents';
 import { GameTerminal } from '../components/GameTerminal';
 import { FirstPersonRenderer } from '../components/SceneRenderer';
 import { CharacterHUD } from '../components/CharacterHUD';
@@ -25,6 +26,9 @@ export function Play() {
   // Audio management
   const { crossfadeTo, isUnlocked, unlockAudio } = useAudioManager();
   const lastLevelRef = useRef<number | null>(null);
+
+  // Sound effects
+  const { playMove, playMenuConfirm, playFeatUnlock } = useSfxCommands();
 
   // Game WebSocket
   const {
@@ -80,6 +84,9 @@ export function Play() {
     };
   }, [disconnectGame, disconnectChat]);
 
+  // Trigger SFX based on game state changes
+  useSfxGameEvents(gameState);
+
   // Unlock audio on first interaction
   const handleAudioUnlock = useCallback(() => {
     if (!isUnlocked) {
@@ -117,12 +124,19 @@ export function Play() {
       if (gameState?.game_state === 'DEAD' || gameState?.game_state === 'VICTORY') {
         if (command === 'ANY_KEY' || command === 'CONFIRM') {
           newGame();
+          playMenuConfirm();
           return;
         }
       }
+
+      // Play movement sounds
+      if (command.startsWith('MOVE_')) {
+        playMove();
+      }
+
       sendCommand(command);
     },
-    [gameState, sendCommand, newGame]
+    [gameState, sendCommand, newGame, playMove, playMenuConfirm]
   );
 
   // Toggle chat collapse

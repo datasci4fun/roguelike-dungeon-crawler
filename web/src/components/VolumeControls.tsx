@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useAudio } from '../contexts/AudioContext';
+import { useSfx } from '../hooks/useSoundEffect';
 import './VolumeControls.css';
 
 interface VolumeControlsProps {
@@ -18,6 +19,8 @@ export function VolumeControls({ showSfx = true, compact = false }: VolumeContro
     setSfxVolume,
     toggleMute,
   } = useAudio();
+
+  const playSfx = useSfx();
 
   const handleMasterChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,6 +103,14 @@ export function VolumeControls({ showSfx = true, compact = false }: VolumeContro
               className="volume-slider"
             />
             <span className="volume-value">{formatPercent(sfxVolume)}</span>
+            <button
+              className="test-sfx-button"
+              onClick={() => playSfx('menu_confirm')}
+              title="Test SFX"
+              type="button"
+            >
+              Test
+            </button>
           </div>
         )}
       </div>

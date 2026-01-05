@@ -57,7 +57,7 @@
 
 .volume-slider-row {
   display: grid;
-  grid-template-columns: 50px 1fr 45px;
+  grid-template-columns: 50px 1fr 45px auto;
   gap: 0.75rem;
   align-items: center;
 }
@@ -131,6 +131,28 @@
   color: #666;
   font-family: monospace;
   text-align: right;
+}
+
+.test-sfx-button {
+  background: rgba(74, 222, 128, 0.2);
+  border: 1px solid #4ade80;
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.65rem;
+  color: #4ade80;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.test-sfx-button:hover {
+  background: rgba(74, 222, 128, 0.4);
+  transform: scale(1.05);
+}
+
+.test-sfx-button:active {
+  transform: scale(0.95);
 }
 
 /* Responsive */

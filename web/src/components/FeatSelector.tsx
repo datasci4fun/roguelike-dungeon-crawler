@@ -1,4 +1,5 @@
 import type { PlayerFeat, FeatCategory } from '../hooks/useGameSocket';
+import { useSfx } from '../hooks/useSoundEffect';
 import './FeatSelector.css';
 
 interface FeatSelectorProps {
@@ -22,6 +23,13 @@ const CATEGORY_ICONS: Record<FeatCategory, string> = {
 };
 
 export function FeatSelector({ availableFeats, onSelectFeat, isStartingFeat }: FeatSelectorProps) {
+  const playSfx = useSfx();
+
+  const handleSelectFeat = (featId: string) => {
+    playSfx('feat_unlock');
+    onSelectFeat(featId);
+  };
+
   // Group feats by category
   const featsByCategory = availableFeats.reduce((acc, feat) => {
     if (!acc[feat.category]) {
@@ -63,7 +71,7 @@ export function FeatSelector({ availableFeats, onSelectFeat, isStartingFeat }: F
                     <button
                       key={feat.id}
                       className="feat-card"
-                      onClick={() => onSelectFeat(feat.id)}
+                      onClick={() => handleSelectFeat(feat.id)}
                       style={{ borderColor: CATEGORY_COLORS[category] }}
                     >
                       <div className="feat-name">{feat.name}</div>
