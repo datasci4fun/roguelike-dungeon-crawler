@@ -576,12 +576,13 @@ class GameSessionManager:
 
         # View parameters
         depth = 8  # How far ahead to look
-        base_width = 5  # Width at far end
+        base_width = 9  # Width at far end (wider to capture room walls)
 
         rows = []
         entities_in_view = []
 
-        for d in range(1, depth + 1):
+        # Start from depth 0 (tiles beside player) for accurate side wall detection
+        for d in range(0, depth + 1):
             row = []
             # Calculate center of this row
             row_center_x = player.x + facing_dx * d
@@ -602,10 +603,12 @@ class GameSessionManager:
                     tile_char = tile.value if hasattr(tile, 'value') else str(tile)
 
                     # Check for entity at this position
+                    # Only include entities at depth > 0 (in front of player, not beside)
+                    # Depth 0 is used for side wall detection only
                     entity_here = None
 
-                    # Check for enemy
-                    if engine.entity_manager:
+                    # Check for enemy (only in front, not beside)
+                    if engine.entity_manager and d > 0:
                         for enemy in engine.entity_manager.enemies:
                             if enemy.is_alive() and enemy.x == tile_x and enemy.y == tile_y:
                                 entity_here = {
