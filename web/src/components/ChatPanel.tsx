@@ -207,6 +207,9 @@ export function ChatPanel({
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
+            onKeyUp={(e) => e.stopPropagation()}
+            onKeyPress={(e) => e.stopPropagation()}
             placeholder={whisperTarget ? `Whisper to ${whisperTarget.username}...` : 'Type a message...'}
             disabled={status !== 'connected'}
             maxLength={500}

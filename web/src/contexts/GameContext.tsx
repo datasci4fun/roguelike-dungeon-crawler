@@ -32,13 +32,17 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [newAchievements, setNewAchievements] = useState<NewAchievement[]>([]);
 
   const connect = useCallback(() => {
-    if (!token || wsRef.current?.readyState === WebSocket.OPEN) {
+    if (!token) return;
+
+    // Don't connect if already connected or connecting
+    const currentWs = wsRef.current;
+    if (currentWs && (currentWs.readyState === WebSocket.OPEN || currentWs.readyState === WebSocket.CONNECTING)) {
       return;
     }
 
-    // Close existing connection if any
-    if (wsRef.current) {
-      wsRef.current.close();
+    // Close stale connection if any
+    if (currentWs && currentWs.readyState !== WebSocket.CLOSED) {
+      currentWs.close();
     }
 
     setStatus('connecting');
@@ -140,12 +144,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setNewAchievements([]);
   }, []);
 
-  // Auto-connect when token is available
+  // Auto-connect when token becomes available (only once)
+  const hasConnectedRef = useRef(false);
   useEffect(() => {
-    if (token && status === 'disconnected') {
+    if (token && !hasConnectedRef.current) {
+      hasConnectedRef.current = true;
       connect();
     }
-  }, [token, status, connect]);
+    // Reset if token changes (logout/login)
+    if (!token) {
+      hasConnectedRef.current = false;
+    }
+  }, [token, connect]);
 
   // Cleanup only on unmount of the provider (app-level)
   useEffect(() => {
