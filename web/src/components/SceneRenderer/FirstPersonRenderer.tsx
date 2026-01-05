@@ -137,18 +137,24 @@ export function FirstPersonRenderer({
       const centerTile = row[centerIdx];
 
       // Check if center is blocked (front wall)
-      const centerIsWall = isWallTile(centerTile?.tile || '#') || isDoorTile(centerTile?.tile || '');
-      const frontWall = centerIsWall ? (centerTile?.tile || '#') : null;
+      // Only treat as wall if we have valid tile data that's actually a wall
+      const centerTileType = centerTile?.tile || '.';  // Default to floor, not wall
+      const centerIsWall = isWallTile(centerTileType) || isDoorTile(centerTileType);
+      const frontWall = centerIsWall ? centerTileType : null;
 
-      // Check for walls on left and right of the walkable path
-      let leftWall = true;
-      let rightWall = true;
+      // Check for walls on left and right edges
+      // A wall exists if the edge tile is an actual wall tile
+      let leftWall = false;
+      let rightWall = false;
 
-      for (let i = 0; i < row.length; i++) {
-        if (!isWallTile(row[i].tile) && !isDoorTile(row[i].tile)) {
-          if (i === 0) leftWall = false;
-          if (i === row.length - 1) rightWall = false;
-        }
+      if (row.length > 0) {
+        const leftTile = row[0].tile;
+        const rightTile = row[row.length - 1].tile;
+
+        // Left wall exists if leftmost tile is a wall
+        leftWall = isWallTile(leftTile) || isDoorTile(leftTile);
+        // Right wall exists if rightmost tile is a wall
+        rightWall = isWallTile(rightTile) || isDoorTile(rightTile);
       }
 
       corridorInfo.push({

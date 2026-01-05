@@ -226,8 +226,8 @@ export function GameTerminal({
         'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
         'w', 'a', 's', 'd', 'W', 'A', 'S', 'D',
         'i', 'I', 'c', 'C', 'm', 'M', '?',
-        '1', '2', '3', '>', 'q', 'Q',
-        'Escape', 'Enter', 'e', 'E',
+        '1', '2', '3', '>', 'q', 'Q', 'e', 'E',
+        'Escape', 'Enter', 'x', 'X',
       ];
 
       if (gameKeys.includes(e.key)) {
@@ -400,9 +400,17 @@ function mapKeyToCommand(key: string, uiMode: string): string | null {
     // Actions
     case '>':
       return 'DESCEND';
+    case 'x':
+    case 'X':
+      return 'QUIT';
+
+    // Turn in place (rotate facing direction)
     case 'q':
     case 'Q':
-      return 'QUIT';
+      return 'TURN_LEFT';
+    case 'e':
+    case 'E':
+      return 'TURN_RIGHT';
 
     // For "press any key" prompts
     case 'Enter':
@@ -434,11 +442,12 @@ function renderNoGame(terminal: Terminal) {
     '',
     `${COLORS.dim}  Controls:${COLORS.reset}`,
     `${COLORS.dim}    WASD / Arrow Keys - Move${COLORS.reset}`,
+    `${COLORS.dim}    Q / E - Turn Left / Right${COLORS.reset}`,
     `${COLORS.dim}    I - Inventory${COLORS.reset}`,
     `${COLORS.dim}    C - Character${COLORS.reset}`,
     `${COLORS.dim}    M - Message Log${COLORS.reset}`,
     `${COLORS.dim}    > - Descend stairs${COLORS.reset}`,
-    `${COLORS.dim}    Q - Quit${COLORS.reset}`,
+    `${COLORS.dim}    X - Quit${COLORS.reset}`,
   ];
   title.forEach((line) => terminal.writeln(line));
 }
@@ -586,7 +595,7 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
   if (isSpectator) {
     terminal.writeln(`${COLORS.dim} Spectating - watch the player explore the dungeon${COLORS.reset}`);
   } else {
-    terminal.writeln(`${COLORS.dim} [I]nventory [C]haracter [M]essages [?]Help [Q]uit${COLORS.reset}`);
+    terminal.writeln(`${COLORS.dim} [Q/E]Turn [I]nventory [C]haracter [M]essages [?]Help [X]Quit${COLORS.reset}`);
   }
 }
 

@@ -59,6 +59,10 @@ class CommandType(Enum):
     NEW_GAME = auto()
     CONTINUE_GAME = auto()
 
+    # Turning (rotate facing direction in place)
+    TURN_LEFT = auto()   # Rotate counterclockwise
+    TURN_RIGHT = auto()  # Rotate clockwise
+
     # Special
     SKIP = auto()      # Skip intro/cutscene
     ANY_KEY = auto()   # Any key pressed (for "press any key" prompts)

@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-04
 **Branch:** master
-**Version:** v4.2.1 (Sound Effects)
+**Version:** v4.2.2 (Turn Commands)
 
 ---
 
@@ -21,6 +21,44 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 ---
 
 ## Current Status
+
+**Turn Commands & First-Person View Fixes** - Added Q/E turn controls and fixed open room rendering.
+
+### Turn Commands (Complete)
+
+| Component | Status |
+|-----------|--------|
+| TURN_LEFT/TURN_RIGHT commands in engine | ✅ Done |
+| Q/E key bindings in GameTerminal | ✅ Done |
+| Turn costs a turn (enemies act) | ✅ Done |
+| Facing direction message feedback | ✅ Done |
+| Updated controls display (X for quit) | ✅ Done |
+| Fixed corridor detection for open rooms | ✅ Done |
+
+### New Controls
+
+| Key | Action |
+|-----|--------|
+| Q | Turn left (counterclockwise) |
+| E | Turn right (clockwise) |
+| X | Quit game (was Q) |
+
+### First-Person View Fixes
+
+- Fixed corridor detection algorithm that caused blank rendering in open rooms
+- Default to floor tiles instead of walls when tile data is missing
+- Properly detect walls on left/right edges for correct side wall rendering
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| src/core/commands.py | Added TURN_LEFT, TURN_RIGHT to CommandType |
+| src/core/engine.py | Added _handle_turn(), TURN_COMMANDS handling |
+| web/src/components/GameTerminal.tsx | Q→TURN_LEFT, E→TURN_RIGHT, X→QUIT |
+| web/src/components/SceneRenderer/FirstPersonRenderer.tsx | Fixed corridor detection |
+
+---
 
 **Sound Effects System added** - Procedural audio using Web Audio API for game feedback.
 
@@ -701,13 +739,15 @@ web/
 | Key | Action |
 |-----|--------|
 | WASD / Arrows | Move |
+| Q | Turn left |
+| E | Turn right |
 | I | Open inventory |
 | C | Character screen |
 | M | Message log |
 | ? | Help screen |
 | 1-3 | Quick use items |
 | > | Descend stairs |
-| Q | Quit game |
+| X | Quit game |
 | E/Enter | Use/equip (in inventory) |
 | D | Drop (in inventory) |
 | Y/N | Dialog confirm/cancel |
@@ -815,6 +855,7 @@ npm run build
 - **v4.1.0** - Scene renderer (first-person 3D view, directional FOV)
 - **v4.2.0** - Character creation (5 races, 3 classes, 18 feats) + demo account
 - **v4.2.1** - Sound effects system (24 procedural sounds via Web Audio API)
+- **v4.2.2** - Turn commands (Q/E to rotate facing) & first-person view fixes
 
 ---
 
@@ -839,6 +880,8 @@ npm run build
 - ✅ Character creation system (5 races, 3 classes)
 - ✅ Feat system (18 feats, level-up choices)
 - ✅ Sound effects system (24 procedural sounds)
+- ✅ Turn commands (Q/E to rotate in place)
+- ✅ First-person view fix for open rooms
 
 ### Future Enhancements
 

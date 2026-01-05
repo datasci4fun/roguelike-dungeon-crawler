@@ -14,6 +14,9 @@ from .commands import (
     MOVEMENT_COMMANDS, ITEM_COMMANDS, SCROLL_COMMANDS,
     get_movement_delta, get_item_index
 )
+
+# Turn commands set
+TURN_COMMANDS = {CommandType.TURN_LEFT, CommandType.TURN_RIGHT}
 from ..world import Dungeon, TrapManager, HazardManager
 from ..entities import Player
 from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
@@ -245,6 +248,16 @@ class GameEngine:
 
             return player_moved
 
+        # Turn commands (rotate facing direction)
+        if cmd_type in TURN_COMMANDS:
+            if self._handle_turn(cmd_type):
+                # Turning costs a turn - enemies get to act
+                self._process_enemy_turns()
+                self._check_auto_save()
+                self._check_player_death()
+                return True
+            return False
+
         # Item use commands
         if cmd_type in ITEM_COMMANDS:
             item_index = get_item_index(cmd_type)
@@ -284,6 +297,46 @@ class GameEngine:
     def _process_enemy_turns(self):
         """Process all enemy turns after player action."""
         self.combat_manager.process_enemy_turns()
+
+    def _handle_turn(self, cmd_type: CommandType) -> bool:
+        """
+        Handle turn-in-place command.
+
+        Turn left (counterclockwise): (dx, dy) → (dy, -dx)
+        Turn right (clockwise): (dx, dy) → (-dy, dx)
+
+        Returns True if successful.
+        """
+        if not self.player:
+            return False
+
+        dx, dy = self.player.facing
+
+        if cmd_type == CommandType.TURN_LEFT:
+            # Counterclockwise: (dx, dy) → (dy, -dx)
+            new_facing = (dy, -dx)
+        else:
+            # Clockwise: (dx, dy) → (-dy, dx)
+            new_facing = (-dy, dx)
+
+        self.player.facing = new_facing
+
+        # Update FOV with new facing direction
+        if self.dungeon:
+            vision_bonus = self.player.get_vision_bonus() if hasattr(self.player, 'get_vision_bonus') else 0
+            self.dungeon.update_fov(self.player.x, self.player.y, vision_bonus=vision_bonus)
+
+        # Get direction name for message
+        direction_names = {
+            (0, -1): "north",
+            (1, 0): "east",
+            (0, 1): "south",
+            (-1, 0): "west",
+        }
+        direction = direction_names.get(new_facing, "unknown")
+        self.add_message(f"You turn to face {direction}.")
+
+        return True
 
     def _check_auto_save(self):
         """Check if auto-save should trigger."""
