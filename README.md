@@ -24,6 +24,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v4.4.0 adds Atmosphere & Exploration!** Medieval compass HUD, trap rendering with animations, secret door system with search command (F key), and atmospheric particle effects.
 
+**v4.4.1 fixes WebSocket stability!** Fixed duplicate connections, chat message posting, and character creation flow.
+
 ## Features
 
 ### Core Gameplay
@@ -385,6 +387,20 @@ Visual representation of dungeon traps in first-person view:
 - **Depth Scaling**: Effects fade with distance
 - **Animation-Based**: Disabled in static rendering mode
 
+### Bug Fixes (v4.4.1)
+
+#### WebSocket Connection Stability
+Fixed duplicate WebSocket connections and message failures caused by React StrictMode:
+- **Game WebSocket**: Added `connectingRef` guard in GameContext to prevent duplicate connections
+- **Chat WebSocket**: Added same guard pattern in useChatSocket hook
+- **Chat Messages**: Fixed messages not posting due to unstable connection state
+- **Keyboard Shortcuts**: Fixed game shortcuts blocking typing in chat input
+
+#### Character Creation Flow
+- **New Games**: Always go through character creation - "Play Now" links to `/character-creation`
+- **Game Over**: Death/victory now redirects to character creation instead of auto-restart
+- **Shared GameContext**: WebSocket connection persists across route navigation
+
 ## Installation
 
 ### Terminal Client (Single Player)
@@ -665,7 +681,8 @@ web/                    # Web frontend (v3.0.0+)
     │       ├── entities/        # Enemy, item, trap rendering (v4.4.0)
     │       └── effects/         # Atmospheric particles (v4.4.0)
     ├── contexts/
-    │   └── AuthContext.tsx   # JWT auth state
+    │   ├── AuthContext.tsx   # JWT auth state
+    │   └── GameContext.tsx   # Shared game WebSocket (v4.4.1)
     ├── config/
     │   └── sfxConfig.ts      # Sound effect definitions (v4.2.1)
     ├── hooks/
