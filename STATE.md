@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-04
 **Branch:** master
-**Version:** v4.2.0 (Character Creation & Feats)
+**Version:** v4.2.1 (Sound Effects)
 
 ---
 
@@ -21,6 +21,43 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 ---
 
 ## Current Status
+
+**Sound Effects System added** - Procedural audio using Web Audio API for game feedback.
+
+### Sound Effects System (Complete)
+
+| Component | Status |
+|-----------|--------|
+| SFX config with 24 sound definitions | ✅ Done |
+| Web Audio API procedural generation | ✅ Done |
+| ADSR envelope shaping | ✅ Done |
+| Game event triggers (useSfxGameEvents) | ✅ Done |
+| Volume control integration | ✅ Done |
+| Test button in VolumeControls | ✅ Done |
+
+### Sound Effect Categories
+
+| Category | Sounds |
+|----------|--------|
+| **Movement** | footstep, bump_wall |
+| **Combat** | attack_hit, attack_miss, player_hurt, enemy_death, critical_hit |
+| **Items** | item_pickup, gold_pickup, potion_drink, scroll_use, equip_weapon, equip_armor |
+| **UI** | menu_select, menu_confirm, menu_back, level_up, feat_unlock |
+| **Environment** | door_open, stairs_descend, trap_trigger |
+| **Abilities** | ability_ready, ability_use, ability_fail |
+
+### Sound Effects Files
+
+```
+web/src/
+├── config/
+│   └── sfxConfig.ts          (250 lines - sound definitions)
+└── hooks/
+    ├── useSoundEffect.ts     (140 lines - Web Audio API hook)
+    └── useSfxGameEvents.ts   (131 lines - automatic triggers)
+```
+
+---
 
 **Character Creation & Feat System released as v4.2.0** - Full RPG character customization with races, classes, abilities, and feats.
 
@@ -777,6 +814,7 @@ npm run build
 - **v4.0.0** - Expanded gameplay (6 enemies, traps, hazards, status effects)
 - **v4.1.0** - Scene renderer (first-person 3D view, directional FOV)
 - **v4.2.0** - Character creation (5 races, 3 classes, 18 feats) + demo account
+- **v4.2.1** - Sound effects system (24 procedural sounds via Web Audio API)
 
 ---
 
@@ -800,6 +838,7 @@ npm run build
 - ✅ v4.1.0 scene renderer (first-person 3D view)
 - ✅ Character creation system (5 races, 3 classes)
 - ✅ Feat system (18 feats, level-up choices)
+- ✅ Sound effects system (24 procedural sounds)
 
 ### Future Enhancements
 
@@ -824,7 +863,7 @@ npm run build
 - ~~First-person 3D renderer~~ ✅ Done (Scene Renderer)
 - ~~Mobile responsiveness improvements~~ ✅ Done in v3.4.0
 - ~~Better animations~~ ✅ Done in v3.5.0
-- Sound effects
+- ~~Sound effects~~ ✅ Done (24 procedural sounds via Web Audio API)
 - Localization
 
 ---
