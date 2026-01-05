@@ -552,6 +552,35 @@ class GameSessionManager:
             return engine.dungeon.visible[y][x]
         return False
 
+    def _is_in_fov_cone(self, player_x: int, player_y: int, target_x: int, target_y: int,
+                         facing_dx: int, facing_dy: int, max_distance: int = 8) -> bool:
+        """
+        Check if a target position is within the player's FOV cone.
+        Uses a ~120 degree cone (60 degrees on each side of facing direction).
+        """
+        import math
+
+        # Calculate relative position
+        rel_x = target_x - player_x
+        rel_y = target_y - player_y
+
+        # Check distance
+        distance = math.sqrt(rel_x * rel_x + rel_y * rel_y)
+        if distance > max_distance or distance == 0:
+            return distance == 0  # Player's own position is always "visible"
+
+        # Normalize direction to target
+        dir_x = rel_x / distance
+        dir_y = rel_y / distance
+
+        # Dot product with facing direction
+        dot = dir_x * facing_dx + dir_y * facing_dy
+
+        # cos(60°) = 0.5 for a 120° cone (60° on each side)
+        cone_threshold = 0.5
+
+        return dot >= cone_threshold
+
     def _serialize_first_person_view(self, engine, facing: tuple) -> dict:
         """
         Serialize tiles and entities in front of the player for first-person rendering.
@@ -607,10 +636,11 @@ class GameSessionManager:
                     # Depth 0 is used for side wall detection only
                     entity_here = None
 
-                    # Check for enemy (only in front, not beside)
+                    # Check for enemy (only in front, not beside, and within FOV cone)
                     if engine.entity_manager and d > 0:
                         for enemy in engine.entity_manager.enemies:
-                            if enemy.is_alive() and enemy.x == tile_x and enemy.y == tile_y:
+                            if (enemy.is_alive() and enemy.x == tile_x and enemy.y == tile_y and
+                                self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
                                 entity_here = {
                                     "type": "enemy",
                                     "name": enemy.name,
@@ -626,10 +656,11 @@ class GameSessionManager:
                                 entities_in_view.append(entity_here)
                                 break
 
-                        # Check for item
+                        # Check for item (within FOV cone)
                         if not entity_here:
                             for item in engine.entity_manager.items:
-                                if item.x == tile_x and item.y == tile_y:
+                                if (item.x == tile_x and item.y == tile_y and
+                                    self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
                                     entity_here = {
                                         "type": "item",
                                         "name": item.name,
@@ -642,10 +673,11 @@ class GameSessionManager:
                                     entities_in_view.append(entity_here)
                                     break
 
-                    # Check for visible trap (only in front, not beside)
+                    # Check for visible trap (only in front, not beside, within FOV cone)
                     if d > 0 and engine.trap_manager:
                         trap = engine.trap_manager.get_trap_at(tile_x, tile_y)
-                        if trap and not trap.hidden:
+                        if (trap and not trap.hidden and
+                            self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
                             trap_entity = {
                                 "type": "trap",
                                 "name": trap.name,
