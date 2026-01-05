@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useGameSocket } from '../hooks/useGameSocket';
+import { useGame } from '../contexts/GameContext';
 import { useChatSocket } from '../hooks/useChatSocket';
 import { useAudioManager } from '../hooks/useAudioManager';
 import { useSfxGameEvents, useSfxCommands } from '../hooks/useSfxGameEvents';
@@ -28,22 +28,20 @@ export function Play() {
   const lastLevelRef = useRef<number | null>(null);
 
   // Sound effects
-  const { playMove, playMenuConfirm, playFeatUnlock } = useSfxCommands();
+  const { playMove, playMenuConfirm } = useSfxCommands();
 
-  // Game WebSocket
+  // Game context (shared WebSocket)
   const {
     status: gameStatus,
     gameState,
     error: gameError,
     newAchievements,
     connect: connectGame,
-    disconnect: disconnectGame,
     sendCommand,
-    newGame,
     quit,
     clearAchievements,
     selectFeat,
-  } = useGameSocket(token);
+  } = useGame();
 
   // Chat WebSocket
   const {
@@ -64,25 +62,32 @@ export function Play() {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Connect to both servers when authenticated
+  // Connect chat when authenticated
   useEffect(() => {
-    if (isAuthenticated && token) {
-      if (gameStatus === 'disconnected') {
-        connectGame();
-      }
-      if (chatStatus === 'disconnected') {
-        connectChat();
-      }
+    if (isAuthenticated && token && chatStatus === 'disconnected') {
+      connectChat();
     }
-  }, [isAuthenticated, token, gameStatus, chatStatus, connectGame, connectChat]);
+  }, [isAuthenticated, token, chatStatus, connectChat]);
 
-  // Cleanup on unmount
+  // Redirect to character creation if no active game
+  useEffect(() => {
+    if (gameStatus === 'connected' && !gameState) {
+      // Give a brief moment for game state to arrive
+      const timeout = setTimeout(() => {
+        if (!gameState) {
+          navigate('/character-creation');
+        }
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [gameStatus, gameState, navigate]);
+
+  // Cleanup chat on unmount (game connection managed by context)
   useEffect(() => {
     return () => {
-      disconnectGame();
       disconnectChat();
     };
-  }, [disconnectGame, disconnectChat]);
+  }, [disconnectChat]);
 
   // Trigger SFX based on game state changes
   useSfxGameEvents(gameState);
@@ -110,23 +115,28 @@ export function Play() {
     }
   }, [gameState?.dungeon?.level, isUnlocked, crossfadeTo]);
 
-  // Handle new game - also handles "press enter to play again"
+  // Handle new game - redirect to character creation
   const handleNewGame = useCallback(() => {
     if (gameState?.game_state === 'DEAD' || gameState?.game_state === 'VICTORY' || !gameState) {
-      newGame();
+      navigate('/character-creation');
     }
-  }, [gameState, newGame]);
+  }, [gameState, navigate]);
 
   // Handle command from terminal
   const handleCommand = useCallback(
     (command: string) => {
-      // If dead or victory, treat any key as new game request
+      // If dead or victory, treat any key as new game request -> go to character creation
       if (gameState?.game_state === 'DEAD' || gameState?.game_state === 'VICTORY') {
         if (command === 'ANY_KEY' || command === 'CONFIRM') {
-          newGame();
           playMenuConfirm();
+          navigate('/character-creation');
           return;
         }
+      }
+
+      // No game state - shouldn't happen, but ignore
+      if (!gameState) {
+        return;
       }
 
       // Play movement sounds
@@ -136,7 +146,7 @@ export function Play() {
 
       sendCommand(command);
     },
-    [gameState, sendCommand, newGame, playMove, playMenuConfirm]
+    [gameState, sendCommand, navigate, playMove, playMenuConfirm]
   );
 
   // Toggle chat collapse

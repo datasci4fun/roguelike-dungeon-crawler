@@ -125,10 +125,11 @@ export interface FirstPersonTile {
   visible: boolean;
   walkable: boolean;
   has_entity: boolean;
+  has_secret?: boolean;  // Hidden secret door at this tile
 }
 
 export interface FirstPersonEntity {
-  type: 'enemy' | 'item';
+  type: 'enemy' | 'item' | 'trap';
   name: string;
   symbol: string;
   distance: number;
@@ -138,6 +139,10 @@ export interface FirstPersonEntity {
   health?: number;
   max_health?: number;
   is_elite?: boolean;
+  // Trap-specific fields
+  trap_type?: 'spike' | 'fire' | 'poison' | 'arrow';
+  triggered?: boolean;
+  is_active?: boolean;
 }
 
 export interface FirstPersonView {

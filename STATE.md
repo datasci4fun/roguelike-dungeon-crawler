@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
-**Last Updated:** 2026-01-04
+**Last Updated:** 2026-01-05
 **Branch:** master
-**Version:** v4.2.1 (Sound Effects)
+**Version:** v4.4.0 (Atmosphere & Exploration)
 
 ---
 
@@ -21,6 +21,260 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 ---
 
 ## Current Status
+
+**Atmosphere & Exploration** - Compass navigation, trap visualization, secret doors, and atmospheric particle effects.
+
+### v4.4.0 Atmosphere & Exploration (Complete)
+
+| Component | Status |
+|-----------|--------|
+| Compass HUD element | ✅ Done |
+| Trap rendering (4 types) | ✅ Done |
+| Secret door system | ✅ Done |
+| Atmospheric visual effects | ✅ Done |
+
+### Compass
+
+Medieval-style compass strip at top center of first-person view:
+- Shows cardinal (N/E/S/W) and intercardinal (NE/SE/SW/NW) directions
+- 180° view centered on player facing direction
+- North highlighted in gold, South in red
+- Animated center marker with subtle pulse
+- Tick marks every 15° for precision
+
+### Trap Rendering
+
+4 trap types with distinct visual styles:
+| Trap | Visual | Animation |
+|------|--------|-----------|
+| Spike | Metal spikes | Rise/fall on trigger |
+| Fire | Flame jets | Flickering flames |
+| Poison | Gas vents | Green mist particles |
+| Arrow | Wall launcher | Projectile animation |
+
+- Warning indicators for active traps within 3 tiles
+- Backend serializes trap state (type, triggered, active)
+
+### Secret Door System
+
+| Component | Description |
+|-----------|-------------|
+| SecretDoor class | Hidden door entity |
+| SecretDoorManager | Placement and discovery |
+| SEARCH command (F key) | Reveals hidden secrets |
+| Visual hints | Subtle cracks in walls |
+
+- 1-2 secret doors per level (starting level 2)
+- Placed on walls connecting two rooms
+- Searching also reveals hidden traps
+
+### Atmospheric Effects
+
+- Dust particles floating in torchlight
+- Fog wisps drifting through dungeon
+- Particles scale and fade with depth
+- All effects animation-based
+
+### Files Created (v4.4.0)
+
+| File | Purpose |
+|------|---------|
+| web/src/components/SceneRenderer/compass.ts | Compass strip renderer (207 lines) |
+| web/src/components/SceneRenderer/entities/drawTrap.ts | Trap rendering (381 lines) |
+| web/src/components/SceneRenderer/walls/drawSecretHints.ts | Secret door hints (92 lines) |
+| web/src/components/SceneRenderer/effects/particles.ts | Dust/fog effects (209 lines) |
+| src/world/secrets.py | Secret door system (154 lines) |
+
+### Files Modified (v4.4.0)
+
+| File | Changes |
+|------|---------|
+| src/core/commands.py | Added SEARCH command |
+| src/core/engine.py | Handle search, reveal secrets |
+| src/world/dungeon.py | Secret door generation |
+| server/app/services/game_session.py | Serialize traps, secrets |
+| web/src/components/GameTerminal.tsx | F key for search |
+| web/src/components/SceneRenderer/FirstPersonRenderer.tsx | Compass, traps, effects integration |
+| web/src/pages/FirstPersonTestPage.tsx | New test scenarios |
+
+---
+
+### Character Creation Flow Fix (Post v4.4.0)
+
+Fixed navigation so new games always go through character creation:
+
+| Change | Before | After |
+|--------|--------|-------|
+| Home "Play Now" | `/play` | `/character-creation` |
+| Death/Victory "Play Again" | `newGame()` directly | Redirect to `/character-creation` |
+
+**New Game Flow:**
+1. User clicks "Play Now" → Character Creation page
+2. User selects race + class → clicks "Begin Adventure"
+3. Game starts with configured character → Play page
+4. On death/victory, press Enter → back to Character Creation
+
+**Files Modified:**
+- `web/src/pages/Home.tsx` - Link to `/character-creation`
+- `web/src/pages/Play.tsx` - Redirect to character creation on game over
+
+---
+
+### WebSocket Connection Stability Fixes (Post v4.4.0)
+
+Fixed WebSocket connection issues causing duplicate connections and message failures:
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| Game WebSocket duplicates | React StrictMode double-mounting | Added `connectingRef` guard in GameContext |
+| Chat WebSocket duplicates | Same StrictMode issue | Added `connectingRef` guard in useChatSocket |
+| Chat messages not posting | Unstable connection state | Connection stability fix |
+| Keyboard shortcuts in chat | Events bubbling to game | Added `stopPropagation()` on chat input |
+
+**GameContext (Shared WebSocket):**
+- Created `web/src/contexts/GameContext.tsx` to share game WebSocket across routes
+- Prevents disconnection when navigating between CharacterCreation and Play
+- Connection persists throughout the authenticated session
+
+**Connection Guard Pattern:**
+```typescript
+const connectingRef = useRef(false);
+
+const connect = useCallback(() => {
+  if (connectingRef.current) return;
+  if (wsRef.current?.readyState === WebSocket.OPEN ||
+      wsRef.current?.readyState === WebSocket.CONNECTING) return;
+
+  connectingRef.current = true;
+  // ... create WebSocket
+  ws.onopen = () => { connectingRef.current = false; };
+  ws.onerror = () => { connectingRef.current = false; };
+  ws.onclose = () => { connectingRef.current = false; };
+}, []);
+```
+
+**Files Created:**
+- `web/src/contexts/GameContext.tsx` - Shared game WebSocket context
+
+**Files Modified:**
+- `web/src/hooks/useChatSocket.ts` - Added connectingRef pattern
+- `web/src/components/ChatPanel.tsx` - Added event stopPropagation
+- `web/src/main.tsx` - Added GameProvider wrapper
+- `web/src/pages/CharacterCreation.tsx` - Uses useGame() context
+- `web/src/pages/Play.tsx` - Uses useGame() context
+
+---
+
+**Previous: First-Person Visual Overhaul** - Complete rendering system upgrade with proper darkness, torch lighting, and developer tools.
+
+### v4.3.0 Visual Overhaul (Complete)
+
+| Component | Status |
+|-----------|--------|
+| Pure black dungeon darkness | ✅ Done |
+| Exponential fog system | ✅ Done |
+| Torch lighting pierces darkness | ✅ Done |
+| Distance-based torch scaling | ✅ Done |
+| Side wall torches at intervals | ✅ Done |
+| FOV cone visualization | ✅ Done |
+| Open room wall rendering fix | ✅ Done |
+| Manual facing control (no auto-turn) | ✅ Done |
+| Visual test page | ✅ Done |
+
+### Darkness & Fog System
+
+- Pure black background (no gradient vignette)
+- Aggressive exponential fog: `1 - pow(0.65, depth)`
+- 95%+ opacity at depth 5+
+- `getDepthFade()` and `getFogAmount()` for consistent depth calculations
+
+### Torch Lighting
+
+| Element | Behavior |
+|---------|----------|
+| Flame | Stays bright regardless of distance |
+| Wall glow | Fades with depth (illuminates surroundings) |
+| Floor pool | Warm light cast beneath torch |
+| Sparks | Only visible for close torches (depth ≤ 3) |
+| Side wall torches | Appear at depths 1, 3, 5 |
+
+Key fix: Torches drawn AFTER fog overlay so light sources punch through darkness.
+
+### FOV Cone Visualization
+
+- Player symbol shows facing: ▲▼◄►
+- Tiles in 120° view cone highlighted with bright background
+- Uses dot product for cone detection
+- Max range of 6 tiles
+
+### Visual Test Page
+
+New route at `/first-person-test` with:
+- 10 preset scenarios (corridor, open room, dead end, etc.)
+- Torch depth comparison grid (depths 2, 3, 4, 5)
+- Parameter customization modal
+- Live renderer preview
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| web/src/components/SceneRenderer/projection.ts | Aggressive fog system |
+| web/src/components/SceneRenderer/colors.ts | Darker color palette |
+| web/src/components/SceneRenderer/walls/drawFloorCeiling.ts | Pure black background |
+| web/src/components/SceneRenderer/walls/drawFrontWall.ts | Torch after fog, bright flames |
+| web/src/components/SceneRenderer/walls/drawCorridorWall.ts | Side wall torches, bright flames |
+| web/src/components/SceneRenderer/FirstPersonRenderer.tsx | Open room wall tracking |
+| web/src/components/GameTerminal.tsx | FOV cone visualization |
+| server/app/services/game_session.py | Wider view sampling (9 tiles) |
+| src/managers/combat_manager.py | No auto-turn on move/attack |
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| web/src/pages/FirstPersonTestPage.tsx | Visual test page (510 lines) |
+| web/src/pages/FirstPersonTestPage.css | Test page styles (369 lines) |
+
+---
+
+**Previous: Turn Commands & First-Person View Fixes** - Added Q/E turn controls and fixed open room rendering.
+
+### Turn Commands (Complete)
+
+| Component | Status |
+|-----------|--------|
+| TURN_LEFT/TURN_RIGHT commands in engine | ✅ Done |
+| Q/E key bindings in GameTerminal | ✅ Done |
+| Turn costs a turn (enemies act) | ✅ Done |
+| Facing direction message feedback | ✅ Done |
+| Updated controls display (X for quit) | ✅ Done |
+| Fixed corridor detection for open rooms | ✅ Done |
+
+### New Controls
+
+| Key | Action |
+|-----|--------|
+| Q | Turn left (counterclockwise) |
+| E | Turn right (clockwise) |
+| X | Quit game (was Q) |
+
+### First-Person View Fixes
+
+- Fixed corridor detection algorithm that caused blank rendering in open rooms
+- Default to floor tiles instead of walls when tile data is missing
+- Properly detect walls on left/right edges for correct side wall rendering
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| src/core/commands.py | Added TURN_LEFT, TURN_RIGHT to CommandType |
+| src/core/engine.py | Added _handle_turn(), TURN_COMMANDS handling |
+| web/src/components/GameTerminal.tsx | Q→TURN_LEFT, E→TURN_RIGHT, X→QUIT |
+| web/src/components/SceneRenderer/FirstPersonRenderer.tsx | Fixed corridor detection |
+
+---
 
 **Sound Effects System added** - Procedural audio using Web Audio API for game feedback.
 
@@ -701,13 +955,16 @@ web/
 | Key | Action |
 |-----|--------|
 | WASD / Arrows | Move |
+| Q | Turn left |
+| E | Turn right |
 | I | Open inventory |
 | C | Character screen |
 | M | Message log |
 | ? | Help screen |
+| F | Search for secrets |
 | 1-3 | Quick use items |
 | > | Descend stairs |
-| Q | Quit game |
+| X | Quit game |
 | E/Enter | Use/equip (in inventory) |
 | D | Drop (in inventory) |
 | Y/N | Dialog confirm/cancel |
@@ -815,6 +1072,9 @@ npm run build
 - **v4.1.0** - Scene renderer (first-person 3D view, directional FOV)
 - **v4.2.0** - Character creation (5 races, 3 classes, 18 feats) + demo account
 - **v4.2.1** - Sound effects system (24 procedural sounds via Web Audio API)
+- **v4.2.2** - Turn commands (Q/E to rotate facing) & first-person view fixes
+- **v4.3.0** - First-person visual overhaul (darkness, torch lighting, test page)
+- **v4.4.0** - Atmosphere & exploration (compass, traps, secret doors, particles)
 
 ---
 
@@ -839,6 +1099,22 @@ npm run build
 - ✅ Character creation system (5 races, 3 classes)
 - ✅ Feat system (18 feats, level-up choices)
 - ✅ Sound effects system (24 procedural sounds)
+- ✅ Turn commands (Q/E to rotate in place)
+- ✅ First-person view fix for open rooms
+- ✅ First-person visual overhaul (darkness, torches, test page)
+- ✅ v4.4.0 compass HUD element
+- ✅ v4.4.0 trap rendering (4 types)
+- ✅ v4.4.0 secret door system with search command
+- ✅ v4.4.0 atmospheric visual effects (dust, fog)
+
+### Planned for v4.5.0
+
+| Feature | Description |
+|---------|-------------|
+| Wall variety | Moss, cracks, cobwebs on dungeon walls |
+| Water reflections | Animated water tiles in first-person |
+| Weather effects | Rain/dripping in certain areas |
+| Ambient sounds | Background audio for atmosphere |
 
 ### Future Enhancements
 

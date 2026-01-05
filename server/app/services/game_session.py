@@ -576,12 +576,13 @@ class GameSessionManager:
 
         # View parameters
         depth = 8  # How far ahead to look
-        base_width = 5  # Width at far end
+        base_width = 9  # Width at far end (wider to capture room walls)
 
         rows = []
         entities_in_view = []
 
-        for d in range(1, depth + 1):
+        # Start from depth 0 (tiles beside player) for accurate side wall detection
+        for d in range(0, depth + 1):
             row = []
             # Calculate center of this row
             row_center_x = player.x + facing_dx * d
@@ -602,10 +603,12 @@ class GameSessionManager:
                     tile_char = tile.value if hasattr(tile, 'value') else str(tile)
 
                     # Check for entity at this position
+                    # Only include entities at depth > 0 (in front of player, not beside)
+                    # Depth 0 is used for side wall detection only
                     entity_here = None
 
-                    # Check for enemy
-                    if engine.entity_manager:
+                    # Check for enemy (only in front, not beside)
+                    if engine.entity_manager and d > 0:
                         for enemy in engine.entity_manager.enemies:
                             if enemy.is_alive() and enemy.x == tile_x and enemy.y == tile_y:
                                 entity_here = {
@@ -639,6 +642,31 @@ class GameSessionManager:
                                     entities_in_view.append(entity_here)
                                     break
 
+                    # Check for visible trap (only in front, not beside)
+                    if d > 0 and engine.trap_manager:
+                        trap = engine.trap_manager.get_trap_at(tile_x, tile_y)
+                        if trap and not trap.hidden:
+                            trap_entity = {
+                                "type": "trap",
+                                "name": trap.name,
+                                "symbol": trap.symbol,
+                                "trap_type": trap.trap_type.name.lower(),  # spike, fire, poison, arrow
+                                "triggered": trap.triggered,
+                                "is_active": trap.is_active,
+                                "distance": d,
+                                "offset": w,
+                                "x": tile_x,
+                                "y": tile_y,
+                            }
+                            entities_in_view.append(trap_entity)
+
+                    # Check for hidden secret door (for visual hints)
+                    has_secret = False
+                    if engine.secret_door_manager:
+                        secret_door = engine.secret_door_manager.get_door_at(tile_x, tile_y)
+                        if secret_door and secret_door.hidden:
+                            has_secret = True
+
                     row.append({
                         "tile": tile_char,
                         "x": tile_x,
@@ -646,6 +674,7 @@ class GameSessionManager:
                         "visible": True,
                         "walkable": dungeon.is_walkable(tile_x, tile_y),
                         "has_entity": entity_here is not None,
+                        "has_secret": has_secret,
                     })
                 elif in_bounds and dungeon.explored[tile_y][tile_x]:
                     row.append({
