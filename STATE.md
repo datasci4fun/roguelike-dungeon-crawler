@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-05
 **Branch:** master
-**Version:** v4.3.0 (First-Person Visual Overhaul)
+**Version:** v4.4.0 (Atmosphere & Exploration)
 
 ---
 
@@ -22,7 +22,84 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 
 ## Current Status
 
-**First-Person Visual Overhaul** - Complete rendering system upgrade with proper darkness, torch lighting, and developer tools.
+**Atmosphere & Exploration** - Compass navigation, trap visualization, secret doors, and atmospheric particle effects.
+
+### v4.4.0 Atmosphere & Exploration (Complete)
+
+| Component | Status |
+|-----------|--------|
+| Compass HUD element | ✅ Done |
+| Trap rendering (4 types) | ✅ Done |
+| Secret door system | ✅ Done |
+| Atmospheric visual effects | ✅ Done |
+
+### Compass
+
+Medieval-style compass strip at top center of first-person view:
+- Shows cardinal (N/E/S/W) and intercardinal (NE/SE/SW/NW) directions
+- 180° view centered on player facing direction
+- North highlighted in gold, South in red
+- Animated center marker with subtle pulse
+- Tick marks every 15° for precision
+
+### Trap Rendering
+
+4 trap types with distinct visual styles:
+| Trap | Visual | Animation |
+|------|--------|-----------|
+| Spike | Metal spikes | Rise/fall on trigger |
+| Fire | Flame jets | Flickering flames |
+| Poison | Gas vents | Green mist particles |
+| Arrow | Wall launcher | Projectile animation |
+
+- Warning indicators for active traps within 3 tiles
+- Backend serializes trap state (type, triggered, active)
+
+### Secret Door System
+
+| Component | Description |
+|-----------|-------------|
+| SecretDoor class | Hidden door entity |
+| SecretDoorManager | Placement and discovery |
+| SEARCH command (F key) | Reveals hidden secrets |
+| Visual hints | Subtle cracks in walls |
+
+- 1-2 secret doors per level (starting level 2)
+- Placed on walls connecting two rooms
+- Searching also reveals hidden traps
+
+### Atmospheric Effects
+
+- Dust particles floating in torchlight
+- Fog wisps drifting through dungeon
+- Particles scale and fade with depth
+- All effects animation-based
+
+### Files Created (v4.4.0)
+
+| File | Purpose |
+|------|---------|
+| web/src/components/SceneRenderer/compass.ts | Compass strip renderer (207 lines) |
+| web/src/components/SceneRenderer/entities/drawTrap.ts | Trap rendering (381 lines) |
+| web/src/components/SceneRenderer/walls/drawSecretHints.ts | Secret door hints (92 lines) |
+| web/src/components/SceneRenderer/effects/particles.ts | Dust/fog effects (209 lines) |
+| src/world/secrets.py | Secret door system (154 lines) |
+
+### Files Modified (v4.4.0)
+
+| File | Changes |
+|------|---------|
+| src/core/commands.py | Added SEARCH command |
+| src/core/engine.py | Handle search, reveal secrets |
+| src/world/dungeon.py | Secret door generation |
+| server/app/services/game_session.py | Serialize traps, secrets |
+| web/src/components/GameTerminal.tsx | F key for search |
+| web/src/components/SceneRenderer/FirstPersonRenderer.tsx | Compass, traps, effects integration |
+| web/src/pages/FirstPersonTestPage.tsx | New test scenarios |
+
+---
+
+**Previous: First-Person Visual Overhaul** - Complete rendering system upgrade with proper darkness, torch lighting, and developer tools.
 
 ### v4.3.0 Visual Overhaul (Complete)
 
@@ -818,6 +895,7 @@ web/
 | C | Character screen |
 | M | Message log |
 | ? | Help screen |
+| F | Search for secrets |
 | 1-3 | Quick use items |
 | > | Descend stairs |
 | X | Quit game |
@@ -930,6 +1008,7 @@ npm run build
 - **v4.2.1** - Sound effects system (24 procedural sounds via Web Audio API)
 - **v4.2.2** - Turn commands (Q/E to rotate facing) & first-person view fixes
 - **v4.3.0** - First-person visual overhaul (darkness, torch lighting, test page)
+- **v4.4.0** - Atmosphere & exploration (compass, traps, secret doors, particles)
 
 ---
 
@@ -957,15 +1036,19 @@ npm run build
 - ✅ Turn commands (Q/E to rotate in place)
 - ✅ First-person view fix for open rooms
 - ✅ First-person visual overhaul (darkness, torches, test page)
+- ✅ v4.4.0 compass HUD element
+- ✅ v4.4.0 trap rendering (4 types)
+- ✅ v4.4.0 secret door system with search command
+- ✅ v4.4.0 atmospheric visual effects (dust, fog)
 
-### Planned for v4.4.0
+### Planned for v4.5.0
 
 | Feature | Description |
 |---------|-------------|
-| Traps | Visual spike traps, pressure plates in first-person |
-| Secret doors | Hidden passages with subtle visual cues |
-| Compass | Direction indicator at top of first-person view |
-| Visual effects | Particle dust, wall variety (moss, cracks, cobwebs) |
+| Wall variety | Moss, cracks, cobwebs on dungeon walls |
+| Water reflections | Animated water tiles in first-person |
+| Weather effects | Rain/dripping in certain areas |
+| Ambient sounds | Background audio for atmosphere |
 
 ### Future Enhancements
 
