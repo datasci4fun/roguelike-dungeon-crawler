@@ -574,32 +574,32 @@ export function FirstPersonRenderer({
         frontWall = centerIsWall ? centerTileType : null;
       }
 
-      // Track wall positions ONLY for visible tiles
+      // Track wall positions using tile_actual for geometry (includes fogged walls)
       const wallPositions: { offset: number; tile: string }[] = [];
-      // Track positions with hidden secrets for visual hints
+      // Track positions with hidden secrets for visual hints (visible only)
       const secretPositions: { offset: number }[] = [];
 
-      // Scan only VISIBLE tiles for wall positions (for open room rendering)
-      for (let i = minVis; i <= maxVis; i++) {
+      // Scan ALL tiles using tile_actual for geometry decisions
+      // This ensures fogged walls (visible:false but tile_actual:'#') are included
+      for (let i = 0; i < row.length; i++) {
         const tileData = row[i];
-        if (!tileData.visible) continue; // Skip non-visible tiles within range
-
-        const tile = tileData.tile;
-        if (isWallTile(tile) || isDoorTile(tile)) {
-          // Calculate offset from center (-half to +half)
+        // Use tile_actual for geometry, fall back to tile for backwards compatibility
+        const actualTile = tileData.tile_actual ?? tileData.tile;
+        if (isWallTile(actualTile) || isDoorTile(actualTile)) {
           const offset = i - centerIdx;
-          wallPositions.push({ offset, tile });
+          wallPositions.push({ offset, tile: actualTile });
+        }
 
-          // Check for hidden secret door
-          if (tileData.has_secret) {
-            secretPositions.push({ offset });
-          }
+        // Secret hints only for visible tiles
+        if (tileData.visible && tileData.has_secret) {
+          const offset = i - centerIdx;
+          secretPositions.push({ offset });
         }
       }
 
       // Determine corridor walls at canonical offsets ±1
       // leftWall/rightWall mean "wall at offset -1/+1" for corridor rendering
-      // Open rooms with walls at -2, +3 etc. should NOT set these flags
+      // Now correctly includes fogged walls via tile_actual
       const leftWall = wallPositions.some(w => w.offset === -1);
       const rightWall = wallPositions.some(w => w.offset === 1);
 

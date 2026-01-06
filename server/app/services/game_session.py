@@ -793,6 +793,7 @@ class GameSessionManager:
 
                     row.append({
                         "tile": tile_char,
+                        "tile_actual": tile_char,  # Same as tile when visible
                         "x": tile_x,
                         "y": tile_y,
                         "visible": True,
@@ -801,17 +802,22 @@ class GameSessionManager:
                         "has_secret": has_secret,
                     })
                 elif in_bounds and dungeon.explored[tile_y][tile_x]:
+                    # Get actual tile for geometry even though display shows fog
+                    actual_tile = dungeon.tiles[tile_y][tile_x]
+                    actual_char = actual_tile.value if hasattr(actual_tile, 'value') else str(actual_tile)
                     row.append({
-                        "tile": "~",  # Explored but not visible
+                        "tile": "~",  # Display: explored but not visible (fog)
+                        "tile_actual": actual_char,  # Geometry: real map tile
                         "x": tile_x,
                         "y": tile_y,
                         "visible": False,
-                        "walkable": False,
+                        "walkable": dungeon.is_walkable(tile_x, tile_y),
                         "has_entity": False,
                     })
                 else:
                     row.append({
-                        "tile": "#",  # Unknown or out of bounds
+                        "tile": "#",  # Display: unknown or out of bounds
+                        "tile_actual": "#",  # Geometry: treat as wall
                         "x": tile_x if in_bounds else -1,
                         "y": tile_y if in_bounds else -1,
                         "visible": False,

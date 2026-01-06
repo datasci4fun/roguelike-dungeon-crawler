@@ -119,13 +119,14 @@ export interface GameEvent {
 }
 
 export interface FirstPersonTile {
-  tile: string;
+  tile: string;           // Display character (~ for fog, # for unknown)
+  tile_actual?: string;   // Actual map tile for geometry (even when fogged)
   x: number;
   y: number;
   visible: boolean;
   walkable: boolean;
   has_entity: boolean;
-  has_secret?: boolean;  // Hidden secret door at this tile
+  has_secret?: boolean;   // Hidden secret door at this tile
 }
 
 export interface FirstPersonEntity {
