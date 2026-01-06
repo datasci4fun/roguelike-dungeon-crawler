@@ -1,6 +1,6 @@
 # Project State Checkpoint
 
-**Last Updated:** 2026-01-05
+**Last Updated:** 2026-01-06
 **Branch:** feature/wall-variety
 **Version:** v4.5.0 (Wall Variety) - In Progress
 
@@ -42,6 +42,8 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 | FOV line-of-sight checking | ✅ Done |
 | Entity serialization null checks | ✅ Done |
 | **Data-driven torch lighting system** | ✅ Done |
+| **Biome theming system** | ✅ Done |
+| **Tile loading engine** | ✅ Done |
 | Weather effects | ⬜ Planned |
 | Ambient sounds | ⬜ Planned |
 
@@ -88,6 +90,77 @@ Replaced hardcoded client-side torch rendering with a comprehensive data-driven 
 - Walls block light completely
 - Entities cast 70% shadows
 - Returns per-tile light levels (0.0-1.0)
+
+### Biome Theming System
+
+Added 8 complete biome themes for visual variety:
+
+| Biome | Floor | Walls | Light | Particles |
+|-------|-------|-------|-------|-----------|
+| Dungeon | Brown stone | Gray stone | Warm orange | Dust |
+| Ice | Light blue | Blue-white | Cool white | Snow |
+| Forest | Brown earth | Dark green | Dappled green | Spores |
+| Lava | Dark charred | Red-orange | Red glow | Embers |
+| Crypt | Gray stone | Purple-gray | Pale purple | Dust |
+| Sewer | Green slime | Brown-green | Sickly green | None |
+| Library | Warm wood | Golden brown | Warm gold | Dust |
+| Crystal | Purple stone | Magenta | Cyan glow | None |
+
+Each biome defines:
+- `floorColor`, `ceilingColor`, `wallColor`, `wallHighlight`
+- `ambientTint`, `fogColor`, `lightColor`
+- `hasParticles` (dust/snow/spores/embers/none)
+- `particleColor`
+
+**Files:**
+- `web/src/components/SceneRenderer/biomes.ts` - 8 biome theme definitions
+- Updated `drawCorridorWall.ts`, `drawFrontWall.ts`, `drawFloorCeiling.ts` to accept biome options
+
+### Tile Loading Engine
+
+Created a modular tile system for loading custom tile images:
+
+| Component | Description |
+|-----------|-------------|
+| `TileManager` | Singleton that loads PNG tiles from `/tiles/{biome}/` |
+| `TileRenderer` | Perspective projection and tile drawing functions |
+| `useTileSet` | React hook for async tile loading with status |
+
+**Supported Tile Types:**
+- `floor.png` - Floor tiles (perspective grid)
+- `ceiling.png` - Ceiling tiles
+- `wall_front.png` - Front-facing walls
+- `wall_left.png` / `wall_right.png` - Corridor walls
+- `wall_corner_left.png` / `wall_corner_right.png` - Corner pieces
+- `door.png` - Door texture
+- `water.png` - Water/liquid tiles
+
+**Directory Structure:**
+```
+web/public/tiles/
+├── README.md      # Tile creation guide
+├── dungeon/       # 64x64 PNG tiles
+├── ice/
+├── forest/
+├── lava/
+├── crypt/
+├── sewer/
+├── library/
+└── crystal/
+```
+
+**Test Page Features:**
+- Biome selector dropdown (8 biomes)
+- Brightness slider (0.2 - 2.0)
+- "Use Tile Grid" toggle for custom tiles
+- Unique test scenes per biome (not identical corridors)
+
+**Files Created:**
+- `web/src/components/SceneRenderer/tiles/TileManager.ts`
+- `web/src/components/SceneRenderer/tiles/TileRenderer.ts`
+- `web/src/components/SceneRenderer/tiles/useTileSet.ts`
+- `web/src/components/SceneRenderer/tiles/index.ts`
+- `web/public/tiles/README.md`
 
 ### Water Reflections
 
