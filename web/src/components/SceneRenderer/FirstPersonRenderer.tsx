@@ -95,6 +95,8 @@ export interface CorridorInfoEntry {
   frontWall: string | null;
   wallPositions: { offset: number; tile: string }[];
   isWater: boolean;
+  // Visibility bounds for debugging
+  visibleRange?: { min: number; max: number } | null; // null = no visible tiles
 }
 
 interface FirstPersonRendererProps {
@@ -529,67 +531,95 @@ export function FirstPersonRenderer({
       isWater: boolean;
       // Track stairs positions
       stairsPositions: { offset: number; direction: 'down' | 'up' }[];
+      // Visible range for debugging
+      visibleRange: { min: number; max: number } | null;
     }[] = [];
 
     for (let d = 0; d < maxDepth; d++) {
       const row = rows[d];
       if (!row || row.length === 0) {
-        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: '#', wallPositions: [], secretPositions: [], isWater: false, stairsPositions: [] });
+        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: '#', wallPositions: [], secretPositions: [], isWater: false, stairsPositions: [], visibleRange: null });
         continue;
       }
 
       const centerIdx = Math.floor(row.length / 2);
+
+      // Find the range of VISIBLE tiles in this row
+      // Only visible tiles should influence corridor geometry
+      let minVis = -1;
+      let maxVis = -1;
+      for (let i = 0; i < row.length; i++) {
+        if (row[i].visible) {
+          if (minVis === -1) minVis = i;
+          maxVis = i;
+        }
+      }
+
+      // If no visible tiles in this row, treat as fog boundary
+      if (minVis === -1) {
+        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: null, wallPositions: [], secretPositions: [], isWater: false, stairsPositions: [], visibleRange: null });
+        continue;
+      }
+
       const centerTile = row[centerIdx];
+      const centerVisible = centerTile?.visible ?? false;
 
-      // Check if center is blocked (front wall)
-      // Only treat as wall if we have valid tile data that's actually a wall
-      const centerTileType = centerTile?.tile || '.';  // Default to floor, not wall
-      const centerIsWall = isWallTile(centerTileType) || isDoorTile(centerTileType);
-      const frontWall = centerIsWall ? centerTileType : null;
+      // Check if center is blocked (front wall) - ONLY if center is visible
+      // Only treat as wall if we have valid tile data that's actually a wall AND is visible
+      let frontWall: string | null = null;
+      let centerIsWall = false;
+      if (centerVisible) {
+        const centerTileType = centerTile?.tile || '.';
+        centerIsWall = isWallTile(centerTileType) || isDoorTile(centerTileType);
+        frontWall = centerIsWall ? centerTileType : null;
+      }
 
-      // Check for walls on left and right edges
-      // A wall exists if the edge tile is an actual wall tile
+      // Check for walls on left and right edges of VISIBLE range
+      // A wall exists if the visible edge tile is an actual wall tile
       let leftWall = false;
       let rightWall = false;
 
-      // Track ALL wall positions in this row for open room rendering
+      // Track wall positions ONLY for visible tiles
       const wallPositions: { offset: number; tile: string }[] = [];
       // Track positions with hidden secrets for visual hints
       const secretPositions: { offset: number }[] = [];
 
-      if (row.length > 0) {
-        const leftTile = row[0].tile;
-        const rightTile = row[row.length - 1].tile;
+      // Use visible range bounds for left/right wall detection
+      const leftTile = row[minVis].tile;
+      const rightTile = row[maxVis].tile;
 
-        // Left wall exists if leftmost tile is a wall
-        leftWall = isWallTile(leftTile) || isDoorTile(leftTile);
-        // Right wall exists if rightmost tile is a wall
-        rightWall = isWallTile(rightTile) || isDoorTile(rightTile);
+      // Left wall exists if leftmost VISIBLE tile is a wall
+      leftWall = isWallTile(leftTile) || isDoorTile(leftTile);
+      // Right wall exists if rightmost VISIBLE tile is a wall
+      rightWall = isWallTile(rightTile) || isDoorTile(rightTile);
 
-        // Scan all tiles for wall positions (for open room rendering)
-        for (let i = 0; i < row.length; i++) {
-          const tileData = row[i];
-          const tile = tileData.tile;
-          if (isWallTile(tile) || isDoorTile(tile)) {
-            // Calculate offset from center (-half to +half)
-            const offset = i - centerIdx;
-            wallPositions.push({ offset, tile });
+      // Scan only VISIBLE tiles for wall positions (for open room rendering)
+      for (let i = minVis; i <= maxVis; i++) {
+        const tileData = row[i];
+        if (!tileData.visible) continue; // Skip non-visible tiles within range
 
-            // Check for hidden secret door
-            if (tileData.has_secret) {
-              secretPositions.push({ offset });
-            }
+        const tile = tileData.tile;
+        if (isWallTile(tile) || isDoorTile(tile)) {
+          // Calculate offset from center (-half to +half)
+          const offset = i - centerIdx;
+          wallPositions.push({ offset, tile });
+
+          // Check for hidden secret door
+          if (tileData.has_secret) {
+            secretPositions.push({ offset });
           }
         }
       }
 
-      // Check if center tile is water
-      const isWater = !centerIsWall && isWaterTile(centerTileType);
+      // Check if center tile is water (only if visible and not a wall)
+      const isWater = centerVisible && !centerIsWall && isWaterTile(centerTile?.tile || '.');
 
-      // Track stairs positions
+      // Track stairs positions (only for visible tiles)
       const stairsPositions: { offset: number; direction: 'down' | 'up' }[] = [];
-      for (let i = 0; i < row.length; i++) {
+      for (let i = minVis; i <= maxVis; i++) {
         const tileData = row[i];
+        if (!tileData.visible) continue;
+
         const tile = tileData.tile;
         if (isStairsDown(tile)) {
           const offset = i - centerIdx;
@@ -609,6 +639,7 @@ export function FirstPersonRenderer({
         secretPositions,
         isWater,
         stairsPositions,
+        visibleRange: { min: minVis - centerIdx, max: maxVis - centerIdx }, // Offsets from center
       });
     }
 
@@ -621,6 +652,7 @@ export function FirstPersonRenderer({
         frontWall: info.frontWall,
         wallPositions: info.wallPositions,
         isWater: info.isWater,
+        visibleRange: info.visibleRange,
       }));
       onCorridorInfo(exportableInfo);
     }
