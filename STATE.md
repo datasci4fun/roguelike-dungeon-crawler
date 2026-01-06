@@ -1,8 +1,8 @@
 # Project State
 
 **Last Updated:** 2026-01-06
-**Branch:** master
-**Version:** v4.6.0 (Debug Tooling & Rendering Fixes)
+**Branch:** develop
+**Version:** v4.6.0+ (Corridor Wall Fix)
 
 ---
 
@@ -29,6 +29,13 @@
 | useDebugRenderer hook | ✅ |
 | DebugToast component | ✅ |
 | Test page occlusion scenarios | ✅ |
+| Corridor wall canonical offset fix | ✅ |
+
+### Recent Bugfix (post v4.6.0)
+
+**Yellow rectangles in open rooms** - Fixed `leftWall`/`rightWall` detection
+to use canonical offsets ±1 instead of visible range edges. Open rooms with
+walls at offsets like -2/+3 no longer trigger corridor boundary rendering.
 
 ### Key Files (v4.6.0)
 
