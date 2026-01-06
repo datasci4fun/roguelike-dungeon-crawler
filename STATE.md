@@ -32,6 +32,9 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 | Corridor wall decorations | ✅ Done |
 | Front wall decorations | ✅ Done |
 | FOV cone filtering for first-person entities | ✅ Done |
+| Relative movement (WASD relative to facing) | ✅ Done |
+| UI screens (Character, Help, Messages) | ✅ Done |
+| Quit dialog confirmation fix | ✅ Done |
 | Water reflections | ⬜ Planned |
 | Weather effects | ⬜ Planned |
 | Ambient sounds | ⬜ Planned |
@@ -1168,9 +1171,23 @@ npm run build
 |---------|-------------|--------|
 | Wall variety | Moss, cracks, cobwebs on dungeon walls | ✅ Done |
 | FOV cone filtering | Entities only visible in facing direction | ✅ Done |
+| Relative movement | WASD moves relative to facing, not cardinal | ✅ Done |
+| UI screens | Character (C), Help (?), Messages (M) screens | ✅ Done |
+| Quit dialog fix | Y to confirm quit now works properly | ✅ Done |
 | Water reflections | Animated water tiles in first-person | ⬜ Planned |
 | Weather effects | Rain/dripping in certain areas | ⬜ Planned |
 | Ambient sounds | Background audio for atmosphere | ⬜ Planned |
+
+### Planned for v4.6.0 (Save System)
+
+| Feature | Description |
+|---------|-------------|
+| Database save storage | Persist game state to PostgreSQL instead of memory |
+| Save on quit | Automatically save when player quits |
+| Load saved game | API endpoint to restore saved game state |
+| Main menu | Show "Continue" (if save exists) and "New Game" options |
+| Multiple save slots | Support for multiple characters per account |
+| Auto-save | Periodic auto-save during gameplay |
 
 ### Future Enhancements
 
