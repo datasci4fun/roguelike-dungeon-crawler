@@ -574,24 +574,10 @@ export function FirstPersonRenderer({
         frontWall = centerIsWall ? centerTileType : null;
       }
 
-      // Check for walls on left and right edges of VISIBLE range
-      // A wall exists if the visible edge tile is an actual wall tile
-      let leftWall = false;
-      let rightWall = false;
-
       // Track wall positions ONLY for visible tiles
       const wallPositions: { offset: number; tile: string }[] = [];
       // Track positions with hidden secrets for visual hints
       const secretPositions: { offset: number }[] = [];
-
-      // Use visible range bounds for left/right wall detection
-      const leftTile = row[minVis].tile;
-      const rightTile = row[maxVis].tile;
-
-      // Left wall exists if leftmost VISIBLE tile is a wall
-      leftWall = isWallTile(leftTile) || isDoorTile(leftTile);
-      // Right wall exists if rightmost VISIBLE tile is a wall
-      rightWall = isWallTile(rightTile) || isDoorTile(rightTile);
 
       // Scan only VISIBLE tiles for wall positions (for open room rendering)
       for (let i = minVis; i <= maxVis; i++) {
@@ -610,6 +596,12 @@ export function FirstPersonRenderer({
           }
         }
       }
+
+      // Determine corridor walls at canonical offsets ±1
+      // leftWall/rightWall mean "wall at offset -1/+1" for corridor rendering
+      // Open rooms with walls at -2, +3 etc. should NOT set these flags
+      const leftWall = wallPositions.some(w => w.offset === -1);
+      const rightWall = wallPositions.some(w => w.offset === 1);
 
       // Check if center tile is water (only if visible and not a wall)
       const isWater = centerVisible && !centerIsWall && isWaterTile(centerTile?.tile || '.');
