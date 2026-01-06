@@ -124,6 +124,58 @@ function fillZBuffer(zBuffer: Float32Array, startX: number, endX: number, depth:
 }
 
 /**
+ * Fill zBuffer columns with interpolated depth for side walls
+ * Linearly interpolates depth across the screen span for more accurate occlusion.
+ * Uses column center sampling (col + 0.5) to reduce edge flicker.
+ * @param zBuffer - The depth buffer array
+ * @param nearX - Screen X at near depth (closer to viewer)
+ * @param farX - Screen X at far depth (further from viewer)
+ * @param nearDepth - Depth at near edge
+ * @param farDepth - Depth at far edge
+ */
+function fillZBufferInterpolated(
+  zBuffer: Float32Array,
+  nearX: number,
+  farX: number,
+  nearDepth: number,
+  farDepth: number
+): void {
+  const width = zBuffer.length;
+  const minX = Math.min(nearX, farX);
+  const maxX = Math.max(nearX, farX);
+  const minCol = Math.max(0, Math.floor(minX));
+  const maxCol = Math.min(width - 1, Math.ceil(maxX));
+
+  // Handle degenerate case where span is too small
+  const spanWidth = farX - nearX;
+  if (Math.abs(spanWidth) < 0.001) {
+    // Fall back to average depth
+    const avgDepth = Math.max((nearDepth + farDepth) / 2, PROJECTION_CONFIG.minDepth);
+    for (let col = minCol; col <= maxCol; col++) {
+      if (avgDepth < zBuffer[col]) {
+        zBuffer[col] = avgDepth;
+      }
+    }
+    return;
+  }
+
+  for (let col = minCol; col <= maxCol; col++) {
+    // Use column center for sampling to reduce edge flicker
+    const x = col + 0.5;
+    // Interpolation factor based on nearX/farX directly (handles nearX > farX)
+    const t = Math.max(0, Math.min(1, (x - nearX) / spanWidth));
+    // Linear interpolation: depth = lerp(nearDepth, farDepth, t)
+    const interpolatedDepth = nearDepth + (farDepth - nearDepth) * t;
+    // Clamp using same minDepth as projection
+    const clampedDepth = Math.max(interpolatedDepth, PROJECTION_CONFIG.minDepth);
+
+    if (clampedDepth < zBuffer[col]) {
+      zBuffer[col] = clampedDepth;
+    }
+  }
+}
+
+/**
  * Check if an entity is occluded by walls in the zBuffer
  * Uses same minDepth clamping as projection for consistency.
  * @param zBuffer - The depth buffer array
@@ -447,24 +499,23 @@ export function FirstPersonRenderer({
 
       // Wall options (same as render options)
       const wallOptions = renderOptions;
-      const avgDepth = (depth + nextDepth) / 2;
 
       // Draw left corridor wall if there's a wall on the left
       if (info.leftWall) {
         drawCorridorWall(ctx, 'left', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
-        // Fill zBuffer for left corridor wall
+        // Fill zBuffer for left corridor wall with interpolated depth
         const nearProj = getProjection(width, height, depth, -1);
         const farProj = getProjection(width, height, nextDepth, -1);
-        fillZBuffer(zBuffer, nearProj.x, farProj.x, avgDepth);
+        fillZBufferInterpolated(zBuffer, nearProj.x, farProj.x, depth, nextDepth);
       }
 
       // Draw right corridor wall if there's a wall on the right
       if (info.rightWall) {
         drawCorridorWall(ctx, 'right', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
-        // Fill zBuffer for right corridor wall
+        // Fill zBuffer for right corridor wall with interpolated depth
         const nearProj = getProjection(width, height, depth, 1);
         const farProj = getProjection(width, height, nextDepth, 1);
-        fillZBuffer(zBuffer, nearProj.x, farProj.x, avgDepth);
+        fillZBufferInterpolated(zBuffer, nearProj.x, farProj.x, depth, nextDepth);
       }
 
       // Draw front wall if this depth is blocked (center blocked)
@@ -576,22 +627,21 @@ export function FirstPersonRenderer({
 
     // Wall options (same as render options)
     const nearWallOptions = nearRenderOptions;
-    const nearAvgDepth = 0.65; // Average of 0.3 and 1
 
     // Draw immediate side walls based on tiles beside player (not in front)
     if (playerSideInfo?.leftWall) {
       drawCorridorWall(ctx, 'left', 0.3, 1, width, height, timeRef.current, enableAnimations, nearWallOptions);
-      // Fill zBuffer for immediate left wall
+      // Fill zBuffer for immediate left wall with interpolated depth
       const nearProj = getProjection(width, height, 0.3, -1);
       const farProj = getProjection(width, height, 1, -1);
-      fillZBuffer(zBuffer, nearProj.x, farProj.x, nearAvgDepth);
+      fillZBufferInterpolated(zBuffer, nearProj.x, farProj.x, 0.3, 1);
     }
     if (playerSideInfo?.rightWall) {
       drawCorridorWall(ctx, 'right', 0.3, 1, width, height, timeRef.current, enableAnimations, nearWallOptions);
-      // Fill zBuffer for immediate right wall
+      // Fill zBuffer for immediate right wall with interpolated depth
       const nearProj = getProjection(width, height, 0.3, 1);
       const farProj = getProjection(width, height, 1, 1);
-      fillZBuffer(zBuffer, nearProj.x, farProj.x, nearAvgDepth);
+      fillZBufferInterpolated(zBuffer, nearProj.x, farProj.x, 0.3, 1);
     }
 
     // Draw stairs in immediate area (row 0 - beside player)
