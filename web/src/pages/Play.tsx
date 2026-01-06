@@ -69,13 +69,14 @@ export function Play() {
     }
   }, [isAuthenticated, token, chatStatus, connectChat]);
 
-  // Redirect to character creation if no active game
+  // Redirect to home if no active game (after quit or game end)
   useEffect(() => {
     if (gameStatus === 'connected' && !gameState) {
       // Give a brief moment for game state to arrive
       const timeout = setTimeout(() => {
         if (!gameState) {
-          navigate('/character-creation');
+          // Go to home page - user can start a new game from there
+          navigate('/');
         }
       }, 500);
       return () => clearTimeout(timeout);
