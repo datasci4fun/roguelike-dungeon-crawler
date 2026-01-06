@@ -32,6 +32,9 @@ export interface DebugSnapshot {
   renderSettings?: Record<string, unknown>;
   corridorInfo?: CorridorInfoEntry[];
   topDownWindow?: string[][]; // 11x11 grid around player (if available from server)
+  // Alignment metadata for debugging FPV vs top-down comparison
+  topDownWindowCenter?: { row: number; col: number }; // Always [5][5] - player position
+  depthWorldCoords?: Array<{ depth: number; x: number; y: number }>; // World coords at each FPV depth
 }
 
 // Check if debug mode is enabled
@@ -153,6 +156,25 @@ export function useDebugRenderer(): UseDebugRendererResult {
       // Include top_down_window if server provides it (snake_case from server)
       if (view.top_down_window) {
         snapshot.topDownWindow = view.top_down_window;
+        // Note: center of 11x11 window is always [5][5] = player position
+        snapshot.topDownWindowCenter = { row: 5, col: 5 };
+      }
+
+      // Compute world coords at each FPV depth for alignment debugging
+      if (playerCoords && view.facing) {
+        const { x, y } = playerCoords;
+        const { dx, dy } = view.facing;
+        const maxDepth = view.rows?.length || 0;
+        const depthCoords: Array<{ depth: number; x: number; y: number }> = [];
+        for (let d = 0; d < maxDepth; d++) {
+          // depth 0 = player row, depth 1 = one tile ahead, etc.
+          depthCoords.push({
+            depth: d,
+            x: x + dx * d,
+            y: y + dy * d,
+          });
+        }
+        snapshot.depthWorldCoords = depthCoords;
       }
 
       return snapshot;
