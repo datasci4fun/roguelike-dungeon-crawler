@@ -31,6 +31,7 @@
 | Test page occlusion scenarios | ✅ |
 | Corridor wall canonical offset fix | ✅ |
 | tile_actual for fogged wall geometry | ✅ |
+| OOB tile placeholder fix + offset field | ✅ |
 
 ### Recent Bugfixes (post v4.6.0)
 
@@ -40,8 +41,13 @@ walls at offsets like -2/+3 no longer trigger corridor boundary rendering.
 
 **Gap on left wall at depth 3** - Server now sends `tile_actual` (real map char)
 alongside `tile` (display char). Fogged walls (`tile: "~"` but `tile_actual: "#"`)
-are now correctly identified for geometry. Fixes missing corridor boundaries
-when walls are explored-but-not-visible.
+are now correctly identified for geometry.
+
+**OOB tile placeholders corrupting offsets** - Server was emitting OOB placeholder
+tiles with coords (-1,-1), corrupting row.length and centerIdx calculations.
+Fix: Skip OOB tiles entirely, add explicit `offset` field to each tile. Renderer
+now uses tile.offset directly instead of computing from array index. Snapshot
+includes `oobTileCount` debug counter (should be 0).
 
 ### Key Files (v4.6.0)
 
