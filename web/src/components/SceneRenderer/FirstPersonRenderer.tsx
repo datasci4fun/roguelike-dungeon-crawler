@@ -7,7 +7,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import type { FirstPersonView, FirstPersonEntity } from '../../hooks/useGameSocket';
 import { Colors } from './colors';
-import { getProjection, getFogAmount } from './projection';
+import { getProjection, getFogAmount, PROJECTION_CONFIG } from './projection';
 import { drawCorridorWall, drawFloorSegment, drawFloorAndCeiling, drawFrontWall, drawSecretHints } from './walls';
 import { drawEnemy, drawItem, drawTrap, renderStairs } from './entities';
 import { drawCompass } from './compass';
@@ -100,6 +100,58 @@ const isDoorTile = (tile: string) => tile === 'D' || tile === 'd' || tile === '+
 const isStairsDown = (tile: string) => tile === '>';
 const isStairsUp = (tile: string) => tile === '<';
 
+/**
+ * Fill zBuffer columns with a depth value
+ * Uses same minDepth clamping as projection for consistency.
+ * @param zBuffer - The depth buffer array
+ * @param startX - Start column (can be fractional, will be clamped)
+ * @param endX - End column (can be fractional, will be clamped)
+ * @param depth - Depth value to write (only writes if closer than existing)
+ */
+function fillZBuffer(zBuffer: Float32Array, startX: number, endX: number, depth: number): void {
+  const width = zBuffer.length;
+  const minCol = Math.max(0, Math.floor(Math.min(startX, endX)));
+  const maxCol = Math.min(width - 1, Math.ceil(Math.max(startX, endX)));
+
+  // Clamp depth using same minDepth as projection
+  const clampedDepth = Math.max(depth, PROJECTION_CONFIG.minDepth);
+
+  for (let col = minCol; col <= maxCol; col++) {
+    if (clampedDepth < zBuffer[col]) {
+      zBuffer[col] = clampedDepth;
+    }
+  }
+}
+
+/**
+ * Check if an entity is occluded by walls in the zBuffer
+ * Uses same minDepth clamping as projection for consistency.
+ * @param zBuffer - The depth buffer array
+ * @param centerX - Entity center X position
+ * @param entityWidth - Entity width in pixels
+ * @param entityDepth - Entity distance from viewer (will be clamped to minDepth)
+ * @returns true if entity should be drawn (not fully occluded)
+ */
+function isEntityVisible(zBuffer: Float32Array, centerX: number, entityWidth: number, entityDepth: number): boolean {
+  const width = zBuffer.length;
+  const halfWidth = entityWidth / 2;
+  const startCol = Math.max(0, Math.floor(centerX - halfWidth));
+  const endCol = Math.min(width - 1, Math.ceil(centerX + halfWidth));
+
+  // Clamp entity depth using same minDepth as projection
+  const clampedEntityDepth = Math.max(entityDepth, PROJECTION_CONFIG.minDepth);
+
+  // Entity is visible if ANY column has depth > entityDepth (entity is closer)
+  // Use small epsilon for floating point comparison
+  const epsilon = 0.01;
+  for (let col = startCol; col <= endCol; col++) {
+    if (clampedEntityDepth < zBuffer[col] - epsilon) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function FirstPersonRenderer({
   view,
   width = 400,
@@ -118,13 +170,14 @@ export function FirstPersonRenderer({
   // Load tiles for this biome if tile grid is enabled
   const tilesLoaded = useTileSet(settings.biome);
 
-  // Draw an entity (enemy or item)
+  // Draw an entity (enemy or item) with z-buffer occlusion check
   const renderEntity = useCallback((
     ctx: CanvasRenderingContext2D,
     entity: FirstPersonEntity,
     canvasWidth: number,
     canvasHeight: number,
-    time: number
+    time: number,
+    zBuffer: Float32Array | null
   ) => {
     const { distance, offset, type, name, symbol, health, max_health, is_elite } = entity;
 
@@ -138,6 +191,11 @@ export function FirstPersonRenderer({
     const entityWidth = entityHeight * 0.5;
     const centerX = projection.x;
     const fogAlpha = getFogAmount(distance);
+
+    // Check z-buffer occlusion (coarse test: is entity behind walls?)
+    if (zBuffer && !isEntityVisible(zBuffer, centerX, entityWidth, distance)) {
+      return; // Entity is fully occluded by walls
+    }
 
     if (type === 'enemy') {
       drawEnemy({
@@ -221,6 +279,9 @@ export function FirstPersonRenderer({
       ctx.fillText('Waiting for game data...', width / 2, height / 2);
       return;
     }
+
+    // Create z-buffer for occlusion culling (one depth value per column)
+    const zBuffer = new Float32Array(width).fill(Infinity);
 
     // Analyze the view to find corridor boundaries
     const rows = view.rows;
@@ -386,20 +447,33 @@ export function FirstPersonRenderer({
 
       // Wall options (same as render options)
       const wallOptions = renderOptions;
+      const avgDepth = (depth + nextDepth) / 2;
 
       // Draw left corridor wall if there's a wall on the left
       if (info.leftWall) {
         drawCorridorWall(ctx, 'left', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
+        // Fill zBuffer for left corridor wall
+        const nearProj = getProjection(width, height, depth, -1);
+        const farProj = getProjection(width, height, nextDepth, -1);
+        fillZBuffer(zBuffer, nearProj.x, farProj.x, avgDepth);
       }
 
       // Draw right corridor wall if there's a wall on the right
       if (info.rightWall) {
         drawCorridorWall(ctx, 'right', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
+        // Fill zBuffer for right corridor wall
+        const nearProj = getProjection(width, height, depth, 1);
+        const farProj = getProjection(width, height, nextDepth, 1);
+        fillZBuffer(zBuffer, nearProj.x, farProj.x, avgDepth);
       }
 
       // Draw front wall if this depth is blocked (center blocked)
       if (info.frontWall) {
         drawFrontWall(ctx, depth, leftOffset, rightOffset, width, height, info.frontWall, timeRef.current, enableAnimations, wallOptions);
+        // Fill zBuffer for front wall
+        const leftProj = getProjection(width, height, depth, leftOffset);
+        const rightProj = getProjection(width, height, depth, rightOffset);
+        fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
       }
       // For open rooms: draw walls at edges even if center is not blocked
       else if (info.wallPositions.length > 0 && !info.leftWall && !info.rightWall) {
@@ -412,6 +486,10 @@ export function FirstPersonRenderer({
           const wallTile = info.wallPositions.find(w => w.offset === leftMostWall)?.tile || '#';
           // Draw a partial front wall on the left side
           drawFrontWall(ctx, depth, leftMostWall - 0.5, leftMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations, wallOptions);
+          // Fill zBuffer for partial left wall
+          const leftProj = getProjection(width, height, depth, leftMostWall - 0.5);
+          const rightProj = getProjection(width, height, depth, leftMostWall + 0.5);
+          fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
         }
 
         // Draw right edge wall if there's one
@@ -419,6 +497,10 @@ export function FirstPersonRenderer({
           const wallTile = info.wallPositions.find(w => w.offset === rightMostWall)?.tile || '#';
           // Draw a partial front wall on the right side
           drawFrontWall(ctx, depth, rightMostWall - 0.5, rightMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations, wallOptions);
+          // Fill zBuffer for partial right wall
+          const leftProj = getProjection(width, height, depth, rightMostWall - 0.5);
+          const rightProj = getProjection(width, height, depth, rightMostWall + 0.5);
+          fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
         }
 
         // If there's a continuous wall across the back (all positions are walls), draw full back wall
@@ -430,6 +512,10 @@ export function FirstPersonRenderer({
           if (wallCount >= totalTiles * 0.7) {
             // Most of the row is walls - draw a full back wall
             drawFrontWall(ctx, depth, leftMostWall, rightMostWall, width, height, '#', timeRef.current, enableAnimations, wallOptions);
+            // Fill zBuffer for full back wall
+            const leftProj = getProjection(width, height, depth, leftMostWall);
+            const rightProj = getProjection(width, height, depth, rightMostWall);
+            fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
           }
         }
       }
@@ -490,13 +576,22 @@ export function FirstPersonRenderer({
 
     // Wall options (same as render options)
     const nearWallOptions = nearRenderOptions;
+    const nearAvgDepth = 0.65; // Average of 0.3 and 1
 
     // Draw immediate side walls based on tiles beside player (not in front)
     if (playerSideInfo?.leftWall) {
       drawCorridorWall(ctx, 'left', 0.3, 1, width, height, timeRef.current, enableAnimations, nearWallOptions);
+      // Fill zBuffer for immediate left wall
+      const nearProj = getProjection(width, height, 0.3, -1);
+      const farProj = getProjection(width, height, 1, -1);
+      fillZBuffer(zBuffer, nearProj.x, farProj.x, nearAvgDepth);
     }
     if (playerSideInfo?.rightWall) {
       drawCorridorWall(ctx, 'right', 0.3, 1, width, height, timeRef.current, enableAnimations, nearWallOptions);
+      // Fill zBuffer for immediate right wall
+      const nearProj = getProjection(width, height, 0.3, 1);
+      const farProj = getProjection(width, height, 1, 1);
+      fillZBuffer(zBuffer, nearProj.x, farProj.x, nearAvgDepth);
     }
 
     // Draw stairs in immediate area (row 0 - beside player)
@@ -556,9 +651,9 @@ export function FirstPersonRenderer({
         }
       }
 
-      // Draw all entities
+      // Draw all entities (with z-buffer occlusion culling)
       for (const entity of sortedEntities) {
-        renderEntity(ctx, entity, width, height, timeRef.current);
+        renderEntity(ctx, entity, width, height, timeRef.current, zBuffer);
       }
     }
 
