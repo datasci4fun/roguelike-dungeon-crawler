@@ -5,7 +5,7 @@
  * with proper perspective transformation.
  */
 
-import { TileManager, TileType } from './TileManager';
+import { TileManager, type TileType } from './TileManager';
 import { getProjection, getDepthFade, getFogAmount } from '../projection';
 import type { BiomeTheme } from '../biomes';
 
