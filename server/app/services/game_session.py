@@ -337,6 +337,11 @@ class GameSessionManager:
                 message=message,
             )
 
+        # Check if player confirmed quit
+        if engine.state == GameState.QUIT:
+            # Return a special response indicating quit was confirmed
+            return {"type": "quit_confirmed", "session_id": session.session_id}
+
         # Build and return state update
         state = self.serialize_game_state(session, events)
 
