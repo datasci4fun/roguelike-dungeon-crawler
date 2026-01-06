@@ -30,12 +30,18 @@
 | DebugToast component | ✅ |
 | Test page occlusion scenarios | ✅ |
 | Corridor wall canonical offset fix | ✅ |
+| tile_actual for fogged wall geometry | ✅ |
 
-### Recent Bugfix (post v4.6.0)
+### Recent Bugfixes (post v4.6.0)
 
 **Yellow rectangles in open rooms** - Fixed `leftWall`/`rightWall` detection
 to use canonical offsets ±1 instead of visible range edges. Open rooms with
 walls at offsets like -2/+3 no longer trigger corridor boundary rendering.
+
+**Gap on left wall at depth 3** - Server now sends `tile_actual` (real map char)
+alongside `tile` (display char). Fogged walls (`tile: "~"` but `tile_actual: "#"`)
+are now correctly identified for geometry. Fixes missing corridor boundaries
+when walls are explored-but-not-visible.
 
 ### Key Files (v4.6.0)
 
