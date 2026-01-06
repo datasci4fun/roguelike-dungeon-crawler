@@ -85,6 +85,18 @@ const DEFAULT_SETTINGS: RenderSettings = {
   useTileGrid: false,
 };
 
+/**
+ * Corridor info computed during render - exported for debug snapshots
+ */
+export interface CorridorInfoEntry {
+  depth: number;
+  leftWall: boolean;
+  rightWall: boolean;
+  frontWall: string | null;
+  wallPositions: { offset: number; tile: string }[];
+  isWater: boolean;
+}
+
 interface FirstPersonRendererProps {
   view: FirstPersonView | undefined;
   width?: number;
@@ -93,6 +105,7 @@ interface FirstPersonRendererProps {
   settings?: Partial<RenderSettings>;
   debugShowOccluded?: boolean; // Show red silhouettes for occluded entities
   debugShowWireframe?: boolean; // Show yellow wireframe for walls/corridors
+  onCorridorInfo?: (info: CorridorInfoEntry[]) => void; // Callback with derived corridor info for debug
 }
 
 // Tile type checks
@@ -214,6 +227,7 @@ export function FirstPersonRenderer({
   settings: userSettings,
   debugShowOccluded = false,
   debugShowWireframe = false,
+  onCorridorInfo,
 }: FirstPersonRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
@@ -598,6 +612,19 @@ export function FirstPersonRenderer({
       });
     }
 
+    // Call debug callback with corridor info (for snapshots)
+    if (onCorridorInfo) {
+      const exportableInfo: CorridorInfoEntry[] = corridorInfo.map((info, depth) => ({
+        depth,
+        leftWall: info.leftWall,
+        rightWall: info.rightWall,
+        frontWall: info.frontWall,
+        wallPositions: info.wallPositions,
+        isWater: info.isWater,
+      }));
+      onCorridorInfo(exportableInfo);
+    }
+
     // Row 0 is tiles beside player (depth 0) - use for immediate side wall detection
     // Row 1+ is tiles in front of player (depth 1+) - use for corridor rendering
     const playerSideInfo = corridorInfo[0]; // Tiles beside player
@@ -910,7 +937,7 @@ export function FirstPersonRenderer({
     if (enableAnimations) {
       animationRef.current = requestAnimationFrame(render);
     }
-  }, [view, width, height, enableAnimations, renderEntity, biome, settings, tilesLoaded, debugShowOccluded, debugShowWireframe, drawDebugWireframe]);
+  }, [view, width, height, enableAnimations, renderEntity, biome, settings, tilesLoaded, debugShowOccluded, debugShowWireframe, drawDebugWireframe, onCorridorInfo]);
 
   // Start/stop animation loop
   useEffect(() => {

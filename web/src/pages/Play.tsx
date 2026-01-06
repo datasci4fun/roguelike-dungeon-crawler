@@ -5,13 +5,15 @@ import { useGame } from '../contexts/GameContext';
 import { useChatSocket } from '../hooks/useChatSocket';
 import { useAudioManager } from '../hooks/useAudioManager';
 import { useSfxGameEvents, useSfxCommands } from '../hooks/useSfxGameEvents';
+import { useDebugRenderer } from '../hooks/useDebugRenderer';
 import { GameTerminal } from '../components/GameTerminal';
-import { FirstPersonRenderer } from '../components/SceneRenderer';
+import { FirstPersonRenderer, type CorridorInfoEntry } from '../components/SceneRenderer';
 import { CharacterHUD } from '../components/CharacterHUD';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
 import { FeatSelector } from '../components/FeatSelector';
+import { DebugToast } from '../components/DebugToast';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
 
@@ -22,6 +24,20 @@ export function Play() {
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSceneView, setShowSceneView] = useState(true);
+
+  // Debug renderer controls (F8/F9/F10 hotkeys)
+  const {
+    debugEnabled,
+    showWireframe,
+    showOccluded,
+    toggleWireframe,
+    toggleOccluded,
+    captureSnapshot,
+    copySnapshotToClipboard,
+    toastMessage,
+    clearToast,
+  } = useDebugRenderer();
+  const corridorInfoRef = useRef<CorridorInfoEntry[]>([]);
 
   // Audio management
   const { crossfadeTo, isUnlocked, unlockAudio } = useAudioManager();
@@ -173,6 +189,56 @@ export function Play() {
     }
   }, [messages.length, isMobileChatOpen]);
 
+  // Debug hotkeys (F8: wireframe, F9: occluded, F10: snapshot)
+  useEffect(() => {
+    if (!debugEnabled) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger hotkeys when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'F8':
+          e.preventDefault();
+          toggleWireframe();
+          break;
+        case 'F9':
+          e.preventDefault();
+          toggleOccluded();
+          break;
+        case 'F10':
+          e.preventDefault();
+          const snapshot = captureSnapshot(
+            gameState?.first_person_view,
+            gameState?.player ? { x: gameState.player.x, y: gameState.player.y } : undefined,
+            corridorInfoRef.current
+          );
+          if (snapshot) {
+            copySnapshotToClipboard(snapshot);
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    debugEnabled,
+    toggleWireframe,
+    toggleOccluded,
+    captureSnapshot,
+    copySnapshotToClipboard,
+    gameState?.first_person_view,
+    gameState?.player,
+  ]);
+
+  // Callback to capture corridor info from renderer
+  const handleCorridorInfo = useCallback((info: CorridorInfoEntry[]) => {
+    corridorInfoRef.current = info;
+  }, []);
+
   if (isLoading) {
     return (
       <div className="play-loading">
@@ -217,6 +283,9 @@ export function Play() {
                   width={800}
                   height={600}
                   enableAnimations={true}
+                  debugShowWireframe={showWireframe}
+                  debugShowOccluded={showOccluded}
+                  onCorridorInfo={handleCorridorInfo}
                 />
                 {/* Character HUD overlay */}
                 {gameState?.player?.race && (
@@ -337,6 +406,9 @@ export function Play() {
           onDismiss={clearAchievements}
         />
       )}
+
+      {/* Debug Toast */}
+      <DebugToast message={toastMessage} onDismiss={clearToast} />
     </div>
   );
 }
