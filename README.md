@@ -2,7 +2,7 @@
 
 A terminal-based roguelike with procedural dungeons, first-person 3D view, multiplayer backend, and React web frontend.
 
-**Current Version:** v4.5.0 (Biome Theming & Tile Engine)
+**Current Version:** v4.6.0 (Debug Tooling & Rendering Fixes)
 
 ## Quick Start
 
@@ -44,6 +44,14 @@ python main.py
 | F | Search for secrets |
 | C/M/? | Character/Messages/Help |
 | X | Quit |
+
+### Debug Hotkeys (DEV or `?debug=1`)
+
+| Key | Action |
+|-----|--------|
+| F8 | Toggle wireframe overlay |
+| F9 | Toggle occluded entity silhouettes |
+| F10 | Copy scene snapshot to clipboard |
 
 ## Documentation
 

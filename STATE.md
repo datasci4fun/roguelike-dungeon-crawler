@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-06
 **Branch:** master
-**Version:** v4.5.0 (Biome Theming & Tile Engine)
+**Version:** v4.6.0 (Debug Tooling & Rendering Fixes)
 
 ---
 
@@ -16,36 +16,32 @@
 
 ---
 
-## Current Version: v4.5.0
+## Current Version: v4.6.0
 
 ### Completed Features
 
 | Feature | Status |
 |---------|--------|
-| Wall decorations (moss, cracks, cobwebs) | ✅ |
-| 8 biome themes with color palettes | ✅ |
-| Tile loading engine for custom PNGs | ✅ |
-| Data-driven torch lighting | ✅ |
-| FOV cone filtering | ✅ |
-| Relative movement (WASD to facing) | ✅ |
-| Water reflections | ✅ |
-| Stairs rendering | ✅ |
-| Secret door system | ✅ |
-| Compass HUD | ✅ |
-| Trap rendering | ✅ |
+| Debug hotkeys (F8/F9/F10) | ✅ |
+| Z-buffer occlusion for entities | ✅ |
+| corridorInfo visibility fix | ✅ |
+| top_down_window in snapshots | ✅ |
+| useDebugRenderer hook | ✅ |
+| DebugToast component | ✅ |
+| Test page occlusion scenarios | ✅ |
 
-### Key Files (v4.5.0)
+### Key Files (v4.6.0)
 
 | File | Purpose |
 |------|---------|
-| `web/src/components/SceneRenderer/biomes.ts` | 8 biome theme definitions |
-| `web/src/components/SceneRenderer/tiles/` | Tile loading system |
-| `src/world/torches.py` | Server-side torch placement |
-| `web/public/tiles/` | Custom tile directories |
+| `web/src/hooks/useDebugRenderer.ts` | Debug state management |
+| `web/src/components/DebugToast.tsx` | Debug feedback UI |
+| `web/src/components/SceneRenderer/FirstPersonRenderer.tsx` | Visibility-based corridorInfo |
+| `server/app/services/game_session.py` | top_down_window generation |
 
 ---
 
-## Next Version: v4.6.0 (Save System)
+## Next Version: v4.7.0 (Save System)
 
 | Feature | Description |
 |---------|-------------|

@@ -4,6 +4,31 @@ All notable changes to this project.
 
 ---
 
+## [4.6.0] - 2026-01-06 - Debug Tooling & Rendering Fixes
+
+### Added
+- **Debug Hotkeys (F8/F9/F10)**: Gameplay debug tools gated behind DEV or `?debug=1`
+  - F8: Toggle wireframe overlay (yellow wall boundaries)
+  - F9: Toggle occluded entity silhouettes (red ghosts)
+  - F10: Copy scene snapshot to clipboard (JSON)
+- **Z-Buffer Occlusion**: Interpolated depth for accurate entity hiding behind walls
+- **useDebugRenderer Hook**: localStorage persistence, environment gating
+- **DebugToast Component**: Visual feedback for debug actions
+- **top_down_window**: Server-side 11x11 grid around player in snapshots
+- **visibleRange**: Corridor info includes visibility bounds for debugging
+
+### Fixed
+- **corridorInfo Visibility**: Only visible tiles now influence wall geometry
+  - Eliminated artifacts from invisible tiles creating fake walls at huge offsets
+  - Left/right walls use visible range bounds instead of full row
+  - Front wall only set if center tile is visible
+- **Side-wall Z-Buffer**: Interpolated depth values for proper occlusion
+
+### Changed
+- Test page scenarios fixed to keep entities within corridor bounds (offset < ±1)
+
+---
+
 ## [4.5.0] - 2026-01-06 - Biome Theming & Tile Engine
 
 ### Added
