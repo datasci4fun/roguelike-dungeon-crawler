@@ -223,9 +223,9 @@ class GameEngine:
         """
         cmd_type = command.type
 
-        # Movement commands
+        # Movement commands - relative to facing direction
         if cmd_type in MOVEMENT_COMMANDS:
-            dx, dy = get_movement_delta(cmd_type)
+            dx, dy = self._get_relative_movement(cmd_type)
             player_moved = self.combat_manager.try_move_or_attack(dx, dy)
 
             if player_moved:
@@ -314,6 +314,42 @@ class GameEngine:
     def _process_enemy_turns(self):
         """Process all enemy turns after player action."""
         self.combat_manager.process_enemy_turns()
+
+    def _get_relative_movement(self, cmd_type: CommandType) -> tuple:
+        """
+        Convert a movement command to actual (dx, dy) based on player facing.
+
+        WASD/Arrows are interpreted relative to facing direction:
+        - MOVE_UP (W/↑) = move forward (in facing direction)
+        - MOVE_DOWN (S/↓) = move backward (opposite to facing)
+        - MOVE_LEFT (A/←) = strafe left (perpendicular left)
+        - MOVE_RIGHT (D/→) = strafe right (perpendicular right)
+
+        Args:
+            cmd_type: The movement command type
+
+        Returns:
+            (dx, dy) tuple for actual world movement
+        """
+        if not self.player:
+            return get_movement_delta(cmd_type)  # Fall back to cardinal
+
+        fx, fy = self.player.facing  # Current facing direction
+
+        if cmd_type == CommandType.MOVE_UP:
+            # Forward = facing direction
+            return (fx, fy)
+        elif cmd_type == CommandType.MOVE_DOWN:
+            # Backward = opposite of facing
+            return (-fx, -fy)
+        elif cmd_type == CommandType.MOVE_LEFT:
+            # Strafe left = rotate facing 90° counterclockwise: (fx, fy) → (fy, -fx)
+            return (fy, -fx)
+        elif cmd_type == CommandType.MOVE_RIGHT:
+            # Strafe right = rotate facing 90° clockwise: (fx, fy) → (-fy, fx)
+            return (-fy, fx)
+
+        return (0, 0)
 
     def _handle_turn(self, cmd_type: CommandType) -> bool:
         """
