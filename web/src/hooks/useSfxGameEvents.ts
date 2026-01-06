@@ -38,8 +38,8 @@ export function useSfxGameEvents(gameState: FullGameState | null) {
       dungeonLevel: dungeon?.level ?? 1,
       enemyCount: enemies?.length ?? 0,
       itemCount: items?.length ?? 0,
-      gold: player.gold ?? 0,
-      inventoryCount: player.inventory?.length ?? 0,
+      gold: (player as { gold?: number }).gold ?? 0,
+      inventoryCount: gameState.inventory?.items?.length ?? 0,
       gameState: gameState.game_state,
       uiMode: gameState.ui_mode ?? 'GAME',
     };

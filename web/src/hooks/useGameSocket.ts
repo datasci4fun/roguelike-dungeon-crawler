@@ -125,10 +125,11 @@ export interface FirstPersonTile {
   visible: boolean;
   walkable: boolean;
   has_entity: boolean;
+  has_secret?: boolean;  // Hidden secret door at this tile
 }
 
 export interface FirstPersonEntity {
-  type: 'enemy' | 'item';
+  type: 'enemy' | 'item' | 'trap';
   name: string;
   symbol: string;
   distance: number;
@@ -138,11 +139,30 @@ export interface FirstPersonEntity {
   health?: number;
   max_health?: number;
   is_elite?: boolean;
+  // Trap-specific fields
+  trap_type?: 'spike' | 'fire' | 'poison' | 'arrow';
+  triggered?: boolean;
+  is_active?: boolean;
+}
+
+export interface FirstPersonTorch {
+  x: number;
+  y: number;
+  distance: number;
+  offset: number;
+  facing_dx: number;
+  facing_dy: number;
+  intensity: number;
+  radius: number;
+  is_lit: boolean;
+  torch_type: 'wall' | 'sconce' | 'brazier';
 }
 
 export interface FirstPersonView {
   rows: FirstPersonTile[][];
   entities: FirstPersonEntity[];
+  torches?: FirstPersonTorch[];
+  lighting?: Record<string, number>;  // "x,y" -> light level 0.0-1.0
   facing: FacingDirection;
   depth: number;
 }

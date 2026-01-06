@@ -199,7 +199,18 @@ async def game_websocket(
                     )
 
                     if result:
-                        await websocket.send_json(result)
+                        # Check if quit was confirmed via dialog
+                        if result.get("type") == "quit_confirmed":
+                            # End the session and record result (same as "quit" action)
+                            stats = await session_manager.end_session(user_id)
+                            recorded = await record_game_result(user_id, stats)
+                            await websocket.send_json({
+                                "type": "game_ended",
+                                "stats": stats,
+                                "recorded": recorded,
+                            })
+                        else:
+                            await websocket.send_json(result)
 
                 elif action == "get_state":
                     # Get current game state without processing a command

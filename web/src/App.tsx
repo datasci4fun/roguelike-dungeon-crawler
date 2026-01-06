@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home, Login, Register, Play, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends } from './pages';
 import { FirstPersonDemo } from './pages/FirstPersonDemo';
+import { FirstPersonTestPage } from './pages/FirstPersonTestPage';
 import { CharacterCreation } from './pages/CharacterCreation';
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route path="play-scene" element={<PlayScene />} />
         <Route path="scene-demo" element={<SceneDemo />} />
         <Route path="first-person-demo" element={<FirstPersonDemo />} />
+        <Route path="first-person-test" element={<FirstPersonTestPage />} />
         <Route path="spectate" element={<Spectate />} />
         <Route path="leaderboard" element={<Leaderboard />} />
         <Route path="ghosts" element={<Ghosts />} />

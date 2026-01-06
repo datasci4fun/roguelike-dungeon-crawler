@@ -55,6 +55,7 @@ export interface UseChatSocketResult {
 
 export function useChatSocket(token: string | null): UseChatSocketResult {
   const wsRef = useRef<WebSocket | null>(null);
+  const connectingRef = useRef(false);
   const [status, setStatus] = useState<ChatConnectionStatus>('disconnected');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
@@ -62,10 +63,18 @@ export function useChatSocket(token: string | null): UseChatSocketResult {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   const connect = useCallback(() => {
-    if (!token || wsRef.current?.readyState === WebSocket.OPEN) {
+    if (!token) return;
+
+    // Prevent duplicate connection attempts
+    if (connectingRef.current) return;
+
+    // Don't connect if already connected or connecting
+    const currentWs = wsRef.current;
+    if (currentWs && (currentWs.readyState === WebSocket.OPEN || currentWs.readyState === WebSocket.CONNECTING)) {
       return;
     }
 
+    connectingRef.current = true;
     setStatus('connecting');
     setError(null);
 
@@ -73,6 +82,7 @@ export function useChatSocket(token: string | null): UseChatSocketResult {
     wsRef.current = ws;
 
     ws.onopen = () => {
+      connectingRef.current = false;
       setStatus('connected');
     };
 
@@ -144,11 +154,13 @@ export function useChatSocket(token: string | null): UseChatSocketResult {
     };
 
     ws.onerror = () => {
+      connectingRef.current = false;
       setStatus('error');
       setError('Chat connection error');
     };
 
     ws.onclose = (event) => {
+      connectingRef.current = false;
       setStatus('disconnected');
       wsRef.current = null;
       if (event.code === 4001) {
@@ -202,10 +214,10 @@ export function useChatSocket(token: string | null): UseChatSocketResult {
     setMessages((prev) => [...prev, systemMsg]);
   }, []);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - only close if actually open to avoid StrictMode warnings
   useEffect(() => {
     return () => {
-      if (wsRef.current) {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
         wsRef.current.close();
       }
     };

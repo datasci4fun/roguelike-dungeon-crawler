@@ -39,6 +39,10 @@ const COLORS = {
   bgGreen: '\x1b[42m',
   bgYellow: '\x1b[43m',
   bgBlue: '\x1b[44m',
+  bgMagenta: '\x1b[45m',
+  bgCyan: '\x1b[46m',
+  // Bright backgrounds for FOV
+  bgBrightBlack: '\x1b[100m',  // Dark gray for FOV cone
 };
 
 // Map enemy symbols to colors
@@ -226,8 +230,8 @@ export function GameTerminal({
         'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
         'w', 'a', 's', 'd', 'W', 'A', 'S', 'D',
         'i', 'I', 'c', 'C', 'm', 'M', '?',
-        '1', '2', '3', '>', 'q', 'Q',
-        'Escape', 'Enter', 'e', 'E',
+        '1', '2', '3', '>', 'q', 'Q', 'e', 'E',
+        'Escape', 'Enter', 'x', 'X',
       ];
 
       if (gameKeys.includes(e.key)) {
@@ -400,9 +404,23 @@ function mapKeyToCommand(key: string, uiMode: string): string | null {
     // Actions
     case '>':
       return 'DESCEND';
+    case 'x':
+    case 'X':
+      return 'QUIT';
+
+    // Turn in place (rotate facing direction)
     case 'q':
     case 'Q':
-      return 'QUIT';
+      return 'TURN_LEFT';
+    case 'e':
+    case 'E':
+      return 'TURN_RIGHT';
+
+    // Search for hidden secrets
+    case 'f':
+    case 'F':
+    case '/':
+      return 'SEARCH';
 
     // For "press any key" prompts
     case 'Enter':
@@ -434,11 +452,12 @@ function renderNoGame(terminal: Terminal) {
     '',
     `${COLORS.dim}  Controls:${COLORS.reset}`,
     `${COLORS.dim}    WASD / Arrow Keys - Move${COLORS.reset}`,
+    `${COLORS.dim}    Q / E - Turn Left / Right${COLORS.reset}`,
     `${COLORS.dim}    I - Inventory${COLORS.reset}`,
     `${COLORS.dim}    C - Character${COLORS.reset}`,
     `${COLORS.dim}    M - Message Log${COLORS.reset}`,
     `${COLORS.dim}    > - Descend stairs${COLORS.reset}`,
-    `${COLORS.dim}    Q - Quit${COLORS.reset}`,
+    `${COLORS.dim}    X - Quit${COLORS.reset}`,
   ];
   title.forEach((line) => terminal.writeln(line));
 }
@@ -463,6 +482,21 @@ function renderGameState(terminal: Terminal, state: FullGameState, isSpectator =
 
   if (state.ui_mode === 'DIALOG' && state.dialog) {
     renderDialog(terminal, state);
+    return;
+  }
+
+  if (state.ui_mode === 'CHARACTER') {
+    renderCharacterScreen(terminal, state);
+    return;
+  }
+
+  if (state.ui_mode === 'HELP') {
+    renderHelpScreen(terminal);
+    return;
+  }
+
+  if (state.ui_mode === 'MESSAGE_LOG') {
+    renderMessageLog(terminal, state);
     return;
   }
 
@@ -528,13 +562,35 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
 
   terminal.writeln('');
 
+  // Get player facing direction for FOV cone
+  const facing = player.facing || { dx: 0, dy: -1 }; // Default facing north
+
   // Render dungeon viewport
   for (let y = 0; y < viewportHeight; y++) {
     let line = ' ';
     for (let x = 0; x < viewportWidth; x++) {
-      // Check for player
+      // Get tile first to check visibility
+      const tile = dungeon.tiles[y]?.[x] || ' ';
+
+      // Calculate relative position for FOV cone
+      const relX = x - playerViewX;
+      const relY = y - playerViewY;
+      const inFovCone = isInFovCone(relX, relY, facing.dx, facing.dy, 6);
+
+      // Only highlight FOV cone for tiles that are ACTUALLY VISIBLE
+      // (not fog '~' or unexplored ' ') - this respects wall occlusion
+      const isActuallyVisible = tile !== '~' && tile !== ' ';
+      const fovBg = (inFovCone && isActuallyVisible) ? COLORS.bgBrightBlack : '';
+
+      // Check for player - render directional arrow
       if (x === playerViewX && y === playerViewY) {
-        line += `${COLORS.brightWhite}${COLORS.bold}@${COLORS.reset}`;
+        // Player symbol shows facing direction
+        let playerChar = '@';
+        if (facing.dy < 0) playerChar = '▲'; // North
+        else if (facing.dy > 0) playerChar = '▼'; // South
+        else if (facing.dx < 0) playerChar = '◄'; // West
+        else if (facing.dx > 0) playerChar = '►'; // East
+        line += `${COLORS.brightWhite}${COLORS.bold}${playerChar}${COLORS.reset}`;
         continue;
       }
 
@@ -542,7 +598,7 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
       const enemy = enemyMap.get(`${x},${y}`);
       if (enemy) {
         const color = ENEMY_COLORS[enemy.symbol] || COLORS.red;
-        line += `${color}${enemy.symbol}${COLORS.reset}`;
+        line += `${fovBg}${color}${enemy.symbol}${COLORS.reset}`;
         continue;
       }
 
@@ -550,14 +606,13 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
       const item = itemMap.get(`${x},${y}`);
       if (item) {
         const color = ITEM_COLORS[item.symbol] || COLORS.white;
-        line += `${color}${item.symbol}${COLORS.reset}`;
+        line += `${fovBg}${color}${item.symbol}${COLORS.reset}`;
         continue;
       }
 
-      // Render tile
-      const tile = dungeon.tiles[y]?.[x] || ' ';
+      // Render tile (already fetched above)
       const tileColor = TILE_COLORS[tile] || COLORS.white;
-      line += `${tileColor}${tile}${COLORS.reset}`;
+      line += `${fovBg}${tileColor}${tile}${COLORS.reset}`;
     }
     terminal.writeln(line);
   }
@@ -586,7 +641,7 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
   if (isSpectator) {
     terminal.writeln(`${COLORS.dim} Spectating - watch the player explore the dungeon${COLORS.reset}`);
   } else {
-    terminal.writeln(`${COLORS.dim} [I]nventory [C]haracter [M]essages [?]Help [Q]uit${COLORS.reset}`);
+    terminal.writeln(`${COLORS.dim} [Q/E]Turn [I]nventory [C]haracter [M]essages [?]Help [X]Quit${COLORS.reset}`);
   }
 }
 
@@ -672,6 +727,135 @@ function renderDialog(terminal: Terminal, state: FullGameState) {
   terminal.writeln(`${COLORS.dim}  [Y]es  [N]o${COLORS.reset}`);
 }
 
+function renderCharacterScreen(terminal: Terminal, state: FullGameState) {
+  const { player } = state;
+  if (!player) return;
+
+  terminal.writeln('');
+  terminal.writeln(`${COLORS.brightCyan}  ╔══════════════════════════════════════╗${COLORS.reset}`);
+  terminal.writeln(`${COLORS.brightCyan}  ║${COLORS.reset}           ${COLORS.brightWhite}CHARACTER INFO${COLORS.reset}             ${COLORS.brightCyan}║${COLORS.reset}`);
+  terminal.writeln(`${COLORS.brightCyan}  ╚══════════════════════════════════════╝${COLORS.reset}`);
+  terminal.writeln('');
+
+  // Race and Class
+  if (player.race) {
+    terminal.writeln(`  ${COLORS.yellow}Race:${COLORS.reset} ${player.race.name}`);
+    terminal.writeln(`    ${COLORS.dim}${player.race.trait_name}: ${player.race.trait_description}${COLORS.reset}`);
+  }
+  if (player.class) {
+    terminal.writeln(`  ${COLORS.yellow}Class:${COLORS.reset} ${player.class.name}`);
+    terminal.writeln(`    ${COLORS.dim}${player.class.description}${COLORS.reset}`);
+  }
+  terminal.writeln('');
+
+  // Stats
+  terminal.writeln(`  ${COLORS.brightWhite}── Stats ──${COLORS.reset}`);
+  terminal.writeln(`  ${COLORS.green}HP:${COLORS.reset} ${player.health}/${player.max_health}`);
+  terminal.writeln(`  ${COLORS.cyan}ATK:${COLORS.reset} ${player.attack}  ${COLORS.blue}DEF:${COLORS.reset} ${player.defense}`);
+  terminal.writeln(`  ${COLORS.magenta}Level:${COLORS.reset} ${player.level}  ${COLORS.yellow}XP:${COLORS.reset} ${player.xp}/${player.xp_to_level}`);
+  terminal.writeln(`  ${COLORS.red}Kills:${COLORS.reset} ${player.kills}`);
+  terminal.writeln('');
+
+  // Abilities
+  if (player.abilities && player.abilities.length > 0) {
+    terminal.writeln(`  ${COLORS.brightWhite}── Abilities ──${COLORS.reset}`);
+    player.abilities.forEach((ability) => {
+      const ready = ability.is_ready ? COLORS.green : COLORS.red;
+      const cooldown = ability.cooldown_remaining > 0 ? ` (${ability.cooldown_remaining} turns)` : '';
+      terminal.writeln(`  ${ready}●${COLORS.reset} ${ability.name}${COLORS.dim}${cooldown}${COLORS.reset}`);
+      terminal.writeln(`    ${COLORS.dim}${ability.description}${COLORS.reset}`);
+    });
+    terminal.writeln('');
+  }
+
+  // Passives
+  if (player.passives && player.passives.length > 0) {
+    terminal.writeln(`  ${COLORS.brightWhite}── Passives ──${COLORS.reset}`);
+    player.passives.forEach((passive) => {
+      terminal.writeln(`  ${COLORS.cyan}◆${COLORS.reset} ${passive.name}`);
+      terminal.writeln(`    ${COLORS.dim}${passive.description}${COLORS.reset}`);
+    });
+    terminal.writeln('');
+  }
+
+  // Feats
+  if (player.feats && player.feats.length > 0) {
+    terminal.writeln(`  ${COLORS.brightWhite}── Feats ──${COLORS.reset}`);
+    player.feats.forEach((feat) => {
+      terminal.writeln(`  ${COLORS.yellow}★${COLORS.reset} ${feat.name}`);
+      terminal.writeln(`    ${COLORS.dim}${feat.description}${COLORS.reset}`);
+    });
+    terminal.writeln('');
+  }
+
+  terminal.writeln(`${COLORS.dim}  Press any key to close${COLORS.reset}`);
+}
+
+function renderHelpScreen(terminal: Terminal) {
+  terminal.writeln('');
+  terminal.writeln(`${COLORS.brightYellow}  ╔══════════════════════════════════════╗${COLORS.reset}`);
+  terminal.writeln(`${COLORS.brightYellow}  ║${COLORS.reset}              ${COLORS.brightWhite}CONTROLS${COLORS.reset}               ${COLORS.brightYellow}║${COLORS.reset}`);
+  terminal.writeln(`${COLORS.brightYellow}  ╚══════════════════════════════════════╝${COLORS.reset}`);
+  terminal.writeln('');
+  terminal.writeln(`  ${COLORS.brightWhite}── Movement ──${COLORS.reset}`);
+  terminal.writeln(`  ${COLORS.cyan}W/↑${COLORS.reset}  Move forward`);
+  terminal.writeln(`  ${COLORS.cyan}S/↓${COLORS.reset}  Move backward`);
+  terminal.writeln(`  ${COLORS.cyan}A/←${COLORS.reset}  Strafe left`);
+  terminal.writeln(`  ${COLORS.cyan}D/→${COLORS.reset}  Strafe right`);
+  terminal.writeln(`  ${COLORS.cyan}Q${COLORS.reset}    Turn left`);
+  terminal.writeln(`  ${COLORS.cyan}E${COLORS.reset}    Turn right`);
+  terminal.writeln('');
+  terminal.writeln(`  ${COLORS.brightWhite}── Actions ──${COLORS.reset}`);
+  terminal.writeln(`  ${COLORS.cyan}>${COLORS.reset}    Descend stairs`);
+  terminal.writeln(`  ${COLORS.cyan}F${COLORS.reset}    Search for secrets`);
+  terminal.writeln(`  ${COLORS.cyan}1-3${COLORS.reset}  Use quick slot item`);
+  terminal.writeln('');
+  terminal.writeln(`  ${COLORS.brightWhite}── Screens ──${COLORS.reset}`);
+  terminal.writeln(`  ${COLORS.cyan}I${COLORS.reset}    Inventory`);
+  terminal.writeln(`  ${COLORS.cyan}C${COLORS.reset}    Character info`);
+  terminal.writeln(`  ${COLORS.cyan}M${COLORS.reset}    Message log`);
+  terminal.writeln(`  ${COLORS.cyan}?${COLORS.reset}    This help screen`);
+  terminal.writeln(`  ${COLORS.cyan}X${COLORS.reset}    Quit game`);
+  terminal.writeln('');
+  terminal.writeln(`${COLORS.dim}  Press any key to close${COLORS.reset}`);
+}
+
+function renderMessageLog(terminal: Terminal, state: FullGameState) {
+  const { messages } = state;
+
+  terminal.writeln('');
+  terminal.writeln(`${COLORS.brightMagenta}  ╔══════════════════════════════════════╗${COLORS.reset}`);
+  terminal.writeln(`${COLORS.brightMagenta}  ║${COLORS.reset}            ${COLORS.brightWhite}MESSAGE LOG${COLORS.reset}              ${COLORS.brightMagenta}║${COLORS.reset}`);
+  terminal.writeln(`${COLORS.brightMagenta}  ╚══════════════════════════════════════╝${COLORS.reset}`);
+  terminal.writeln('');
+
+  if (!messages || messages.length === 0) {
+    terminal.writeln(`  ${COLORS.dim}(no messages)${COLORS.reset}`);
+  } else {
+    // Show last 15 messages (most recent at bottom)
+    const displayMessages = messages.slice(-15);
+    displayMessages.forEach((msg) => {
+      // Color code messages
+      let color = COLORS.white;
+      if (msg.includes('hit') || msg.includes('damage') || msg.includes('attack')) {
+        color = COLORS.red;
+      } else if (msg.includes('heal') || msg.includes('health')) {
+        color = COLORS.green;
+      } else if (msg.includes('level') || msg.includes('Level')) {
+        color = COLORS.yellow;
+      } else if (msg.includes('pick') || msg.includes('found')) {
+        color = COLORS.cyan;
+      } else if (msg.includes('turn to face')) {
+        color = COLORS.blue;
+      }
+      terminal.writeln(`  ${color}${msg}${COLORS.reset}`);
+    });
+  }
+
+  terminal.writeln('');
+  terminal.writeln(`${COLORS.dim}  [W/↑] Scroll up  [S/↓] Scroll down  [ESC] Close${COLORS.reset}`);
+}
+
 function getRarityColor(rarity: string): string {
   switch (rarity) {
     case 'COMMON':
@@ -687,4 +871,44 @@ function getRarityColor(rarity: string): string {
     default:
       return COLORS.white;
   }
+}
+
+/**
+ * Check if a tile position is within the player's FOV cone.
+ * The FOV cone is a ~90 degree arc in the facing direction.
+ *
+ * @param relX - X position relative to player (tile_x - player_x)
+ * @param relY - Y position relative to player (tile_y - player_y)
+ * @param facingDx - Player facing X direction
+ * @param facingDy - Player facing Y direction
+ * @param maxDistance - Maximum range of FOV cone (tiles)
+ * @returns true if in FOV cone
+ */
+function isInFovCone(
+  relX: number,
+  relY: number,
+  facingDx: number,
+  facingDy: number,
+  maxDistance: number = 6
+): boolean {
+  // Player's own position is always visible but not in "cone"
+  if (relX === 0 && relY === 0) return false;
+
+  // Calculate distance
+  const distance = Math.sqrt(relX * relX + relY * relY);
+  if (distance > maxDistance) return false;
+
+  // Normalize the direction to tile
+  const dirX = relX / distance;
+  const dirY = relY / distance;
+
+  // Dot product with facing direction
+  // Facing is already a unit vector: (1,0), (-1,0), (0,1), or (0,-1)
+  const dot = dirX * facingDx + dirY * facingDy;
+
+  // cos(45°) ≈ 0.707 for a 90° cone (45° on each side)
+  // Use a slightly wider threshold for better visibility
+  const coneThreshold = 0.5; // ~120° cone (60° on each side)
+
+  return dot >= coneThreshold;
 }

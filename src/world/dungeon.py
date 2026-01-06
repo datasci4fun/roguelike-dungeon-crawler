@@ -9,10 +9,13 @@ from ..core.constants import (
     MIN_ROOM_SIZE, MAX_ROOM_SIZE, MAX_BSP_DEPTH,
     LEVEL_THEMES, THEME_TILES, THEME_TILES_ASCII,
     THEME_DECORATIONS, THEME_DECORATIONS_ASCII,
-    THEME_TERRAIN, TERRAIN_BLOOD
+    THEME_TERRAIN, TERRAIN_BLOOD,
+    THEME_TORCH_COUNTS, TORCH_DEFAULT_RADIUS, TORCH_DEFAULT_INTENSITY
 )
 from .traps import Trap, TrapManager
 from .hazards import Hazard, HazardManager
+from .secrets import SecretDoor, SecretDoorManager
+from .torches import Torch, TorchManager
 
 
 @dataclass
@@ -480,10 +483,17 @@ class Dungeon:
                 return (x, y)
 
     def is_blocking_sight(self, x: int, y: int) -> bool:
-        """Check if a tile blocks line of sight (walls block, floors don't)."""
+        """Check if a tile blocks line of sight (walls and closed doors block)."""
         if not (0 <= x < self.width and 0 <= y < self.height):
             return True
-        return self.tiles[y][x] == TileType.WALL
+        tile = self.tiles[y][x]
+        # Walls always block sight
+        if tile == TileType.WALL:
+            return True
+        # Locked/closed doors block sight (open doors don't)
+        if tile == TileType.DOOR_LOCKED:
+            return True
+        return False
 
     def update_fov(self, center_x: int, center_y: int, vision_bonus: int = 0):
         """
@@ -702,3 +712,222 @@ class Dungeon:
             hazard_manager.add_hazard(hazard)
             avoid_positions.add(pos)
             placed += 1
+
+    # =========================================================================
+    # v4.3: Secret Door Generation
+    # =========================================================================
+
+    def generate_secret_doors(self, secret_door_manager: SecretDoorManager, player_x: int, player_y: int):
+        """
+        Generate secret doors for this dungeon level.
+
+        Secret doors are placed on wall tiles adjacent to floor tiles, creating
+        hidden passages that can be discovered through searching.
+
+        Args:
+            secret_door_manager: The SecretDoorManager to add doors to
+            player_x, player_y: Player position to avoid placing doors there
+        """
+        # Number of secret doors scales slightly with level (0-2 per level)
+        num_doors = min(self.level // 2, 2)
+        if num_doors == 0 and self.level >= 2:
+            num_doors = 1  # At least 1 on level 2+
+
+        if num_doors == 0:
+            return
+
+        # Find valid wall positions for secret doors
+        # A valid position is a wall tile with exactly one adjacent floor tile
+        # (forms a connection through a wall)
+        valid_positions = []
+
+        for y in range(1, self.height - 1):
+            for x in range(1, self.width - 1):
+                if self.tiles[y][x] != TileType.WALL:
+                    continue
+
+                # Count adjacent floor tiles and track which direction
+                adjacent_floors = []
+                for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                        if self.tiles[ny][nx] == TileType.FLOOR:
+                            adjacent_floors.append((dx, dy))
+
+                # Want exactly 2 adjacent floors on opposite sides (passage through wall)
+                if len(adjacent_floors) == 2:
+                    d1, d2 = adjacent_floors
+                    # Check if they're opposite directions
+                    if d1[0] == -d2[0] and d1[1] == -d2[1]:
+                        # This is a valid secret door position
+                        valid_positions.append((x, y, d1[0], d1[1]))
+
+        if not valid_positions:
+            return
+
+        # Shuffle and pick positions
+        random.shuffle(valid_positions)
+
+        # Avoid positions too close to player start
+        avoid_near_player = []
+        for pos in valid_positions:
+            x, y = pos[0], pos[1]
+            if abs(x - player_x) <= 4 and abs(y - player_y) <= 4:
+                continue
+            avoid_near_player.append(pos)
+
+        valid_positions = avoid_near_player if avoid_near_player else valid_positions[:1]
+
+        # Place secret doors
+        placed = 0
+        for pos in valid_positions:
+            if placed >= num_doors:
+                break
+
+            x, y, dx, dy = pos
+            secret_door_manager.add_at(x, y, dx, dy)
+            placed += 1
+
+    # =========================================================================
+    # v4.5: Torch Generation
+    # =========================================================================
+
+    def generate_torches(self, torch_manager: TorchManager, player_x: int, player_y: int):
+        """
+        Generate torches for this dungeon level.
+
+        Torches are placed on wall tiles adjacent to floor tiles, facing inward
+        toward the room or corridor. Placement is theme-dependent.
+
+        Args:
+            torch_manager: The TorchManager to add torches to
+            player_x, player_y: Player position to avoid placing torches there
+        """
+        # Get torch count range for this theme
+        min_torches, max_torches = THEME_TORCH_COUNTS.get(
+            self.theme,
+            (4, 8)  # Default fallback
+        )
+        num_torches = random.randint(min_torches, max_torches)
+
+        # Find all valid torch positions (wall tiles adjacent to floor)
+        valid_positions = self._find_torch_positions()
+
+        if not valid_positions:
+            return
+
+        # Positions to avoid
+        avoid_positions = set()
+        if self.stairs_up_pos:
+            avoid_positions.add(self.stairs_up_pos)
+        if self.stairs_down_pos:
+            avoid_positions.add(self.stairs_down_pos)
+
+        # Add decoration positions to avoid
+        for dx, dy, _, _ in self.decorations:
+            avoid_positions.add((dx, dy))
+
+        # Priority placement: near stairs (landmark lighting)
+        priority_positions = []
+        regular_positions = []
+
+        for pos in valid_positions:
+            x, y, facing_dx, facing_dy = pos
+
+            # Skip avoided positions
+            if (x, y) in avoid_positions:
+                continue
+
+            # Check if near stairs
+            near_stairs = False
+            if self.stairs_up_pos:
+                dist = abs(x - self.stairs_up_pos[0]) + abs(y - self.stairs_up_pos[1])
+                if dist <= 3:
+                    near_stairs = True
+            if self.stairs_down_pos:
+                dist = abs(x - self.stairs_down_pos[0]) + abs(y - self.stairs_down_pos[1])
+                if dist <= 3:
+                    near_stairs = True
+
+            if near_stairs:
+                priority_positions.append(pos)
+            else:
+                regular_positions.append(pos)
+
+        # Shuffle regular positions
+        random.shuffle(regular_positions)
+
+        # Combine: priority first, then regular
+        all_positions = priority_positions + regular_positions
+
+        # Place torches with minimum spacing
+        placed = 0
+        placed_positions = set()
+
+        for pos in all_positions:
+            if placed >= num_torches:
+                break
+
+            x, y, facing_dx, facing_dy = pos
+
+            # Ensure minimum spacing between torches (at least 4 tiles apart)
+            too_close = False
+            for px, py in placed_positions:
+                if abs(x - px) + abs(y - py) < 4:
+                    too_close = True
+                    break
+
+            if too_close:
+                continue
+
+            # Create torch
+            torch = Torch(
+                x=x, y=y,
+                facing_dx=facing_dx,
+                facing_dy=facing_dy,
+                radius=TORCH_DEFAULT_RADIUS,
+                intensity=TORCH_DEFAULT_INTENSITY,
+                is_lit=True,
+                torch_type=self._get_torch_type_for_theme()
+            )
+            torch_manager.add_torch(torch)
+            placed_positions.add((x, y))
+            placed += 1
+
+    def _find_torch_positions(self) -> List[Tuple[int, int, int, int]]:
+        """
+        Find all valid wall positions for torches.
+
+        Returns:
+            List of (x, y, facing_dx, facing_dy) tuples where:
+            - x, y is the wall tile position
+            - facing_dx, facing_dy is the direction the torch should face
+        """
+        positions = []
+
+        for y in range(1, self.height - 1):
+            for x in range(1, self.width - 1):
+                if self.tiles[y][x] != TileType.WALL:
+                    continue
+
+                # Check each cardinal direction for adjacent floor
+                for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                        if self.tiles[ny][nx] == TileType.FLOOR:
+                            # Torch faces toward the floor (away from wall)
+                            positions.append((x, y, dx, dy))
+                            break  # Only one torch per wall tile
+
+        return positions
+
+    def _get_torch_type_for_theme(self) -> str:
+        """Get the appropriate torch type for the current theme."""
+        if self.theme == DungeonTheme.CAVE:
+            return "sconce"  # Simple wall-mounted
+        elif self.theme == DungeonTheme.TREASURY:
+            return "brazier"  # Ornate
+        elif self.theme == DungeonTheme.LIBRARY:
+            return "sconce"  # Clean, functional
+        else:
+            return "wall"  # Standard torch

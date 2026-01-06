@@ -5,7 +5,8 @@
  */
 
 export { SceneRenderer, default } from './SceneRenderer';
-export { FirstPersonRenderer } from './FirstPersonRenderer';
+export { FirstPersonRenderer, type RenderSettings } from './FirstPersonRenderer';
+export { BIOMES, getBiome, type BiomeTheme, type BiomeId } from './biomes';
 export { useSceneFrame, gameStateToSceneFrame } from './useSceneRenderer';
 export { SpriteManager } from './SpriteManager';
 export * from './animations';

@@ -612,6 +612,19 @@ THEME_TERRAIN = {
     DungeonTheme.TREASURY: [TERRAIN_WATER],  # Water features
 }
 
+# Theme-specific torch counts (min, max) per level
+THEME_TORCH_COUNTS = {
+    DungeonTheme.STONE: (6, 10),     # Well-lit stone dungeon
+    DungeonTheme.CAVE: (2, 4),       # Natural, sparse lighting
+    DungeonTheme.CRYPT: (4, 6),      # Dim, atmospheric
+    DungeonTheme.LIBRARY: (8, 12),   # Bright for reading
+    DungeonTheme.TREASURY: (6, 8),   # Highlight treasure
+}
+
+# Default torch light properties
+TORCH_DEFAULT_RADIUS = 5
+TORCH_DEFAULT_INTENSITY = 1.0
+
 # Item rarity color pairs (matches curses color pair indices)
 ITEM_RARITY_COLORS = {
     ItemRarity.COMMON: 1,      # White (color_pair 1)

@@ -2,10 +2,16 @@
  * Draw floor and ceiling segments with perspective
  */
 import { getProjection, getDepthFade, getFogAmount } from '../projection';
-import { Colors } from '../colors';
+import type { BiomeTheme } from '../biomes';
+
+export interface FloorSegmentOptions {
+  biome?: BiomeTheme;
+  brightness?: number;
+}
 
 /**
  * Draw a floor or ceiling segment between two depths
+ * Segments fade to pure black at distance
  */
 export function drawFloorSegment(
   ctx: CanvasRenderingContext2D,
@@ -15,7 +21,8 @@ export function drawFloorSegment(
   rightOffset: number,
   canvasWidth: number,
   canvasHeight: number,
-  isFloor: boolean = true
+  isFloor: boolean = true,
+  options: FloorSegmentOptions = {}
 ): void {
   const nearLeft = getProjection(canvasWidth, canvasHeight, nearDepth, leftOffset);
   const nearRight = getProjection(canvasWidth, canvasHeight, nearDepth, rightOffset);
@@ -25,16 +32,53 @@ export function drawFloorSegment(
   const avgDepth = (nearDepth + farDepth) / 2;
   const depthFade = getDepthFade(avgDepth);
 
-  // Floor is darker, ceiling is lighter
-  const baseBrightness = isFloor ? 35 : 25;
-  const brightness = Math.floor(baseBrightness * depthFade);
+  // Use biome colors if provided
+  const biome = options.biome;
+  const globalBrightness = options.brightness ?? 1.0;
+
+  let baseR: number, baseG: number, baseB: number;
+  let lightR: number, lightG: number, lightB: number;
+  let fogR: number, fogG: number, fogB: number;
+
+  if (biome) {
+    if (isFloor) {
+      baseR = biome.floorColor[0];
+      baseG = biome.floorColor[1];
+      baseB = biome.floorColor[2];
+    } else {
+      baseR = biome.ceilingColor[0];
+      baseG = biome.ceilingColor[1];
+      baseB = biome.ceilingColor[2];
+    }
+    lightR = biome.lightColor[0];
+    lightG = biome.lightColor[1];
+    lightB = biome.lightColor[2];
+    fogR = biome.fogColor[0];
+    fogG = biome.fogColor[1];
+    fogB = biome.fogColor[2];
+  } else {
+    // Default dungeon colors
+    baseR = isFloor ? 40 : 20;
+    baseG = isFloor ? 35 : 18;
+    baseB = isFloor ? 30 : 15;
+    lightR = 255; lightG = 150; lightB = 80;
+    fogR = 0; fogG = 0; fogB = 0;
+  }
+
+  const brightness = depthFade * globalBrightness;
+
+  // Mix floor/ceiling color with light tint
+  const lightMix = 0.12 * depthFade;
+  const finalR = Math.floor((baseR * (1 - lightMix) + lightR * lightMix) * brightness);
+  const finalG = Math.floor((baseG * (1 - lightMix) + lightG * lightMix) * brightness);
+  const finalB = Math.floor((baseB * (1 - lightMix) + lightB * lightMix) * brightness);
 
   const yNearLeft = isFloor ? nearLeft.wallBottom : nearLeft.wallTop;
   const yNearRight = isFloor ? nearRight.wallBottom : nearRight.wallTop;
   const yFarLeft = isFloor ? farLeft.wallBottom : farLeft.wallTop;
   const yFarRight = isFloor ? farRight.wallBottom : farRight.wallTop;
 
-  ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness + 10})`;
+  ctx.fillStyle = `rgb(${finalR}, ${finalG}, ${finalB})`;
   ctx.beginPath();
   ctx.moveTo(nearLeft.x, yNearLeft);
   ctx.lineTo(nearRight.x, yNearRight);
@@ -43,22 +87,10 @@ export function drawFloorSegment(
   ctx.closePath();
   ctx.fill();
 
-  // Grid lines for floor
-  if (isFloor) {
-    ctx.strokeStyle = `rgba(60, 60, 80, ${0.2 * depthFade})`;
-    ctx.lineWidth = 1;
-
-    // Horizontal line
-    ctx.beginPath();
-    ctx.moveTo(nearLeft.x, yNearLeft);
-    ctx.lineTo(nearRight.x, yNearRight);
-    ctx.stroke();
-  }
-
-  // Fog
-  const fogAmount = getFogAmount(avgDepth, 0.5);
+  // Fog overlay using biome fog color
+  const fogAmount = getFogAmount(avgDepth);
   if (fogAmount > 0) {
-    ctx.fillStyle = `rgba(10, 10, 20, ${fogAmount})`;
+    ctx.fillStyle = `rgba(${fogR}, ${fogG}, ${fogB}, ${fogAmount})`;
     ctx.beginPath();
     ctx.moveTo(nearLeft.x, yNearLeft);
     ctx.lineTo(nearRight.x, yNearRight);
@@ -70,7 +102,7 @@ export function drawFloorSegment(
 }
 
 /**
- * Draw the background floor and ceiling gradients
+ * Draw the background - pure black dungeon with torch-lit area near player
  */
 export function drawFloorAndCeiling(
   ctx: CanvasRenderingContext2D,
@@ -80,72 +112,43 @@ export function drawFloorAndCeiling(
   enableAnimations: boolean
 ): void {
   const horizon = canvasHeight / 2;
+  const centerX = canvasWidth / 2;
 
-  // Ceiling gradient
-  const ceilingGrad = ctx.createLinearGradient(0, 0, 0, horizon);
-  ceilingGrad.addColorStop(0, Colors.ceilingFar);
-  ceilingGrad.addColorStop(1, Colors.ceilingNear);
-  ctx.fillStyle = ceilingGrad;
-  ctx.fillRect(0, 0, canvasWidth, horizon);
+  // Everything starts as pure black
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-  // Floor gradient
-  const floorGrad = ctx.createLinearGradient(0, horizon, 0, canvasHeight);
-  floorGrad.addColorStop(0, Colors.floorNear);
-  floorGrad.addColorStop(1, Colors.floorFar);
+  // Torch flicker
+  const flicker = enableAnimations ? Math.sin(time * 8) * 0.1 + 0.9 : 1;
+
+  // Only illuminate area near the player (bottom of screen)
+  // This creates a small pool of light in the darkness
+
+  // Floor - only visible near player, fades to black
+  const floorGrad = ctx.createLinearGradient(0, canvasHeight, 0, horizon);
+  floorGrad.addColorStop(0, `rgba(40, 35, 30, ${0.8 * flicker})`);  // Lit floor near player
+  floorGrad.addColorStop(0.3, `rgba(25, 22, 18, ${0.5 * flicker})`);
+  floorGrad.addColorStop(0.6, 'rgba(10, 8, 5, 0.3)');
+  floorGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');  // Black at horizon
   ctx.fillStyle = floorGrad;
   ctx.fillRect(0, horizon, canvasWidth, horizon);
 
-  // Add perspective floor tiles
-  const numLines = 12;
-  const centerX = canvasWidth / 2;
+  // Ceiling - barely visible, mostly black
+  const ceilingGrad = ctx.createLinearGradient(0, horizon, 0, 0);
+  ceilingGrad.addColorStop(0, `rgba(20, 18, 15, ${0.3 * flicker})`);
+  ceilingGrad.addColorStop(0.3, 'rgba(5, 4, 3, 0.1)');
+  ceilingGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = ceilingGrad;
+  ctx.fillRect(0, 0, canvasWidth, horizon);
 
-  for (let i = 1; i <= numLines; i++) {
-    const t = i / numLines;
-    const y = horizon + (canvasHeight - horizon) * (1 - Math.pow(1 - t, 2));
-    const lineAlpha = 0.15 * (1 - t);
-
-    // Horizontal floor lines
-    ctx.strokeStyle = `rgba(60, 60, 80, ${lineAlpha})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvasWidth, y);
-    ctx.stroke();
-
-    // Perspective converging lines on floor
-    const spread = canvasWidth * 0.8 * t;
-    ctx.strokeStyle = `rgba(60, 60, 80, ${lineAlpha * 0.5})`;
-    ctx.beginPath();
-    ctx.moveTo(centerX - spread, y);
-    ctx.lineTo(centerX, horizon);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(centerX + spread, y);
-    ctx.lineTo(centerX, horizon);
-    ctx.stroke();
-  }
-
-  // Add ceiling lines (subtler)
-  for (let i = 1; i <= 8; i++) {
-    const t = i / 8;
-    const y = horizon * (1 - Math.pow(1 - t, 2));
-    const lineAlpha = 0.08 * t;
-
-    ctx.strokeStyle = `rgba(40, 40, 60, ${lineAlpha})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvasWidth, y);
-    ctx.stroke();
-  }
-
-  // Ambient light effect in center (subtle)
-  if (enableAnimations) {
-    const pulse = Math.sin(time * 0.5) * 0.02 + 0.05;
-    const ambientGrad = ctx.createRadialGradient(centerX, horizon, 0, centerX, horizon, canvasWidth * 0.6);
-    ambientGrad.addColorStop(0, `rgba(100, 100, 140, ${pulse})`);
-    ambientGrad.addColorStop(1, 'rgba(100, 100, 140, 0)');
-    ctx.fillStyle = ambientGrad;
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-  }
+  // Subtle warm torch glow on nearby surfaces
+  const torchGrad = ctx.createRadialGradient(
+    centerX, canvasHeight + 20, 0,
+    centerX, canvasHeight + 20, canvasHeight * 0.5
+  );
+  torchGrad.addColorStop(0, `rgba(255, 140, 50, ${0.15 * flicker})`);
+  torchGrad.addColorStop(0.4, `rgba(200, 100, 30, ${0.06 * flicker})`);
+  torchGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = torchGrad;
+  ctx.fillRect(0, horizon, canvasWidth, horizon);
 }
