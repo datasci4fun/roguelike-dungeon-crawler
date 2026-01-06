@@ -1,8 +1,8 @@
 # Project State Checkpoint
 
 **Last Updated:** 2026-01-06
-**Branch:** feature/wall-variety
-**Version:** v4.5.0 (Wall Variety) - In Progress
+**Branch:** master
+**Version:** v4.5.0 (Biome Theming & Tile Engine) - Released
 
 ---
 
@@ -22,9 +22,9 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 
 ## Current Status
 
-**Wall Variety** - Visual enhancements with moss, cracks, cobwebs on dungeon walls plus FOV cone filtering fix.
+**Biome Theming & Tile Engine** - 8 biome themes, data-driven torch lighting, tile loading engine for custom textures, wall decorations.
 
-### v4.5.0 Wall Variety (In Progress)
+### v4.5.0 Biome Theming & Tile Engine (Complete)
 
 | Component | Status |
 |-----------|--------|

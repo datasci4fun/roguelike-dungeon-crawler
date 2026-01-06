@@ -26,6 +26,8 @@ A terminal-based roguelike game with procedural dungeon generation, exploration,
 
 **v4.4.1 fixes WebSocket stability!** Fixed duplicate connections, chat message posting, and character creation flow.
 
+**v4.5.0 adds Biome Theming & Tile Engine!** 8 biome themes (dungeon, ice, forest, lava, crypt, sewer, library, crystal) with distinct color palettes, data-driven torch lighting system, tile loading engine for custom textures, wall decorations (moss, cracks, cobwebs), and a test page with biome selector and brightness controls.
+
 ## Features
 
 ### Core Gameplay
