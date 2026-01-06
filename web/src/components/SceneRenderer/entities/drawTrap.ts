@@ -3,7 +3,7 @@
  *
  * Each trap type has a distinct visual appearance on the dungeon floor.
  */
-import { getFogAmount } from '../projection';
+// getFogAmount is available if needed for future trap effects
 
 type TrapType = 'spike' | 'fire' | 'poison' | 'arrow';
 
@@ -30,8 +30,8 @@ export function drawTrap({
   ctx,
   centerX,
   floorY,
-  width,
-  height,
+  width: _width,
+  height: _height,
   scale,
   trapType,
   triggered,
@@ -87,9 +87,9 @@ function drawSpikeTrap(
   width: number,
   height: number,
   triggered: boolean,
-  isActive: boolean,
-  time: number,
-  enableAnimations: boolean
+  _isActive: boolean,
+  _time: number,
+  _enableAnimations: boolean
 ): void {
   // Pressure plate base
   ctx.fillStyle = triggered ? '#3a3530' : '#4a4540';

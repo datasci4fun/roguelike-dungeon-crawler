@@ -3,57 +3,13 @@
  */
 import { getProjection, seededRandom, getDepthFade, getFogAmount } from '../projection';
 import { drawMossCorridor, drawCracksCorridor, drawCobwebsCorridor } from './drawWallDecor';
+import type { BiomeTheme } from '../biomes';
 
-/**
- * Draw a wall-mounted torch on a side wall
- * Light sources stay bright - only the glow on surrounding walls fades with distance
- */
-function drawSideWallTorch(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  scale: number,
-  depthFade: number,
-  time: number,
-  enableAnimations: boolean,
-  side: 'left' | 'right'
-): void {
-  const flicker = enableAnimations ? Math.sin(time * 8) * 0.15 + 0.85 : 1;
+// Note: Torches are now data-driven and rendered separately by torchLight.ts
 
-  // Glow on wall - this fades with distance (it illuminates the wall)
-  const glowRadius = 40 * scale;
-  const glowGrad = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
-  glowGrad.addColorStop(0, `rgba(255, 160, 60, ${0.5 * flicker * depthFade})`);
-  glowGrad.addColorStop(0.4, `rgba(255, 120, 40, ${0.3 * flicker * depthFade})`);
-  glowGrad.addColorStop(1, 'rgba(255, 80, 20, 0)');
-  ctx.fillStyle = glowGrad;
-  ctx.beginPath();
-  ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Bracket - fades into darkness
-  const bracketW = Math.max(2, 4 * scale);
-  const bracketH = Math.max(3, 10 * scale);
-  const offsetX = side === 'left' ? bracketW : -bracketW * 2;
-  ctx.fillStyle = `rgb(${Math.floor(40 * depthFade)}, ${Math.floor(35 * depthFade)}, ${Math.floor(30 * depthFade)})`;
-  ctx.fillRect(x + offsetX, y, bracketW, bracketH);
-
-  // Flame - STAYS BRIGHT regardless of distance (it's the light source!)
-  const flameW = Math.max(2, 8 * scale);
-  const flameH = Math.max(3, (10 + (enableAnimations ? Math.sin(time * 10) * 2 : 0)) * scale);
-  const flameX = x + offsetX + bracketW / 2;
-
-  ctx.fillStyle = `rgba(255, 140, 30, ${flicker})`;
-  ctx.beginPath();
-  ctx.moveTo(flameX - flameW / 2, y);
-  ctx.quadraticCurveTo(flameX, y - flameH, flameX + flameW / 2, y);
-  ctx.fill();
-
-  // Core - STAYS BRIGHT, pierces the darkness
-  ctx.fillStyle = `rgba(255, 220, 100, ${flicker})`;
-  ctx.beginPath();
-  ctx.arc(flameX, y - flameH * 0.3, Math.max(1, 2 * scale), 0, Math.PI * 2);
-  ctx.fill();
+export interface CorridorWallOptions {
+  biome?: BiomeTheme;
+  brightness?: number;
 }
 
 export function drawCorridorWall(
@@ -63,25 +19,56 @@ export function drawCorridorWall(
   farDepth: number,
   canvasWidth: number,
   canvasHeight: number,
-  time: number,
-  enableAnimations: boolean = true
+  _time: number,
+  _enableAnimations: boolean = true,
+  options: CorridorWallOptions = {}
 ): void {
   const xOffset = side === 'left' ? -1 : 1;
 
   const near = getProjection(canvasWidth, canvasHeight, nearDepth, xOffset);
   const far = getProjection(canvasWidth, canvasHeight, farDepth, xOffset);
 
-  // Darker base - walls emerge from darkness
-  // Left wall is darker (shadow side), right wall slightly lighter (torch side)
-  const baseBrightness = side === 'left' ? 35 : 50;
   const avgDepth = (nearDepth + farDepth) / 2;
   const depthFade = getDepthFade(avgDepth);
-  const brightness = Math.floor(baseBrightness * depthFade);
-  // Warm torch tint
-  const warmth = Math.floor(10 * depthFade);
 
-  // Draw the wall quad with warm stone color
-  ctx.fillStyle = `rgb(${brightness + warmth}, ${brightness + Math.floor(warmth * 0.6)}, ${brightness})`;
+  // Use biome colors if provided, otherwise use defaults
+  const biome = options.biome;
+  const globalBrightness = options.brightness ?? 1.0;
+
+  // Wall base color from biome or default warm stone
+  let wallR: number, wallG: number, wallB: number;
+  let lightR: number, lightG: number, lightB: number;
+  let fogR: number, fogG: number, fogB: number;
+
+  if (biome) {
+    wallR = biome.wallColor[0];
+    wallG = biome.wallColor[1];
+    wallB = biome.wallColor[2];
+    lightR = biome.lightColor[0];
+    lightG = biome.lightColor[1];
+    lightB = biome.lightColor[2];
+    fogR = biome.fogColor[0];
+    fogG = biome.fogColor[1];
+    fogB = biome.fogColor[2];
+  } else {
+    // Default dungeon colors
+    wallR = 74; wallG = 74; wallB = 94;
+    lightR = 255; lightG = 150; lightB = 80;
+    fogR = 0; fogG = 0; fogB = 0;
+  }
+
+  // Left wall is darker (shadow side), right wall slightly lighter (torch side)
+  const sideFactor = side === 'left' ? 0.7 : 1.0;
+  const brightness = depthFade * globalBrightness * sideFactor;
+
+  // Calculate final wall color with light tint
+  const lightMix = 0.15 * depthFade; // How much light color affects wall
+  const finalR = Math.floor((wallR * (1 - lightMix) + lightR * lightMix) * brightness);
+  const finalG = Math.floor((wallG * (1 - lightMix) + lightG * lightMix) * brightness);
+  const finalB = Math.floor((wallB * (1 - lightMix) + lightB * lightMix) * brightness);
+
+  // Draw the wall quad with biome-appropriate color
+  ctx.fillStyle = `rgb(${finalR}, ${finalG}, ${finalB})`;
   ctx.beginPath();
   ctx.moveTo(near.x, near.wallTop);
   ctx.lineTo(far.x, far.wallTop);
@@ -104,10 +91,12 @@ export function drawCorridorWall(
 
       // Brick variation
       const seed = i * 100 + (side === 'left' ? 0 : 500) + Math.floor(nearDepth * 10);
-      const variation = seededRandom(seed) * 15 - 7;
-      const brickBrightness = brightness + variation;
+      const variation = (seededRandom(seed) * 0.3 - 0.15); // +/- 15% variation
+      const brickR = Math.floor(finalR * (1 + variation));
+      const brickG = Math.floor(finalG * (1 + variation));
+      const brickB = Math.floor(finalB * (1 + variation));
 
-      ctx.fillStyle = `rgb(${brickBrightness + warmth}, ${brickBrightness + Math.floor(warmth * 0.6)}, ${brickBrightness})`;
+      ctx.fillStyle = `rgb(${brickR}, ${brickG}, ${brickB})`;
       ctx.beginPath();
       ctx.moveTo(near.x + (side === 'left' ? 2 : -2), nearY + 2);
       ctx.lineTo(far.x + (side === 'left' ? 2 : -2), farY + 2);
@@ -160,11 +149,10 @@ export function drawCorridorWall(
     drawCobwebsCorridor(ctx, corridorBounds, side, avgDepth, decorSeed + 300);
   }
 
-  // Black fog overlay - pure darkness at distance
-  // Applied BEFORE torches so light sources punch through
+  // Fog overlay using biome fog color
   const fogAmount = getFogAmount(avgDepth);
   if (fogAmount > 0) {
-    ctx.fillStyle = `rgba(0, 0, 0, ${fogAmount})`;
+    ctx.fillStyle = `rgba(${fogR}, ${fogG}, ${fogB}, ${fogAmount})`;
     ctx.beginPath();
     ctx.moveTo(near.x, near.wallTop);
     ctx.lineTo(far.x, far.wallTop);
@@ -174,17 +162,5 @@ export function drawCorridorWall(
     ctx.fill();
   }
 
-  // Add torch at regular intervals for depth reference
-  // Torches appear every ~2 depth units on side walls
-  // Drawn AFTER fog so they illuminate through darkness
-  const torchDepth = Math.round(avgDepth);
-  if (torchDepth >= 1 && torchDepth <= 5 && torchDepth % 2 === 1) {
-    // Interpolate position along the wall
-    const t = 0.5; // Middle of this wall segment
-    const torchX = near.x + (far.x - near.x) * t;
-    const torchY = near.wallTop + (near.wallBottom - near.wallTop) * 0.35;
-    const torchScale = Math.max(0.3, 1 / (avgDepth * 0.5 + 0.5));
-
-    drawSideWallTorch(ctx, torchX, torchY, torchScale, depthFade, time, enableAnimations, side);
-  }
+  // Note: Torches are now data-driven and rendered separately by torchLight.ts
 }

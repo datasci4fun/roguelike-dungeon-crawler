@@ -17,7 +17,7 @@ from .commands import (
 
 # Turn commands set
 TURN_COMMANDS = {CommandType.TURN_LEFT, CommandType.TURN_RIGHT}
-from ..world import Dungeon, TrapManager, HazardManager, SecretDoorManager
+from ..world import Dungeon, TrapManager, HazardManager, SecretDoorManager, TorchManager
 from ..entities import Player
 from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
 from ..story import StoryManager
@@ -77,6 +77,9 @@ class GameEngine:
 
         # v4.3: Secret door manager
         self.secret_door_manager = SecretDoorManager()
+
+        # v4.5: Torch manager
+        self.torch_manager = TorchManager()
 
         # Death tracking for recap
         self.last_attacker_name = None
@@ -145,6 +148,10 @@ class GameEngine:
         # v4.3: Generate secret doors
         self.secret_door_manager.clear()
         self.dungeon.generate_secret_doors(self.secret_door_manager, self.player.x, self.player.y)
+
+        # v4.5: Generate torches
+        self.torch_manager.clear()
+        self.dungeon.generate_torches(self.torch_manager, self.player.x, self.player.y)
 
         # Welcome messages with character info
         if race and player_class:
@@ -248,7 +255,8 @@ class GameEngine:
                 if self.dungeon:
                     new_hazards = self.hazard_manager.tick_spreading(self.dungeon.is_walkable)
                     for hazard in new_hazards:
-                        self.add_message(f"The {hazard.name.lower()} spreads!")
+                        if hazard and hasattr(hazard, 'name') and hazard.name:
+                            self.add_message(f"The {hazard.name.lower()} spreads!")
 
                 self._check_auto_save()
                 self._check_player_death()
@@ -410,7 +418,8 @@ class GameEngine:
                 self.player.x, self.player.y, perception, radius=1
             )
             for trap in detected_traps:
-                self.add_message(f"You found a hidden {trap.name}!", important=True)
+                trap_name = trap.name if trap and hasattr(trap, 'name') and trap.name else "trap"
+                self.add_message(f"You found a hidden {trap_name}!", important=True)
                 found_something = True
 
         # Search for secret doors
@@ -461,7 +470,8 @@ class GameEngine:
 
             # Track damage for death recap
             if result.get('damage', 0) > 0:
-                self.last_attacker_name = f"a {trap.name}"
+                trap_name = trap.name if trap and hasattr(trap, 'name') and trap.name else "trap"
+                self.last_attacker_name = f"a {trap_name}"
                 self.last_damage_taken = result['damage']
 
         # Tick all trap cooldowns

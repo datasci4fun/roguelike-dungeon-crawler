@@ -427,64 +427,94 @@ class GameSessionManager:
                     state["player"]["available_feats"] = player.get_available_feats_info()
 
             # Add first-person view data (tiles in front of player)
-            state["first_person_view"] = self._serialize_first_person_view(engine, facing)
+            try:
+                state["first_person_view"] = self._serialize_first_person_view(engine, facing)
+            except Exception as e:
+                print(f"Error in _serialize_first_person_view: {e}")
+                state["first_person_view"] = {"rows": [], "entities": [], "torches": [], "lighting": {}, "facing": {"dx": facing[0], "dy": facing[1]}, "depth": 8}
 
         # Add dungeon data if available
         if engine.dungeon:
-            state["dungeon"] = {
-                "level": engine.dungeon.level,
-                "width": engine.dungeon.width,
-                "height": engine.dungeon.height,
-                "tiles": self._serialize_visible_tiles(engine),
-            }
+            try:
+                state["dungeon"] = {
+                    "level": engine.dungeon.level,
+                    "width": engine.dungeon.width,
+                    "height": engine.dungeon.height,
+                    "tiles": self._serialize_visible_tiles(engine),
+                }
+            except Exception as e:
+                print(f"Error serializing dungeon: {e}")
+                state["dungeon"] = {"level": 1, "width": 50, "height": 30, "tiles": []}
 
         # Add enemies in view
         if engine.entity_manager:
-            state["enemies"] = [
-                {
-                    "x": e.x,
-                    "y": e.y,
-                    "name": e.name,
-                    "health": e.health,
-                    "max_health": e.max_health,
-                    "is_elite": e.is_elite,
-                    "symbol": e.symbol,
-                }
-                for e in engine.entity_manager.enemies
-                if e.is_alive() and self._is_visible(engine, e.x, e.y)
-            ]
+            enemies_list = []
+            for e in engine.entity_manager.enemies:
+                if e is None:
+                    continue
+                try:
+                    if e.is_alive() and self._is_visible(engine, e.x, e.y):
+                        enemies_list.append({
+                            "x": e.x,
+                            "y": e.y,
+                            "name": e.name if hasattr(e, 'name') and e.name else "enemy",
+                            "health": e.health if hasattr(e, 'health') else 0,
+                            "max_health": e.max_health if hasattr(e, 'max_health') else 0,
+                            "is_elite": getattr(e, 'is_elite', False),
+                            "symbol": e.symbol if hasattr(e, 'symbol') and e.symbol else "?",
+                        })
+                except (AttributeError, TypeError):
+                    continue  # Skip malformed enemy
+            state["enemies"] = enemies_list
 
-            state["items"] = [
-                {
-                    "x": i.x,
-                    "y": i.y,
-                    "name": i.name,
-                    "symbol": getattr(i, 'symbol', '?'),
-                }
-                for i in engine.entity_manager.items
-                if self._is_visible(engine, i.x, i.y)
-            ]
+            items_list = []
+            for i in engine.entity_manager.items:
+                if i is None:
+                    continue
+                try:
+                    if self._is_visible(engine, i.x, i.y):
+                        items_list.append({
+                            "x": i.x,
+                            "y": i.y,
+                            "name": i.name if hasattr(i, 'name') and i.name else "item",
+                            "symbol": getattr(i, 'symbol', '?'),
+                        })
+                except (AttributeError, TypeError):
+                    continue  # Skip malformed item
+            state["items"] = items_list
 
         # Add messages
         state["messages"] = engine.messages[-10:] if engine.messages else []
 
         # Add events for animations
-        state["events"] = [
-            {"type": e.type.name, "data": self._sanitize_event_data(e.data)}
-            for e in events
-        ]
+        events_list = []
+        for e in events:
+            if e is None:
+                continue
+            try:
+                event_type = e.type.name if hasattr(e, 'type') and hasattr(e.type, 'name') else "UNKNOWN"
+                event_data = self._sanitize_event_data(e.data) if hasattr(e, 'data') else {}
+                events_list.append({"type": event_type, "data": event_data})
+            except (AttributeError, TypeError):
+                continue  # Skip malformed event
+        state["events"] = events_list
 
         # Add UI-specific data
         if engine.ui_mode == UIMode.INVENTORY and engine.player:
+            inventory_items = []
+            for item in engine.player.inventory.items:
+                if item is None:
+                    continue
+                try:
+                    inventory_items.append({
+                        "name": item.name if hasattr(item, 'name') and item.name else "Unknown Item",
+                        "type": item.item_type.name if hasattr(item, 'item_type') and item.item_type else "UNKNOWN",
+                        "rarity": item.rarity.name if hasattr(item, 'rarity') and item.rarity else "COMMON",
+                    })
+                except (AttributeError, TypeError):
+                    continue  # Skip malformed item
             state["inventory"] = {
-                "items": [
-                    {
-                        "name": item.name,
-                        "type": item.item_type.name if hasattr(item, 'item_type') else "UNKNOWN",
-                        "rarity": item.rarity.name if hasattr(item, 'rarity') else "COMMON",
-                    }
-                    for item in engine.player.inventory.items
-                ],
+                "items": inventory_items,
                 "selected_index": engine.selected_item_index,
             }
 
@@ -586,6 +616,43 @@ class GameSessionManager:
 
         return dot >= cone_threshold
 
+    def _has_line_of_sight(self, dungeon, start_x: int, start_y: int, end_x: int, end_y: int) -> bool:
+        """
+        Check if there's a clear line of sight between two points.
+        Uses Bresenham's line algorithm to trace the path.
+        Returns True if no walls block the view (the end tile itself can be a wall - we can see walls).
+        """
+        dx = abs(end_x - start_x)
+        dy = abs(end_y - start_y)
+        sx = 1 if start_x < end_x else -1
+        sy = 1 if start_y < end_y else -1
+        err = dx - dy
+
+        x, y = start_x, start_y
+
+        while True:
+            # If we reached the destination, line of sight is clear
+            if x == end_x and y == end_y:
+                return True
+
+            # Check if current position blocks sight (walls block, but we can see the wall itself)
+            if (x != start_x or y != start_y):  # Don't check start position
+                if dungeon.is_blocking_sight(x, y):
+                    # We hit a wall before reaching destination
+                    # But if this IS the destination, we can see it
+                    if x == end_x and y == end_y:
+                        return True
+                    return False
+
+            # Move to next cell
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x += sx
+            if e2 < dx:
+                err += dx
+                y += sy
+
     def _serialize_first_person_view(self, engine, facing: tuple) -> dict:
         """
         Serialize tiles and entities in front of the player for first-person rendering.
@@ -632,7 +699,10 @@ class GameSessionManager:
                 # Check bounds and visibility
                 in_bounds = 0 <= tile_x < dungeon.width and 0 <= tile_y < dungeon.height
 
-                if in_bounds and dungeon.visible[tile_y][tile_x]:
+                # Check line of sight - walls should block visibility of tiles behind them
+                has_los = in_bounds and self._has_line_of_sight(dungeon, player.x, player.y, tile_x, tile_y)
+
+                if in_bounds and has_los:
                     tile = dungeon.tiles[tile_y][tile_x]
                     tile_char = tile.value if hasattr(tile, 'value') else str(tile)
 
@@ -644,32 +714,18 @@ class GameSessionManager:
                     # Check for enemy (only in front, not beside, and within FOV cone)
                     if engine.entity_manager and d > 0:
                         for enemy in engine.entity_manager.enemies:
-                            if (enemy.is_alive() and enemy.x == tile_x and enemy.y == tile_y and
-                                self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
-                                entity_here = {
-                                    "type": "enemy",
-                                    "name": enemy.name,
-                                    "symbol": enemy.symbol,
-                                    "health": enemy.health,
-                                    "max_health": enemy.max_health,
-                                    "is_elite": enemy.is_elite,
-                                    "distance": d,
-                                    "offset": w,
-                                    "x": tile_x,
-                                    "y": tile_y,
-                                }
-                                entities_in_view.append(entity_here)
-                                break
-
-                        # Check for item (within FOV cone)
-                        if not entity_here:
-                            for item in engine.entity_manager.items:
-                                if (item.x == tile_x and item.y == tile_y and
+                            if enemy is None:
+                                continue
+                            try:
+                                if (enemy.is_alive() and enemy.x == tile_x and enemy.y == tile_y and
                                     self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
                                     entity_here = {
-                                        "type": "item",
-                                        "name": item.name,
-                                        "symbol": getattr(item, 'symbol', '?'),
+                                        "type": "enemy",
+                                        "name": enemy.name if hasattr(enemy, 'name') and enemy.name else "enemy",
+                                        "symbol": enemy.symbol if hasattr(enemy, 'symbol') and enemy.symbol else "?",
+                                        "health": enemy.health if hasattr(enemy, 'health') else 0,
+                                        "max_health": enemy.max_health if hasattr(enemy, 'max_health') else 0,
+                                        "is_elite": getattr(enemy, 'is_elite', False),
                                         "distance": d,
                                         "offset": w,
                                         "x": tile_x,
@@ -677,25 +733,56 @@ class GameSessionManager:
                                     }
                                     entities_in_view.append(entity_here)
                                     break
+                            except (AttributeError, TypeError):
+                                continue  # Skip malformed enemy
+
+                        # Check for item (within FOV cone)
+                        if not entity_here:
+                            for item in engine.entity_manager.items:
+                                if item is None:
+                                    continue
+                                try:
+                                    if (item.x == tile_x and item.y == tile_y and
+                                        self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
+                                        entity_here = {
+                                            "type": "item",
+                                            "name": item.name if hasattr(item, 'name') and item.name else "item",
+                                            "symbol": getattr(item, 'symbol', '?'),
+                                            "distance": d,
+                                            "offset": w,
+                                            "x": tile_x,
+                                            "y": tile_y,
+                                        }
+                                        entities_in_view.append(entity_here)
+                                        break
+                                except (AttributeError, TypeError):
+                                    continue  # Skip malformed item
 
                     # Check for visible trap (only in front, not beside, within FOV cone)
                     if d > 0 and engine.trap_manager:
                         trap = engine.trap_manager.get_trap_at(tile_x, tile_y)
-                        if (trap and not trap.hidden and
+                        if (trap and not trap.hidden and trap.trap_type and
+                            hasattr(trap.trap_type, 'name') and
                             self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
-                            trap_entity = {
-                                "type": "trap",
-                                "name": trap.name,
-                                "symbol": trap.symbol,
-                                "trap_type": trap.trap_type.name.lower(),  # spike, fire, poison, arrow
-                                "triggered": trap.triggered,
-                                "is_active": trap.is_active,
-                                "distance": d,
-                                "offset": w,
-                                "x": tile_x,
-                                "y": tile_y,
-                            }
-                            entities_in_view.append(trap_entity)
+                            try:
+                                trap_type_name = trap.trap_type.name.lower() if trap.trap_type else "spike"
+                                trap_name = trap.name if hasattr(trap, 'name') and trap.name else "trap"
+                                trap_symbol = trap.symbol if hasattr(trap, 'symbol') and trap.symbol else "^"
+                                trap_entity = {
+                                    "type": "trap",
+                                    "name": trap_name,
+                                    "symbol": trap_symbol,
+                                    "trap_type": trap_type_name,
+                                    "triggered": trap.triggered if hasattr(trap, 'triggered') else False,
+                                    "is_active": trap.is_active if hasattr(trap, 'is_active') else True,
+                                    "distance": d,
+                                    "offset": w,
+                                    "x": tile_x,
+                                    "y": tile_y,
+                                }
+                                entities_in_view.append(trap_entity)
+                            except (AttributeError, TypeError):
+                                pass  # Skip malformed trap
 
                     # Check for hidden secret door (for visual hints)
                     has_secret = False
@@ -734,9 +821,72 @@ class GameSessionManager:
 
             rows.append(row)
 
+        # Serialize torches in view
+        torches_in_view = []
+        if hasattr(engine, 'torch_manager') and engine.torch_manager:
+            for torch in engine.torch_manager.torches:
+                if not torch.is_lit:
+                    continue
+
+                # Check if torch is in FOV cone
+                if not self._is_in_fov_cone(player.x, player.y, torch.x, torch.y, facing_dx, facing_dy, max_distance=depth):
+                    continue
+
+                # Check line of sight to torch
+                if not self._has_line_of_sight(dungeon, player.x, player.y, torch.x, torch.y):
+                    continue
+
+                # Calculate relative position
+                rel_x = torch.x - player.x
+                rel_y = torch.y - player.y
+
+                # Distance along facing direction
+                distance = rel_x * facing_dx + rel_y * facing_dy
+
+                # Offset perpendicular to facing
+                offset = rel_x * perp_dx + rel_y * perp_dy
+
+                torches_in_view.append({
+                    "x": torch.x,
+                    "y": torch.y,
+                    "distance": distance,
+                    "offset": offset,
+                    "facing_dx": torch.facing_dx,
+                    "facing_dy": torch.facing_dy,
+                    "intensity": torch.intensity,
+                    "radius": torch.radius,
+                    "is_lit": torch.is_lit,
+                    "torch_type": torch.torch_type,
+                })
+
+        # Calculate lighting data for visible tiles
+        lighting = {}
+        if hasattr(engine, 'torch_manager') and engine.torch_manager and len(engine.torch_manager.torches) > 0:
+            # Get entity positions that block light
+            blocker_positions = set()
+            blocker_positions.add((player.x, player.y))
+            if hasattr(engine, 'entity_manager') and engine.entity_manager:
+                for enemy in engine.entity_manager.enemies:
+                    if enemy.is_alive():
+                        blocker_positions.add((enemy.x, enemy.y))
+
+            # Calculate lighting
+            lit_tiles = engine.torch_manager.calculate_lighting(dungeon, blocker_positions)
+
+            # Only include tiles in our view
+            for row in rows:
+                for tile_data in row:
+                    tx, ty = tile_data.get("x", -1), tile_data.get("y", -1)
+                    if tx >= 0 and ty >= 0:
+                        light_level = lit_tiles.get((tx, ty), 0.0)
+                        if light_level > 0.05:  # Only include meaningfully lit tiles
+                            lighting[f"{tx},{ty}"] = round(light_level, 2)
+
         return {
             "rows": rows,
             "entities": entities_in_view,
+            "torches": torches_in_view,
+            "lighting": lighting,
             "facing": {"dx": facing_dx, "dy": facing_dy},
             "depth": depth,
         }

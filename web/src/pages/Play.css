@@ -1,8 +1,6 @@
 .play {
   height: calc(100vh - 60px);
   display: flex;
-  align-items: center;
-  justify-content: center;
   padding: 1rem;
   background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
 }
@@ -23,9 +21,7 @@
   display: flex;
   gap: 1rem;
   width: 100%;
-  max-width: 1200px;
   height: 100%;
-  max-height: 700px;
 }
 
 .game-container {
@@ -91,9 +87,8 @@
 }
 
 .terminal-wrapper {
-  flex: 1;
+  flex: 0 0 500px;
   min-height: 0;
-  min-width: 0;
   border: 1px solid #333;
   border-radius: 8px;
   overflow: hidden;
@@ -101,13 +96,20 @@
 }
 
 .scene-wrapper {
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   border: 1px solid #333;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   background: #000;
   position: relative; /* For CharacterHUD positioning */
+}
+
+.scene-wrapper canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .game-controls {
@@ -185,33 +187,38 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 1200px) {
-  .game-views {
-    flex-direction: column;
+@media (max-width: 1400px) {
+  .terminal-wrapper {
+    flex: 0 0 450px;
   }
+}
 
-  .scene-wrapper {
-    max-height: 300px;
+@media (max-width: 1200px) {
+  .terminal-wrapper {
+    flex: 0 0 400px;
   }
 }
 
 @media (max-width: 1024px) {
+  .game-views {
+    flex-direction: column;
+  }
+
+  .terminal-wrapper {
+    flex: 0 0 350px;
+  }
+
+  .scene-wrapper {
+    flex: 1;
+    min-height: 300px;
+  }
+
   .play-layout {
     flex-direction: column;
-    max-height: none;
   }
 
   .chat-container {
-    height: 250px;
-  }
-
-  /* Hide scene view on smaller screens */
-  .scene-wrapper {
-    display: none;
-  }
-
-  .game-controls {
-    display: none;
+    height: 200px;
   }
 }
 
@@ -222,6 +229,19 @@
 
   .play-layout {
     height: calc(100vh - 80px);
+  }
+
+  /* Hide scene view on mobile */
+  .scene-wrapper {
+    display: none;
+  }
+
+  .game-controls {
+    display: none;
+  }
+
+  .terminal-wrapper {
+    flex: 1 1 auto;
   }
 
   .chat-container {

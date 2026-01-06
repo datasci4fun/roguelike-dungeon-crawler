@@ -569,13 +569,18 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
   for (let y = 0; y < viewportHeight; y++) {
     let line = ' ';
     for (let x = 0; x < viewportWidth; x++) {
+      // Get tile first to check visibility
+      const tile = dungeon.tiles[y]?.[x] || ' ';
+
       // Calculate relative position for FOV cone
       const relX = x - playerViewX;
       const relY = y - playerViewY;
       const inFovCone = isInFovCone(relX, relY, facing.dx, facing.dy, 6);
 
-      // FOV cone background highlight
-      const fovBg = inFovCone ? COLORS.bgBrightBlack : '';
+      // Only highlight FOV cone for tiles that are ACTUALLY VISIBLE
+      // (not fog '~' or unexplored ' ') - this respects wall occlusion
+      const isActuallyVisible = tile !== '~' && tile !== ' ';
+      const fovBg = (inFovCone && isActuallyVisible) ? COLORS.bgBrightBlack : '';
 
       // Check for player - render directional arrow
       if (x === playerViewX && y === playerViewY) {
@@ -605,8 +610,7 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
         continue;
       }
 
-      // Render tile
-      const tile = dungeon.tiles[y]?.[x] || ' ';
+      // Render tile (already fetched above)
       const tileColor = TILE_COLORS[tile] || COLORS.white;
       line += `${fovBg}${tileColor}${tile}${COLORS.reset}`;
     }

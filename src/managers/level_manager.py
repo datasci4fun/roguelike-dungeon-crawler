@@ -76,9 +76,28 @@ class LevelManager:
             self.game.player.y
         )
 
+        # v4.4: Clear and generate secret doors for new level
+        if hasattr(self.game, 'secret_door_manager') and self.game.secret_door_manager:
+            self.game.secret_door_manager.clear()
+            self.game.dungeon.generate_secret_doors(
+                self.game.secret_door_manager,
+                self.game.player.x,
+                self.game.player.y
+            )
+
+        # v4.5: Clear and generate torches for new level
+        if hasattr(self.game, 'torch_manager') and self.game.torch_manager:
+            self.game.torch_manager.clear()
+            self.game.dungeon.generate_torches(
+                self.game.torch_manager,
+                self.game.player.x,
+                self.game.player.y
+            )
+
         self.game.add_message("The air grows colder...")
         if self.game.entity_manager.boss:
-            boss_name = self.game.entity_manager.boss.name
+            boss = self.game.entity_manager.boss
+            boss_name = boss.name if hasattr(boss, 'name') and boss.name else "Boss"
             self.game.add_message(f"You sense a powerful presence... The {boss_name} awaits.")
 
         # Auto-save on level transition
@@ -119,3 +138,12 @@ class LevelManager:
             self.game.player.x,
             self.game.player.y
         )
+
+        # v4.5: Generate torches for level
+        if hasattr(self.game, 'torch_manager') and self.game.torch_manager:
+            self.game.torch_manager.clear()
+            self.game.dungeon.generate_torches(
+                self.game.torch_manager,
+                self.game.player.x,
+                self.game.player.y
+            )

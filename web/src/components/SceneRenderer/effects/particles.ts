@@ -46,8 +46,6 @@ export function drawDustParticles(
 ): void {
   if (!enableAnimations) return;
 
-  const centerY = canvasHeight * 0.5;
-
   for (const particle of DUST_PARTICLES) {
     // Animate position
     const animTime = time * particle.speed + particle.phase;
@@ -171,7 +169,6 @@ export function drawFogWisps(
   if (!enableAnimations) return;
 
   const numWisps = 5;
-  const centerY = canvasHeight * 0.5;
 
   for (let i = 0; i < numWisps; i++) {
     const phase = (i / numWisps) * Math.PI * 2;

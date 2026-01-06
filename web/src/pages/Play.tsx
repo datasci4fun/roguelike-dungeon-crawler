@@ -214,8 +214,8 @@ export function Play() {
               <div className="scene-wrapper">
                 <FirstPersonRenderer
                   view={gameState?.first_person_view}
-                  width={400}
-                  height={300}
+                  width={800}
+                  height={600}
                   enableAnimations={true}
                 />
                 {/* Character HUD overlay */}

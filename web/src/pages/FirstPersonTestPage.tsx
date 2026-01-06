@@ -5,7 +5,8 @@
  * without needing to play the actual game.
  */
 import { useState, useCallback } from 'react';
-import { FirstPersonRenderer } from '../components/SceneRenderer/FirstPersonRenderer';
+import { FirstPersonRenderer, type RenderSettings } from '../components/SceneRenderer/FirstPersonRenderer';
+import { BIOMES, type BiomeId } from '../components/SceneRenderer/biomes';
 import type { FirstPersonView, FirstPersonTile, FirstPersonEntity } from '../hooks/useGameSocket';
 import './FirstPersonTestPage.css';
 
@@ -22,6 +23,9 @@ type ScenarioId =
   | 'items_scattered'
   | 'compass_test'
   | 'traps_test'
+  | 'water_test'
+  | 'offset_test'
+  | 'biome_compare'
   | 'custom';
 
 interface ScenarioConfig {
@@ -42,6 +46,9 @@ const SCENARIOS: ScenarioConfig[] = [
   { id: 'items_scattered', name: 'Items Scattered', description: 'Various items at different depths' },
   { id: 'compass_test', name: 'Compass Test', description: 'View compass in all 4 directions' },
   { id: 'traps_test', name: 'Traps', description: 'All 4 trap types at different depths' },
+  { id: 'water_test', name: 'Water', description: 'Water tiles with reflections' },
+  { id: 'offset_test', name: 'Offset Test', description: 'Test item offsets at various depths' },
+  { id: 'biome_compare', name: 'Biomes', description: 'Compare all biome themes side by side' },
   { id: 'custom', name: 'Custom', description: 'Configure your own scene' },
 ];
 
@@ -68,6 +75,15 @@ interface CustomParams {
   canvasHeight: number;
   enableAnimations: boolean;
   facing: FacingDirection;
+  // Offset test params
+  testOffset: number;
+  testDepth: number;
+  // Biome/brightness settings
+  biome: BiomeId;
+  brightness: number;
+  fogDensity: number;
+  torchIntensity: number;
+  useTileGrid: boolean;
 }
 
 const DEFAULT_PARAMS: CustomParams = {
@@ -78,10 +94,18 @@ const DEFAULT_PARAMS: CustomParams = {
   frontWallType: '#',
   enemyDepths: [],
   itemDepths: [],
-  canvasWidth: 500,
-  canvasHeight: 400,
+  canvasWidth: 800,
+  canvasHeight: 600,
   enableAnimations: true,
   facing: 'north',
+  testOffset: 0,
+  testDepth: 2,
+  // Biome/brightness defaults
+  biome: 'dungeon',
+  brightness: 1.0,
+  fogDensity: 1.0,
+  torchIntensity: 1.0,
+  useTileGrid: false,
 };
 
 // Generate mock tile data
@@ -101,22 +125,254 @@ function generateRow(
   depth: number,
   leftWall: boolean,
   rightWall: boolean,
-  centerTile: string = '.'
+  centerTile: string = '.',
+  floorTile: string = '.'
 ): FirstPersonTile[] {
   const width = Math.max(3, Math.floor(depth * 1.5) + 1);
   const halfWidth = Math.floor(width / 2);
   const row: FirstPersonTile[] = [];
 
   for (let i = -halfWidth; i <= halfWidth; i++) {
-    let tile = '.';
+    let tile = floorTile;
     if (i === -halfWidth && leftWall) tile = '#';
     else if (i === halfWidth && rightWall) tile = '#';
-    else if (i === 0) tile = centerTile;
+    else if (i === 0 && centerTile !== '.') tile = centerTile;
 
     row.push(generateTile(tile, i, depth));
   }
 
   return row;
+}
+
+// Generate a water row (uses '=' for water tiles)
+function generateWaterRow(
+  depth: number,
+  leftWall: boolean,
+  rightWall: boolean
+): FirstPersonTile[] {
+  return generateRow(depth, leftWall, rightWall, '=', '=');
+}
+
+// Generate an open cavern row (no side walls, wider)
+function generateCavernRow(depth: number, floorTile: string = '.'): FirstPersonTile[] {
+  const width = Math.max(5, Math.floor(depth * 2) + 3);
+  const halfWidth = Math.floor(width / 2);
+  const row: FirstPersonTile[] = [];
+  for (let i = -halfWidth; i <= halfWidth; i++) {
+    row.push(generateTile(floorTile, i, depth));
+  }
+  return row;
+}
+
+// Generate unique scenes for each biome
+function generateBiomeScene(biomeId: BiomeId): FirstPersonView {
+  const rows: FirstPersonTile[][] = [];
+  const entities: FirstPersonEntity[] = [];
+
+  switch (biomeId) {
+    case 'dungeon':
+      // Classic dungeon: corridor leading to a door
+      for (let d = 0; d <= 5; d++) {
+        const centerTile = d === 4 ? 'D' : '.';
+        rows.push(generateRow(d, true, true, centerTile));
+      }
+      // Skeleton guard
+      entities.push({
+        type: 'enemy', name: 'Skeleton', symbol: 's',
+        distance: 2, offset: 0.3, x: 0, y: 2,
+        health: 8, max_health: 10, is_elite: false,
+      });
+      // Gold on floor
+      entities.push({
+        type: 'item', name: 'Gold', symbol: '*',
+        distance: 1, offset: -0.5, x: -1, y: 1,
+      });
+      break;
+
+    case 'ice':
+      // Ice cavern: open frozen cave with icy lake
+      rows.push(generateCavernRow(0));
+      rows.push(generateWaterRow(1, false, false)); // Frozen lake
+      rows.push(generateWaterRow(2, false, false));
+      rows.push(generateCavernRow(3));
+      rows.push(generateCavernRow(4));
+      rows.push(generateCavernRow(5));
+      // Ice elemental
+      entities.push({
+        type: 'enemy', name: 'Ice Elemental', symbol: 'E',
+        distance: 3, offset: 0, x: 0, y: 3,
+        health: 15, max_health: 15, is_elite: true,
+      });
+      // Frozen treasure
+      entities.push({
+        type: 'item', name: 'Frozen Gem', symbol: '*',
+        distance: 4, offset: 1, x: 1, y: 4,
+      });
+      break;
+
+    case 'forest':
+      // Forest clearing: open space with trees (walls) scattered
+      for (let d = 0; d <= 6; d++) {
+        // Irregular tree placement
+        const leftTree = d === 1 || d === 3 || d === 5;
+        const rightTree = d === 2 || d === 4;
+        rows.push(generateRow(d, leftTree, rightTree, '.'));
+      }
+      // Wolf pack
+      entities.push({
+        type: 'enemy', name: 'Wolf', symbol: 'w',
+        distance: 2, offset: -0.5, x: -1, y: 2,
+        health: 6, max_health: 8, is_elite: false,
+      });
+      entities.push({
+        type: 'enemy', name: 'Wolf', symbol: 'w',
+        distance: 2, offset: 0.5, x: 1, y: 2,
+        health: 8, max_health: 8, is_elite: false,
+      });
+      // Herbs
+      entities.push({
+        type: 'item', name: 'Healing Herbs', symbol: '!',
+        distance: 3, offset: 0, x: 0, y: 3,
+      });
+      break;
+
+    case 'lava':
+      // Volcanic bridge: narrow path over lava
+      rows.push(generateRow(0, true, true, '.'));
+      rows.push(generateRow(1, false, false, '.')); // Open lava pit sides
+      rows.push(generateRow(2, false, false, '.'));
+      rows.push(generateRow(3, false, false, '.'));
+      rows.push(generateRow(4, true, true, '.')); // Back to solid ground
+      rows.push(generateRow(5, true, true, '.'));
+      // Fire trap
+      entities.push({
+        type: 'trap', name: 'Fire Trap', symbol: '^',
+        distance: 2, offset: 0, x: 0, y: 2,
+        trap_type: 'fire', triggered: false, is_active: true,
+      });
+      // Fire demon
+      entities.push({
+        type: 'enemy', name: 'Fire Demon', symbol: 'D',
+        distance: 4, offset: 0, x: 0, y: 4,
+        health: 20, max_health: 20, is_elite: true,
+      });
+      break;
+
+    case 'crypt':
+      // Ancient crypt: narrow tomb with stairs down
+      for (let d = 0; d <= 5; d++) {
+        const centerTile = d === 5 ? '>' : '.';
+        rows.push(generateRow(d, true, true, centerTile));
+      }
+      // Undead enemies
+      entities.push({
+        type: 'enemy', name: 'Wraith', symbol: 'W',
+        distance: 2, offset: 0, x: 0, y: 2,
+        health: 12, max_health: 12, is_elite: false,
+      });
+      entities.push({
+        type: 'enemy', name: 'Zombie', symbol: 'z',
+        distance: 3, offset: -0.8, x: -1, y: 3,
+        health: 5, max_health: 10, is_elite: false,
+      });
+      // Ancient artifact
+      entities.push({
+        type: 'item', name: 'Ancient Amulet', symbol: '"',
+        distance: 4, offset: 0.5, x: 1, y: 4,
+      });
+      break;
+
+    case 'sewer':
+      // Sewer tunnels: water channel in center
+      rows.push(generateRow(0, true, true, '.'));
+      rows.push(generateWaterRow(1, true, true));
+      rows.push(generateWaterRow(2, true, true));
+      rows.push(generateWaterRow(3, true, true));
+      rows.push(generateRow(4, true, true, '.'));
+      rows.push(generateRow(5, true, true, '.'));
+      // Giant rat
+      entities.push({
+        type: 'enemy', name: 'Giant Rat', symbol: 'r',
+        distance: 1, offset: 0.6, x: 1, y: 1,
+        health: 4, max_health: 6, is_elite: false,
+      });
+      // Slime
+      entities.push({
+        type: 'enemy', name: 'Slime', symbol: 'j',
+        distance: 3, offset: -0.3, x: 0, y: 3,
+        health: 8, max_health: 8, is_elite: false,
+      });
+      // Dropped potion
+      entities.push({
+        type: 'item', name: 'Murky Potion', symbol: '!',
+        distance: 2, offset: 0, x: 0, y: 2,
+      });
+      break;
+
+    case 'library':
+      // Ancient library: bookshelves as walls, open reading area
+      rows.push(generateRow(0, true, true, '.'));
+      rows.push(generateRow(1, true, false, '.')); // Left bookshelf only
+      rows.push(generateRow(2, false, true, '.')); // Right bookshelf only
+      rows.push(generateRow(3, true, true, '.')); // Both sides
+      rows.push(generateRow(4, false, false, '.')); // Open reading area
+      rows.push(generateRow(5, true, true, '#')); // Back wall
+      // Animated book enemy
+      entities.push({
+        type: 'enemy', name: 'Living Tome', symbol: 'B',
+        distance: 2, offset: 0, x: 0, y: 2,
+        health: 6, max_health: 6, is_elite: false,
+      });
+      // Scrolls and books
+      entities.push({
+        type: 'item', name: 'Spell Scroll', symbol: '?',
+        distance: 1, offset: -0.5, x: -1, y: 1,
+      });
+      entities.push({
+        type: 'item', name: 'Ancient Tome', symbol: '+',
+        distance: 3, offset: 0.8, x: 1, y: 3,
+      });
+      break;
+
+    case 'crystal':
+      // Crystal cave: wide open cavern with gems
+      for (let d = 0; d <= 6; d++) {
+        rows.push(generateCavernRow(d));
+      }
+      // Crystal golem
+      entities.push({
+        type: 'enemy', name: 'Crystal Golem', symbol: 'G',
+        distance: 3, offset: 0, x: 0, y: 3,
+        health: 25, max_health: 25, is_elite: true,
+      });
+      // Scattered gems
+      entities.push({
+        type: 'item', name: 'Ruby', symbol: '*',
+        distance: 1, offset: -1, x: -1, y: 1,
+      });
+      entities.push({
+        type: 'item', name: 'Sapphire', symbol: '*',
+        distance: 2, offset: 1.2, x: 1, y: 2,
+      });
+      entities.push({
+        type: 'item', name: 'Emerald', symbol: '*',
+        distance: 4, offset: -0.5, x: 0, y: 4,
+      });
+      break;
+
+    default:
+      // Fallback: simple corridor
+      for (let d = 0; d <= 5; d++) {
+        rows.push(generateRow(d, true, true, '.'));
+      }
+  }
+
+  return {
+    rows,
+    entities,
+    facing: { dx: 0, dy: -1 },
+    depth: rows.length,
+  };
 }
 
 // Generate mock first-person view for a scenario
@@ -231,6 +487,54 @@ function generateMockView(scenarioId: ScenarioId, params: CustomParams): FirstPe
           trap_type: trapType,
           triggered: false,
           is_active: true,
+        });
+      });
+      break;
+
+    case 'water_test':
+      // First row normal, then water, then normal again
+      rows.push(generateRow(0, true, true, '.'));
+      for (let d = 1; d <= 4; d++) {
+        rows.push(generateWaterRow(d, true, true));
+      }
+      for (let d = 5; d <= maxDepth; d++) {
+        rows.push(generateRow(d, true, true, '.'));
+      }
+      // Add some items in the water
+      entities.push(
+        { type: 'item', name: 'Sunken Gold', symbol: '*', distance: 2, offset: 0, x: 0, y: 2 },
+        { type: 'item', name: 'Lost Potion', symbol: '!', distance: 3, offset: -1, x: -1, y: 3 },
+      );
+      break;
+
+    case 'offset_test':
+      // Create corridor
+      for (let d = 0; d <= maxDepth; d++) {
+        rows.push(generateRow(d, true, true, '.'));
+      }
+      // Add items at different offsets at the test depth
+      // Use params.testOffset and params.testDepth for the main test item
+      entities.push({
+        type: 'item',
+        name: 'Test Item',
+        symbol: '!',
+        distance: params.testDepth,
+        offset: params.testOffset,
+        x: Math.round(params.testOffset),
+        y: params.testDepth,
+      });
+      // Add reference items at offset 0 at different depths for comparison
+      [1, 2, 3, 4, 5].forEach((depth) => {
+        // Skip if this would overlap with test item
+        if (depth === params.testDepth && params.testOffset === 0) return;
+        entities.push({
+          type: 'item',
+          name: `D${depth}`,
+          symbol: '*',
+          distance: depth,
+          offset: 0,
+          x: 0,
+          y: depth,
         });
       });
       break;
@@ -372,6 +676,56 @@ export function FirstPersonTestPage() {
               ))}
             </div>
           </div>
+
+          {/* Biome selector */}
+          <div className="biome-selector">
+            <h3>Biome Theme</h3>
+            <select
+              className="biome-select"
+              value={params.biome}
+              onChange={(e) => setParams({ ...params, biome: e.target.value as BiomeId })}
+            >
+              {Object.values(BIOMES).map((biome) => (
+                <option key={biome.id} value={biome.id}>
+                  {biome.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Brightness controls */}
+          <div className="brightness-controls">
+            <h3>Lighting</h3>
+            <div className="brightness-slider">
+              <label>
+                Brightness: <strong>{params.brightness.toFixed(1)}</strong>
+                <input
+                  type="range"
+                  min={0.2}
+                  max={2.0}
+                  step={0.1}
+                  value={params.brightness}
+                  onChange={(e) => setParams({ ...params, brightness: Number(e.target.value) })}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* Tile Grid toggle */}
+          <div className="tile-grid-toggle">
+            <h3>Rendering</h3>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={params.useTileGrid}
+                onChange={(e) => setParams({ ...params, useTileGrid: e.target.checked })}
+              />
+              Use Tile Grid
+            </label>
+            <p className="tile-grid-hint">
+              Renders floor/ceiling as individual tiles (add images to /tiles/{params.biome}/)
+            </p>
+          </div>
         </aside>
 
         {/* Renderer Preview */}
@@ -386,6 +740,13 @@ export function FirstPersonTestPage() {
                 width={params.canvasWidth}
                 height={params.canvasHeight}
                 enableAnimations={params.enableAnimations}
+                settings={{
+                  biome: params.biome,
+                  brightness: params.brightness,
+                  fogDensity: params.fogDensity,
+                  torchIntensity: params.torchIntensity,
+                  useTileGrid: params.useTileGrid,
+                }}
               />
             </div>
             <div className="preview-info">
@@ -495,6 +856,135 @@ export function FirstPersonTestPage() {
               </div>
             </div>
           )}
+
+          {/* Water comparison at different depths */}
+          {selectedScenario === 'water_test' && (
+            <div className="torch-comparison">
+              <h3>Water at Different Depths</h3>
+              <div className="torch-grid">
+                {[1, 2, 3, 4].map((waterStart) => {
+                  const waterView: FirstPersonView = {
+                    rows: Array.from({ length: 6 }, (_, d) => {
+                      if (d >= waterStart && d < waterStart + 2) {
+                        return generateWaterRow(d, true, true);
+                      }
+                      return generateRow(d, true, true, '.');
+                    }),
+                    entities: [],
+                    facing: { dx: 0, dy: -1 },
+                    depth: 6,
+                  };
+                  return (
+                    <div key={waterStart} className="torch-sample">
+                      <div className="torch-label">Water at {waterStart}-{waterStart + 1}</div>
+                      <FirstPersonRenderer
+                        view={waterView}
+                        width={200}
+                        height={160}
+                        enableAnimations={params.enableAnimations}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Offset test controls */}
+          {selectedScenario === 'offset_test' && (
+            <div className="torch-comparison">
+              <h3>Offset Testing Controls</h3>
+              <div className="offset-controls">
+                <div className="offset-slider">
+                  <label>
+                    Offset: <strong>{params.testOffset.toFixed(1)}</strong>
+                    <input
+                      type="range"
+                      min={-3}
+                      max={3}
+                      step={0.1}
+                      value={params.testOffset}
+                      onChange={(e) => setParams({ ...params, testOffset: Number(e.target.value) })}
+                    />
+                  </label>
+                </div>
+                <div className="offset-slider">
+                  <label>
+                    Depth: <strong>{params.testDepth}</strong>
+                    <input
+                      type="range"
+                      min={1}
+                      max={6}
+                      step={1}
+                      value={params.testDepth}
+                      onChange={(e) => setParams({ ...params, testDepth: Number(e.target.value) })}
+                    />
+                  </label>
+                </div>
+              </div>
+              <h4>Single Item at Different Offsets</h4>
+              <div className="torch-grid">
+                {[-2, -1, 0, 1, 2].map((off) => {
+                  const offsetView: FirstPersonView = {
+                    rows: Array.from({ length: 6 }, (_, d) =>
+                      generateRow(d, true, true, '.')
+                    ),
+                    entities: [{
+                      type: 'item' as const,
+                      name: `Off ${off}`,
+                      symbol: '*',
+                      distance: 2,
+                      offset: off,
+                      x: off,
+                      y: 2,
+                    }],
+                    facing: { dx: 0, dy: -1 },
+                    depth: 6,
+                  };
+                  return (
+                    <div key={off} className="torch-sample">
+                      <div className="torch-label">Offset {off}</div>
+                      <FirstPersonRenderer
+                        view={offsetView}
+                        width={150}
+                        height={120}
+                        enableAnimations={params.enableAnimations}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Biome comparison grid */}
+          {selectedScenario === 'biome_compare' && (
+            <div className="torch-comparison">
+              <h3>All Biome Themes - Unique Scenes</h3>
+              <div className="torch-grid biome-grid">
+                {Object.values(BIOMES).map((biomeTheme) => {
+                  const biomeView = generateBiomeScene(biomeTheme.id as BiomeId);
+                  return (
+                    <div key={biomeTheme.id} className="torch-sample biome-sample">
+                      <div className="torch-label">{biomeTheme.name}</div>
+                      <FirstPersonRenderer
+                        view={biomeView}
+                        width={240}
+                        height={180}
+                        enableAnimations={params.enableAnimations}
+                        settings={{
+                          biome: biomeTheme.id as BiomeId,
+                          brightness: params.brightness,
+                          fogDensity: 1.0,
+                          torchIntensity: 1.0,
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </main>
       </div>
 
@@ -511,7 +1001,7 @@ export function FirstPersonTestPage() {
                 <input
                   type="number"
                   min={200}
-                  max={800}
+                  max={1200}
                   value={tempParams.canvasWidth}
                   onChange={(e) => setTempParams({ ...tempParams, canvasWidth: Number(e.target.value) })}
                 />
@@ -521,7 +1011,7 @@ export function FirstPersonTestPage() {
                 <input
                   type="number"
                   min={150}
-                  max={600}
+                  max={900}
                   value={tempParams.canvasHeight}
                   onChange={(e) => setTempParams({ ...tempParams, canvasHeight: Number(e.target.value) })}
                 />

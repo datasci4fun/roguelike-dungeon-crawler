@@ -15,7 +15,7 @@ export interface Projection {
  * @param canvasWidth - Canvas width in pixels
  * @param canvasHeight - Canvas height in pixels
  * @param depth - Distance from viewer (1 = closest)
- * @param xOffset - Horizontal offset (-1 to 1, where 0 is center)
+ * @param xOffset - Horizontal offset in tile units (e.g., -2 to +2 for tiles left/right of center)
  */
 export function getProjection(
   canvasWidth: number,
@@ -31,10 +31,12 @@ export function getProjection(
   const wallTop = horizon - wallHeight / 2;
   const wallBottom = horizon + wallHeight / 2;
 
-  // X position based on offset and depth
+  // X position with perspective-correct offset
+  // Items further away should have offset converge toward center
   const centerX = canvasWidth / 2;
-  const spread = canvasWidth * 0.5 * scale;
-  const x = centerX + xOffset * spread;
+  // Base tile width in screen space at this depth
+  const tileScreenWidth = canvasWidth * 0.18 * scale;
+  const x = centerX + xOffset * tileScreenWidth;
 
   return { wallTop, wallBottom, x, scale, horizon };
 }
@@ -49,22 +51,24 @@ export function seededRandom(seed: number): number {
 
 /**
  * Calculate depth-based fade factor for fog/lighting
- * Simulates torch light falloff - bright near player, pitch black at distance
+ * Simulates torch light falloff - bright near player, dimmer at distance
+ * Minimum ensures walls are always at least somewhat visible
  */
-export function getDepthFade(depth: number, minFade: number = 0.08): number {
-  // Aggressive exponential falloff - darkness dominates
-  // Light barely reaches beyond 3-4 tiles
+export function getDepthFade(depth: number, minFade: number = 0.25): number {
+  // Exponential falloff with higher minimum so distant walls stay visible
+  // depth 1: ~0.6, depth 2: ~0.36, depth 3+: ~0.25 minimum
   const falloff = Math.pow(0.6, depth);
   return Math.max(minFade, falloff);
 }
 
 /**
  * Calculate fog amount for a given depth
- * Pure black fog that swallows everything at distance
+ * Fog that darkens distant areas but never completely obscures them
+ * Walls must always be visible if in FOV - can't have floating torches
  */
-export function getFogAmount(depth: number, maxFog: number = 1.0): number {
-  // Aggressive fog - pitch black by depth 4-5
-  // depth 1: ~0.35, depth 2: ~0.58, depth 3: ~0.73, depth 4: ~0.83, depth 5+: ~0.9+
+export function getFogAmount(depth: number, maxFog: number = 0.6): number {
+  // Fog increases with distance but caps at 60% so walls remain clearly visible
+  // depth 1: ~0.35, depth 2: ~0.58, depth 3+: capped at 0.60
   const fog = 1 - Math.pow(0.65, depth);
   return Math.min(maxFog, fog);
 }

@@ -138,6 +138,8 @@ class SaveManager:
 
     def _serialize_enemy(self, enemy: Enemy) -> dict:
         """Serialize enemy to dictionary."""
+        # Handle bosses which have enemy_type = None
+        enemy_type_name = enemy.enemy_type.name if enemy.enemy_type else None
         return {
             'x': enemy.x,
             'y': enemy.y,
@@ -145,16 +147,28 @@ class SaveManager:
             'max_health': enemy.max_health,
             'attack_damage': enemy.attack_damage,
             'is_elite': enemy.is_elite,
-            'enemy_type': enemy.enemy_type.name
+            'enemy_type': enemy_type_name,
+            'is_boss': getattr(enemy, 'is_boss', False),
+            'boss_type': getattr(enemy, 'boss_type', None).name if getattr(enemy, 'boss_type', None) else None,
+            'name': enemy.name if hasattr(enemy, 'name') and enemy.name else None
         }
 
     def _deserialize_enemy(self, data: dict) -> Enemy:
         """Deserialize enemy from dictionary."""
-        enemy_type = EnemyType[data['enemy_type']]
-        enemy = Enemy(data['x'], data['y'], enemy_type=enemy_type, is_elite=data['is_elite'])
+        enemy_type_name = data.get('enemy_type')
+        enemy_type = EnemyType[enemy_type_name] if enemy_type_name else None
+        enemy = Enemy(data['x'], data['y'], enemy_type=enemy_type, is_elite=data.get('is_elite', False))
         enemy.health = data['health']
         enemy.max_health = data['max_health']
         enemy.attack_damage = data['attack_damage']
+
+        # Restore boss if this was a boss
+        if data.get('is_boss') and data.get('boss_type'):
+            from ..core.constants import BossType
+            boss_type = BossType[data['boss_type']]
+            enemy.make_boss(boss_type)
+            enemy.health = data['health']  # Re-apply health after make_boss
+
         return enemy
 
     def _serialize_item(self, item: Item) -> dict:

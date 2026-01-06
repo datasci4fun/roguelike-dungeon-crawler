@@ -35,9 +35,133 @@ The demo account is auto-created on server startup. Click **"Try Demo"** on the 
 | Relative movement (WASD relative to facing) | ✅ Done |
 | UI screens (Character, Help, Messages) | ✅ Done |
 | Quit dialog confirmation fix | ✅ Done |
-| Water reflections | ⬜ Planned |
+| Water reflections | ✅ Done |
+| Stairs rendering (up/down) | ✅ Done |
+| Wall visibility fixes (fog/brightness) | ✅ Done |
+| Torch centering fixes | ✅ Done |
+| FOV line-of-sight checking | ✅ Done |
+| Entity serialization null checks | ✅ Done |
+| **Data-driven torch lighting system** | ✅ Done |
 | Weather effects | ⬜ Planned |
 | Ambient sounds | ⬜ Planned |
+
+### Data-Driven Torch System
+
+Replaced hardcoded client-side torch rendering with a comprehensive data-driven system:
+
+| Component | Description |
+|-----------|-------------|
+| `TorchManager` | Server-side torch placement and light calculation |
+| `Torch` dataclass | Position, facing direction, intensity, radius, type |
+| Raycasting | Directional light with wall/entity occlusion |
+| Theme-based placement | Different torch counts per dungeon theme |
+| Serialization | Torches sent to client with lighting data |
+
+**Backend (Python):**
+- `src/world/torches.py` - Torch dataclass and TorchManager with raycasting
+- `src/world/dungeon.py` - `generate_torches()` during level generation
+- `src/core/constants.py` - `THEME_TORCH_COUNTS` per dungeon theme
+- `src/core/engine.py` - TorchManager integration
+- `src/managers/level_manager.py` - Torch regeneration on level change
+- `server/app/services/game_session.py` - Serialize torches and lighting
+
+**Frontend (TypeScript):**
+- `web/src/hooks/useGameSocket.ts` - `FirstPersonTorch` interface
+- `web/src/components/SceneRenderer/lighting/torchLight.ts` - Directional light cones
+- `web/src/components/SceneRenderer/FirstPersonRenderer.tsx` - Calls `drawTorches()`
+- Removed hardcoded torch rendering from `drawFrontWall.ts` and `drawCorridorWall.ts`
+
+**Torch Placement Rules:**
+- Placed on walls adjacent to floor tiles
+- Priority near stairs for landmark lighting
+- Minimum 4-tile spacing between torches
+- Theme-dependent counts:
+  - STONE: 6-10 torches
+  - CAVE: 2-4 torches (sparse)
+  - CRYPT: 4-6 torches
+  - LIBRARY: 8-12 torches (bright)
+  - TREASURY: 6-8 torches
+
+**Light Raycasting:**
+- 120° directional cone from torch facing
+- Intensity falloff: `1.0 / (1.0 + distance * 0.3)`
+- Walls block light completely
+- Entities cast 70% shadows
+- Returns per-tile light levels (0.0-1.0)
+
+### Water Reflections
+
+Added animated water surface rendering for water tiles in the first-person view:
+
+| Feature | Description |
+|---------|-------------|
+| Water detection | Tiles '≈' (deep water) and '~' (shallow water) detected |
+| Base color | Dark blue-green murky water |
+| Ripples | Animated horizontal wave lines with reflections |
+| Sparkles | Random shimmer highlights on water surface |
+| Torch glow | Warm orange reflection for nearby water |
+| Depth fade | Water effects fade with distance like other elements |
+
+- Water replaces floor rendering when water tiles detected
+- Immediate area (depth 0-1) and corridor depths (1+) both support water
+- Smooth animation using time-based calculations
+
+### Stairs Rendering
+
+Added first-person rendering for stairs (up and down):
+
+| Feature | Description |
+|---------|-------------|
+| Stairs detection | Tiles '>' (down) and '<' (up) detected in view |
+| Visual style | 3D trapezoid with 4 steps, depth-based shading |
+| Direction indicator | Arrow showing up or down direction |
+| Depth fade | Stairs fade with distance like other elements |
+
+- `drawStairs.ts` - New entity renderer for stairs
+- `renderStairs()` helper for easy integration
+- Stairs detected in corridorInfo alongside water/secrets
+
+### Wall Visibility & Torch Fixes
+
+Fixed wall rendering at distance and torch positioning:
+
+| Issue | Fix |
+|-------|-----|
+| Walls invisible at depth 5+ | Capped fog at 60% (was 100%), minimum brightness at 25% (was 8%) |
+| Torches not punching through fog | Added `ctx.globalCompositeOperation = 'lighter'` for additive blending |
+| Torches off-center at depth 1 | Center at screen center if wall spans center, else wall center |
+| Floating torches at depth 5+ | Same conditional centering logic |
+
+Key changes in `projection.ts`:
+- `getDepthFade()`: `minFade` changed from 0.08 to 0.25
+- `getFogAmount()`: `maxFog` changed from 1.0 to 0.6
+
+### FOV Line-of-Sight Fix
+
+Fixed first-person view showing tiles through walls:
+
+| Change | Description |
+|--------|-------------|
+| Backend | Added `_has_line_of_sight()` using Bresenham's algorithm |
+| Tile visibility | Only serialize tiles with clear line of sight |
+| Locked doors | Now block sight (added to `is_blocking_sight()`) |
+| Frontend | FOV cone only highlights actually visible tiles (not fog/unexplored) |
+
+### Entity Serialization Fixes
+
+Added comprehensive defensive null checks to prevent "NoneType has no attribute 'name'" errors during level transitions and gameplay:
+
+| Location | Fix |
+|----------|-----|
+| Enemy serialization | `if e is None: continue` + try/except wrapper |
+| Item serialization | `if i is None: continue` + try/except wrapper |
+| Trap serialization | `hasattr(trap.trap_type, 'name')` + try/except |
+| First-person entities | Null checks + try/except for all entity types |
+| Events serialization | try/except for event type name access |
+| Inventory serialization | try/except for item attributes |
+| Level transition | Secret door manager regeneration |
+
+All entity serialization now uses explicit try/except blocks to gracefully skip malformed objects.
 
 ### Wall Decorations
 
@@ -71,14 +195,22 @@ Fixed a bug where entities (enemies, items, traps) were visible in the first-per
 | File | Purpose |
 |------|---------|
 | web/src/components/SceneRenderer/walls/drawWallDecor.ts | Wall decoration rendering (280 lines) |
+| web/src/components/SceneRenderer/effects/drawWater.ts | Water reflection rendering (191 lines) |
+| web/src/components/SceneRenderer/entities/drawStairs.ts | Stairs rendering (175 lines) |
 
 ### Files Modified (v4.5.0)
 
 | File | Changes |
 |------|---------|
-| web/src/components/SceneRenderer/walls/drawCorridorWall.ts | Import and call wall decorations |
-| web/src/components/SceneRenderer/walls/drawFrontWall.ts | Import and call wall decorations |
-| server/app/services/game_session.py | Added FOV cone filtering for entities |
+| web/src/components/SceneRenderer/walls/drawCorridorWall.ts | Import and call wall decorations, additive torch blending |
+| web/src/components/SceneRenderer/walls/drawFrontWall.ts | Import and call wall decorations, torch centering fix, additive blending |
+| web/src/components/SceneRenderer/projection.ts | Adjusted fog/brightness thresholds (minFade=0.25, maxFog=0.6) |
+| web/src/components/SceneRenderer/FirstPersonRenderer.tsx | Water tile detection, stairs detection and rendering |
+| web/src/components/SceneRenderer/entities/index.ts | Export drawStairs, renderStairs |
+| web/src/components/GameTerminal.tsx | FOV cone only highlights actually visible tiles |
+| server/app/services/game_session.py | FOV cone filtering, line-of-sight check, defensive null checks |
+| src/world/dungeon.py | is_blocking_sight includes locked doors |
+| src/managers/level_manager.py | Secret door regeneration on level change |
 
 ---
 
@@ -1174,7 +1306,7 @@ npm run build
 | Relative movement | WASD moves relative to facing, not cardinal | ✅ Done |
 | UI screens | Character (C), Help (?), Messages (M) screens | ✅ Done |
 | Quit dialog fix | Y to confirm quit now works properly | ✅ Done |
-| Water reflections | Animated water tiles in first-person | ⬜ Planned |
+| Water reflections | Animated water tiles in first-person | ✅ Done |
 | Weather effects | Rain/dripping in certain areas | ⬜ Planned |
 | Ambient sounds | Background audio for atmosphere | ⬜ Planned |
 

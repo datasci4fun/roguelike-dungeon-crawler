@@ -2,7 +2,12 @@
  * Draw floor and ceiling segments with perspective
  */
 import { getProjection, getDepthFade, getFogAmount } from '../projection';
-import { Colors } from '../colors';
+import type { BiomeTheme } from '../biomes';
+
+export interface FloorSegmentOptions {
+  biome?: BiomeTheme;
+  brightness?: number;
+}
 
 /**
  * Draw a floor or ceiling segment between two depths
@@ -16,7 +21,8 @@ export function drawFloorSegment(
   rightOffset: number,
   canvasWidth: number,
   canvasHeight: number,
-  isFloor: boolean = true
+  isFloor: boolean = true,
+  options: FloorSegmentOptions = {}
 ): void {
   const nearLeft = getProjection(canvasWidth, canvasHeight, nearDepth, leftOffset);
   const nearRight = getProjection(canvasWidth, canvasHeight, nearDepth, rightOffset);
@@ -26,19 +32,53 @@ export function drawFloorSegment(
   const avgDepth = (nearDepth + farDepth) / 2;
   const depthFade = getDepthFade(avgDepth);
 
-  // Very dark base - barely visible even when lit
-  const baseBrightness = isFloor ? 30 : 18;
-  const brightness = Math.floor(baseBrightness * depthFade);
+  // Use biome colors if provided
+  const biome = options.biome;
+  const globalBrightness = options.brightness ?? 1.0;
 
-  // Add slight warm tint for torch-lit areas
-  const warmth = Math.floor(8 * depthFade);
+  let baseR: number, baseG: number, baseB: number;
+  let lightR: number, lightG: number, lightB: number;
+  let fogR: number, fogG: number, fogB: number;
+
+  if (biome) {
+    if (isFloor) {
+      baseR = biome.floorColor[0];
+      baseG = biome.floorColor[1];
+      baseB = biome.floorColor[2];
+    } else {
+      baseR = biome.ceilingColor[0];
+      baseG = biome.ceilingColor[1];
+      baseB = biome.ceilingColor[2];
+    }
+    lightR = biome.lightColor[0];
+    lightG = biome.lightColor[1];
+    lightB = biome.lightColor[2];
+    fogR = biome.fogColor[0];
+    fogG = biome.fogColor[1];
+    fogB = biome.fogColor[2];
+  } else {
+    // Default dungeon colors
+    baseR = isFloor ? 40 : 20;
+    baseG = isFloor ? 35 : 18;
+    baseB = isFloor ? 30 : 15;
+    lightR = 255; lightG = 150; lightB = 80;
+    fogR = 0; fogG = 0; fogB = 0;
+  }
+
+  const brightness = depthFade * globalBrightness;
+
+  // Mix floor/ceiling color with light tint
+  const lightMix = 0.12 * depthFade;
+  const finalR = Math.floor((baseR * (1 - lightMix) + lightR * lightMix) * brightness);
+  const finalG = Math.floor((baseG * (1 - lightMix) + lightG * lightMix) * brightness);
+  const finalB = Math.floor((baseB * (1 - lightMix) + lightB * lightMix) * brightness);
 
   const yNearLeft = isFloor ? nearLeft.wallBottom : nearLeft.wallTop;
   const yNearRight = isFloor ? nearRight.wallBottom : nearRight.wallTop;
   const yFarLeft = isFloor ? farLeft.wallBottom : farLeft.wallTop;
   const yFarRight = isFloor ? farRight.wallBottom : farRight.wallTop;
 
-  ctx.fillStyle = `rgb(${brightness + warmth}, ${brightness + Math.floor(warmth * 0.7)}, ${brightness})`;
+  ctx.fillStyle = `rgb(${finalR}, ${finalG}, ${finalB})`;
   ctx.beginPath();
   ctx.moveTo(nearLeft.x, yNearLeft);
   ctx.lineTo(nearRight.x, yNearRight);
@@ -47,10 +87,10 @@ export function drawFloorSegment(
   ctx.closePath();
   ctx.fill();
 
-  // Black fog overlay - pure darkness at distance
+  // Fog overlay using biome fog color
   const fogAmount = getFogAmount(avgDepth);
   if (fogAmount > 0) {
-    ctx.fillStyle = `rgba(0, 0, 0, ${fogAmount})`;
+    ctx.fillStyle = `rgba(${fogR}, ${fogG}, ${fogB}, ${fogAmount})`;
     ctx.beginPath();
     ctx.moveTo(nearLeft.x, yNearLeft);
     ctx.lineTo(nearRight.x, yNearRight);

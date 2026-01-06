@@ -174,10 +174,13 @@ class EntityManager:
             The picked up item, or None if no item was picked up
         """
         for item in self.items[:]:  # Use slice to iterate over copy
+            if item is None:
+                continue
             if item.x == player.x and item.y == player.y:
                 if player.inventory.add_item(item):
                     self.items.remove(item)
-                    add_message_func(f"Picked up {item.name}")
+                    item_name = item.name if hasattr(item, 'name') and item.name else "item"
+                    add_message_func(f"Picked up {item_name}")
                     return item
                 else:
                     add_message_func("Inventory full!")

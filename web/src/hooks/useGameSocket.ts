@@ -145,9 +145,24 @@ export interface FirstPersonEntity {
   is_active?: boolean;
 }
 
+export interface FirstPersonTorch {
+  x: number;
+  y: number;
+  distance: number;
+  offset: number;
+  facing_dx: number;
+  facing_dy: number;
+  intensity: number;
+  radius: number;
+  is_lit: boolean;
+  torch_type: 'wall' | 'sconce' | 'brazier';
+}
+
 export interface FirstPersonView {
   rows: FirstPersonTile[][];
   entities: FirstPersonEntity[];
+  torches?: FirstPersonTorch[];
+  lighting?: Record<string, number>;  // "x,y" -> light level 0.0-1.0
   facing: FacingDirection;
   depth: number;
 }

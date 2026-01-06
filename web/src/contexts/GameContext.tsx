@@ -2,7 +2,8 @@
  * Game context - shares WebSocket connection across routes.
  * Prevents disconnection when navigating between CharacterCreation and Play.
  */
-import { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import type { ReactNode } from 'react';
 import { getGameWsUrl } from '../services/api';
 import { useAuth } from './AuthContext';
 import type { FullGameState, ConnectionStatus, CharacterConfig, NewAchievement } from '../hooks/useGameSocket';
