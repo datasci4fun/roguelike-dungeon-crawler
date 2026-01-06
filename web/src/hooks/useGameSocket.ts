@@ -165,6 +165,7 @@ export interface FirstPersonView {
   lighting?: Record<string, number>;  // "x,y" -> light level 0.0-1.0
   facing: FacingDirection;
   depth: number;
+  top_down_window?: string[][];  // 11x11 grid around player for debug
 }
 
 export interface NewAchievement {

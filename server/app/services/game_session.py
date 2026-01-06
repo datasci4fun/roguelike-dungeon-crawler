@@ -882,6 +882,37 @@ class GameSessionManager:
                         if light_level > 0.05:  # Only include meaningfully lit tiles
                             lighting[f"{tx},{ty}"] = round(light_level, 2)
 
+        # Generate 11x11 top-down window around player for debug visualization
+        top_down_window = []
+        window_radius = 5  # 5 in each direction = 11x11
+        for dy in range(-window_radius, window_radius + 1):
+            row_tiles = []
+            for dx in range(-window_radius, window_radius + 1):
+                wx = player.x + dx
+                wy = player.y + dy
+                if 0 <= wx < dungeon.width and 0 <= wy < dungeon.height:
+                    tile = dungeon.tiles[wy][wx]
+                    tile_char = tile.value if hasattr(tile, 'value') else str(tile)
+                    # Mark player position
+                    if dx == 0 and dy == 0:
+                        tile_char = '@'
+                    # Mark enemies
+                    elif engine.entity_manager:
+                        for enemy in engine.entity_manager.enemies:
+                            if enemy and enemy.is_alive() and enemy.x == wx and enemy.y == wy:
+                                tile_char = enemy.symbol if hasattr(enemy, 'symbol') else 'E'
+                                break
+                        # Mark items
+                        if tile_char not in ['@', 'E']:
+                            for item in engine.entity_manager.items:
+                                if item and item.x == wx and item.y == wy:
+                                    tile_char = item.symbol if hasattr(item, 'symbol') else '!'
+                                    break
+                    row_tiles.append(tile_char)
+                else:
+                    row_tiles.append(' ')  # Out of bounds
+            top_down_window.append(row_tiles)
+
         return {
             "rows": rows,
             "entities": entities_in_view,
@@ -889,6 +920,7 @@ class GameSessionManager:
             "lighting": lighting,
             "facing": {"dx": facing_dx, "dy": facing_dy},
             "depth": depth,
+            "top_down_window": top_down_window,
         }
 
     def get_active_session_count(self) -> int:
