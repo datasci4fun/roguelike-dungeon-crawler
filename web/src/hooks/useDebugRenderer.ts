@@ -35,6 +35,8 @@ export interface DebugSnapshot {
   // Alignment metadata for debugging FPV vs top-down comparison
   topDownWindowCenter?: { row: number; col: number }; // Always [5][5] - player position
   depthWorldCoords?: Array<{ depth: number; x: number; y: number }>; // World coords at each FPV depth
+  // Debug counters
+  oobTileCount?: number; // Count of tiles with x<0 or y<0 (should be 0 after fix)
 }
 
 // Check if debug mode is enabled
@@ -175,6 +177,11 @@ export function useDebugRenderer(): UseDebugRendererResult {
           });
         }
         snapshot.depthWorldCoords = depthCoords;
+      }
+
+      // Debug counter: count OOB tiles (should be 0 after fix)
+      if (view.rows) {
+        snapshot.oobTileCount = view.rows.flat().filter(t => t.x < 0 || t.y < 0).length;
       }
 
       return snapshot;

@@ -794,6 +794,7 @@ class GameSessionManager:
                     row.append({
                         "tile": tile_char,
                         "tile_actual": tile_char,  # Same as tile when visible
+                        "offset": w,  # Lateral offset from center (-left, +right)
                         "x": tile_x,
                         "y": tile_y,
                         "visible": True,
@@ -808,6 +809,7 @@ class GameSessionManager:
                     row.append({
                         "tile": "~",  # Display: explored but not visible (fog)
                         "tile_actual": actual_char,  # Geometry: real map tile
+                        "offset": w,  # Lateral offset from center (-left, +right)
                         "x": tile_x,
                         "y": tile_y,
                         "visible": False,
@@ -815,15 +817,9 @@ class GameSessionManager:
                         "has_entity": False,
                     })
                 else:
-                    row.append({
-                        "tile": "#",  # Display: unknown or out of bounds
-                        "tile_actual": "#",  # Geometry: treat as wall
-                        "x": tile_x if in_bounds else -1,
-                        "y": tile_y if in_bounds else -1,
-                        "visible": False,
-                        "walkable": False,
-                        "has_entity": False,
-                    })
+                    # OOB or unexplored: skip to avoid corrupting offset mapping
+                    # Renderer uses tile.offset field instead of array index
+                    continue
 
             rows.append(row)
 

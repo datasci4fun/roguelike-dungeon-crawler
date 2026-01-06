@@ -542,64 +542,61 @@ export function FirstPersonRenderer({
         continue;
       }
 
-      const centerIdx = Math.floor(row.length / 2);
+      // Use tile.offset field from server (not array index) for correct offset mapping
+      // This handles sparse rows where OOB tiles are omitted
 
-      // Find the range of VISIBLE tiles in this row
-      // Only visible tiles should influence corridor geometry
-      let minVis = -1;
-      let maxVis = -1;
-      for (let i = 0; i < row.length; i++) {
-        if (row[i].visible) {
-          if (minVis === -1) minVis = i;
-          maxVis = i;
+      // Find the range of VISIBLE tile offsets in this row
+      let minVisOffset = Infinity;
+      let maxVisOffset = -Infinity;
+      for (const tileData of row) {
+        if (tileData.visible) {
+          const off = tileData.offset;
+          if (off < minVisOffset) minVisOffset = off;
+          if (off > maxVisOffset) maxVisOffset = off;
         }
       }
 
       // If no visible tiles in this row, treat as fog boundary
-      if (minVis === -1) {
+      if (minVisOffset === Infinity) {
         corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: null, wallPositions: [], secretPositions: [], isWater: false, stairsPositions: [], visibleRange: null });
         continue;
       }
 
-      const centerTile = row[centerIdx];
+      // Find center tile (offset === 0)
+      const centerTile = row.find(t => t.offset === 0);
       const centerVisible = centerTile?.visible ?? false;
 
       // Check if center is blocked (front wall) - ONLY if center is visible
-      // Only treat as wall if we have valid tile data that's actually a wall AND is visible
       let frontWall: string | null = null;
       let centerIsWall = false;
-      if (centerVisible) {
-        const centerTileType = centerTile?.tile || '.';
+      if (centerVisible && centerTile) {
+        const centerTileType = centerTile.tile_actual ?? centerTile.tile;
         centerIsWall = isWallTile(centerTileType) || isDoorTile(centerTileType);
         frontWall = centerIsWall ? centerTileType : null;
       }
 
-      // Track wall positions using tile_actual for geometry (includes fogged walls)
+      // Track wall positions using tile.offset and tile_actual for geometry
       const wallPositions: { offset: number; tile: string }[] = [];
       // Track positions with hidden secrets for visual hints (visible only)
       const secretPositions: { offset: number }[] = [];
 
       // Scan ALL tiles using tile_actual for geometry decisions
-      // This ensures fogged walls (visible:false but tile_actual:'#') are included
-      for (let i = 0; i < row.length; i++) {
-        const tileData = row[i];
-        // Use tile_actual for geometry, fall back to tile for backwards compatibility
+      // Use tile.offset directly (not array index) for correct offset mapping
+      for (const tileData of row) {
         const actualTile = tileData.tile_actual ?? tileData.tile;
+        const offset = tileData.offset;
         if (isWallTile(actualTile) || isDoorTile(actualTile)) {
-          const offset = i - centerIdx;
           wallPositions.push({ offset, tile: actualTile });
         }
 
         // Secret hints only for visible tiles
         if (tileData.visible && tileData.has_secret) {
-          const offset = i - centerIdx;
           secretPositions.push({ offset });
         }
       }
 
       // Determine corridor walls at canonical offsets ±1
       // leftWall/rightWall mean "wall at offset -1/+1" for corridor rendering
-      // Now correctly includes fogged walls via tile_actual
       const leftWall = wallPositions.some(w => w.offset === -1);
       const rightWall = wallPositions.some(w => w.offset === 1);
 
@@ -608,16 +605,14 @@ export function FirstPersonRenderer({
 
       // Track stairs positions (only for visible tiles)
       const stairsPositions: { offset: number; direction: 'down' | 'up' }[] = [];
-      for (let i = minVis; i <= maxVis; i++) {
-        const tileData = row[i];
+      for (const tileData of row) {
         if (!tileData.visible) continue;
 
         const tile = tileData.tile;
+        const offset = tileData.offset;
         if (isStairsDown(tile)) {
-          const offset = i - centerIdx;
           stairsPositions.push({ offset, direction: 'down' });
         } else if (isStairsUp(tile)) {
-          const offset = i - centerIdx;
           stairsPositions.push({ offset, direction: 'up' });
         }
       }
@@ -631,7 +626,7 @@ export function FirstPersonRenderer({
         secretPositions,
         isWater,
         stairsPositions,
-        visibleRange: { min: minVis - centerIdx, max: maxVis - centerIdx }, // Offsets from center
+        visibleRange: { min: minVisOffset, max: maxVisOffset }, // Visible tile offsets
       });
     }
 
