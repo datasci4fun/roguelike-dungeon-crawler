@@ -25,6 +25,11 @@ type ScenarioId =
   | 'traps_test'
   | 'water_test'
   | 'offset_test'
+  | 'offset_grid'
+  | 'occlusion_front'
+  | 'occlusion_side'
+  | 'occlusion_edge_peek'
+  | 'occlusion_wall_bounds'
   | 'biome_compare'
   | 'custom';
 
@@ -48,6 +53,11 @@ const SCENARIOS: ScenarioConfig[] = [
   { id: 'traps_test', name: 'Traps', description: 'All 4 trap types at different depths' },
   { id: 'water_test', name: 'Water', description: 'Water tiles with reflections' },
   { id: 'offset_test', name: 'Offset Test', description: 'Test item offsets at various depths' },
+  { id: 'offset_grid', name: 'Offset Grid', description: 'Grid of items at depth/offset combos' },
+  { id: 'occlusion_front', name: 'Occlusion: Front', description: 'Entity behind front wall (should hide)' },
+  { id: 'occlusion_side', name: 'Occlusion: Side', description: 'Entities near side walls' },
+  { id: 'occlusion_edge_peek', name: 'Occlusion: Edge Peek', description: 'Wall ends mid-corridor (all visible)' },
+  { id: 'occlusion_wall_bounds', name: 'Occlusion: Wall Bounds', description: 'Entities beyond wall edges (should hide)' },
   { id: 'biome_compare', name: 'Biomes', description: 'Compare all biome themes side by side' },
   { id: 'custom', name: 'Custom', description: 'Configure your own scene' },
 ];
@@ -84,6 +94,9 @@ interface CustomParams {
   fogDensity: number;
   torchIntensity: number;
   useTileGrid: boolean;
+  // Debug settings
+  debugShowOccluded: boolean;
+  debugShowWireframe: boolean;
 }
 
 const DEFAULT_PARAMS: CustomParams = {
@@ -106,6 +119,9 @@ const DEFAULT_PARAMS: CustomParams = {
   fogDensity: 1.0,
   torchIntensity: 1.0,
   useTileGrid: false,
+  // Debug defaults
+  debugShowOccluded: false,
+  debugShowWireframe: false,
 };
 
 // Generate mock tile data
@@ -500,10 +516,10 @@ function generateMockView(scenarioId: ScenarioId, params: CustomParams): FirstPe
       for (let d = 5; d <= maxDepth; d++) {
         rows.push(generateRow(d, true, true, '.'));
       }
-      // Add some items in the water
+      // Add some items in the water (within corridor bounds)
       entities.push(
         { type: 'item', name: 'Sunken Gold', symbol: '*', distance: 2, offset: 0, x: 0, y: 2 },
-        { type: 'item', name: 'Lost Potion', symbol: '!', distance: 3, offset: -1, x: -1, y: 3 },
+        { type: 'item', name: 'Lost Potion', symbol: '!', distance: 3, offset: -0.6, x: -1, y: 3 },
       );
       break;
 
@@ -537,6 +553,110 @@ function generateMockView(scenarioId: ScenarioId, params: CustomParams): FirstPe
           y: depth,
         });
       });
+      break;
+
+    case 'offset_grid':
+      // Create wide corridor for offset testing
+      for (let d = 0; d <= 6; d++) {
+        rows.push(generateRow(d, true, true, '.'));
+      }
+      // Create grid of items at various depth/offset combinations
+      // Depths: 1, 2, 3, 4 | Offsets: -0.8, -0.4, 0, 0.4, 0.8 (within wall bounds ±1)
+      const offsets = [-0.8, -0.4, 0, 0.4, 0.8];
+      const depths = [1, 2, 3, 4];
+      depths.forEach((depth) => {
+        offsets.forEach((offset, i) => {
+          entities.push({
+            type: 'item',
+            name: `D${depth}O${offset}`,
+            symbol: ['!', '*', '?', ')', '+'][i % 5],
+            distance: depth,
+            offset: offset,
+            x: Math.round(offset),
+            y: depth,
+          });
+        });
+      });
+      break;
+
+    case 'occlusion_front':
+      // Front wall at depth 2, enemies at depths 1, 3, 4
+      // Enemy at depth 3 should be HIDDEN (behind wall)
+      // Enemies at depths 1 and 4 should be VISIBLE
+      for (let d = 0; d <= 5; d++) {
+        const centerTile = d === 2 ? '#' : '.';
+        rows.push(generateRow(d, true, true, centerTile));
+      }
+      entities.push(
+        { type: 'enemy', name: 'Visible (D1)', symbol: 'g', distance: 1, offset: 0, x: 0, y: 1, health: 10, max_health: 10, is_elite: false },
+        { type: 'enemy', name: 'HIDDEN (D3)', symbol: 'g', distance: 3, offset: 0, x: 0, y: 3, health: 10, max_health: 10, is_elite: true },
+        { type: 'enemy', name: 'HIDDEN (D4)', symbol: 'g', distance: 4, offset: 0, x: 0, y: 4, health: 10, max_health: 10, is_elite: false },
+      );
+      break;
+
+    case 'occlusion_side':
+      // Corridor with entities at various offsets near side walls
+      // All entities should be VISIBLE (within corridor bounds ±0.9)
+      // Tests that entities near walls but inside corridor render correctly
+      for (let d = 0; d <= 6; d++) {
+        rows.push(generateRow(d, true, true, '.'));
+      }
+      // Entities at different offsets - all within corridor bounds (walls at ±1)
+      entities.push(
+        // Center entities (should always be visible)
+        { type: 'enemy', name: 'Center D2', symbol: 'g', distance: 2, offset: 0, x: 0, y: 2, health: 10, max_health: 10, is_elite: false },
+        // Left-side entities (near left wall but inside corridor)
+        { type: 'item', name: 'Left D2', symbol: '!', distance: 2, offset: -0.7, x: -1, y: 2 },
+        { type: 'item', name: 'Near Left D3', symbol: '*', distance: 3, offset: -0.8, x: -1, y: 3 },
+        // Right-side entities (near right wall but inside corridor)
+        { type: 'item', name: 'Right D2', symbol: '?', distance: 2, offset: 0.7, x: 1, y: 2 },
+        { type: 'item', name: 'Near Right D3', symbol: ')', distance: 3, offset: 0.8, x: 1, y: 3 },
+        // Deep entities
+        { type: 'enemy', name: 'Deep Center', symbol: 'T', distance: 5, offset: 0, x: 0, y: 5, health: 20, max_health: 20, is_elite: true },
+      );
+      break;
+
+    case 'occlusion_edge_peek':
+      // Test wall edge visibility: left wall ends at depth 3
+      // Entities at depth <= 3 near left wall may be occluded
+      // Entities at depth > 3 where wall ends should be visible
+      for (let d = 0; d <= 6; d++) {
+        // Left wall only for depths 0-3, then open corridor
+        const hasLeftWall = d <= 3;
+        rows.push(generateRow(d, hasLeftWall, false, '.'));
+      }
+      entities.push(
+        // Right side (no wall) - should always be visible
+        { type: 'enemy', name: 'Open Right D2', symbol: 'g', distance: 2, offset: 0.6, x: 1, y: 2, health: 10, max_health: 10, is_elite: false },
+        // Center - should be visible
+        { type: 'item', name: 'Center D2', symbol: '!', distance: 2, offset: 0, x: 0, y: 2 },
+        // Near left wall (inside corridor) - should be visible
+        { type: 'item', name: 'Near Wall D3', symbol: '*', distance: 3, offset: -0.7, x: -1, y: 3 },
+        // Deep left where wall ended - should be visible (wall stops at depth 3)
+        { type: 'enemy', name: 'Past Wall D5', symbol: 'T', distance: 5, offset: -0.6, x: -1, y: 5, health: 15, max_health: 15, is_elite: false },
+      );
+      break;
+
+    case 'occlusion_wall_bounds':
+      // Test that entities BEYOND wall boundaries are correctly hidden
+      // Walls are at offset ±1, entities at ±1.2 should be occluded
+      for (let d = 0; d <= 6; d++) {
+        rows.push(generateRow(d, true, true, '.'));
+      }
+      entities.push(
+        // Center - VISIBLE (inside corridor)
+        { type: 'enemy', name: 'Center (visible)', symbol: 'g', distance: 2, offset: 0, x: 0, y: 2, health: 10, max_health: 10, is_elite: false },
+        // Left side inside corridor - VISIBLE
+        { type: 'item', name: 'Left Inside (visible)', symbol: '!', distance: 2, offset: -0.7, x: -1, y: 2 },
+        // Left side BEYOND wall - HIDDEN (offset -1.3 is past wall at -1)
+        { type: 'enemy', name: 'Left Beyond (HIDDEN)', symbol: 'X', distance: 3, offset: -1.3, x: -2, y: 3, health: 10, max_health: 10, is_elite: true },
+        // Right side inside corridor - VISIBLE
+        { type: 'item', name: 'Right Inside (visible)', symbol: '?', distance: 2, offset: 0.7, x: 1, y: 2 },
+        // Right side BEYOND wall - HIDDEN (offset 1.3 is past wall at 1)
+        { type: 'enemy', name: 'Right Beyond (HIDDEN)', symbol: 'X', distance: 3, offset: 1.3, x: 2, y: 3, health: 10, max_health: 10, is_elite: true },
+        // Deep center - VISIBLE
+        { type: 'enemy', name: 'Deep Center (visible)', symbol: 'T', distance: 5, offset: 0, x: 0, y: 5, health: 20, max_health: 20, is_elite: false },
+      );
       break;
 
     case 'custom':
@@ -587,21 +707,165 @@ function generateMockView(scenarioId: ScenarioId, params: CustomParams): FirstPe
   };
 }
 
+/**
+ * Transform a view based on facing direction using proper rotation math
+ * Treats (offset, depth) as 2D coordinates and applies rotation:
+ * - North (0°): no transform
+ * - East (90° right): (offset, depth) → (-depth, offset)
+ * - South (180°): (offset, depth) → (-offset, -depth) - entity behind camera
+ * - West (90° left): (offset, depth) → (depth, -offset)
+ *
+ * Entities with resulting negative depth are behind the camera and filtered out.
+ * Walls are regenerated to show the appropriate view for each direction.
+ */
+function transformViewForFacing(view: FirstPersonView, facing: FacingDirection): FirstPersonView {
+  if (facing === 'north') {
+    return view; // No transform needed
+  }
+
+  // Transform entities using 2D rotation
+  const transformedEntities = view.entities
+    .map(entity => {
+      const offset = entity.offset;
+      const depth = entity.distance;
+
+      let newOffset: number;
+      let newDepth: number;
+
+      switch (facing) {
+        case 'east':
+          // Rotate 90° right: entity ahead moves to your left
+          newOffset = -depth;
+          newDepth = offset;
+          break;
+        case 'south':
+          // Rotate 180°: entity ahead is now behind
+          newOffset = -offset;
+          newDepth = -depth;
+          break;
+        case 'west':
+          // Rotate 90° left: entity ahead moves to your right
+          newOffset = depth;
+          newDepth = -offset;
+          break;
+        default:
+          newOffset = offset;
+          newDepth = depth;
+      }
+
+      return { ...entity, offset: newOffset, distance: newDepth };
+    })
+    // Filter out entities behind camera (negative depth) or too close
+    .filter(entity => entity.distance > 0.5);
+
+  // Analyze original wall configuration
+  const originalWallConfig = view.rows.map(row => {
+    if (row.length === 0) return { leftWall: false, rightWall: false };
+    const leftTile = row[0]?.tile || '.';
+    const rightTile = row[row.length - 1]?.tile || '.';
+    return {
+      leftWall: leftTile === '#' || leftTile === 'D',
+      rightWall: rightTile === '#' || rightTile === 'D',
+    };
+  });
+
+  // Generate new wall rows based on facing direction
+  let transformedRows: FirstPersonTile[][];
+
+  if (facing === 'south') {
+    // 180° rotation: swap left/right walls, looking back down corridor
+    transformedRows = view.rows.map((row, d) => {
+      const config = originalWallConfig[d];
+      // Swap left and right
+      return generateRow(d, config.rightWall, config.leftWall, '.');
+    });
+  } else if (facing === 'east') {
+    // 90° right: Looking at what was your right side
+    // Original corridor is to your left, original right wall is now in front
+    // Check if there was a right wall - if so, it's now a front wall
+    const hadRightWall = originalWallConfig.some(c => c.rightWall);
+
+    if (hadRightWall) {
+      // You're facing a wall - generate a dead end view
+      transformedRows = [];
+      for (let d = 0; d <= 3; d++) {
+        const centerTile = d === 1 ? '#' : '.';
+        transformedRows.push(generateRow(d, false, false, centerTile));
+      }
+    } else {
+      // No right wall - you see open space extending to the right
+      // The original left wall is now behind you
+      // Generate an open corridor view
+      transformedRows = [];
+      for (let d = 0; d <= 6; d++) {
+        // Looking perpendicular - might see the back wall of the corridor
+        transformedRows.push(generateRow(d, false, true, '.'));
+      }
+    }
+  } else if (facing === 'west') {
+    // 90° left: Looking at what was your left side
+    // Original corridor is to your right, original left wall is now in front
+    const hadLeftWall = originalWallConfig.some(c => c.leftWall);
+
+    if (hadLeftWall) {
+      // You're facing a wall - generate a dead end view
+      // The wall is right in front of you
+      transformedRows = [];
+      for (let d = 0; d <= 3; d++) {
+        const centerTile = d === 1 ? '#' : '.';
+        transformedRows.push(generateRow(d, false, false, centerTile));
+      }
+    } else {
+      // No left wall - you see open space extending to the left
+      transformedRows = [];
+      for (let d = 0; d <= 6; d++) {
+        transformedRows.push(generateRow(d, true, false, '.'));
+      }
+    }
+  } else {
+    transformedRows = view.rows;
+  }
+
+  return {
+    ...view,
+    rows: transformedRows,
+    entities: transformedEntities,
+  };
+}
+
 export function FirstPersonTestPage() {
   const [selectedScenario, setSelectedScenario] = useState<ScenarioId>('corridor');
   const [params, setParams] = useState<CustomParams>(DEFAULT_PARAMS);
   const [showModal, setShowModal] = useState(false);
   const [tempParams, setTempParams] = useState<CustomParams>(DEFAULT_PARAMS);
+  // Override view for when user clicks a comparison thumbnail
+  const [overrideView, setOverrideView] = useState<{ view: FirstPersonView; label: string } | null>(null);
 
   const mockView = generateMockView(selectedScenario, params);
+  // Use override view if set, otherwise use the scenario's default view
+  const baseView = overrideView?.view ?? mockView;
+
+  // Transform view based on facing direction (simulate rotation)
+  // North = default, South = mirror horizontally, East/West = swap walls
+  const transformedView = transformViewForFacing(baseView, params.facing);
+  const activeView: FirstPersonView = {
+    ...transformedView,
+    facing: FACING_MAP[params.facing],
+  };
 
   const handleScenarioClick = useCallback((scenarioId: ScenarioId) => {
     setSelectedScenario(scenarioId);
+    setOverrideView(null); // Clear any selected thumbnail
     if (scenarioId === 'custom') {
       setShowModal(true);
       setTempParams(params);
     }
   }, [params]);
+
+  // Click handler for comparison thumbnails
+  const selectThumbnail = useCallback((view: FirstPersonView, label: string) => {
+    setOverrideView({ view, label });
+  }, []);
 
   const openCustomize = useCallback(() => {
     setTempParams(params);
@@ -726,17 +990,47 @@ export function FirstPersonTestPage() {
               Renders floor/ceiling as individual tiles (add images to /tiles/{params.biome}/)
             </p>
           </div>
+
+          {/* Debug toggle */}
+          <div className="tile-grid-toggle">
+            <h3>Debug</h3>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={params.debugShowOccluded}
+                onChange={(e) => setParams({ ...params, debugShowOccluded: e.target.checked })}
+              />
+              Show Occluded Entities
+            </label>
+            <p className="tile-grid-hint">
+              Red silhouettes for entities hidden by z-buffer
+            </p>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={params.debugShowWireframe}
+                onChange={(e) => setParams({ ...params, debugShowWireframe: e.target.checked })}
+              />
+              Show Wall Wireframe
+            </label>
+            <p className="tile-grid-hint">
+              Yellow edges show wall boundaries (offset ±1)
+            </p>
+          </div>
         </aside>
 
         {/* Renderer Preview */}
         <main className="fp-test-preview">
           <div className="preview-container">
             <div className="preview-label">
-              {SCENARIOS.find(s => s.id === selectedScenario)?.name || 'Custom'}
+              {overrideView
+                ? <><span className="selected-thumb">{overrideView.label}</span> <button className="clear-selection" onClick={() => setOverrideView(null)}>✕ Clear</button></>
+                : (SCENARIOS.find(s => s.id === selectedScenario)?.name || 'Custom')
+              }
             </div>
             <div className="renderer-wrapper" style={{ width: params.canvasWidth, height: params.canvasHeight }}>
               <FirstPersonRenderer
-                view={mockView}
+                view={activeView}
                 width={params.canvasWidth}
                 height={params.canvasHeight}
                 enableAnimations={params.enableAnimations}
@@ -747,6 +1041,8 @@ export function FirstPersonTestPage() {
                   torchIntensity: params.torchIntensity,
                   useTileGrid: params.useTileGrid,
                 }}
+                debugShowOccluded={params.debugShowOccluded}
+                debugShowWireframe={params.debugShowWireframe}
               />
             </div>
             <div className="preview-info">
@@ -949,6 +1245,218 @@ export function FirstPersonTestPage() {
                         width={150}
                         height={120}
                         enableAnimations={params.enableAnimations}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Offset Grid comparison */}
+          {selectedScenario === 'offset_grid' && (
+            <div className="torch-comparison">
+              <h3>Offset Grid - Items at Each Depth/Offset Combo</h3>
+              <p className="scenario-hint">
+                Each row is a different depth (1-4). Each column is a different offset (-1.5 to +1.5).
+                Items should maintain consistent lateral spacing at each depth. Click any thumbnail to view larger.
+              </p>
+              <div className="torch-grid">
+                {[1, 2, 3, 4].map((depth) => {
+                  const label = `Depth ${depth}`;
+                  const gridView: FirstPersonView = {
+                    rows: Array.from({ length: 6 }, (_, d) =>
+                      generateRow(d, true, true, '.')
+                    ),
+                    entities: [-1.5, -0.75, 0, 0.75, 1.5].map((offset, i) => ({
+                      type: 'item' as const,
+                      name: `O${offset}`,
+                      symbol: ['!', '*', '?', ')', '+'][i % 5],
+                      distance: depth,
+                      offset: offset,
+                      x: Math.round(offset),
+                      y: depth,
+                    })),
+                    facing: { dx: 0, dy: -1 },
+                    depth: 6,
+                  };
+                  const isSelected = overrideView?.label === label;
+                  return (
+                    <div
+                      key={depth}
+                      className={`torch-sample clickable ${isSelected ? 'selected' : ''}`}
+                      onClick={() => selectThumbnail(gridView, label)}
+                    >
+                      <div className="torch-label">{label}</div>
+                      <FirstPersonRenderer
+                        view={gridView}
+                        width={200}
+                        height={160}
+                        enableAnimations={params.enableAnimations}
+                        settings={{ biome: params.biome, brightness: params.brightness }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Occlusion Front comparison */}
+          {selectedScenario === 'occlusion_front' && (
+            <div className="torch-comparison">
+              <h3>Front Wall Occlusion Test</h3>
+              <p className="scenario-hint">
+                <strong>Wall at depth 2.</strong> Enemy at D1 should be VISIBLE.
+                Enemies at D3 and D4 should be HIDDEN (behind wall). Click any thumbnail to view larger.
+              </p>
+              <div className="torch-grid">
+                {[
+                  { wallDepth: 2, entityDepth: 1, label: 'Entity D1 (visible)' },
+                  { wallDepth: 2, entityDepth: 3, label: 'Entity D3 (hidden)' },
+                  { wallDepth: 3, entityDepth: 2, label: 'Wall D3, Entity D2 (visible)' },
+                  { wallDepth: 3, entityDepth: 4, label: 'Wall D3, Entity D4 (hidden)' },
+                ].map(({ wallDepth, entityDepth, label }, i) => {
+                  const occlusionView: FirstPersonView = {
+                    rows: Array.from({ length: 6 }, (_, d) =>
+                      generateRow(d, true, true, d === wallDepth ? '#' : '.')
+                    ),
+                    entities: [{
+                      type: 'enemy' as const,
+                      name: 'Test',
+                      symbol: 'g',
+                      distance: entityDepth,
+                      offset: 0,
+                      x: 0,
+                      y: entityDepth,
+                      health: 10,
+                      max_health: 10,
+                      is_elite: entityDepth > wallDepth,
+                    }],
+                    facing: { dx: 0, dy: -1 },
+                    depth: 6,
+                  };
+                  const isSelected = overrideView?.label === label;
+                  return (
+                    <div
+                      key={i}
+                      className={`torch-sample clickable ${isSelected ? 'selected' : ''}`}
+                      onClick={() => selectThumbnail(occlusionView, label)}
+                    >
+                      <div className="torch-label">{label}</div>
+                      <FirstPersonRenderer
+                        view={occlusionView}
+                        width={200}
+                        height={160}
+                        enableAnimations={params.enableAnimations}
+                        settings={{ biome: params.biome, brightness: params.brightness }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Occlusion Side comparison */}
+          {selectedScenario === 'occlusion_side' && (
+            <div className="torch-comparison">
+              <h3>Side Wall Occlusion Test</h3>
+              <p className="scenario-hint">
+                Entities at various lateral offsets. Center entities always visible.
+                Entities near wall edges test z-buffer interpolation accuracy. Click any thumbnail to view larger.
+              </p>
+              <div className="torch-grid">
+                {[
+                  { offset: 0, label: 'Center (offset 0)' },
+                  { offset: -0.8, label: 'Left (offset -0.8)' },
+                  { offset: 0.8, label: 'Right (offset +0.8)' },
+                  { offset: -1.2, label: 'Far Left (-1.2)' },
+                  { offset: 1.2, label: 'Far Right (+1.2)' },
+                ].map(({ offset, label }, i) => {
+                  const sideView: FirstPersonView = {
+                    rows: Array.from({ length: 6 }, (_, d) =>
+                      generateRow(d, true, true, '.')
+                    ),
+                    entities: [{
+                      type: 'item' as const,
+                      name: 'Test',
+                      symbol: '*',
+                      distance: 2,
+                      offset: offset,
+                      x: Math.round(offset),
+                      y: 2,
+                    }],
+                    facing: { dx: 0, dy: -1 },
+                    depth: 6,
+                  };
+                  const isSelected = overrideView?.label === label;
+                  return (
+                    <div
+                      key={i}
+                      className={`torch-sample clickable ${isSelected ? 'selected' : ''}`}
+                      onClick={() => selectThumbnail(sideView, label)}
+                    >
+                      <div className="torch-label">{label}</div>
+                      <FirstPersonRenderer
+                        view={sideView}
+                        width={150}
+                        height={120}
+                        enableAnimations={params.enableAnimations}
+                        settings={{ biome: params.biome, brightness: params.brightness }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Occlusion Edge Peek comparison */}
+          {selectedScenario === 'occlusion_edge_peek' && (
+            <div className="torch-comparison">
+              <h3>Edge Peek Occlusion Test</h3>
+              <p className="scenario-hint">
+                Left wall only (depths 0-3). Test entities at wall edge.
+                Use facing buttons to rotate view and test edge interpolation. Click any thumbnail to view larger.
+              </p>
+              <div className="torch-grid">
+                {[
+                  { offset: 1.0, depth: 2, wallEnd: 3, label: 'Open Right D2' },
+                  { offset: -0.5, depth: 2, wallEnd: 3, label: 'Wall Edge D2' },
+                  { offset: -1.0, depth: 2, wallEnd: 3, label: 'Behind Wall D2' },
+                  { offset: -1.0, depth: 5, wallEnd: 3, label: 'Past Wall D5' },
+                ].map(({ offset, depth, wallEnd, label }, i) => {
+                  const edgeView: FirstPersonView = {
+                    rows: Array.from({ length: 7 }, (_, d) =>
+                      generateRow(d, d <= wallEnd, false, '.')
+                    ),
+                    entities: [{
+                      type: 'item' as const,
+                      name: 'Test',
+                      symbol: '*',
+                      distance: depth,
+                      offset: offset,
+                      x: Math.round(offset),
+                      y: depth,
+                    }],
+                    facing: { dx: 0, dy: -1 },
+                    depth: 7,
+                  };
+                  const isSelected = overrideView?.label === label;
+                  return (
+                    <div
+                      key={i}
+                      className={`torch-sample clickable ${isSelected ? 'selected' : ''}`}
+                      onClick={() => selectThumbnail(edgeView, label)}
+                    >
+                      <div className="torch-label">{label}</div>
+                      <FirstPersonRenderer
+                        view={edgeView}
+                        width={150}
+                        height={120}
+                        enableAnimations={params.enableAnimations}
+                        settings={{ biome: params.biome, brightness: params.brightness }}
                       />
                     </div>
                   );

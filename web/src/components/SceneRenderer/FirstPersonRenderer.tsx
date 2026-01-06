@@ -91,6 +91,8 @@ interface FirstPersonRendererProps {
   height?: number;
   enableAnimations?: boolean;
   settings?: Partial<RenderSettings>;
+  debugShowOccluded?: boolean; // Show red silhouettes for occluded entities
+  debugShowWireframe?: boolean; // Show yellow wireframe for walls/corridors
 }
 
 // Tile type checks
@@ -210,6 +212,8 @@ export function FirstPersonRenderer({
   height = 300,
   enableAnimations = true,
   settings: userSettings,
+  debugShowOccluded = false,
+  debugShowWireframe = false,
 }: FirstPersonRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
@@ -222,6 +226,158 @@ export function FirstPersonRenderer({
   // Load tiles for this biome if tile grid is enabled
   const tilesLoaded = useTileSet(settings.biome);
 
+  // Draw a debug silhouette for occluded entities (red ghost outline)
+  const drawOccludedSilhouette = useCallback((
+    ctx: CanvasRenderingContext2D,
+    centerX: number,
+    baseY: number,
+    entityWidth: number,
+    entityHeight: number,
+    distance: number,
+    symbol: string
+  ) => {
+    // Draw a red semi-transparent silhouette
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+
+    // Draw body silhouette (simple rectangle with rounded top)
+    ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+    ctx.lineWidth = 2;
+
+    const bodyTop = baseY - entityHeight;
+    ctx.beginPath();
+    ctx.ellipse(centerX, bodyTop + entityWidth * 0.4, entityWidth * 0.4, entityWidth * 0.4, 0, Math.PI, 0);
+    ctx.lineTo(centerX + entityWidth * 0.3, baseY);
+    ctx.lineTo(centerX - entityWidth * 0.3, baseY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Draw "OCCLUDED" label
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#ff0000';
+    ctx.font = `bold ${Math.max(10, entityWidth * 0.4)}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.fillText('HIDDEN', centerX, bodyTop - 5);
+    ctx.fillText(`D=${distance.toFixed(1)}`, centerX, bodyTop - 5 - Math.max(10, entityWidth * 0.4));
+
+    // Draw the entity symbol
+    ctx.fillStyle = '#ff6666';
+    ctx.font = `bold ${Math.max(14, entityWidth * 0.6)}px monospace`;
+    ctx.fillText(symbol, centerX, baseY - entityHeight * 0.4);
+
+    ctx.restore();
+  }, []);
+
+  // Draw debug wireframe showing wall boundaries and corridor edges
+  const drawDebugWireframe = useCallback((
+    ctx: CanvasRenderingContext2D,
+    canvasWidth: number,
+    canvasHeight: number,
+    maxDepth: number,
+    corridorInfo: Array<{ leftWall: boolean; rightWall: boolean; frontWall: string | null }>
+  ) => {
+    ctx.save();
+
+    const horizon = canvasHeight / 2;
+
+    // Draw corridor boundary lines (walls at offset ±1)
+    // Yellow for wall edges, cyan for depth markers
+    for (let d = 1; d <= Math.min(maxDepth, 8); d++) {
+      const depth = d;
+      const nextDepth = d + 1;
+      const info = corridorInfo[d] || { leftWall: false, rightWall: false, frontWall: null };
+
+      // Get projections for wall edges at this depth
+      const leftNear = getProjection(canvasWidth, canvasHeight, depth, -1);
+      const leftFar = getProjection(canvasWidth, canvasHeight, nextDepth, -1);
+      const rightNear = getProjection(canvasWidth, canvasHeight, depth, 1);
+      const rightFar = getProjection(canvasWidth, canvasHeight, nextDepth, 1);
+
+      // Draw left wall edge (yellow if wall exists, dim if not)
+      ctx.strokeStyle = info.leftWall ? '#ffff00' : 'rgba(255, 255, 0, 0.2)';
+      ctx.lineWidth = info.leftWall ? 2 : 1;
+      ctx.setLineDash(info.leftWall ? [] : [4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(leftNear.x, leftNear.wallTop);
+      ctx.lineTo(leftNear.x, leftNear.wallBottom);
+      ctx.lineTo(leftFar.x, leftFar.wallBottom);
+      ctx.lineTo(leftFar.x, leftFar.wallTop);
+      ctx.lineTo(leftNear.x, leftNear.wallTop);
+      ctx.stroke();
+
+      // Draw right wall edge
+      ctx.strokeStyle = info.rightWall ? '#ffff00' : 'rgba(255, 255, 0, 0.2)';
+      ctx.lineWidth = info.rightWall ? 2 : 1;
+      ctx.setLineDash(info.rightWall ? [] : [4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(rightNear.x, rightNear.wallTop);
+      ctx.lineTo(rightNear.x, rightNear.wallBottom);
+      ctx.lineTo(rightFar.x, rightFar.wallBottom);
+      ctx.lineTo(rightFar.x, rightFar.wallTop);
+      ctx.lineTo(rightNear.x, rightNear.wallTop);
+      ctx.stroke();
+
+      // Draw front wall if present (orange)
+      if (info.frontWall) {
+        ctx.strokeStyle = '#ff8800';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(leftNear.x, leftNear.wallTop);
+        ctx.lineTo(rightNear.x, rightNear.wallTop);
+        ctx.lineTo(rightNear.x, rightNear.wallBottom);
+        ctx.lineTo(leftNear.x, leftNear.wallBottom);
+        ctx.closePath();
+        ctx.stroke();
+      }
+
+      // Draw depth label (cyan)
+      ctx.fillStyle = '#00ffff';
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(`D${depth}`, canvasWidth / 2, leftNear.wallTop - 2);
+
+      // Draw horizontal floor line at this depth (cyan, dashed)
+      ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath();
+      ctx.moveTo(leftNear.x, leftNear.wallBottom);
+      ctx.lineTo(rightNear.x, rightNear.wallBottom);
+      ctx.stroke();
+    }
+
+    // Draw center line (green, for reference)
+    ctx.strokeStyle = 'rgba(0, 255, 0, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(canvasWidth / 2, 0);
+    ctx.lineTo(canvasWidth / 2, canvasHeight);
+    ctx.stroke();
+
+    // Draw horizon line (magenta)
+    ctx.strokeStyle = 'rgba(255, 0, 255, 0.4)';
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(0, horizon);
+    ctx.lineTo(canvasWidth, horizon);
+    ctx.stroke();
+
+    // Draw wall boundary markers at offset ±1 (where z-buffer blocks)
+    ctx.fillStyle = '#ffff00';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('← Wall -1', 5, horizon - 5);
+    ctx.textAlign = 'right';
+    ctx.fillText('Wall +1 →', canvasWidth - 5, horizon - 5);
+
+    ctx.setLineDash([]);
+    ctx.restore();
+  }, []);
+
   // Draw an entity (enemy or item) with z-buffer occlusion check
   const renderEntity = useCallback((
     ctx: CanvasRenderingContext2D,
@@ -229,7 +385,8 @@ export function FirstPersonRenderer({
     canvasWidth: number,
     canvasHeight: number,
     time: number,
-    zBuffer: Float32Array | null
+    zBuffer: Float32Array | null,
+    showOccludedDebug: boolean
   ) => {
     const { distance, offset, type, name, symbol, health, max_health, is_elite } = entity;
 
@@ -246,6 +403,10 @@ export function FirstPersonRenderer({
 
     // Check z-buffer occlusion (coarse test: is entity behind walls?)
     if (zBuffer && !isEntityVisible(zBuffer, centerX, entityWidth, distance)) {
+      if (showOccludedDebug) {
+        // Draw debug silhouette instead of hiding
+        drawOccludedSilhouette(ctx, centerX, baseY, entityWidth, entityHeight, distance, symbol);
+      }
       return; // Entity is fully occluded by walls
     }
 
@@ -299,7 +460,7 @@ export function FirstPersonRenderer({
         fogAlpha,
       });
     }
-  }, [enableAnimations]);
+  }, [enableAnimations, drawOccludedSilhouette]);
 
   // Main render function
   const render = useCallback((time: number) => {
@@ -703,7 +864,7 @@ export function FirstPersonRenderer({
 
       // Draw all entities (with z-buffer occlusion culling)
       for (const entity of sortedEntities) {
-        renderEntity(ctx, entity, width, height, timeRef.current, zBuffer);
+        renderEntity(ctx, entity, width, height, timeRef.current, zBuffer, debugShowOccluded);
       }
     }
 
@@ -740,11 +901,16 @@ export function FirstPersonRenderer({
       drawCompass(ctx, width, facing.dx, facing.dy, timeRef.current, enableAnimations);
     }
 
+    // Draw debug wireframe overlay (on top of everything)
+    if (debugShowWireframe) {
+      drawDebugWireframe(ctx, width, height, maxDepth, corridorInfo);
+    }
+
     // Continue animation loop
     if (enableAnimations) {
       animationRef.current = requestAnimationFrame(render);
     }
-  }, [view, width, height, enableAnimations, renderEntity, biome, settings, tilesLoaded]);
+  }, [view, width, height, enableAnimations, renderEntity, biome, settings, tilesLoaded, debugShowOccluded, debugShowWireframe, drawDebugWireframe]);
 
   // Start/stop animation loop
   useEffect(() => {

@@ -207,11 +207,58 @@
   margin-bottom: 0.25rem;
 }
 
+.scenario-hint {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-bottom: 1rem;
+  line-height: 1.4;
+}
+
 .torch-sample canvas {
   border: 1px solid #333;
   border-radius: 2px;
   max-width: 100%;
   height: auto;
+}
+
+/* Clickable thumbnails */
+.torch-sample.clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.torch-sample.clickable:hover {
+  transform: scale(1.03);
+  box-shadow: 0 0 12px rgba(100, 200, 255, 0.3);
+}
+
+.torch-sample.clickable.selected {
+  outline: 2px solid #4af;
+  outline-offset: 2px;
+  box-shadow: 0 0 16px rgba(68, 170, 255, 0.5);
+}
+
+/* Selected thumbnail indicator */
+.selected-thumb {
+  color: #4af;
+  font-weight: 600;
+}
+
+.clear-selection {
+  background: transparent;
+  border: 1px solid #666;
+  color: #aaa;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+.clear-selection:hover {
+  background: #333;
+  color: #fff;
+  border-color: #888;
 }
 
 /* Modal */
