@@ -230,7 +230,7 @@ class GameSessionManager:
                     "killed_by": killed_by,
                     "game_duration_seconds": duration_seconds,
                     "turns_taken": session.turn_count,
-                    "started_at": session.created_at,
+                    "started_at": session.created_at.isoformat() if session.created_at else None,
                     "ghost_data": ghost_data,
                 }
 
