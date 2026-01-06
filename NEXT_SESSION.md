@@ -1,49 +1,58 @@
 # Next Session Handoff
 
-**Last Session:** 2026-01-03
-**Current Version:** v4.0.0 (Expanded Gameplay)
-**Status:** Released, all features complete
+**Last Session:** 2026-01-06
+**Current Version:** v4.5.0 (Biome Theming & Tile Engine)
+**Status:** Released, merged to master
 
 ---
 
-## What Was Accomplished (v4.0.0)
+## What Was Accomplished (v4.5.0)
 
-### New Enemy Types (6)
-| Enemy | HP | ATK | DEF | XP | Min Level | AI Type |
-|-------|-----|-----|-----|-----|-----------|---------|
-| Necromancer | 25 | 8 | 3 | 40 | 3 | Ranged Kite |
-| Demon | 45 | 16 | 6 | 60 | 4 | Aggressive |
-| Assassin | 20 | 14 | 2 | 35 | 2 | Stealth |
-| Fire Elemental | 30 | 12 | 4 | 45 | 3 | Elemental |
-| Ice Elemental | 30 | 10 | 5 | 45 | 3 | Elemental |
-| Lightning Elemental | 25 | 14 | 3 | 50 | 4 | Elemental |
+### Biome Theming System
+8 complete biome themes with distinct visual palettes:
 
-### Status Effects System
-- **Poison**: 2 damage/turn, 5 turns, stacks intensity (max 3x)
-- **Burn**: 3 damage/turn, 3 turns, refreshes duration
-- **Freeze**: 50% movement penalty, 3 turns, no stacking
-- **Stun**: Skip turn, 1 turn, no stacking
+| Biome | Floor | Walls | Light | Particles |
+|-------|-------|-------|-------|-----------|
+| Dungeon | Brown stone | Gray stone | Warm orange | Dust |
+| Ice | Light blue | Blue-white | Cool white | Snow |
+| Forest | Brown earth | Dark green | Dappled green | Spores |
+| Lava | Dark charred | Red-orange | Red glow | Embers |
+| Crypt | Gray stone | Purple-gray | Pale purple | Dust |
+| Sewer | Green slime | Brown-green | Sickly green | None |
+| Library | Warm wood | Golden brown | Warm gold | Dust |
+| Crystal | Purple stone | Magenta | Cyan glow | None |
 
-### Dungeon Mechanics
-- **Traps**: Spike, Fire, Poison, Arrow (hidden until detected/triggered)
-- **Hazards**: Lava, Ice, Poison Gas (spreads), Deep Water
+### Tile Loading Engine
+- `TileManager` singleton loads PNG tiles from `/tiles/{biome}/`
+- `TileRenderer` with perspective projection for floor/ceiling grids
+- `useTileSet` React hook for async tile loading
+- Supports 9 tile types: floor, ceiling, wall_front, wall_left, wall_right, wall_corner_left, wall_corner_right, door, water
+- Falls back to biome colors if tiles not present
 
-### New Equipment
-- **Shields** (Off-hand): Block chance + defense
-- **Rings**: Stat bonuses (Strength, Defense, Speed)
-- **Amulets**: Passive effects (Health, Resistance, Vision)
-- **Ranged Weapons**: Shortbow, Longbow, Crossbow
-- **Throwables**: Throwing Knife, Bomb, Poison Vial
-- **Keys**: Bronze, Silver, Gold
+### Data-Driven Torch System
+- Server-side torch placement during dungeon generation
+- Raycasting for directional light with wall/entity occlusion
+- Theme-based torch counts (sparse in caves, bright in libraries)
+- Torches serialized to client with lighting data
 
-### AI Behavior System
-- Chase, Ranged Kite, Aggressive, Stealth, Elemental behaviors
+### Wall Decorations
+- Procedural moss, cracks, cobwebs on dungeon walls
+- Seeded randomness for deterministic placement
+- Decorations fade with depth
 
-### Files Created
-- `src/entities/status_effects.py`
-- `src/entities/ai_behaviors.py`
-- `src/world/traps.py`
-- `src/world/hazards.py`
+### Other Features
+- FOV cone filtering for first-person entities
+- Relative movement (WASD relative to facing direction)
+- UI screens (Character, Help, Messages)
+- Water reflections and stairs rendering
+- Wall visibility and torch centering fixes
+
+### Test Page Enhancements
+- Biome selector dropdown (8 biomes)
+- Brightness slider (0.2 - 2.0)
+- "Use Tile Grid" toggle for custom tiles
+- Unique test scenes per biome
+- Tile generation prompts for AI image generators (`/tiles/PROMPTS.md`)
 
 ---
 
@@ -51,14 +60,35 @@
 
 ```
 Branch: master
-Tag: v4.0.0
-Last Commit: a3e0f52 - docs: Mark v4.0.0 as released in STATE.md
+Tag: v4.5.0
+Last Commit: 6e0638c - docs: Update README and STATE.md for v4.5.0 release
 
-All branches synced with origin:
-- master (up to date)
-- develop (up to date)
-- feature/v4.0-expanded-gameplay (deleted after merge)
+Remote: origin (https://github.com/datasci4fun/roguelike-dungeon-crawler.git)
+Status: All synced, working tree clean
 ```
+
+---
+
+## Files Created (v4.5.0)
+
+### Backend
+- `src/world/torches.py` - Torch dataclass and TorchManager
+
+### Frontend
+- `web/src/components/SceneRenderer/biomes.ts` - 8 biome theme definitions
+- `web/src/components/SceneRenderer/tiles/TileManager.ts` - Tile loading singleton
+- `web/src/components/SceneRenderer/tiles/TileRenderer.ts` - Perspective tile rendering
+- `web/src/components/SceneRenderer/tiles/useTileSet.ts` - React hook for tile loading
+- `web/src/components/SceneRenderer/tiles/index.ts` - Module exports
+- `web/src/components/SceneRenderer/lighting/torchLight.ts` - Directional light rendering
+- `web/src/components/SceneRenderer/effects/drawWater.ts` - Water reflections
+- `web/src/components/SceneRenderer/entities/drawStairs.ts` - Stairs rendering
+- `web/src/components/SceneRenderer/walls/drawWallDecor.ts` - Wall decorations
+
+### Assets
+- `web/public/tiles/README.md` - Tile creation guide
+- `web/public/tiles/PROMPTS.md` - AI image generation prompts
+- `web/public/tiles/{biome}/.gitkeep` - Directory structure for 8 biomes
 
 ---
 
@@ -78,39 +108,39 @@ All branches synced with origin:
 | v3.3.0 | Spectator mode, legendary items |
 | v3.4.0 | Mobile support, PWA |
 | v3.5.0 | Friends system, 34 achievements |
-| **v4.0.0** | **Expanded gameplay (current)** |
+| v4.0.0 | Expanded gameplay (enemies, traps, hazards) |
+| v4.1.0 | Scene renderer (first-person 3D view) |
+| v4.2.0 | Character creation (races, classes, feats) |
+| v4.3.0 | Visual overhaul (darkness, torch lighting) |
+| v4.4.0 | Atmosphere (compass, traps, secrets, particles) |
+| **v4.5.0** | **Biome theming & tile engine (current)** |
 
 ---
 
-## Potential v4.1.0 or v5.0.0 Ideas
+## Next Steps
 
-### Gameplay Enhancements
-- [ ] Locked doors + key system integration (keys exist but doors not implemented)
-- [ ] Secret rooms with hidden walls
-- [ ] Ranged combat targeting system (ranged weapons exist but no targeting UI)
-- [ ] Throwable item usage (bombs, poison vials)
-- [ ] More status effects (Blind, Slow, Confusion)
-- [ ] Enemy resistances/weaknesses to elements
+### Immediate Options
+1. **Generate Tiles** - Use prompts in `/tiles/PROMPTS.md` to create custom tile images
+2. **Test Biomes** - Visit `/first-person-test` and cycle through all 8 biomes
 
-### Content Additions
-- [ ] More enemy types (Vampire, Golem, Spider)
-- [ ] New boss abilities
-- [ ] Dungeon level 6+ (post-game content)
-- [ ] Unique legendary items per boss
-- [ ] Set items with bonuses
+### Planned for v4.6.0 (Save System)
+| Feature | Description |
+|---------|-------------|
+| Database save storage | Persist game state to PostgreSQL |
+| Save on quit | Automatically save when player quits |
+| Load saved game | API endpoint to restore saved game |
+| Main menu | "Continue" and "New Game" options |
+| Multiple save slots | Multiple characters per account |
+| Auto-save | Periodic saves during gameplay |
 
-### Quality of Life
-- [ ] Trap detection skill/stat
-- [ ] Hazard resistance equipment
-- [ ] Status effect cure items
-- [ ] Auto-explore feature
-- [ ] Minimap improvements
+### Deferred from v4.5.0
+- Weather effects (rain/dripping in certain areas)
+- Ambient sounds (background audio for atmosphere)
 
-### Multiplayer Enhancements
-- [ ] Guilds/clans system
-- [ ] Tournaments
-- [ ] Seasonal achievements
-- [ ] Daily challenges
+### Future Ideas
+- Skybox system for open environments (forests, etc.)
+- More biome-specific entities and hazards
+- Biome transitions within dungeons
 
 ---
 
@@ -122,28 +152,32 @@ cd C:\Users\blixa\claude_test
 .\.venv\Scripts\python main.py
 ```
 
-### Syntax Check
+### Run Web Frontend
 ```bash
-.\.venv\Scripts\python -m py_compile src/*.py src/**/*.py
+cd C:\Users\blixa\claude_test\web
+npm run dev
 ```
 
-### Key Files for v4.0.0 Features
-- `src/core/constants.py` - All enums, stats configs
-- `src/entities/status_effects.py` - Status effect system
-- `src/entities/ai_behaviors.py` - Enemy AI dispatch
-- `src/world/traps.py` - Trap mechanics
-- `src/world/hazards.py` - Environmental hazards
-- `src/items/items.py` - New item classes
-- `src/managers/combat_manager.py` - Shield blocking, status effects
-- `src/core/engine.py` - Trap/hazard processing in game loop
+### Test First-Person Renderer
+Visit: http://localhost:5173/first-person-test
+
+### Add Custom Tiles
+1. Create 64x64 PNG images
+2. Place in `web/public/tiles/{biome}/`
+3. Enable "Use Tile Grid" toggle in test page
+
+### Key Files for v4.5.0
+- `web/src/components/SceneRenderer/biomes.ts` - Biome theme definitions
+- `web/src/components/SceneRenderer/tiles/TileManager.ts` - Tile loading
+- `web/src/components/SceneRenderer/FirstPersonRenderer.tsx` - Main renderer
+- `web/src/pages/FirstPersonTestPage.tsx` - Test page with controls
+- `src/world/torches.py` - Server-side torch system
 
 ---
 
 ## Notes
 
-- v4.0.0 adds significant complexity to combat and dungeon exploration
-- New enemies only spawn on appropriate dungeon levels (min_level/max_level)
-- Status effects process for both player and enemies each turn
-- Traps prefer corridor placement, hazards cluster in zones
-- Shield blocking provides chance to completely negate damage
-- All new systems are integrated but could use balance tuning after playtesting
+- Tile system is ready but no actual tiles exist yet - uses fallback colors
+- Each biome has unique test scene in FirstPersonTestPage (not identical corridors)
+- Wall rendering functions now accept biome options for theming
+- TileManager is a singleton - tiles persist across component remounts
