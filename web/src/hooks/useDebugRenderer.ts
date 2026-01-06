@@ -150,9 +150,9 @@ export function useDebugRenderer(): UseDebugRendererResult {
         };
       }
 
-      // Include topDownWindow if server provides it
-      if ((view as { topDownWindow?: string[][] }).topDownWindow) {
-        snapshot.topDownWindow = (view as { topDownWindow?: string[][] }).topDownWindow;
+      // Include top_down_window if server provides it (snake_case from server)
+      if (view.top_down_window) {
+        snapshot.topDownWindow = view.top_down_window;
       }
 
       return snapshot;
