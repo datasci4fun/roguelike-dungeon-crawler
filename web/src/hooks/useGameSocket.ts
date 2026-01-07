@@ -121,7 +121,8 @@ export interface GameEvent {
 export interface FirstPersonTile {
   tile: string;           // Display character (~ for fog, # for unknown)
   tile_actual?: string;   // Actual map tile for geometry (even when fogged)
-  offset: number;         // Lateral offset from center (-left, +right)
+  // NOTE: offset may be omitted by server/debug snapshots; renderer can derive it from x/y + facing + depth.
+  offset?: number;        // Lateral offset from center (-left, +right)
   x: number;
   y: number;
   visible: boolean;

@@ -24,6 +24,9 @@ export function Play() {
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSceneView, setShowSceneView] = useState(true);
+  const [useTileGrid, setUseTileGrid] = useState(() => {
+    try { return localStorage.getItem('useTileGrid') === '1'; } catch { return false; }
+  });
 
   // Debug renderer controls (F8/F9/F10 hotkeys)
   const {
@@ -189,6 +192,11 @@ export function Play() {
     }
   }, [messages.length, isMobileChatOpen]);
 
+  // Persist tile grid preference
+  useEffect(() => {
+    try { localStorage.setItem('useTileGrid', useTileGrid ? '1' : '0'); } catch {}
+  }, [useTileGrid]);
+
   // Debug hotkeys (F8: wireframe, F9: occluded, F10: snapshot)
   useEffect(() => {
     if (!debugEnabled) return;
@@ -280,6 +288,8 @@ export function Play() {
               <div className="scene-wrapper">
                 <FirstPersonRenderer
                   view={gameState?.first_person_view}
+                  playerPos={gameState?.player ? { x: gameState.player.x, y: gameState.player.y } : undefined}
+                  settings={{ biome: 'dungeon', useTileGrid }}
                   width={800}
                   height={600}
                   enableAnimations={true}
@@ -312,6 +322,16 @@ export function Play() {
                 onChange={(e) => setShowSceneView(e.target.checked)}
               />
               First-Person View
+            </label>
+
+            <label className="scene-toggle">
+              <input
+                type="checkbox"
+                checked={useTileGrid}
+                onChange={(e) => setUseTileGrid(e.target.checked)}
+                disabled={!showSceneView}
+              />
+              Tile Grid
             </label>
           </div>
 
