@@ -127,37 +127,65 @@ function drawTexturedQuad(
 
   const { topLeft, topRight, bottomLeft, bottomRight } = corners;
 
-  // For proper perspective texture mapping, we'd need WebGL
-  // With canvas 2D, we approximate by subdividing the quad into triangles
-  // and using affine transforms
+  // Canvas2D can't do true perspective texture mapping.
+  // Approximate it by slicing the quad into many thin horizontal strips in texture space.
+  // Each strip is clipped to a trapezoid and the corresponding slice of the texture is drawn into it.
 
-  // Simple approach: draw the image stretched to fit the quad bounds
-  // This won't be perfect perspective but is a reasonable approximation
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+  // More slices = less distortion, more cost. 24–48 is a good range.
+  const slices = 32;
 
   ctx.save();
-
-  // Create clipping path for the quad
-  ctx.beginPath();
-  ctx.moveTo(bottomLeft.x, bottomLeft.y);
-  ctx.lineTo(bottomRight.x, bottomRight.y);
-  ctx.lineTo(topRight.x, topRight.y);
-  ctx.lineTo(topLeft.x, topLeft.y);
-  ctx.closePath();
-  ctx.clip();
-
-  // Calculate bounding box
-  const minX = Math.min(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
-  const maxX = Math.max(topLeft.x, topRight.x, bottomLeft.x, bottomRight.x);
-  const minY = Math.min(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
-  const maxY = Math.max(topLeft.y, topRight.y, bottomLeft.y, bottomRight.y);
-
-  const width = maxX - minX;
-  const height = maxY - minY;
-
-  // Draw the image stretched to the bounding box
-  // Apply brightness
   ctx.globalAlpha = brightness;
-  ctx.drawImage(image, minX, minY, width, height);
+
+  // We map texture V from 0..1 along the quad from FAR (top*) to NEAR (bottom*).
+  // For each slice band [t0,t1], compute the four corners by interpolating
+  // between top and bottom edges.
+  for (let i = 0; i < slices; i++) {
+    const t0 = i / slices;
+    const t1 = (i + 1) / slices;
+
+    // Interpolate left edge
+    const xL0 = lerp(topLeft.x, bottomLeft.x, t0);
+    const yL0 = lerp(topLeft.y, bottomLeft.y, t0);
+    const xL1 = lerp(topLeft.x, bottomLeft.x, t1);
+    const yL1 = lerp(topLeft.y, bottomLeft.y, t1);
+
+    // Interpolate right edge
+    const xR0 = lerp(topRight.x, bottomRight.x, t0);
+    const yR0 = lerp(topRight.y, bottomRight.y, t0);
+    const xR1 = lerp(topRight.x, bottomRight.x, t1);
+    const yR1 = lerp(topRight.y, bottomRight.y, t1);
+
+    // Clip to the trapezoid for this slice
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(xL0, yL0);
+    ctx.lineTo(xR0, yR0);
+    ctx.lineTo(xR1, yR1);
+    ctx.lineTo(xL1, yL1);
+    ctx.closePath();
+    ctx.clip();
+
+    // Destination bounding box for the slice (cheap drawImage target)
+    const minX = Math.min(xL0, xR0, xL1, xR1);
+    const maxX = Math.max(xL0, xR0, xL1, xR1);
+    const minY = Math.min(yL0, yR0, yL1, yR1);
+    const maxY = Math.max(yL0, yR0, yL1, yR1);
+
+    const dw = Math.max(1, maxX - minX);
+    const dh = Math.max(1, maxY - minY);
+
+    // Source slice in texture space
+    const sx = 0;
+    const sy = Math.floor(t0 * image.height);
+    const sw = image.width;
+    const sh = Math.max(1, Math.floor((t1 - t0) * image.height));
+
+    ctx.drawImage(image, sx, sy, sw, sh, minX, minY, dw, dh);
+    ctx.restore();
+  }
 
   ctx.restore();
 }
