@@ -5,7 +5,7 @@
  * without needing to play the actual game.
  */
 import { useState, useCallback } from 'react';
-import { FirstPersonRenderer, type RenderSettings } from '../components/SceneRenderer/FirstPersonRenderer';
+import { FirstPersonRenderer } from '../components/SceneRenderer/FirstPersonRenderer';
 import { BIOMES, type BiomeId } from '../components/SceneRenderer/biomes';
 import type { FirstPersonView, FirstPersonTile, FirstPersonEntity } from '../hooks/useGameSocket';
 import './FirstPersonTestPage.css';
@@ -774,7 +774,7 @@ function transformViewForFacing(view: FirstPersonView, facing: FacingDirection):
 
   if (facing === 'south') {
     // 180° rotation: swap left/right walls, looking back down corridor
-    transformedRows = view.rows.map((row, d) => {
+    transformedRows = view.rows.map((_row, d) => {
       const config = originalWallConfig[d];
       // Swap left and right
       return generateRow(d, config.rightWall, config.leftWall, '.');
