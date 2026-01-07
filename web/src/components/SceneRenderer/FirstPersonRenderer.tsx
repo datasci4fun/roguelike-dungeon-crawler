@@ -8,13 +8,13 @@ import { useRef, useEffect, useCallback } from 'react';
 import type { FirstPersonView, FirstPersonEntity } from '../../hooks/useGameSocket';
 import { Colors } from './colors';
 import { getProjection, getFogAmount, PROJECTION_CONFIG } from './projection';
-import { drawCorridorWall, drawFloorSegment, drawFloorAndCeiling, drawFrontWall, drawSecretHints } from './walls';
+import { drawCorridorWall, drawFloorSegment, drawFrontWall, drawSecretHints } from './walls';
 import { drawEnemy, drawItem, drawTrap, renderStairs } from './entities';
 import { drawCompass } from './compass';
 import { drawDustParticles, drawFogWisps, isWaterTile, drawWaterSegment } from './effects';
 import { drawTorches } from './lighting';
-import { getBiome, rgbToString, adjustBrightness, mixColors, type BiomeTheme, type BiomeId } from './biomes';
-import { TileManager, drawFloorGrid, drawCeilingGrid, useTileSet, type TileRenderContext } from './tiles';
+import { getBiome, rgbToString, adjustBrightness, type BiomeTheme, type BiomeId } from './biomes';
+import { drawFloorGrid, drawCeilingGrid, drawWallWithTexture, useTileSet, type TileRenderContext } from './tiles';
 
 /**
  * Draw floor and ceiling with biome-specific colors
@@ -38,7 +38,6 @@ function drawFloorAndCeilingBiome(
   const floorColor = adjustBrightness(biome.floorColor, brightness);
   const ceilingColor = adjustBrightness(biome.ceilingColor, brightness);
   const lightColor = adjustBrightness(biome.lightColor, brightness);
-  const ambientTint = biome.ambientTint;
 
   // Floor gradient - visible near player, fades to fog
   const floorGrad = ctx.createLinearGradient(0, canvasHeight, 0, horizon);
@@ -107,6 +106,8 @@ interface FirstPersonRendererProps {
   settings?: Partial<RenderSettings>;
   debugShowOccluded?: boolean; // Show red silhouettes for occluded entities
   debugShowWireframe?: boolean; // Show yellow wireframe for walls/corridors
+  // Optional: if provided, used for offset derivation when server omits tile.offset
+  playerPos?: { x: number; y: number };
   onCorridorInfo?: (info: CorridorInfoEntry[]) => void; // Callback with derived corridor info for debug
 }
 
@@ -229,6 +230,7 @@ export function FirstPersonRenderer({
   settings: userSettings,
   debugShowOccluded = false,
   debugShowWireframe = false,
+  playerPos,
   onCorridorInfo,
 }: FirstPersonRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -516,6 +518,41 @@ export function FirstPersonRenderer({
     const rows = view.rows;
     const maxDepth = rows.length;
 
+    // --- Derived offset fallback ---
+    // Server is expected to send tile.offset (w), but if it is missing or rows are sparse/ragged,
+    // derive offset from world coords relative to the row center at depth d.
+    // Facing basis:
+    //   forward = (dx, dy)
+    //   right/perp = (-dy, dx)  (matches server)
+    const facing = view.facing;
+    const perp_dx = -facing.dy;
+    const perp_dy = facing.dx;
+
+    // Infer player position if not provided:
+    // Depth 0 row is a lateral slice centered on player (d=0).
+    // We find the median tile along the perp axis as the center.
+    const inferPlayerPos = (): { x: number; y: number } | null => {
+      if (!rows[0] || rows[0].length === 0) return null;
+      const r0 = rows[0].filter(t => typeof t.x === 'number' && typeof t.y === 'number');
+      if (r0.length === 0) return null;
+      const scored = r0
+        .map(t => ({ t, s: (t.x * perp_dx + t.y * perp_dy) }))
+        .sort((a, b) => a.s - b.s);
+      const mid = scored[Math.floor(scored.length / 2)].t;
+      return { x: mid.x, y: mid.y };
+    };
+
+    const derivedPlayer = playerPos ?? inferPlayerPos();
+
+    const getTileOffset = (tileData: { offset?: number; x: number; y: number }, depth: number): number => {
+      if (typeof tileData.offset === 'number') return tileData.offset;
+      if (!derivedPlayer) return 0; // safe fallback; prevents "no visible tiles" collapse
+      const centerX = derivedPlayer.x + facing.dx * depth;
+      const centerY = derivedPlayer.y + facing.dy * depth;
+      return (tileData.x - centerX) * perp_dx + (tileData.y - centerY) * perp_dy;
+    };
+
+
     // Find the corridor configuration at each depth
     // Track: side walls, front walls, and any walls in the row for open room rendering
     const corridorInfo: {
@@ -550,7 +587,7 @@ export function FirstPersonRenderer({
       let maxVisOffset = -Infinity;
       for (const tileData of row) {
         if (tileData.visible) {
-          const off = tileData.offset;
+          const off = getTileOffset(tileData, d);
           if (off < minVisOffset) minVisOffset = off;
           if (off > maxVisOffset) maxVisOffset = off;
         }
@@ -563,7 +600,7 @@ export function FirstPersonRenderer({
       }
 
       // Find center tile (offset === 0)
-      const centerTile = row.find(t => t.offset === 0);
+      const centerTile = row.find(t => getTileOffset(t, d) === 0);
       const centerVisible = centerTile?.visible ?? false;
 
       // Check if center is blocked (front wall) - ONLY if center is visible
@@ -584,7 +621,7 @@ export function FirstPersonRenderer({
       // Use tile.offset directly (not array index) for correct offset mapping
       for (const tileData of row) {
         const actualTile = tileData.tile_actual ?? tileData.tile;
-        const offset = tileData.offset;
+        const offset = getTileOffset(tileData, d);
         if (isWallTile(actualTile) || isDoorTile(actualTile)) {
           wallPositions.push({ offset, tile: actualTile });
         }
@@ -609,7 +646,7 @@ export function FirstPersonRenderer({
         if (!tileData.visible) continue;
 
         const tile = tileData.tile;
-        const offset = tileData.offset;
+        const offset = getTileOffset(tileData, d);
         if (isStairsDown(tile)) {
           stairsPositions.push({ offset, direction: 'down' });
         } else if (isStairsUp(tile)) {
@@ -709,7 +746,11 @@ export function FirstPersonRenderer({
 
       // Draw left corridor wall if there's a wall on the left
       if (info.leftWall) {
-        drawCorridorWall(ctx, 'left', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
+        if (settings.useTileGrid && tilesLoaded) {
+          drawWallWithTexture(tileContext, 'left', depth, -1, 1);
+        } else {
+          drawCorridorWall(ctx, 'left', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
+        }
         // Fill zBuffer for left corridor wall with interpolated depth
         const nearProj = getProjection(width, height, depth, -1);
         const farProj = getProjection(width, height, nextDepth, -1);
@@ -718,7 +759,11 @@ export function FirstPersonRenderer({
 
       // Draw right corridor wall if there's a wall on the right
       if (info.rightWall) {
-        drawCorridorWall(ctx, 'right', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
+        if (settings.useTileGrid && tilesLoaded) {
+          drawWallWithTexture(tileContext, 'right', depth, -1, 1);
+        } else {
+          drawCorridorWall(ctx, 'right', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
+        }
         // Fill zBuffer for right corridor wall with interpolated depth
         const nearProj = getProjection(width, height, depth, 1);
         const farProj = getProjection(width, height, nextDepth, 1);
@@ -727,7 +772,11 @@ export function FirstPersonRenderer({
 
       // Draw front wall if this depth is blocked (center blocked)
       if (info.frontWall) {
-        drawFrontWall(ctx, depth, leftOffset, rightOffset, width, height, info.frontWall, timeRef.current, enableAnimations, wallOptions);
+        if (settings.useTileGrid && tilesLoaded) {
+          drawWallWithTexture(tileContext, 'front', depth, leftOffset, rightOffset);
+        } else {
+          drawFrontWall(ctx, depth, leftOffset, rightOffset, width, height, info.frontWall, timeRef.current, enableAnimations, wallOptions);
+        }
         // Fill zBuffer for front wall
         const leftProj = getProjection(width, height, depth, leftOffset);
         const rightProj = getProjection(width, height, depth, rightOffset);
@@ -743,7 +792,11 @@ export function FirstPersonRenderer({
         if (leftMostWall < 0) {
           const wallTile = info.wallPositions.find(w => w.offset === leftMostWall)?.tile || '#';
           // Draw a partial front wall on the left side
-          drawFrontWall(ctx, depth, leftMostWall - 0.5, leftMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations, wallOptions);
+          if (settings.useTileGrid && tilesLoaded) {
+            drawWallWithTexture(tileContext, 'front', depth, leftMostWall - 0.5, leftMostWall + 0.5);
+          } else {
+            drawFrontWall(ctx, depth, leftMostWall - 0.5, leftMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations, wallOptions);
+          }
           // Fill zBuffer for partial left wall
           const leftProj = getProjection(width, height, depth, leftMostWall - 0.5);
           const rightProj = getProjection(width, height, depth, leftMostWall + 0.5);
@@ -754,7 +807,11 @@ export function FirstPersonRenderer({
         if (rightMostWall > 0) {
           const wallTile = info.wallPositions.find(w => w.offset === rightMostWall)?.tile || '#';
           // Draw a partial front wall on the right side
-          drawFrontWall(ctx, depth, rightMostWall - 0.5, rightMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations, wallOptions);
+          if (settings.useTileGrid && tilesLoaded) {
+            drawWallWithTexture(tileContext, 'front', depth, rightMostWall - 0.5, rightMostWall + 0.5);
+          } else {
+            drawFrontWall(ctx, depth, rightMostWall - 0.5, rightMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations, wallOptions);
+          }
           // Fill zBuffer for partial right wall
           const leftProj = getProjection(width, height, depth, rightMostWall - 0.5);
           const rightProj = getProjection(width, height, depth, rightMostWall + 0.5);
@@ -769,7 +826,11 @@ export function FirstPersonRenderer({
           const wallCount = info.wallPositions.length;
           if (wallCount >= totalTiles * 0.7) {
             // Most of the row is walls - draw a full back wall
-            drawFrontWall(ctx, depth, leftMostWall, rightMostWall, width, height, '#', timeRef.current, enableAnimations, wallOptions);
+            if (settings.useTileGrid && tilesLoaded) {
+              drawWallWithTexture(tileContext, 'front', depth, leftMostWall, rightMostWall);
+            } else {
+              drawFrontWall(ctx, depth, leftMostWall, rightMostWall, width, height, '#', timeRef.current, enableAnimations, wallOptions);
+            }
             // Fill zBuffer for full back wall
             const leftProj = getProjection(width, height, depth, leftMostWall);
             const rightProj = getProjection(width, height, depth, rightMostWall);
@@ -837,7 +898,11 @@ export function FirstPersonRenderer({
 
     // Draw immediate side walls based on tiles beside player (not in front)
     if (playerSideInfo?.leftWall) {
-      drawCorridorWall(ctx, 'left', 0.3, 1, width, height, timeRef.current, enableAnimations, nearWallOptions);
+      if (settings.useTileGrid && tilesLoaded) {
+        drawWallWithTexture(tileContext, 'left', 0.3, -1, 1);
+      } else {
+        drawCorridorWall(ctx, 'left', 0.3, 1, width, height, timeRef.current, enableAnimations, nearWallOptions);
+      }
       // Fill zBuffer for immediate left wall with interpolated depth
       const nearProj = getProjection(width, height, 0.3, -1);
       const farProj = getProjection(width, height, 1, -1);
@@ -942,9 +1007,9 @@ export function FirstPersonRenderer({
     }
 
     // Draw compass at top center
-    const facing = view.facing;
-    if (facing) {
-      drawCompass(ctx, width, facing.dx, facing.dy, timeRef.current, enableAnimations);
+    const facingDir = view.facing;
+    if (facingDir) {
+      drawCompass(ctx, width, facingDir.dx, facingDir.dy, timeRef.current, enableAnimations);
     }
 
     // Draw debug wireframe overlay (on top of everything)
