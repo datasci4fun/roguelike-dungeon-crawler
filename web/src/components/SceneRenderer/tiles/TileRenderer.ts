@@ -82,8 +82,8 @@ export function drawTile(
   // Skip if too fogged
   if (fogAmount > 0.95) return;
 
-  // Try to get the tile image
-  const tileImage = TileManager.getTile(biome.id, tileType);
+  // Try to get the tile image (with position-seeded variant selection)
+  const tileImage = TileManager.getTileVariant(biome.id, tileType, tileX, tileDepth);
 
   ctx.save();
 
@@ -191,6 +191,82 @@ function drawTexturedQuad(
 }
 
 /**
+ * Draw a textured side wall quad with perspective correction
+ * Uses horizontal slicing to properly map texture from near (wide) to far (narrow)
+ * corners: [nearTop, farTop, farBottom, nearBottom]
+ * @param flipHorizontal - If true, flip texture horizontally (for right walls)
+ */
+function drawTexturedWallQuad(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  corners: { x: number; y: number }[],
+  brightness: number,
+  flipHorizontal: boolean = false
+): void {
+  if (corners.length < 4) return;
+
+  const [nearTop, farTop, farBottom, nearBottom] = corners;
+
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+  // Slice horizontally from near edge to far edge
+  const slices = 24;
+
+  ctx.save();
+  ctx.globalAlpha = brightness;
+
+  for (let i = 0; i < slices; i++) {
+    const t0 = i / slices;
+    const t1 = (i + 1) / slices;
+
+    // Interpolate top edge (from nearTop to farTop)
+    const xT0 = lerp(nearTop.x, farTop.x, t0);
+    const yT0 = lerp(nearTop.y, farTop.y, t0);
+    const xT1 = lerp(nearTop.x, farTop.x, t1);
+    const yT1 = lerp(nearTop.y, farTop.y, t1);
+
+    // Interpolate bottom edge (from nearBottom to farBottom)
+    const xB0 = lerp(nearBottom.x, farBottom.x, t0);
+    const yB0 = lerp(nearBottom.y, farBottom.y, t0);
+    const xB1 = lerp(nearBottom.x, farBottom.x, t1);
+    const yB1 = lerp(nearBottom.y, farBottom.y, t1);
+
+    // Clip to this vertical strip
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(xT0, yT0);
+    ctx.lineTo(xT1, yT1);
+    ctx.lineTo(xB1, yB1);
+    ctx.lineTo(xB0, yB0);
+    ctx.closePath();
+    ctx.clip();
+
+    // Destination bounding box
+    const minX = Math.min(xT0, xT1, xB0, xB1);
+    const maxX = Math.max(xT0, xT1, xB0, xB1);
+    const minY = Math.min(yT0, yT1, yB0, yB1);
+    const maxY = Math.max(yT0, yT1, yB0, yB1);
+
+    const dw = Math.max(1, maxX - minX);
+    const dh = Math.max(1, maxY - minY);
+
+    // Source slice in texture space (horizontal slice)
+    // For flipped textures, read from the opposite side
+    const texT0 = flipHorizontal ? (1 - t1) : t0;
+    const texT1 = flipHorizontal ? (1 - t0) : t1;
+    const sx = Math.floor(Math.min(texT0, texT1) * image.width);
+    const sy = 0;
+    const sw = Math.max(1, Math.floor(Math.abs(texT1 - texT0) * image.width));
+    const sh = image.height;
+
+    ctx.drawImage(image, sx, sy, sw, sh, minX, minY, dw, dh);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+/**
  * Draw a colored quadrilateral (fallback when no texture)
  */
 function drawColoredQuad(
@@ -287,7 +363,8 @@ export function drawWallWithTexture(
   const { ctx, canvasWidth, canvasHeight, biome, brightness } = context;
 
   const tileType: TileType = side === 'front' ? 'wall_front' : side === 'left' ? 'wall_left' : 'wall_right';
-  const tileImage = TileManager.getTile(biome.id, tileType);
+  // Use leftOffset as x position for variant selection (represents horizontal wall position)
+  const tileImage = TileManager.getTileVariant(biome.id, tileType, Math.floor(leftOffset), depth);
 
   const depthFade = getDepthFade(depth);
   const fogAmount = getFogAmount(depth);
@@ -320,22 +397,47 @@ export function drawWallWithTexture(
   ctx.save();
 
   if (tileImage) {
-    // Clip and draw texture
-    ctx.beginPath();
-    ctx.moveTo(corners[0].x, corners[0].y);
-    for (let i = 1; i < corners.length; i++) {
-      ctx.lineTo(corners[i].x, corners[i].y);
+    if (side === 'front') {
+      // Front walls: tile horizontally to maintain aspect ratio
+      const minX = Math.min(...corners.map(c => c.x));
+      const maxX = Math.max(...corners.map(c => c.x));
+      const minY = Math.min(...corners.map(c => c.y));
+      const maxY = Math.max(...corners.map(c => c.y));
+
+      const wallWidth = maxX - minX;
+      const wallHeight = maxY - minY;
+
+      // Calculate tile size to maintain square aspect ratio
+      // Use wall height as the base (one tile = one wall height)
+      const tileSize = wallHeight;
+      const tilesNeeded = Math.ceil(wallWidth / tileSize);
+
+      // Clip to wall bounds
+      ctx.beginPath();
+      ctx.moveTo(corners[0].x, corners[0].y);
+      for (let i = 1; i < corners.length; i++) {
+        ctx.lineTo(corners[i].x, corners[i].y);
+      }
+      ctx.closePath();
+      ctx.clip();
+
+      ctx.globalAlpha = depthFade * brightness;
+
+      // Draw tiled texture
+      for (let t = 0; t < tilesNeeded; t++) {
+        const tileX = minX + t * tileSize;
+        const tileW = Math.min(tileSize, maxX - tileX);
+        // Use proportional source width if tile is partially visible
+        const srcW = (tileW / tileSize) * tileImage.width;
+        ctx.drawImage(tileImage, 0, 0, srcW, tileImage.height, tileX, minY, tileW, wallHeight);
+      }
+    } else {
+      // Side walls: use perspective-correct slicing (like floor tiles)
+      // corners: [nearTop, farTop, farBottom, nearBottom]
+      // For right walls, flip texture horizontally (wall goes right-to-left on screen)
+      const flipHorizontal = side === 'right';
+      drawTexturedWallQuad(ctx, tileImage, corners, depthFade * brightness, flipHorizontal);
     }
-    ctx.closePath();
-    ctx.clip();
-
-    const minX = Math.min(...corners.map(c => c.x));
-    const maxX = Math.max(...corners.map(c => c.x));
-    const minY = Math.min(...corners.map(c => c.y));
-    const maxY = Math.max(...corners.map(c => c.y));
-
-    ctx.globalAlpha = depthFade * brightness;
-    ctx.drawImage(tileImage, minX, minY, maxX - minX, maxY - minY);
   } else {
     // Fallback: colored quad
     const baseColor = biome.wallColor;

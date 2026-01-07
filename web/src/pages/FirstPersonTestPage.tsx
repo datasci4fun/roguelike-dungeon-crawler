@@ -118,7 +118,7 @@ const DEFAULT_PARAMS: CustomParams = {
   brightness: 1.0,
   fogDensity: 1.0,
   torchIntensity: 1.0,
-  useTileGrid: false,
+  useTileGrid: true,
   // Debug defaults
   debugShowOccluded: false,
   debugShowWireframe: false,

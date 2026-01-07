@@ -28,6 +28,7 @@ export type TileType =
 export interface TileSet {
   biomeId: string;
   tiles: Map<TileType, HTMLImageElement>;
+  variants: Map<TileType, HTMLImageElement[]>;  // variants[tileType] = [base, var1, var2, ...]
   loaded: boolean;
   loading: boolean;
 }
@@ -105,6 +106,7 @@ class TileManagerClass {
     const tileSet: TileSet = {
       biomeId,
       tiles: new Map(),
+      variants: new Map(),
       loaded: false,
       loading: true,
     };
@@ -128,9 +130,27 @@ class TileManagerClass {
 
     const loadPromises = tileTypes.map(async (tileType) => {
       try {
-        const image = await this.loadTileImage(biomeId, tileType);
-        if (image) {
-          tileSet.tiles.set(tileType, image);
+        // Load base tile
+        const baseImage = await this.loadTileImage(biomeId, tileType);
+        if (baseImage) {
+          tileSet.tiles.set(tileType, baseImage);
+
+          // Load variants (var1, var2, etc.)
+          const variantImages: HTMLImageElement[] = [baseImage];
+          let variantIndex = 1;
+          while (variantIndex <= 10) {  // Cap at 10 variants
+            const variantImage = await this.loadTileImage(biomeId, tileType, variantIndex);
+            if (variantImage) {
+              variantImages.push(variantImage);
+              variantIndex++;
+            } else {
+              break;  // No more variants
+            }
+          }
+          tileSet.variants.set(tileType, variantImages);
+          if (variantImages.length > 1) {
+            console.log(`[TileManager] Loaded ${variantImages.length} variants for ${biomeId}/${tileType}`);
+          }
         }
       } catch (e) {
         // Tile not found - will use fallback color
@@ -149,11 +169,13 @@ class TileManagerClass {
 
   /**
    * Load a single tile image
+   * @param variantIndex - Optional variant number (1, 2, 3...). Omit for base tile.
    */
-  private loadTileImage(biomeId: string, tileType: TileType): Promise<HTMLImageElement | null> {
+  private loadTileImage(biomeId: string, tileType: TileType, variantIndex?: number): Promise<HTMLImageElement | null> {
     return new Promise((resolve) => {
       const img = new Image();
-      const path = `${this.config.basePath}/${biomeId}/${tileType}.png`;
+      const filename = variantIndex ? `${tileType}_var${variantIndex}` : tileType;
+      const path = `${this.config.basePath}/${biomeId}/${filename}.png`;
 
       img.onload = () => resolve(img);
       img.onerror = () => resolve(null);
@@ -171,6 +193,52 @@ class TileManagerClass {
       return null;
     }
     return tileSet.tiles.get(tileType) || null;
+  }
+
+  /**
+   * Get a tile variant using position-seeded selection
+   * Same (x, depth) always returns the same variant (deterministic)
+   * @param x - Tile X position in grid
+   * @param depth - Tile depth from player
+   * @returns Tile image or null if not found
+   */
+  getTileVariant(biomeId: string, tileType: TileType, x: number, depth: number): HTMLImageElement | null {
+    const tileSet = this.tileSets.get(biomeId);
+    if (!tileSet?.loaded) {
+      return null;
+    }
+
+    const variants = tileSet.variants.get(tileType);
+    if (!variants || variants.length === 0) {
+      return tileSet.tiles.get(tileType) || null;
+    }
+
+    // Position-seeded hash for deterministic variant selection
+    const hash = this.positionHash(x, depth);
+    const variantIndex = hash % variants.length;
+    return variants[variantIndex];
+  }
+
+  /**
+   * Simple position hash for variant selection
+   * Returns a positive integer based on (x, depth)
+   */
+  private positionHash(x: number, depth: number): number {
+    // Use a simple but effective hash combining x and depth
+    // Multipliers are primes to reduce patterns
+    const h = Math.abs((x * 73856093) ^ (depth * 19349663));
+    return h >>> 0;  // Ensure positive integer
+  }
+
+  /**
+   * Get the number of variants available for a tile type
+   */
+  getVariantCount(biomeId: string, tileType: TileType): number {
+    const tileSet = this.tileSets.get(biomeId);
+    if (!tileSet?.loaded) {
+      return 0;
+    }
+    return tileSet.variants.get(tileType)?.length ?? 0;
   }
 
   /**
