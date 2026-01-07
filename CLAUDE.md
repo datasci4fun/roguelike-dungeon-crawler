@@ -76,3 +76,8 @@ At the end of EVERY session:
 - No obvious UI breakage (panel + dungeon render ok).
 - Any new behavior is visible in-game (or logged to message panel).
 - STATE.md updated if behavior or goals changed.
+
+## PR creation template
+Use `PR_BODY_TEMPLATE.md` in repo root when creating GitHub PRs:
+- `gh pr create --base develop --title "..." --body-file PR_BODY_TEMPLATE.md`
+Avoid heredocs in commands.
