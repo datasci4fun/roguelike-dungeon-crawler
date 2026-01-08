@@ -649,7 +649,8 @@ export function FirstPersonRenderer({
     for (let d = 0; d < maxDepth; d++) {
       const row = rows[d];
       if (!row || row.length === 0) {
-        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: '#', wallPositions: [], secretPositions: [], isWater: false, stairsPositions: [], visibleRange: null });
+        // Empty row means no tile data - treat as fog boundary, not a wall
+        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: null, wallPositions: [], secretPositions: [], isWater: false, stairsPositions: [], visibleRange: null });
         continue;
       }
 
