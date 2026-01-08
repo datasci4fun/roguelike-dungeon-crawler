@@ -30,20 +30,17 @@ export interface Projection {
 export const PROJECTION_CONFIG = {
   // Minimum depth to prevent near-plane explosion (z = max(depth, minDepth))
   minDepth: 0.3,
-  // Scale calibration: at depth=1, scale ≈ 0.77 (matches previous visual size)
-  scaleCalibration: 0.77,
-  // Horizontal focal length factor (relative to canvas width)
-  // 0.5 = ~90° FOV feel; reduce for narrower FOV
-  focalXFactor: 0.5,
-  // Wall height factor (relative to canvas height)
+  // Vertical field of view in degrees (matches Three.js camera FOV)
+  verticalFOV: 75,
+  // Wall height factor (how much of screen height a wall fills at depth 1)
   wallHeightFactor: 0.7,
 };
 
 /**
  * Calculate perspective projection for a point at given depth
  *
- * Uses true perspective: screenX = centerX + focalX * (camX / z)
- * This ensures consistent spacing for entities at the same depth.
+ * Uses true perspective projection matching Three.js camera behavior.
+ * Both X and Y projections use the same focal length to maintain aspect ratio.
  *
  * @param canvasWidth - Canvas width in pixels
  * @param canvasHeight - Canvas height in pixels
@@ -56,25 +53,31 @@ export function getProjection(
   depth: number,
   xOffset: number = 0
 ): Projection {
-  const { minDepth, scaleCalibration, focalXFactor, wallHeightFactor } = PROJECTION_CONFIG;
+  const { minDepth, verticalFOV, wallHeightFactor } = PROJECTION_CONFIG;
 
   // Clamp depth to prevent near-plane explosion
   const z = Math.max(depth, minDepth);
 
   const horizon = canvasHeight / 2;
 
-  // Scale factor using true perspective (1/z) with calibration constant
-  const scale = scaleCalibration / z;
+  // Calculate focal length from vertical FOV (same formula as Three.js)
+  // focalLength = (canvasHeight / 2) / tan(FOV / 2)
+  const fovRadians = (verticalFOV * Math.PI) / 180;
+  const focalLength = (canvasHeight / 2) / Math.tan(fovRadians / 2);
 
-  // Wall height: perspective-scaled
-  const wallHeight = canvasHeight * wallHeightFactor * scale;
+  // Scale factor for entities/sizing (normalized to depth 1)
+  const scale = 1 / z;
+
+  // Wall height: perspective-scaled, using focal length for consistency
+  // At depth 1, wall fills wallHeightFactor of screen height
+  const wallHeight = (canvasHeight * wallHeightFactor) / z;
   const wallTop = horizon - wallHeight / 2;
   const wallBottom = horizon + wallHeight / 2;
 
-  // True perspective X projection: screenX = centerX + focalX * (camX / z)
+  // True perspective X projection using focal length
+  // This maintains proper aspect ratio - a square tile appears square
   const centerX = canvasWidth / 2;
-  const focalX = canvasWidth * focalXFactor;
-  const x = centerX + focalX * (xOffset / z);
+  const x = centerX + focalLength * (xOffset / z);
 
   return { wallTop, wallBottom, x, scale, horizon };
 }
