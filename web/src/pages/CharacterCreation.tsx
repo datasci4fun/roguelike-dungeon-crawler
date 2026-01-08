@@ -5,6 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
+import { useAudioManager } from '../hooks/useAudioManager';
+import { GameIntro } from '../components/GameIntro';
 import type { RaceId, ClassId } from '../hooks/useGameSocket';
 import { RACES, CLASSES, ABILITY_DESCRIPTIONS, calculateStats } from '../data/characterData';
 import './CharacterCreation.css';
@@ -16,8 +18,17 @@ export function CharacterCreation() {
   const [selectedRace, setSelectedRace] = useState<RaceId>('HUMAN');
   const [selectedClass, setSelectedClass] = useState<ClassId>('WARRIOR');
   const [isStarting, setIsStarting] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
 
   const { status, gameState, newGame } = useGame();
+  const { crossfadeTo, isUnlocked } = useAudioManager();
+
+  // Handle music change from intro
+  const handleIntroMusic = useCallback((trackId: string) => {
+    if (isUnlocked) {
+      crossfadeTo(trackId);
+    }
+  }, [isUnlocked, crossfadeTo]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -33,12 +44,18 @@ export function CharacterCreation() {
     }
   }, [isStarting, gameState, navigate]);
 
-  // Start game here - only navigate once it's running
-  const handleStartGame = useCallback(() => {
+  // Show intro when user clicks "Begin Adventure"
+  const handleBeginAdventure = useCallback(() => {
     if (status !== 'connected') return;
+    setShowIntro(true);
+  }, [status]);
+
+  // Start game after intro completes
+  const handleIntroComplete = useCallback(() => {
+    setShowIntro(false);
     setIsStarting(true);
     newGame({ race: selectedRace, class: selectedClass });
-  }, [status, selectedRace, selectedClass, newGame]);
+  }, [selectedRace, selectedClass, newGame]);
 
   const stats = calculateStats(selectedRace, selectedClass);
   const race = RACES[selectedRace];
@@ -189,13 +206,22 @@ export function CharacterCreation() {
 
           <button
             className="start-button"
-            onClick={handleStartGame}
+            onClick={handleBeginAdventure}
             disabled={status !== 'connected'}
           >
             {status === 'connecting' ? 'Connecting...' : 'Begin Adventure'}
           </button>
         </div>
       </div>
+
+      {/* Game Intro Overlay */}
+      {showIntro && (
+        <GameIntro
+          onComplete={handleIntroComplete}
+          onSkip={handleIntroComplete}
+          onMusicChange={handleIntroMusic}
+        />
+      )}
     </div>
   );
 }
