@@ -455,10 +455,11 @@ export function FirstPersonRenderer3D({
     }
 
     // Add entities as simple billboards/sprites
-    // Entity offset is in corridor-relative units (-1 to +1 spans corridor width)
-    // Corridor width in world units is TILE_SIZE, so offset maps to TILE_SIZE/2 on each side
+    // Entity positioning uses same scale for offset and distance
+    // Both use TILE_SIZE so 1 offset unit = 1 distance unit in world space
+    // This ensures squares appear square when viewed from camera
     for (const entity of view.entities) {
-      const x = entity.offset * (TILE_SIZE / 2);
+      const x = entity.offset * TILE_SIZE;
       const z = -entity.distance * TILE_SIZE;
       const y = entity.type === 'item' ? 0.3 : CAMERA_HEIGHT * 0.8;
 
