@@ -685,31 +685,17 @@ export function FirstPersonRenderer3D({
 
   }, [view, debugShowWallMarkers]);
 
-  // Update camera base direction when character facing changes
+  // Reset look offsets when character facing changes
+  // Note: Camera always looks down -Z because view.rows is in view-relative space
+  // (depth 0 = player position, depth 1 = one tile ahead in facing direction, etc.)
   useEffect(() => {
     if (!sceneRef.current || !view) return;
 
     const { controls } = sceneRef.current;
 
-    // Calculate base yaw from facing direction
-    const { dx, dy } = view.facing;
-    let baseYaw = 0;
-    if (dx === 0 && dy === -1) {
-      // North - looking into -Z
-      baseYaw = 0;
-    } else if (dx === 0 && dy === 1) {
-      // South - looking into +Z
-      baseYaw = Math.PI;
-    } else if (dx === 1 && dy === 0) {
-      // East - looking into +X
-      baseYaw = -Math.PI / 2;
-    } else if (dx === -1 && dy === 0) {
-      // West - looking into -X
-      baseYaw = Math.PI / 2;
-    }
-
-    // Update base yaw and reset look offsets when facing changes
-    controls.baseYaw = baseYaw;
+    // Camera always faces forward (-Z) - geometry is already view-relative
+    // Just reset look offsets when player turns
+    controls.baseYaw = 0;
     controls.lookYaw = 0;
     controls.lookPitch = 0;
   }, [view?.facing]);
