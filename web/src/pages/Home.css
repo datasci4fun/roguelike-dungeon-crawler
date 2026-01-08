@@ -1,69 +1,710 @@
+/**
+ * Home Page - Atmospheric dungeon crawler landing
+ */
+
 .home {
-  display: flex;
-  flex-direction: column;
-  gap: 4rem;
+  position: relative;
+  min-height: 100vh;
+  color: #c0c0c0;
 }
+
+/* ============================================
+   Ambient Background
+   ============================================ */
+
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.fog-layer {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 80%, rgba(74, 222, 128, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(74, 222, 128, 0.02) 0%, transparent 40%);
+  animation: fogDrift 30s ease-in-out infinite;
+}
+
+@keyframes fogDrift {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(-20px); }
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.8) 100%);
+}
+
+/* ============================================
+   Section Headers
+   ============================================ */
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.section-header h2 {
+  font-size: 1.3rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: #4ade80;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.header-line {
+  flex: 1;
+  max-width: 100px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #4ade80, transparent);
+}
+
+/* ============================================
+   Hero Section
+   ============================================ */
 
 .hero {
-  text-align: center;
-  padding: 4rem 2rem;
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
 }
 
-.hero h1 {
-  font-size: 3rem;
+.hero-content {
+  text-align: center;
+  max-width: 800px;
+}
+
+.title-container {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 1.2s ease, transform 1.2s ease;
+}
+
+.title-container.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ascii-title {
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: clamp(0.4rem, 1.8vw, 0.9rem);
+  line-height: 1.15;
   color: #4ade80;
-  margin-bottom: 1rem;
+  text-shadow: 0 0 20px rgba(74, 222, 128, 0.4);
+  margin: 0;
+  white-space: pre;
+  animation: subtleGlow 4s ease-in-out infinite;
+}
+
+@keyframes subtleGlow {
+  0%, 100% { text-shadow: 0 0 20px rgba(74, 222, 128, 0.4); }
+  50% { text-shadow: 0 0 30px rgba(74, 222, 128, 0.6); }
+}
+
+.title-subtitle {
+  font-size: clamp(1.2rem, 3.5vw, 2rem);
+  font-weight: 300;
+  letter-spacing: 0.6em;
+  color: #4ade80;
+  margin-top: 0.5rem;
+  text-indent: 0.6em;
 }
 
 .tagline {
-  font-size: 1.25rem;
-  color: #a0a0a0;
-  max-width: 600px;
-  margin: 0 auto 2rem;
+  font-size: 1.1rem;
+  color: #888;
+  margin: 2.5rem auto;
+  line-height: 1.8;
 }
 
 .audio-hint {
   font-size: 0.85rem;
-  color: #666;
-  margin-bottom: 1rem;
-  animation: pulse 2s ease-in-out infinite;
+  color: #555;
+  margin-bottom: 2rem;
+  animation: pulse 2.5s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
 }
+
+/* ============================================
+   CTA Buttons (Proper styling)
+   ============================================ */
 
 .hero-actions {
   display: flex;
   gap: 1rem;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
-.btn-large {
-  padding: 0.75rem 2rem;
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+.cta-button.primary {
+  background: #4ade80;
+  color: #0a0a0f;
+}
+
+.cta-button.primary:hover {
+  background: #22c55e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
+}
+
+.cta-button.secondary {
+  background: transparent;
+  color: #4ade80;
+  border: 1px solid #4ade80;
+}
+
+.cta-button.secondary:hover {
+  background: rgba(74, 222, 128, 0.1);
+  transform: translateY(-2px);
+}
+
+.cta-button.large {
+  padding: 1.25rem 3rem;
   font-size: 1.1rem;
 }
 
-.features {
+.cta-icon {
+  font-size: 1.1em;
+}
+
+.cta-text {
+  letter-spacing: 0.05em;
+}
+
+/* Scroll Indicator */
+.scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: #444;
+  font-size: 0.8rem;
+  animation: bobbing 2s ease-in-out infinite;
+}
+
+.scroll-arrow {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+}
+
+@keyframes bobbing {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(8px); }
+}
+
+/* ============================================
+   Legend Section
+   ============================================ */
+
+.legend-section {
+  position: relative;
+  z-index: 1;
+  padding: 6rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.legend-content {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
 }
 
-.feature {
-  background: #1a1a2e;
-  padding: 1.5rem;
-  border-radius: 8px;
-  border: 1px solid #333;
+.legend-text {
+  font-size: 1.05rem;
+  line-height: 1.9;
+  color: #999;
 }
 
-.feature h3 {
+.legend-text p {
+  margin-bottom: 1.5rem;
+}
+
+.legend-warning {
   color: #4ade80;
-  margin-bottom: 0.5rem;
+  font-style: italic;
 }
 
-.feature p {
-  color: #a0a0a0;
-  line-height: 1.6;
+.dungeon-preview {
+  text-align: center;
+}
+
+.dungeon-art {
+  font-family: 'Courier New', Consolas, monospace;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  color: #4ade80;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+  margin: 0;
+  white-space: pre;
+  display: inline-block;
+}
+
+.preview-legend {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.preview-legend b {
+  color: #4ade80;
+  margin-right: 0.25rem;
+}
+
+/* ============================================
+   Quote Section
+   ============================================ */
+
+.quote-section {
+  position: relative;
+  z-index: 1;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: linear-gradient(180deg, transparent, rgba(74, 222, 128, 0.02), transparent);
+}
+
+.lore-quote {
+  max-width: 600px;
+  margin: 0 auto;
+  animation: fadeInQuote 0.8s ease;
+}
+
+@keyframes fadeInQuote {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.lore-quote p {
+  font-size: 1.4rem;
+  font-style: italic;
+  color: #aaa;
+  margin: 0 0 1rem;
+}
+
+.lore-quote cite {
+  font-size: 0.9rem;
+  color: #4ade80;
+  font-style: normal;
+}
+
+/* ============================================
+   Classes Section
+   ============================================ */
+
+.classes-section {
+  position: relative;
+  z-index: 1;
+  padding: 6rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.classes-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.class-card {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: rgba(20, 20, 30, 0.6);
+  border: 1px solid #2a2a3e;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.class-card:hover {
+  border-color: #4ade80;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.class-symbol {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: #4ade80;
+}
+
+.class-name {
+  font-size: 1rem;
+  color: #e0e0e0;
+  margin: 0 0 0.5rem;
+  font-weight: 500;
+}
+
+.class-desc {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0;
+}
+
+.races-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.race-tag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background: rgba(74, 222, 128, 0.05);
+  border: 1px solid #2a2a3e;
+  border-radius: 4px;
+}
+
+.race-name {
+  font-size: 0.9rem;
+  color: #c0c0c0;
+}
+
+.race-trait {
+  font-size: 0.75rem;
+  color: #4ade80;
+}
+
+/* ============================================
+   Descent Section
+   ============================================ */
+
+.descent-section {
+  position: relative;
+  z-index: 1;
+  padding: 6rem 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.descent-visual {
+  position: relative;
+  padding-left: 3rem;
+}
+
+.depth-line {
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  bottom: 3rem;
+  width: 2px;
+  background: linear-gradient(180deg, #4ade80 0%, #166534 50%, #450a0a 100%);
+}
+
+.depth-markers {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.depth-marker {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  position: relative;
+}
+
+.marker-dot {
+  position: absolute;
+  left: -2.5rem;
+  top: 0.4rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+}
+
+.depth-marker:nth-child(n+5) .marker-dot {
+  background: #854d0e;
+}
+
+.depth-marker:nth-child(8) .marker-dot {
+  background: #dc2626;
+  box-shadow: 0 0 15px rgba(220, 38, 38, 0.6);
+}
+
+.marker-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.marker-level {
+  font-size: 0.9rem;
+  color: #c0c0c0;
+  font-weight: 500;
+}
+
+.marker-mystery {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+.depth-marker:nth-child(8) .marker-mystery {
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.descent-warning {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 3rem;
+  padding: 1rem;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  border-radius: 4px;
+  color: #f87171;
+  font-size: 0.9rem;
+}
+
+.warning-icon {
+  font-size: 1.2rem;
+}
+
+/* ============================================
+   Features Section
+   ============================================ */
+
+.features-section {
+  position: relative;
+  z-index: 1;
+  padding: 6rem 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.features-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(20, 20, 30, 0.4);
+  border-left: 2px solid #2a2a3e;
+  transition: all 0.3s ease;
+}
+
+.feature-item:hover {
+  border-left-color: #4ade80;
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.feature-bullet {
+  color: #4ade80;
+  font-size: 0.8rem;
+}
+
+.feature-item span:last-child {
+  color: #999;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* ============================================
+   Final CTA
+   ============================================ */
+
+.final-cta {
+  position: relative;
+  z-index: 1;
+  padding: 8rem 2rem;
+  text-align: center;
+}
+
+.cta-content {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.cta-question {
+  font-size: 1.8rem;
+  color: #e0e0e0;
+  margin-bottom: 2rem;
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+.home-footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #444;
+  font-size: 0.85rem;
+}
+
+.footer-art {
+  color: #2a2a3e;
+  margin-bottom: 1rem;
+  letter-spacing: -1px;
+}
+
+.home-footer p {
+  margin: 0.25rem 0;
+}
+
+.footer-version {
+  color: #4ade80;
+  opacity: 0.4;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 900px) {
+  .legend-content {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+
+  .dungeon-preview {
+    order: -1;
+  }
+
+  .classes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    min-height: 90vh;
+  }
+
+  .ascii-title {
+    font-size: 0.35rem;
+  }
+
+  .title-subtitle {
+    font-size: 1rem;
+    letter-spacing: 0.4em;
+  }
+
+  .section-header h2 {
+    font-size: 1rem;
+    letter-spacing: 0.2em;
+  }
+
+  .header-line {
+    max-width: 40px;
+  }
+
+  .legend-text {
+    font-size: 0.95rem;
+  }
+
+  .dungeon-art {
+    font-size: 0.5rem;
+  }
+
+  .lore-quote p {
+    font-size: 1.1rem;
+  }
+
+  .classes-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .class-card {
+    padding: 1.5rem 0.75rem;
+  }
+
+  .class-symbol {
+    font-size: 1.5rem;
+  }
+
+  .races-row {
+    gap: 0.5rem;
+  }
+
+  .race-tag {
+    padding: 0.5rem 1rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .cta-button {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+
+  .cta-question {
+    font-size: 1.4rem;
+  }
+
+  .scroll-indicator {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .ascii-title {
+    font-size: 0.28rem;
+  }
+
+  .title-subtitle {
+    font-size: 0.9rem;
+    letter-spacing: 0.3em;
+  }
+
+  .classes-grid {
+    grid-template-columns: 1fr;
+  }
 }
