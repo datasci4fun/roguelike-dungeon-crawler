@@ -524,6 +524,21 @@ class GameSessionManager:
                 "message": engine.dialog_message,
             }
 
+        if engine.ui_mode == UIMode.READING:
+            state["reading"] = {
+                "title": engine.reading_title,
+                "content": engine.reading_content,
+            }
+
+        # Include lore journal data (always available)
+        if engine.story_manager:
+            discovered, total = engine.story_manager.get_lore_progress()
+            state["lore_journal"] = {
+                "entries": engine.story_manager.get_discovered_lore_entries(),
+                "discovered_count": discovered,
+                "total_count": total,
+            }
+
         return state
 
     def _sanitize_event_data(self, data: dict) -> dict:

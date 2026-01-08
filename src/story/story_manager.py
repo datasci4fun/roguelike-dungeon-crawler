@@ -92,6 +92,25 @@ class StoryManager:
         from .story_data import LORE_ENTRIES
         return len(self.discovered_lore), len(LORE_ENTRIES)
 
+    def get_discovered_lore_entries(self) -> list:
+        """
+        Get full data for all discovered lore entries.
+
+        Returns:
+            List of dicts with id, title, content for each discovered entry
+        """
+        from .story_data import LORE_ENTRIES
+        entries = []
+        for lore_id in sorted(self.discovered_lore):
+            if lore_id in LORE_ENTRIES:
+                entry = LORE_ENTRIES[lore_id]
+                entries.append({
+                    'id': lore_id,
+                    'title': entry['title'],
+                    'content': entry['content'],
+                })
+        return entries
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize story state to dictionary for saving."""
         return {
