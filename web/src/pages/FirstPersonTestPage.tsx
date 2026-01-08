@@ -5,6 +5,7 @@
  * without needing to play the actual game.
  */
 import { useState, useCallback, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FirstPersonRenderer } from '../components/SceneRenderer/FirstPersonRenderer';
 import { BIOMES, type BiomeId } from '../components/SceneRenderer/biomes';
 import type { FirstPersonView, FirstPersonTile, FirstPersonEntity } from '../hooks/useGameSocket';
@@ -1072,6 +1073,9 @@ export function FirstPersonTestPage() {
       <header className="fp-test-header">
         <h1>First-Person Renderer Test</h1>
         <p>Select a scenario or customize parameters to test rendering</p>
+        <Link to="/debug-3d" style={{ color: '#88f', marginTop: '5px', display: 'inline-block' }}>
+          Open 3D Debug View (free-fly camera) &rarr;
+        </Link>
       </header>
 
       <div className="fp-test-content">
