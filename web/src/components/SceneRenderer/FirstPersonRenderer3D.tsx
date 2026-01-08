@@ -16,6 +16,12 @@ const TILE_SIZE = 2;
 const WALL_HEIGHT = 2.5;
 const CAMERA_HEIGHT = 1.4;
 
+// Animation constants
+const MOVE_ANIMATION_DURATION = 0.15; // seconds
+const TURN_ANIMATION_DURATION = 0.12; // seconds
+const HEAD_BOB_AMPLITUDE = 0.04; // vertical bob amount
+const HEAD_BOB_FREQUENCY = 12; // bobs per second during movement
+
 interface RenderSettings {
   biome: BiomeId;
   brightness: number;
@@ -57,6 +63,7 @@ export function FirstPersonRenderer3D({
   debugShowWallMarkers = false,
 }: FirstPersonRenderer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const prevViewRef = useRef<{ rowsJson: string; facing: { dx: number; dy: number } } | null>(null);
   const sceneRef = useRef<{
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
@@ -88,6 +95,24 @@ export function FirstPersonRenderer3D({
       lookYaw: number;    // Offset from base facing direction (limited range)
       lookPitch: number;  // Up/down look offset (limited range)
       baseYaw: number;    // Base yaw from character facing direction
+    };
+    // Animation state
+    animation: {
+      // Movement animation (camera offset from origin)
+      moveProgress: number;      // 0 = start, 1 = complete
+      moveOffsetX: number;       // Starting X offset (animates to 0)
+      moveOffsetZ: number;       // Starting Z offset (animates to 0)
+      // Turn animation
+      turnProgress: number;      // 0 = start, 1 = complete
+      turnOffsetYaw: number;     // Starting yaw offset (animates to 0)
+      // Head bob
+      bobPhase: number;          // Continuous phase for head bob
+      isMoving: boolean;         // Whether currently in move animation
+      // Previous state for change detection
+      prevFacingDx: number;
+      prevFacingDy: number;
+      // Entity animations - track previous positions
+      entityPositions: Map<string, { x: number; z: number; targetX: number; targetZ: number; progress: number }>;
     };
   } | null>(null);
 
@@ -287,6 +312,18 @@ export function FirstPersonRenderer3D({
         lookPitch: 0,
         baseYaw: 0,
       },
+      animation: {
+        moveProgress: 1,
+        moveOffsetX: 0,
+        moveOffsetZ: 0,
+        turnProgress: 1,
+        turnOffsetYaw: 0,
+        bobPhase: 0,
+        isMoving: false,
+        prevFacingDx: 0,
+        prevFacingDy: -1, // Default facing north
+        entityPositions: new Map(),
+      },
     };
 
     // Note: Variants are loaded but not currently used in 3D mode
@@ -294,19 +331,63 @@ export function FirstPersonRenderer3D({
 
     // Animation loop
     let time = 0;
+    let lastTime = performance.now();
     const animate = () => {
       if (!sceneRef.current) return;
 
-      time += 0.016;
+      const now = performance.now();
+      const deltaTime = (now - lastTime) / 1000; // Convert to seconds
+      lastTime = now;
+      time += deltaTime;
 
-      const { controls } = sceneRef.current;
+      const { controls, animation } = sceneRef.current;
 
-      // Apply camera rotation: base facing + limited look offset
-      const totalYaw = controls.baseYaw + controls.lookYaw;
+      // Update movement animation
+      if (animation.moveProgress < 1) {
+        animation.moveProgress += deltaTime / MOVE_ANIMATION_DURATION;
+        if (animation.moveProgress > 1) animation.moveProgress = 1;
+        animation.isMoving = animation.moveProgress < 1;
+      }
+
+      // Update turn animation
+      if (animation.turnProgress < 1) {
+        animation.turnProgress += deltaTime / TURN_ANIMATION_DURATION;
+        if (animation.turnProgress > 1) animation.turnProgress = 1;
+      }
+
+      // Update head bob phase (continuous when moving)
+      if (animation.isMoving || animation.moveProgress < 1) {
+        animation.bobPhase += deltaTime * HEAD_BOB_FREQUENCY * Math.PI * 2;
+      }
+
+      // Ease function for smooth animation (ease out cubic)
+      const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+
+      // Calculate animated camera offset
+      const moveEase = easeOut(animation.moveProgress);
+      const animatedOffsetX = animation.moveOffsetX * (1 - moveEase);
+      const animatedOffsetZ = animation.moveOffsetZ * (1 - moveEase);
+
+      // Calculate animated turn offset
+      const turnEase = easeOut(animation.turnProgress);
+      const animatedTurnYaw = animation.turnOffsetYaw * (1 - turnEase);
+
+      // Calculate head bob (only when moving)
+      let headBob = 0;
+      if (animation.moveProgress < 1 && enableAnimations) {
+        headBob = Math.sin(animation.bobPhase) * HEAD_BOB_AMPLITUDE;
+      }
+
+      // Apply camera rotation: base facing + look offset + turn animation
+      const totalYaw = controls.baseYaw + controls.lookYaw + animatedTurnYaw;
       camera.rotation.set(controls.lookPitch, totalYaw, 0, 'YXZ');
 
-      // Camera stays fixed at player position (grid-based movement only)
-      camera.position.set(0, CAMERA_HEIGHT, 0);
+      // Camera position with movement animation and head bob
+      camera.position.set(
+        animatedOffsetX,
+        CAMERA_HEIGHT + headBob,
+        animatedOffsetZ
+      );
 
       // Update torch light position to follow camera
       torchLight.position.copy(camera.position);
@@ -615,20 +696,76 @@ export function FirstPersonRenderer3D({
 
   }, [view, debugShowWallMarkers]);
 
-  // Reset look offsets when character facing changes
-  // Note: Camera always looks down -Z because view.rows is in view-relative space
-  // (depth 0 = player position, depth 1 = one tile ahead in facing direction, etc.)
+  // Handle turn animations when facing direction changes
   useEffect(() => {
     if (!sceneRef.current || !view) return;
 
-    const { controls } = sceneRef.current;
+    const { controls, animation } = sceneRef.current;
+    const { dx, dy } = view.facing;
 
-    // Camera always faces forward (-Z) - geometry is already view-relative
-    // Just reset look offsets when player turns
+    // Check if facing direction changed (turn)
+    if (dx !== animation.prevFacingDx || dy !== animation.prevFacingDy) {
+      // Determine turn direction
+      // Cross product to determine if turn is clockwise or counter-clockwise
+      const cross = animation.prevFacingDx * dy - animation.prevFacingDy * dx;
+
+      if (cross !== 0 && enableAnimations) {
+        // Start turn animation
+        // cross > 0 = turning right (clockwise), cross < 0 = turning left
+        animation.turnProgress = 0;
+        animation.turnOffsetYaw = cross > 0 ? Math.PI / 2 : -Math.PI / 2;
+      }
+
+      // Update previous facing
+      animation.prevFacingDx = dx;
+      animation.prevFacingDy = dy;
+    }
+
+    // Reset look offsets when player turns
     controls.baseYaw = 0;
     controls.lookYaw = 0;
     controls.lookPitch = 0;
-  }, [view?.facing]);
+  }, [view?.facing, enableAnimations]);
+
+  // Handle movement animations when view changes (but facing stays same)
+  useEffect(() => {
+    if (!sceneRef.current || !view || !view.rows) return;
+
+    const { animation } = sceneRef.current;
+    const currentRowsJson = JSON.stringify(view.rows.map(row => row?.map(t => `${t.x},${t.y}`)));
+    const currentFacing = view.facing;
+
+    // Check if this is a real view change (not initial load)
+    if (prevViewRef.current) {
+      const facingSame =
+        currentFacing.dx === prevViewRef.current.facing.dx &&
+        currentFacing.dy === prevViewRef.current.facing.dy;
+      const rowsChanged = currentRowsJson !== prevViewRef.current.rowsJson;
+
+      // If facing is same but rows changed, it's a movement
+      if (facingSame && rowsChanged && enableAnimations) {
+        // Determine movement direction by checking how the view shifted
+        // Since geometry is view-relative, we animate camera FROM offset TO origin
+        // Forward movement: camera starts behind (positive Z) and moves to 0
+        // Backward movement: camera starts ahead (negative Z) and moves to 0
+        // Strafe: similar for X axis
+
+        // For simplicity, assume forward movement when rows change
+        // A more sophisticated detection could compare specific tile positions
+        animation.moveProgress = 0;
+        animation.moveOffsetZ = TILE_SIZE; // Start behind, animate forward
+        animation.moveOffsetX = 0;
+        animation.isMoving = true;
+        animation.bobPhase = 0; // Reset bob phase for clean animation
+      }
+    }
+
+    // Update previous view reference
+    prevViewRef.current = {
+      rowsJson: currentRowsJson,
+      facing: { dx: currentFacing.dx, dy: currentFacing.dy },
+    };
+  }, [view, enableAnimations]);
 
   // Mouse event handlers for limited look-around (head movement)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
