@@ -45,6 +45,7 @@ const RACES = [
   { name: 'Human', trait: 'Adaptable' },
   { name: 'Elf', trait: 'Swift' },
   { name: 'Dwarf', trait: 'Resilient' },
+  { name: 'Halfling', trait: 'Lucky' },
   { name: 'Orc', trait: 'Fierce' },
 ];
 
