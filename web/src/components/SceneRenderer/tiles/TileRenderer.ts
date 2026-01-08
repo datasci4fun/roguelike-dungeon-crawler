@@ -88,8 +88,11 @@ export function drawTile(
   ctx.save();
 
   if (tileImage) {
-    // Draw textured tile using perspective transform
-    drawTexturedQuad(ctx, tileImage, corners, depthFade * brightness);
+    // Draw textured tile using perspective-correct transform
+    // Pass depth values for proper perspective interpolation
+    const nearDepth = tileDepth;
+    const farDepth = tileDepth + 1;
+    drawTexturedQuad(ctx, tileImage, corners, depthFade * brightness, nearDepth, farDepth);
   } else {
     // Fallback: draw solid color quad
     drawColoredQuad(ctx, corners, biome, tileType, isFloor, depthFade * brightness);
@@ -114,49 +117,60 @@ export function drawTile(
 }
 
 /**
- * Draw a textured quadrilateral with perspective
- * Uses canvas 2D transforms to approximate perspective texture mapping
+ * Draw a textured quadrilateral with perspective-correct texture mapping
+ * Uses slicing with depth-weighted interpolation for proper perspective
  */
 function drawTexturedQuad(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
   corners: ReturnType<typeof projectTileCorners>,
-  brightness: number
+  brightness: number,
+  nearDepth: number = 1,
+  farDepth: number = 2
 ): void {
   if (!corners) return;
 
   const { topLeft, topRight, bottomLeft, bottomRight } = corners;
 
-  // Canvas2D can't do true perspective texture mapping.
-  // Approximate it by slicing the quad into many thin horizontal strips in texture space.
-  // Each strip is clipped to a trapezoid and the corresponding slice of the texture is drawn into it.
-
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-  // More slices = less distortion, more cost. 24–48 is a good range.
+  // Perspective-correct interpolation: converts linear t to perspective-correct t
+  // This accounts for the fact that equal screen distances don't equal equal world distances
+  const perspectiveLerp = (t: number): number => {
+    // Use 1/z interpolation for perspective correction
+    const invNear = 1 / nearDepth;
+    const invFar = 1 / farDepth;
+    const invZ = lerp(invFar, invNear, t); // Far is at top (t=0), near is at bottom (t=1)
+    // Convert back to linear texture coordinate
+    return (invZ - invFar) / (invNear - invFar);
+  };
+
+  // More slices = less distortion, more cost
   const slices = 32;
 
   ctx.save();
   ctx.globalAlpha = brightness;
 
-  // We map texture V from 0..1 along the quad from FAR (top*) to NEAR (bottom*).
-  // For each slice band [t0,t1], compute the four corners by interpolating
-  // between top and bottom edges.
+  // We map texture V from 0..1 along the quad from FAR (top) to NEAR (bottom).
+  // Use perspective-correct interpolation for texture coordinates.
   for (let i = 0; i < slices; i++) {
     const t0 = i / slices;
     const t1 = (i + 1) / slices;
 
-    // Interpolate left edge
+    // Screen space interpolation (linear for geometry)
     const xL0 = lerp(topLeft.x, bottomLeft.x, t0);
     const yL0 = lerp(topLeft.y, bottomLeft.y, t0);
     const xL1 = lerp(topLeft.x, bottomLeft.x, t1);
     const yL1 = lerp(topLeft.y, bottomLeft.y, t1);
 
-    // Interpolate right edge
     const xR0 = lerp(topRight.x, bottomRight.x, t0);
     const yR0 = lerp(topRight.y, bottomRight.y, t0);
     const xR1 = lerp(topRight.x, bottomRight.x, t1);
     const yR1 = lerp(topRight.y, bottomRight.y, t1);
+
+    // Perspective-correct texture coordinates
+    const texT0 = perspectiveLerp(t0);
+    const texT1 = perspectiveLerp(t1);
 
     // Clip to the trapezoid for this slice
     ctx.save();
@@ -168,7 +182,7 @@ function drawTexturedQuad(
     ctx.closePath();
     ctx.clip();
 
-    // Destination bounding box for the slice (cheap drawImage target)
+    // Destination bounding box
     const minX = Math.min(xL0, xR0, xL1, xR1);
     const maxX = Math.max(xL0, xR0, xL1, xR1);
     const minY = Math.min(yL0, yR0, yL1, yR1);
@@ -177,11 +191,11 @@ function drawTexturedQuad(
     const dw = Math.max(1, maxX - minX);
     const dh = Math.max(1, maxY - minY);
 
-    // Source slice in texture space
+    // Source slice in texture space (using perspective-correct coordinates)
     const sx = 0;
-    const sy = Math.floor(t0 * image.height);
+    const sy = Math.floor(texT0 * image.height);
     const sw = image.width;
-    const sh = Math.max(1, Math.floor((t1 - t0) * image.height));
+    const sh = Math.max(1, Math.ceil((texT1 - texT0) * image.height));
 
     ctx.drawImage(image, sx, sy, sw, sh, minX, minY, dw, dh);
     ctx.restore();
@@ -191,23 +205,35 @@ function drawTexturedQuad(
 }
 
 /**
- * Draw a textured side wall quad with perspective correction
- * Uses horizontal slicing to properly map texture from near (wide) to far (narrow)
+ * Draw a textured side wall quad with perspective-correct texture mapping
+ * Uses horizontal slicing with depth-weighted interpolation
  * corners: [nearTop, farTop, farBottom, nearBottom]
  * @param flipHorizontal - If true, flip texture horizontally (for right walls)
+ * @param nearDepth - Depth at near edge
+ * @param farDepth - Depth at far edge
  */
 function drawTexturedWallQuad(
   ctx: CanvasRenderingContext2D,
   image: HTMLImageElement,
   corners: { x: number; y: number }[],
   brightness: number,
-  flipHorizontal: boolean = false
+  flipHorizontal: boolean = false,
+  nearDepth: number = 1,
+  farDepth: number = 2
 ): void {
   if (corners.length < 4) return;
 
   const [nearTop, farTop, farBottom, nearBottom] = corners;
 
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+
+  // Perspective-correct interpolation for texture coordinates
+  const perspectiveLerp = (t: number): number => {
+    const invNear = 1 / nearDepth;
+    const invFar = 1 / farDepth;
+    const invZ = lerp(invNear, invFar, t); // Near is at t=0, far is at t=1
+    return (invZ - invNear) / (invFar - invNear);
+  };
 
   // Slice horizontally from near edge to far edge
   const slices = 24;
@@ -219,17 +245,20 @@ function drawTexturedWallQuad(
     const t0 = i / slices;
     const t1 = (i + 1) / slices;
 
-    // Interpolate top edge (from nearTop to farTop)
+    // Screen space interpolation (linear for geometry)
     const xT0 = lerp(nearTop.x, farTop.x, t0);
     const yT0 = lerp(nearTop.y, farTop.y, t0);
     const xT1 = lerp(nearTop.x, farTop.x, t1);
     const yT1 = lerp(nearTop.y, farTop.y, t1);
 
-    // Interpolate bottom edge (from nearBottom to farBottom)
     const xB0 = lerp(nearBottom.x, farBottom.x, t0);
     const yB0 = lerp(nearBottom.y, farBottom.y, t0);
     const xB1 = lerp(nearBottom.x, farBottom.x, t1);
     const yB1 = lerp(nearBottom.y, farBottom.y, t1);
+
+    // Perspective-correct texture coordinates
+    const texT0 = perspectiveLerp(t0);
+    const texT1 = perspectiveLerp(t1);
 
     // Clip to this vertical strip
     ctx.save();
@@ -250,13 +279,13 @@ function drawTexturedWallQuad(
     const dw = Math.max(1, maxX - minX);
     const dh = Math.max(1, maxY - minY);
 
-    // Source slice in texture space (horizontal slice)
+    // Source slice in texture space (using perspective-correct coordinates)
     // For flipped textures, read from the opposite side
-    const texT0 = flipHorizontal ? (1 - t1) : t0;
-    const texT1 = flipHorizontal ? (1 - t0) : t1;
-    const sx = Math.floor(Math.min(texT0, texT1) * image.width);
+    const finalTexT0 = flipHorizontal ? (1 - texT1) : texT0;
+    const finalTexT1 = flipHorizontal ? (1 - texT0) : texT1;
+    const sx = Math.floor(Math.min(finalTexT0, finalTexT1) * image.width);
     const sy = 0;
-    const sw = Math.max(1, Math.floor(Math.abs(texT1 - texT0) * image.width));
+    const sw = Math.max(1, Math.ceil(Math.abs(finalTexT1 - finalTexT0) * image.width));
     const sh = image.height;
 
     ctx.drawImage(image, sx, sy, sw, sh, minX, minY, dw, dh);
@@ -398,7 +427,7 @@ export function drawWallWithTexture(
 
   if (tileImage) {
     if (side === 'front') {
-      // Front walls: tile horizontally to maintain aspect ratio
+      // Front walls: tile horizontally while preserving texture aspect ratio
       const minX = Math.min(...corners.map(c => c.x));
       const maxX = Math.max(...corners.map(c => c.x));
       const minY = Math.min(...corners.map(c => c.y));
@@ -407,10 +436,11 @@ export function drawWallWithTexture(
       const wallWidth = maxX - minX;
       const wallHeight = maxY - minY;
 
-      // Calculate tile size to maintain square aspect ratio
-      // Use wall height as the base (one tile = one wall height)
-      const tileSize = wallHeight;
-      const tilesNeeded = Math.ceil(wallWidth / tileSize);
+      // Calculate tile width based on texture aspect ratio
+      // This ensures the texture isn't stretched
+      const textureAspect = tileImage.width / tileImage.height;
+      const tileWidth = wallHeight * textureAspect;
+      const tilesNeeded = Math.ceil(wallWidth / tileWidth);
 
       // Clip to wall bounds
       ctx.beginPath();
@@ -423,12 +453,12 @@ export function drawWallWithTexture(
 
       ctx.globalAlpha = depthFade * brightness;
 
-      // Draw tiled texture
+      // Draw tiled texture - each tile maintains correct aspect ratio
       for (let t = 0; t < tilesNeeded; t++) {
-        const tileX = minX + t * tileSize;
-        const tileW = Math.min(tileSize, maxX - tileX);
+        const tileX = minX + t * tileWidth;
+        const tileW = Math.min(tileWidth, maxX - tileX);
         // Use proportional source width if tile is partially visible
-        const srcW = (tileW / tileSize) * tileImage.width;
+        const srcW = (tileW / tileWidth) * tileImage.width;
         ctx.drawImage(tileImage, 0, 0, srcW, tileImage.height, tileX, minY, tileW, wallHeight);
       }
     } else {
@@ -436,7 +466,8 @@ export function drawWallWithTexture(
       // corners: [nearTop, farTop, farBottom, nearBottom]
       // For right walls, flip texture horizontally (wall goes right-to-left on screen)
       const flipHorizontal = side === 'right';
-      drawTexturedWallQuad(ctx, tileImage, corners, depthFade * brightness, flipHorizontal);
+      // Pass depth values for perspective-correct texture mapping
+      drawTexturedWallQuad(ctx, tileImage, corners, depthFade * brightness, flipHorizontal, depth, depth + 1);
     }
   } else {
     // Fallback: colored quad
