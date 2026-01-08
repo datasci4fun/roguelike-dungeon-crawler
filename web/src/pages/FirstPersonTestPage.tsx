@@ -7,6 +7,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FirstPersonRenderer } from '../components/SceneRenderer/FirstPersonRenderer';
+import { FirstPersonRenderer3D } from '../components/SceneRenderer/FirstPersonRenderer3D';
 import { BIOMES, type BiomeId } from '../components/SceneRenderer/biomes';
 import type { FirstPersonView, FirstPersonTile, FirstPersonEntity } from '../hooks/useGameSocket';
 import './FirstPersonTestPage.css';
@@ -186,6 +187,8 @@ interface CustomParams {
   // Debug settings
   debugShowOccluded: boolean;
   debugShowWireframe: boolean;
+  // Renderer selection
+  use3DRenderer: boolean;
 }
 
 const DEFAULT_PARAMS: CustomParams = {
@@ -211,6 +214,8 @@ const DEFAULT_PARAMS: CustomParams = {
   // Debug defaults
   debugShowOccluded: false,
   debugShowWireframe: false,
+  // Renderer defaults
+  use3DRenderer: false,
 };
 
 // Generate mock tile data
@@ -1206,6 +1211,22 @@ export function FirstPersonTestPage() {
               Yellow edges show wall boundaries (offset ±1)
             </p>
           </div>
+
+          {/* Renderer Selection */}
+          <div className="tile-grid-toggle">
+            <h3>Renderer</h3>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={params.use3DRenderer}
+                onChange={(e) => setParams({ ...params, use3DRenderer: e.target.checked })}
+              />
+              Use Three.js 3D Renderer
+            </label>
+            <p className="tile-grid-hint">
+              True 3D rendering instead of Canvas 2D
+            </p>
+          </div>
         </aside>
 
         {/* Renderer Preview */}
@@ -1218,21 +1239,37 @@ export function FirstPersonTestPage() {
               }
             </div>
             <div className="renderer-wrapper" style={{ width: params.canvasWidth, height: params.canvasHeight }}>
-              <FirstPersonRenderer
-                view={activeView}
-                width={params.canvasWidth}
-                height={params.canvasHeight}
-                enableAnimations={params.enableAnimations}
-                settings={{
-                  biome: params.biome,
-                  brightness: params.brightness,
-                  fogDensity: params.fogDensity,
-                  torchIntensity: params.torchIntensity,
-                  useTileGrid: params.useTileGrid,
-                }}
-                debugShowOccluded={params.debugShowOccluded}
-                debugShowWireframe={params.debugShowWireframe}
-              />
+              {params.use3DRenderer ? (
+                <FirstPersonRenderer3D
+                  view={activeView}
+                  width={params.canvasWidth}
+                  height={params.canvasHeight}
+                  enableAnimations={params.enableAnimations}
+                  settings={{
+                    biome: params.biome,
+                    brightness: params.brightness,
+                    fogDensity: params.fogDensity,
+                    torchIntensity: params.torchIntensity,
+                    useTileGrid: params.useTileGrid,
+                  }}
+                />
+              ) : (
+                <FirstPersonRenderer
+                  view={activeView}
+                  width={params.canvasWidth}
+                  height={params.canvasHeight}
+                  enableAnimations={params.enableAnimations}
+                  settings={{
+                    biome: params.biome,
+                    brightness: params.brightness,
+                    fogDensity: params.fogDensity,
+                    torchIntensity: params.torchIntensity,
+                    useTileGrid: params.useTileGrid,
+                  }}
+                  debugShowOccluded={params.debugShowOccluded}
+                  debugShowWireframe={params.debugShowWireframe}
+                />
+              )}
             </div>
             <div className="preview-info">
               <span>Rows: {mockView.rows.length}</span>
