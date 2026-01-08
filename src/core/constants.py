@@ -44,12 +44,15 @@ class UIMode(Enum):
 
 
 class DungeonTheme(Enum):
-    """Visual themes for dungeon levels."""
-    STONE = auto()    # Classic stone dungeon
-    CAVE = auto()     # Natural cave
-    CRYPT = auto()    # Undead tomb
-    LIBRARY = auto()  # Ancient library
-    TREASURY = auto() # Treasure vault
+    """Visual themes for dungeon levels (8 biomes)."""
+    STONE = auto()     # Level 1 - Stone Dungeon
+    ICE = auto()       # Level 2 - Ice Cavern
+    FOREST = auto()    # Level 3 - Forest Depths
+    VOLCANIC = auto()  # Level 4 - Volcanic Depths
+    CRYPT = auto()     # Level 5 - Ancient Crypt
+    SEWER = auto()     # Level 6 - Sewer
+    LIBRARY = auto()   # Level 7 - Ancient Library
+    CRYSTAL = auto()   # Level 8 - Crystal Cave
 
 
 class RoomType(Enum):
@@ -79,12 +82,15 @@ class EnemyType(Enum):
 
 
 class BossType(Enum):
-    """Boss types, one per dungeon level."""
+    """Boss types, one per dungeon level (8 levels)."""
     GOBLIN_KING = auto()      # Level 1 - Stone Dungeon
-    CAVE_TROLL = auto()       # Level 2 - Cave
-    LICH_LORD = auto()        # Level 3 - Crypt
-    ARCANE_KEEPER = auto()    # Level 4 - Library
-    DRAGON_EMPEROR = auto()   # Level 5 - Treasury
+    FROST_GIANT = auto()      # Level 2 - Ice Cavern
+    SPIDER_QUEEN = auto()     # Level 3 - Forest Depths
+    FLAME_LORD = auto()       # Level 4 - Volcanic Depths
+    LICH_LORD = auto()        # Level 5 - Ancient Crypt
+    RAT_KING = auto()         # Level 6 - Sewer
+    ARCANE_KEEPER = auto()    # Level 7 - Ancient Library
+    DRAGON_EMPEROR = auto()   # Level 8 - Crystal Cave
 
 
 class ItemRarity(Enum):
@@ -257,7 +263,7 @@ DUNGEON_HEIGHT = 40
 MIN_ROOM_SIZE = 4
 MAX_ROOM_SIZE = 10
 MAX_BSP_DEPTH = 4
-MAX_DUNGEON_LEVELS = 5
+MAX_DUNGEON_LEVELS = 8
 
 # Entity symbols
 PLAYER_SYMBOL = '@'
@@ -337,7 +343,7 @@ ENEMY_STATS = {
         'xp': 40,
         'weight': 10,
         'min_level': 3,  # Only spawns on levels 3+
-        'max_level': 5,
+        'max_level': 8,
         'ai_type': AIBehavior.RANGED_KITE,
         'element': ElementType.DARK,
         'abilities': ['raise_skeleton', 'dark_bolt'],
@@ -350,7 +356,7 @@ ENEMY_STATS = {
         'xp': 60,
         'weight': 6,
         'min_level': 4,
-        'max_level': 5,
+        'max_level': 8,
         'ai_type': AIBehavior.AGGRESSIVE,
         'element': ElementType.FIRE,
         'abilities': ['fire_strike'],
@@ -364,7 +370,7 @@ ENEMY_STATS = {
         'xp': 35,
         'weight': 12,
         'min_level': 2,
-        'max_level': 5,
+        'max_level': 8,
         'ai_type': AIBehavior.STEALTH,
         'abilities': ['backstab', 'vanish'],
     },
@@ -376,7 +382,7 @@ ENEMY_STATS = {
         'xp': 45,
         'weight': 8,
         'min_level': 3,
-        'max_level': 5,
+        'max_level': 8,
         'ai_type': AIBehavior.ELEMENTAL,
         'element': ElementType.FIRE,
         'abilities': ['fire_bolt'],
@@ -390,7 +396,7 @@ ENEMY_STATS = {
         'xp': 45,
         'weight': 8,
         'min_level': 3,
-        'max_level': 5,
+        'max_level': 8,
         'ai_type': AIBehavior.ELEMENTAL,
         'element': ElementType.ICE,
         'abilities': ['ice_shard'],
@@ -404,7 +410,7 @@ ENEMY_STATS = {
         'xp': 50,
         'weight': 6,
         'min_level': 4,
-        'max_level': 5,
+        'max_level': 8,
         'ai_type': AIBehavior.ELEMENTAL,
         'element': ElementType.LIGHTNING,
         'abilities': ['chain_lightning'],
@@ -412,7 +418,7 @@ ENEMY_STATS = {
     },
 }
 
-# Boss configuration
+# Boss configuration (8 bosses for 8 levels)
 BOSS_STATS = {
     BossType.GOBLIN_KING: {
         'symbol': 'K',
@@ -424,62 +430,98 @@ BOSS_STATS = {
         'abilities': ['summon_goblins', 'war_cry'],
         'description': 'A crowned goblin wielding a bloodied mace',
     },
-    BossType.CAVE_TROLL: {
-        'symbol': 'T',
-        'name': 'Cave Troll',
+    BossType.FROST_GIANT: {
+        'symbol': 'F',
+        'name': 'Frost Giant',
         'hp': 80,
-        'damage': 8,
+        'damage': 12,
         'xp': 300,
         'level': 2,
-        'abilities': ['ground_slam', 'regenerate'],
-        'description': 'A massive troll with stone-like skin',
+        'abilities': ['ice_blast', 'freeze_ground'],
+        'description': 'A towering giant encased in eternal ice',
     },
-    BossType.LICH_LORD: {
-        'symbol': 'L',
-        'name': 'Lich Lord',
+    BossType.SPIDER_QUEEN: {
+        'symbol': 'S',
+        'name': 'Spider Queen',
         'hp': 70,
         'damage': 10,
         'xp': 400,
         'level': 3,
+        'abilities': ['web_trap', 'poison_bite', 'summon_spiders'],
+        'description': 'A massive arachnid matriarch dripping with venom',
+    },
+    BossType.FLAME_LORD: {
+        'symbol': 'Φ',
+        'name': 'Flame Lord',
+        'hp': 100,
+        'damage': 15,
+        'xp': 500,
+        'level': 4,
+        'abilities': ['fire_breath', 'lava_pool', 'inferno'],
+        'description': 'A being of pure fire born from the volcanic depths',
+    },
+    BossType.LICH_LORD: {
+        'symbol': 'L',
+        'name': 'Lich Lord',
+        'hp': 90,
+        'damage': 12,
+        'xp': 600,
+        'level': 5,
         'abilities': ['raise_dead', 'life_drain'],
         'description': 'An ancient undead sorcerer crackling with dark energy',
+    },
+    BossType.RAT_KING: {
+        'symbol': 'R',
+        'name': 'Rat King',
+        'hp': 85,
+        'damage': 11,
+        'xp': 700,
+        'level': 6,
+        'abilities': ['summon_swarm', 'plague_bite', 'burrow'],
+        'description': 'A grotesque fusion of rats bound by diseased flesh',
     },
     BossType.ARCANE_KEEPER: {
         'symbol': 'A',
         'name': 'Arcane Keeper',
-        'hp': 60,
-        'damage': 12,
-        'xp': 500,
-        'level': 4,
+        'hp': 80,
+        'damage': 14,
+        'xp': 800,
+        'level': 7,
         'abilities': ['arcane_bolt', 'teleport'],
         'description': 'A spectral guardian of forbidden knowledge',
     },
     BossType.DRAGON_EMPEROR: {
         'symbol': 'E',
         'name': 'Dragon Emperor',
-        'hp': 150,
-        'damage': 15,
-        'xp': 1000,
-        'level': 5,
-        'abilities': ['fire_breath', 'tail_sweep'],
+        'hp': 200,
+        'damage': 20,
+        'xp': 1500,
+        'level': 8,
+        'abilities': ['fire_breath', 'tail_sweep', 'dragon_fear'],
         'description': 'The ancient dragon lord guarding the ultimate treasure',
     },
 }
 
-# Map dungeon levels to boss types
+# Map dungeon levels to boss types (8 levels)
 LEVEL_BOSS_MAP = {
-    1: BossType.GOBLIN_KING,
-    2: BossType.CAVE_TROLL,
-    3: BossType.LICH_LORD,
-    4: BossType.ARCANE_KEEPER,
-    5: BossType.DRAGON_EMPEROR,
+    1: BossType.GOBLIN_KING,      # Stone Dungeon
+    2: BossType.FROST_GIANT,      # Ice Cavern
+    3: BossType.SPIDER_QUEEN,     # Forest Depths
+    4: BossType.FLAME_LORD,       # Volcanic Depths
+    5: BossType.LICH_LORD,        # Ancient Crypt
+    6: BossType.RAT_KING,         # Sewer
+    7: BossType.ARCANE_KEEPER,    # Ancient Library
+    8: BossType.DRAGON_EMPEROR,   # Crystal Cave
 }
 
 # Boss loot tables (guaranteed drops)
 BOSS_LOOT = {
     BossType.GOBLIN_KING: ['iron_sword', 'chain_mail'],
-    BossType.CAVE_TROLL: ['battle_axe', 'strength_potion', 'strength_potion'],
+    BossType.FROST_GIANT: ['frost_axe', 'ice_shield'],
+    BossType.SPIDER_QUEEN: ['spider_silk_armor', 'venom_dagger'],
+    BossType.FLAME_LORD: ['flame_sword', 'fire_resist_ring'],
     BossType.LICH_LORD: ['plate_armor', 'health_potion', 'health_potion'],
+    BossType.RAT_KING: ['plague_blade', 'rat_king_crown'],
     BossType.ARCANE_KEEPER: ['teleport_scroll', 'teleport_scroll', 'strength_potion'],
     BossType.DRAGON_EMPEROR: ['dragon_slayer', 'dragon_scale'],
 }
@@ -530,69 +572,96 @@ BOX_V_ASCII = '|'
 BOX_LEFT_ASCII = '+'
 BOX_RIGHT_ASCII = '+'
 
-# Dungeon theme visual tiles
+# Dungeon theme visual tiles (8 biomes)
 THEME_TILES = {
     DungeonTheme.STONE: {
         'wall': '#',
         'floor': '.',
         'description': 'Stone Dungeon'
     },
-    DungeonTheme.CAVE: {
-        'wall': '█',
+    DungeonTheme.ICE: {
+        'wall': '▓',
         'floor': '·',
-        'description': 'Natural Cave'
+        'description': 'Ice Cavern'
+    },
+    DungeonTheme.FOREST: {
+        'wall': '♣',
+        'floor': '"',
+        'description': 'Forest Depths'
+    },
+    DungeonTheme.VOLCANIC: {
+        'wall': '▒',
+        'floor': ',',
+        'description': 'Volcanic Depths'
     },
     DungeonTheme.CRYPT: {
-        'wall': '▓',
+        'wall': '█',
         'floor': ',',
         'description': 'Ancient Crypt'
+    },
+    DungeonTheme.SEWER: {
+        'wall': '▓',
+        'floor': '.',
+        'description': 'Sewer'
     },
     DungeonTheme.LIBRARY: {
         'wall': '║',
         'floor': '_',
-        'description': 'Forgotten Library'
+        'description': 'Ancient Library'
     },
-    DungeonTheme.TREASURY: {
-        'wall': '╬',
+    DungeonTheme.CRYSTAL: {
+        'wall': '◊',
         'floor': '·',
-        'description': 'Treasure Vault'
+        'description': 'Crystal Cave'
     },
 }
 
 # ASCII fallbacks for theme tiles (when Unicode not supported)
 THEME_TILES_ASCII = {
     DungeonTheme.STONE: {'wall': '#', 'floor': '.'},
-    DungeonTheme.CAVE: {'wall': '#', 'floor': '.'},
+    DungeonTheme.ICE: {'wall': '#', 'floor': '.'},
+    DungeonTheme.FOREST: {'wall': '#', 'floor': '"'},
+    DungeonTheme.VOLCANIC: {'wall': '#', 'floor': ','},
     DungeonTheme.CRYPT: {'wall': '#', 'floor': ','},
+    DungeonTheme.SEWER: {'wall': '#', 'floor': '.'},
     DungeonTheme.LIBRARY: {'wall': '|', 'floor': '_'},
-    DungeonTheme.TREASURY: {'wall': '+', 'floor': '.'},
+    DungeonTheme.CRYSTAL: {'wall': '#', 'floor': '.'},
 }
 
-# Map dungeon levels to themes
+# Map dungeon levels to themes (8 levels)
 LEVEL_THEMES = {
-    1: DungeonTheme.STONE,
-    2: DungeonTheme.CAVE,
-    3: DungeonTheme.CRYPT,
-    4: DungeonTheme.LIBRARY,
-    5: DungeonTheme.TREASURY,
+    1: DungeonTheme.STONE,      # Stone Dungeon
+    2: DungeonTheme.ICE,        # Ice Cavern
+    3: DungeonTheme.FOREST,     # Forest Depths
+    4: DungeonTheme.VOLCANIC,   # Volcanic Depths
+    5: DungeonTheme.CRYPT,      # Ancient Crypt
+    6: DungeonTheme.SEWER,      # Sewer
+    7: DungeonTheme.LIBRARY,    # Ancient Library
+    8: DungeonTheme.CRYSTAL,    # Crystal Cave
 }
 
 # Decoration characters for each theme
 THEME_DECORATIONS = {
-    DungeonTheme.STONE: ['Θ', '♪'],  # Pillars, braziers
-    DungeonTheme.CAVE: ['*', '"'],    # Rubble, moss
+    DungeonTheme.STONE: ['Θ', '♪'],   # Pillars, braziers
+    DungeonTheme.ICE: ['❄', '◇'],     # Icicles, crystals
+    DungeonTheme.FOREST: ['♠', '¥'],  # Trees, mushrooms
+    DungeonTheme.VOLCANIC: ['∆', '≡'], # Rocks, vents
     DungeonTheme.CRYPT: ['†', 'Ω'],   # Tombstones, statues
+    DungeonTheme.SEWER: ['○', '='],   # Pipes, grates
     DungeonTheme.LIBRARY: ['╤', '║'], # Tables, shelves
-    DungeonTheme.TREASURY: ['ß', 'Ω'], # Barrels, statues
+    DungeonTheme.CRYSTAL: ['◇', '✦'], # Crystals, gems
 }
 
 # ASCII fallbacks for decorations
 THEME_DECORATIONS_ASCII = {
     DungeonTheme.STONE: ['O', '^'],   # Pillars, braziers
-    DungeonTheme.CAVE: ['*', '"'],    # Rubble, moss
+    DungeonTheme.ICE: ['*', '<'],     # Icicles, crystals
+    DungeonTheme.FOREST: ['T', 'm'],  # Trees, mushrooms
+    DungeonTheme.VOLCANIC: ['^', '='], # Rocks, vents
     DungeonTheme.CRYPT: ['+', 'O'],   # Tombstones, statues
+    DungeonTheme.SEWER: ['o', '='],   # Pipes, grates
     DungeonTheme.LIBRARY: ['=', '|'], # Tables, shelves
-    DungeonTheme.TREASURY: ['$', 'O'], # Barrels, statues
+    DungeonTheme.CRYSTAL: ['<', '*'], # Crystals, gems
 }
 
 # Terrain features (walkable floor variations)
@@ -602,23 +671,31 @@ TERRAIN_BLOOD = 'ꕤ'
 TERRAIN_BLOOD_ASCII = '%'
 TERRAIN_GRASS = '"'
 TERRAIN_MOSS = ':'
+TERRAIN_LAVA = '~'
+TERRAIN_ICE = '='
 
 # Theme-specific terrain features
 THEME_TERRAIN = {
-    DungeonTheme.STONE: [],  # No special terrain
-    DungeonTheme.CAVE: [TERRAIN_WATER, TERRAIN_GRASS],  # Water pools, moss
-    DungeonTheme.CRYPT: [],  # Blood added dynamically when enemies die
-    DungeonTheme.LIBRARY: [],  # No special terrain
-    DungeonTheme.TREASURY: [TERRAIN_WATER],  # Water features
+    DungeonTheme.STONE: [],                              # No special terrain
+    DungeonTheme.ICE: [TERRAIN_ICE],                     # Slippery ice
+    DungeonTheme.FOREST: [TERRAIN_WATER, TERRAIN_GRASS], # Water, vegetation
+    DungeonTheme.VOLCANIC: [TERRAIN_LAVA],               # Lava pools
+    DungeonTheme.CRYPT: [],                              # Blood added on kills
+    DungeonTheme.SEWER: [TERRAIN_WATER],                 # Sewer water
+    DungeonTheme.LIBRARY: [],                            # Clean floors
+    DungeonTheme.CRYSTAL: [],                            # Crystal floors
 }
 
 # Theme-specific torch counts (min, max) per level
 THEME_TORCH_COUNTS = {
-    DungeonTheme.STONE: (6, 10),     # Well-lit stone dungeon
-    DungeonTheme.CAVE: (2, 4),       # Natural, sparse lighting
-    DungeonTheme.CRYPT: (4, 6),      # Dim, atmospheric
-    DungeonTheme.LIBRARY: (8, 12),   # Bright for reading
-    DungeonTheme.TREASURY: (6, 8),   # Highlight treasure
+    DungeonTheme.STONE: (6, 10),      # Well-lit stone dungeon
+    DungeonTheme.ICE: (2, 4),         # Cold, sparse lighting
+    DungeonTheme.FOREST: (3, 5),      # Natural bioluminescence
+    DungeonTheme.VOLCANIC: (4, 6),    # Lava glow
+    DungeonTheme.CRYPT: (4, 6),       # Dim, atmospheric
+    DungeonTheme.SEWER: (2, 4),       # Dark and damp
+    DungeonTheme.LIBRARY: (8, 12),    # Bright for reading
+    DungeonTheme.CRYSTAL: (8, 12),    # Crystal glow
 }
 
 # Default torch light properties

@@ -5,10 +5,13 @@ from typing import Dict, List, Optional, Tuple
 # Level intro messages - shown when entering each dungeon level
 LEVEL_INTRO_MESSAGES: Dict[int, str] = {
     1: "You descend into the Stone Dungeon. Ancient torches flicker with unnatural light.",
-    2: "The air grows damp as you enter the Natural Caves. Water drips from unseen heights.",
-    3: "A chill runs down your spine as you step into the Ancient Crypt. The dead do not rest here.",
-    4: "Dust motes dance in pale light. You have found the Forgotten Library.",
-    5: "Gold glimmers in the darkness. You have reached the Treasure Vault. Something guards it.",
+    2: "A biting cold grips you as you enter the Ice Cavern. Frost clings to every surface.",
+    3: "Roots and vines consume the walls. You have entered the Forest Depths, where nature claims all.",
+    4: "Heat radiates from below. The Volcanic Depths glow with rivers of molten rock.",
+    5: "A chill runs down your spine as you step into the Ancient Crypt. The dead do not rest here.",
+    6: "The stench hits you first. The Sewers of Valdris stretch endlessly into darkness.",
+    7: "Dust motes dance in pale light. You have found the Ancient Library. Knowledge... and danger.",
+    8: "Brilliant light refracts through countless crystals. The Crystal Cave holds the dragon's lair.",
 }
 
 
@@ -49,29 +52,73 @@ LORE_ENTRIES: Dict[str, Dict] = {
         "item_type": "scroll",
     },
 
-    # Level 2 - Cave lore
-    "journal_adventurer_2": {
-        "title": "Water-Stained Pages",
+    # Level 2 - Ice Cavern lore
+    "frozen_explorer": {
+        "title": "Frozen Explorer's Journal",
         "content": [
-            "Day 7: The caves are natural, but something shaped them further.",
-            "I found tool marks on the walls. The people of Valdris dug deeper.",
-            "What were they searching for? Or hiding from?",
+            "Day 12: The cold is unnatural. My torch barely helps.",
+            "I found a giant frozen solid in the ice. Still breathing.",
+            "The Frost Giant was sealed here. Someone is waking it.",
         ],
         "level_hint": 2,
         "item_type": "scroll",
     },
-    "miner_note": {
-        "title": "Miner's Note",
+    "ice_warning": {
+        "title": "Warning Carved in Ice",
         "content": [
-            "We broke through to something today. A tomb, older than Valdris itself.",
-            "Foreman says to keep digging. The king wants what's inside.",
-            "I don't like the sounds coming from below.",
+            "BEWARE THE THAW",
+            "THE GIANT SLEEPS IN FROZEN SLUMBER",
+            "DO NOT MELT THE ICE",
         ],
         "level_hint": 2,
         "item_type": "scroll",
     },
 
-    # Level 3 - Crypt lore
+    # Level 3 - Forest Depths lore
+    "druid_log": {
+        "title": "Druid's Log",
+        "content": [
+            "The forest has grown wild since we abandoned the upper levels.",
+            "Nature reclaims what was taken. The Spider Queen has made her nest.",
+            "We thought we could contain her. We were wrong.",
+        ],
+        "level_hint": 3,
+        "item_type": "scroll",
+    },
+    "webbed_note": {
+        "title": "Note Wrapped in Silk",
+        "content": [
+            "If you can read this, run.",
+            "The spiders are everywhere. Their queen watches.",
+            "She was once human. The forest changed her.",
+        ],
+        "level_hint": 3,
+        "item_type": "scroll",
+    },
+
+    # Level 4 - Volcanic Depths lore
+    "smith_journal": {
+        "title": "Master Smith's Journal",
+        "content": [
+            "We built our forge above the magma flows. The heat was perfect.",
+            "Then the Flame Lord emerged from the depths. Fire given form.",
+            "Our greatest weapons could not harm him. He melted them all.",
+        ],
+        "level_hint": 4,
+        "item_type": "scroll",
+    },
+    "obsidian_tablet": {
+        "title": "Obsidian Tablet",
+        "content": [
+            "THE FLAME LORD WAS BORN OF VALDRIS' GREED",
+            "THEY DUG TOO DEEP FOR GOLD AND GEMS",
+            "AND WOKE THE FIRE THAT NEVER DIES",
+        ],
+        "level_hint": 4,
+        "item_type": "scroll",
+    },
+
+    # Level 5 - Ancient Crypt lore
     "crypt_inscription": {
         "title": "Tomb Inscription",
         "content": [
@@ -81,7 +128,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
             "",
             "The kingdom called. They rose. They did not stop.",
         ],
-        "level_hint": 3,
+        "level_hint": 5,
         "item_type": "scroll",
     },
     "priest_confession": {
@@ -92,11 +139,33 @@ LORE_ENTRIES: Dict[str, Dict] = {
             "But the dead cannot tell friend from foe.",
             "We sealed the crypt, but the magic... it spreads.",
         ],
-        "level_hint": 3,
+        "level_hint": 5,
         "item_type": "book",
     },
 
-    # Level 4 - Library lore
+    # Level 6 - Sewer lore
+    "sewer_worker": {
+        "title": "Sewer Worker's Note",
+        "content": [
+            "The rats have been acting strange. Organized.",
+            "I saw them carrying food to the deep tunnels. Thousands of them.",
+            "There's something down there commanding them. Something big.",
+        ],
+        "level_hint": 6,
+        "item_type": "scroll",
+    },
+    "plague_warning": {
+        "title": "Health Warden's Warning",
+        "content": [
+            "SEWERS CONDEMNED BY ORDER OF THE CROWN",
+            "The Rat King has been sighted. All workers evacuated.",
+            "Disease spreads from below. Burn anything that emerges.",
+        ],
+        "level_hint": 6,
+        "item_type": "scroll",
+    },
+
+    # Level 7 - Ancient Library lore
     "wizard_research": {
         "title": "Arcane Research Notes",
         "content": [
@@ -105,7 +174,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
             "Experiment 61: I understand now. It was never a weapon.",
             "It was a prison. And we have been feeding the prisoner.",
         ],
-        "level_hint": 4,
+        "level_hint": 7,
         "item_type": "book",
     },
     "history_valdris": {
@@ -116,11 +185,11 @@ LORE_ENTRIES: Dict[str, Dict] = {
             "But the miners dug too deep, and found something sleeping.",
             "The Darkness woke, and Valdris fell in a single night.",
         ],
-        "level_hint": 4,
+        "level_hint": 7,
         "item_type": "book",
     },
 
-    # Level 5 - Treasury lore
+    # Level 8 - Crystal Cave / Dragon's Lair lore
     "dragon_pact": {
         "title": "The Dragon's Pact",
         "content": [
@@ -131,7 +200,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
             "",
             "The enemies ran out long ago. I hunger.",
         ],
-        "level_hint": 5,
+        "level_hint": 8,
         "item_type": "scroll",
     },
     "final_entry": {
@@ -145,7 +214,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
             "",
             "- Aldric, Last King of Valdris",
         ],
-        "level_hint": 5,
+        "level_hint": 8,
         "item_type": "book",
     },
 }
