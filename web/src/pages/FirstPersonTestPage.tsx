@@ -29,6 +29,7 @@ type ScenarioId =
   | 'water_test'
   | 'offset_test'
   | 'offset_grid'
+  | 'projection_test'
   | 'occlusion_front'
   | 'occlusion_side'
   | 'occlusion_edge_peek'
@@ -58,6 +59,7 @@ const SCENARIOS: ScenarioConfig[] = [
   { id: 'water_test', name: 'Water', description: 'Water tiles with reflections' },
   { id: 'offset_test', name: 'Offset Test', description: 'Test item offsets at various depths' },
   { id: 'offset_grid', name: 'Offset Grid', description: 'Grid of items at depth/offset combos' },
+  { id: 'projection_test', name: 'Projection Test', description: 'Markers at known positions to verify aspect ratio' },
   { id: 'occlusion_front', name: 'Occlusion: Front', description: 'Entity behind front wall (should hide)' },
   { id: 'occlusion_side', name: 'Occlusion: Side', description: 'Entities near side walls' },
   { id: 'occlusion_edge_peek', name: 'Occlusion: Edge Peek', description: 'Wall ends mid-corridor (all visible)' },
@@ -671,6 +673,71 @@ function generateMockView(scenarioId: ScenarioId, params: CustomParams): FirstPe
           });
         });
       });
+      break;
+
+    case 'projection_test':
+      // Projection/aspect ratio test with markers at known positions
+      // Open corridor (no walls) to see markers clearly
+      for (let d = 0; d <= 6; d++) {
+        rows.push(generateRow(d, false, false, '.'));
+      }
+
+      // === SQUARE TEST ===
+      // Place 4 markers forming a square in world space at depth 2:
+      // - Top: depth 1.5, offset 0
+      // - Bottom: depth 2.5, offset 0
+      // - Left: depth 2, offset -0.5
+      // - Right: depth 2, offset +0.5
+      // If projection is correct, these should form a visual square
+      entities.push(
+        { type: 'item', name: 'SQ-Top', symbol: '▲', distance: 1.5, offset: 0, x: 0, y: 1 },
+        { type: 'item', name: 'SQ-Bot', symbol: '▼', distance: 2.5, offset: 0, x: 0, y: 2 },
+        { type: 'item', name: 'SQ-Left', symbol: '◄', distance: 2, offset: -0.5, x: -1, y: 2 },
+        { type: 'item', name: 'SQ-Right', symbol: '►', distance: 2, offset: 0.5, x: 1, y: 2 },
+      );
+
+      // === HORIZONTAL SPACING TEST ===
+      // Row of evenly spaced markers at depth 3
+      // Should appear evenly spaced horizontally
+      [-1, -0.5, 0, 0.5, 1].forEach((offset, i) => {
+        entities.push({
+          type: 'item',
+          name: `H${i}`,
+          symbol: '●',
+          distance: 3,
+          offset: offset,
+          x: Math.round(offset),
+          y: 3,
+        });
+      });
+
+      // === DEPTH SPACING TEST ===
+      // Column of markers along center at depths 1-5
+      // Should show proper perspective diminution
+      [1, 2, 3, 4, 5].forEach((depth) => {
+        entities.push({
+          type: 'item',
+          name: `D${depth}`,
+          symbol: '◆',
+          distance: depth,
+          offset: 0,
+          x: 0,
+          y: depth,
+        });
+      });
+
+      // === CORNER MARKERS ===
+      // Markers at corners to verify edge projection
+      // Depth 1 corners (should be large/wide apart)
+      entities.push(
+        { type: 'item', name: 'C1-L', symbol: '○', distance: 1, offset: -1, x: -1, y: 1 },
+        { type: 'item', name: 'C1-R', symbol: '○', distance: 1, offset: 1, x: 1, y: 1 },
+      );
+      // Depth 4 corners (should be small/close together)
+      entities.push(
+        { type: 'item', name: 'C4-L', symbol: '○', distance: 4, offset: -1, x: -1, y: 4 },
+        { type: 'item', name: 'C4-R', symbol: '○', distance: 4, offset: 1, x: 1, y: 4 },
+      );
       break;
 
     case 'occlusion_front':
