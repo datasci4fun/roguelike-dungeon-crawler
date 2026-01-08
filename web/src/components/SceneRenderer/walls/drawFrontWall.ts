@@ -1,7 +1,7 @@
 /**
  * Draw front-facing walls that block the corridor
  */
-import { getProjection, seededRandom, getDepthFade, getFogAmount } from '../projection';
+import { getProjection, seededRandom, getDepthFade } from '../projection';
 import { drawMoss, drawCracks, drawCobwebs } from './drawWallDecor';
 import type { BiomeTheme } from '../biomes';
 
@@ -35,7 +35,6 @@ export function drawFrontWall(
   let wallR: number, wallG: number, wallB: number;
   let highlightR: number, highlightG: number, highlightB: number;
   let lightR: number, lightG: number, lightB: number;
-  let fogR: number, fogG: number, fogB: number;
 
   if (biome) {
     wallR = biome.wallColor[0];
@@ -47,15 +46,11 @@ export function drawFrontWall(
     lightR = biome.lightColor[0];
     lightG = biome.lightColor[1];
     lightB = biome.lightColor[2];
-    fogR = biome.fogColor[0];
-    fogG = biome.fogColor[1];
-    fogB = biome.fogColor[2];
   } else {
     // Default dungeon colors
     wallR = 74; wallG = 74; wallB = 94;
     highlightR = 90; highlightG = 90; highlightB = 110;
     lightR = 255; lightG = 150; lightB = 80;
-    fogR = 0; fogG = 0; fogB = 0;
   }
 
   const brightness = depthFade * globalBrightness;
@@ -140,12 +135,8 @@ export function drawFrontWall(
     drawDoor(ctx, left.x, left.wallTop, wallWidth, wallHeight, depthFade);
   }
 
-  // Fog overlay using biome fog color
-  const fogAmount = getFogAmount(depth);
-  if (fogAmount > 0) {
-    ctx.fillStyle = `rgba(${fogR}, ${fogG}, ${fogB}, ${fogAmount})`;
-    ctx.fillRect(left.x, left.wallTop, wallWidth, wallHeight);
-  }
+  // Note: Fog is now blended into wall color via depthFade, not overlaid
+  // This keeps walls fully opaque while still fading them into darkness at distance
 
   // Note: Torches are now data-driven and rendered separately by torchLight.ts
 }
