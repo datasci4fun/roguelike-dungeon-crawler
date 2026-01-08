@@ -110,12 +110,13 @@ export function FirstPersonRenderer3D({
       biome.fogColor[2] / 255
     );
     scene.background = bgColor;
-    // Fog: starts at 2 tiles, full opacity at 8 tiles (adjustable via fogDensity)
-    scene.fog = new THREE.Fog(bgColor, 2 * settings.fogDensity, 8 * settings.fogDensity);
+    // Fog: starts at 4 tiles, full opacity at 12 tiles (adjustable via fogDensity)
+    // Pushed back to prevent immediate darkness in front of player
+    scene.fog = new THREE.Fog(bgColor, 4 * TILE_SIZE * settings.fogDensity, 12 * TILE_SIZE * settings.fogDensity);
 
-    // Camera - positioned at origin looking forward (into -Z)
+    // Camera - positioned at player position looking forward (into -Z)
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
-    camera.position.set(0, CAMERA_HEIGHT, 1); // Start at z=1, looking into -Z
+    camera.position.set(0, CAMERA_HEIGHT, 0); // Player position
     camera.rotation.set(0, 0, 0); // Face forward (default is -Z)
 
     // Renderer
@@ -130,14 +131,14 @@ export function FirstPersonRenderer3D({
     }
     containerRef.current.appendChild(renderer.domElement);
 
-    // Lighting - dim ambient for atmosphere, strong torch for player illumination
+    // Lighting - some ambient for visibility, strong torch for player illumination
     const ambientLight = new THREE.AmbientLight(
       new THREE.Color(
         biome.lightColor[0] / 255,
         biome.lightColor[1] / 255,
         biome.lightColor[2] / 255
       ),
-      0.05 * settings.brightness // Very dim ambient - darkness is the default
+      0.15 * settings.brightness // Moderate ambient so scene is never pure black
     );
     scene.add(ambientLight);
 
@@ -373,7 +374,8 @@ export function FirstPersonRenderer3D({
       const row = rows[rowIndex];
       if (!row || row.length === 0) continue;
 
-      const depth = row[0]?.y ?? rowIndex;
+      // Use rowIndex as depth (0 = player position, 1 = one tile ahead, etc.)
+      const depth = rowIndex;
 
       // Find leftmost and rightmost walls, and any center walls
       let hasLeftWall = false;
@@ -592,13 +594,28 @@ export function FirstPersonRenderer3D({
       }
     }
 
+    // Always add floor/ceiling at player position (depth 0)
+    // This ensures the player always has ground to stand on
+    const playerFloorGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
+    const playerFloor = new THREE.Mesh(playerFloorGeom, materials.floor);
+    playerFloor.rotation.x = -Math.PI / 2;
+    playerFloor.position.set(0, 0, 0);
+    geometryGroup.add(playerFloor);
+
+    const playerCeilingGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
+    const playerCeiling = new THREE.Mesh(playerCeilingGeom, materials.ceiling);
+    playerCeiling.rotation.x = Math.PI / 2;
+    playerCeiling.position.set(0, WALL_HEIGHT, 0);
+    geometryGroup.add(playerCeiling);
+
     // Add floor and ceiling tiles based on actual view data
     // This handles both corridors and open rooms correctly
     for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
       const row = rows[rowIndex];
       if (!row || row.length === 0) continue;
 
-      const depth = row[0]?.y ?? rowIndex;
+      // Use rowIndex as depth (0 = player position, 1 = one tile ahead, etc.)
+      const depth = rowIndex;
       const z = -(depth * TILE_SIZE);
 
       for (const tile of row) {
@@ -606,8 +623,15 @@ export function FirstPersonRenderer3D({
         const tileX = tile.offset ?? tile.x ?? 0;
         const x = tileX * TILE_SIZE;
 
-        // Only create floor/ceiling for walkable tiles (floor, doors, stairs, water)
-        if (isFloorTile(tileChar) || isDoorTile(tileChar) || tileChar === '=' || tileChar === '>' || tileChar === '<') {
+        // Skip player position center tile (already added above)
+        if (depth === 0 && tileX === 0) continue;
+
+        // Create floor/ceiling for walkable tiles (floor, doors, stairs, water)
+        // Also create for visible non-wall tiles to fill the corridor
+        const isWalkable = isFloorTile(tileChar) || isDoorTile(tileChar) ||
+                          tileChar === '=' || tileChar === '>' || tileChar === '<';
+
+        if (isWalkable || (tile.visible && !isWallTile(tileChar) && tile.walkable)) {
           // Floor tile
           const floorGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
           const floor = new THREE.Mesh(floorGeom, materials.floor);
