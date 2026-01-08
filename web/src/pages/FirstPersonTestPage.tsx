@@ -4,7 +4,7 @@
  * Provides mock scenarios and parameter controls to test rendering
  * without needing to play the actual game.
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { FirstPersonRenderer } from '../components/SceneRenderer/FirstPersonRenderer';
 import { BIOMES, type BiomeId } from '../components/SceneRenderer/biomes';
 import type { FirstPersonView, FirstPersonTile, FirstPersonEntity } from '../hooks/useGameSocket';
@@ -12,6 +12,7 @@ import './FirstPersonTestPage.css';
 
 // Scenario presets
 type ScenarioId =
+  | 'explore'
   | 'corridor'
   | 'open_room'
   | 'dead_end'
@@ -40,6 +41,7 @@ interface ScenarioConfig {
 }
 
 const SCENARIOS: ScenarioConfig[] = [
+  { id: 'explore', name: 'Explore (WASD)', description: 'Navigate a dungeon with keyboard' },
   { id: 'corridor', name: 'Corridor', description: 'Walls on both sides, open ahead' },
   { id: 'open_room', name: 'Open Room', description: 'No side walls, open space' },
   { id: 'dead_end', name: 'Dead End', description: 'Front wall at depth 3' },
@@ -71,6 +73,92 @@ const FACING_MAP: Record<FacingDirection, { dx: number; dy: number }> = {
   south: { dx: 0, dy: 1 },
   west: { dx: -1, dy: 0 },
 };
+
+// Explore mode dungeon map (# = wall, . = floor, D = door)
+const EXPLORE_MAP: string[] = [
+  '###############',
+  '#.....#.......#',
+  '#.###.#.#####.#',
+  '#.#...#.#...#.#',
+  '#.#.###.#.#.#.#',
+  '#.#.....#.#...#',
+  '#.#######.###.#',
+  '#.........#...#',
+  '#.#######.#.###',
+  '#.#.....#.#...#',
+  '#.#.###.#.###.#',
+  '#...#.....#...#',
+  '###############',
+];
+
+const EXPLORE_START = { x: 1, y: 1 }; // Starting position
+
+// Get tile at map position
+function getMapTile(x: number, y: number): string {
+  if (y < 0 || y >= EXPLORE_MAP.length) return '#';
+  const row = EXPLORE_MAP[y];
+  if (x < 0 || x >= row.length) return '#';
+  return row[x];
+}
+
+// Check if a position is walkable
+function isWalkable(x: number, y: number): boolean {
+  const tile = getMapTile(x, y);
+  return tile === '.' || tile === 'D';
+}
+
+// Generate first-person view from map position and facing
+function generateExploreView(
+  camX: number,
+  camY: number,
+  facing: FacingDirection
+): FirstPersonView {
+  const dir = FACING_MAP[facing];
+  const rows: FirstPersonTile[][] = [];
+  const entities: FirstPersonEntity[] = [];
+
+  // Generate view rows for depths 0-8
+  for (let depth = 0; depth <= 8; depth++) {
+    const row: FirstPersonTile[] = [];
+
+    // Get world position at this depth
+    const worldX = camX + dir.dx * depth;
+    const worldY = camY + dir.dy * depth;
+
+    // Sample tiles across the view width (-3 to +3)
+    for (let offset = -3; offset <= 3; offset++) {
+      // Calculate world position for this offset
+      // Offset is perpendicular to facing direction
+      let tileX: number, tileY: number;
+      if (facing === 'north' || facing === 'south') {
+        tileX = worldX + offset * (facing === 'north' ? 1 : -1);
+        tileY = worldY;
+      } else {
+        tileX = worldX;
+        tileY = worldY + offset * (facing === 'east' ? 1 : -1);
+      }
+
+      const tile = getMapTile(tileX, tileY);
+      row.push({
+        tile,
+        x: offset,
+        y: depth,
+        visible: true,
+        walkable: tile === '.' || tile === 'D',
+        has_entity: false,
+      });
+    }
+
+    rows.push(row);
+  }
+
+  return {
+    rows,
+    entities,
+    facing: dir,
+    depth: 8,
+  };
+}
 
 // Custom parameters
 interface CustomParams {
@@ -841,16 +929,113 @@ export function FirstPersonTestPage() {
   // Override view for when user clicks a comparison thumbnail
   const [overrideView, setOverrideView] = useState<{ view: FirstPersonView; label: string } | null>(null);
 
-  const mockView = generateMockView(selectedScenario, params);
+  // Explore mode camera state
+  const [camX, setCamX] = useState(EXPLORE_START.x);
+  const [camY, setCamY] = useState(EXPLORE_START.y);
+  const [camFacing, setCamFacing] = useState<FacingDirection>('south');
+
+  // Keyboard controls for explore mode
+  useEffect(() => {
+    if (selectedScenario !== 'explore') return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      const dir = FACING_MAP[camFacing];
+
+      switch (e.key.toLowerCase()) {
+        case 'w':
+        case 'arrowup': {
+          // Move forward
+          const newX = camX + dir.dx;
+          const newY = camY + dir.dy;
+          if (isWalkable(newX, newY)) {
+            setCamX(newX);
+            setCamY(newY);
+          }
+          e.preventDefault();
+          break;
+        }
+        case 's':
+        case 'arrowdown': {
+          // Move backward
+          const newX = camX - dir.dx;
+          const newY = camY - dir.dy;
+          if (isWalkable(newX, newY)) {
+            setCamX(newX);
+            setCamY(newY);
+          }
+          e.preventDefault();
+          break;
+        }
+        case 'a':
+        case 'arrowleft': {
+          // Turn left
+          const turns: FacingDirection[] = ['north', 'west', 'south', 'east'];
+          const idx = turns.indexOf(camFacing);
+          setCamFacing(turns[(idx + 1) % 4]);
+          e.preventDefault();
+          break;
+        }
+        case 'd':
+        case 'arrowright': {
+          // Turn right
+          const turns: FacingDirection[] = ['north', 'east', 'south', 'west'];
+          const idx = turns.indexOf(camFacing);
+          setCamFacing(turns[(idx + 1) % 4]);
+          e.preventDefault();
+          break;
+        }
+        case 'q': {
+          // Strafe left
+          const leftDir = { north: -1, south: 1, east: 0, west: 0 }[camFacing];
+          const leftDirY = { north: 0, south: 0, east: -1, west: 1 }[camFacing];
+          const newX = camX + leftDir;
+          const newY = camY + leftDirY;
+          if (isWalkable(newX, newY)) {
+            setCamX(newX);
+            setCamY(newY);
+          }
+          e.preventDefault();
+          break;
+        }
+        case 'e': {
+          // Strafe right
+          const rightDir = { north: 1, south: -1, east: 0, west: 0 }[camFacing];
+          const rightDirY = { north: 0, south: 0, east: 1, west: -1 }[camFacing];
+          const newX = camX + rightDir;
+          const newY = camY + rightDirY;
+          if (isWalkable(newX, newY)) {
+            setCamX(newX);
+            setCamY(newY);
+          }
+          e.preventDefault();
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedScenario, camX, camY, camFacing]);
+
+  // Generate view based on scenario
+  const mockView = selectedScenario === 'explore'
+    ? generateExploreView(camX, camY, camFacing)
+    : generateMockView(selectedScenario, params);
+
   // Use override view if set, otherwise use the scenario's default view
   const baseView = overrideView?.view ?? mockView;
 
-  // Transform view based on facing direction (simulate rotation)
-  // North = default, South = mirror horizontally, East/West = swap walls
-  const transformedView = transformViewForFacing(baseView, params.facing);
+  // Transform view based on facing direction (simulate rotation) - skip for explore mode
+  const transformedView = selectedScenario === 'explore'
+    ? baseView
+    : transformViewForFacing(baseView, params.facing);
+
   const activeView: FirstPersonView = {
     ...transformedView,
-    facing: FACING_MAP[params.facing],
+    facing: selectedScenario === 'explore' ? FACING_MAP[camFacing] : FACING_MAP[params.facing],
   };
 
   const handleScenarioClick = useCallback((scenarioId: ScenarioId) => {
@@ -1048,9 +1233,63 @@ export function FirstPersonTestPage() {
             <div className="preview-info">
               <span>Rows: {mockView.rows.length}</span>
               <span>Entities: {mockView.entities.length}</span>
-              <span>Facing: {params.facing.charAt(0).toUpperCase() + params.facing.slice(1)}</span>
+              <span>Facing: {selectedScenario === 'explore' ? camFacing.charAt(0).toUpperCase() + camFacing.slice(1) : params.facing.charAt(0).toUpperCase() + params.facing.slice(1)}</span>
+              {selectedScenario === 'explore' && <span>Pos: ({camX}, {camY})</span>}
             </div>
           </div>
+
+          {/* Explore mode controls and mini-map */}
+          {selectedScenario === 'explore' && (
+            <div className="torch-comparison">
+              <h3>Explore Mode</h3>
+              <div className="explore-controls">
+                <div className="controls-hint">
+                  <p><strong>Controls:</strong></p>
+                  <p>W/↑ - Move forward</p>
+                  <p>S/↓ - Move backward</p>
+                  <p>A/← - Turn left</p>
+                  <p>D/→ - Turn right</p>
+                  <p>Q - Strafe left</p>
+                  <p>E - Strafe right</p>
+                </div>
+                <div className="mini-map">
+                  <p><strong>Map:</strong></p>
+                  <pre style={{ fontFamily: 'monospace', fontSize: '12px', lineHeight: '1.2' }}>
+                    {EXPLORE_MAP.map((row, y) => (
+                      <div key={y}>
+                        {row.split('').map((cell, x) => {
+                          const isPlayer = x === camX && y === camY;
+                          const playerChar = { north: '↑', south: '↓', east: '→', west: '←' }[camFacing];
+                          return (
+                            <span
+                              key={x}
+                              style={{
+                                color: isPlayer ? '#0f0' : cell === '#' ? '#666' : '#fff',
+                                fontWeight: isPlayer ? 'bold' : 'normal',
+                              }}
+                            >
+                              {isPlayer ? playerChar : cell}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </pre>
+                </div>
+              </div>
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  setCamX(EXPLORE_START.x);
+                  setCamY(EXPLORE_START.y);
+                  setCamFacing('south');
+                }}
+                style={{ marginTop: '10px' }}
+              >
+                Reset Position
+              </button>
+            </div>
+          )}
 
           {/* Compass comparison for all 4 directions */}
           {selectedScenario === 'compass_test' && (
