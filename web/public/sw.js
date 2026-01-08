@@ -5,7 +5,7 @@
  * Game functionality requires active WebSocket connection.
  */
 
-const CACHE_NAME = 'roguelike-v1';
+const CACHE_NAME = 'roguelike-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -58,6 +58,11 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/@') ||
       url.pathname.startsWith('/src/') ||
       url.pathname.startsWith('/node_modules/')) {
+    return;
+  }
+
+  // Skip audio files - let browser handle them directly
+  if (url.pathname.startsWith('/audio/')) {
     return;
   }
 
