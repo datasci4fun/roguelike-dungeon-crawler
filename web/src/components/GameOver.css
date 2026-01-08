@@ -1,0 +1,355 @@
+/**
+ * GameOver - Cinematic death and victory overlay styles
+ */
+
+.game-over {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #e0e0e0;
+  opacity: 0;
+  transition: opacity 1s ease;
+  overflow: hidden;
+}
+
+.game-over.fade-in {
+  opacity: 1;
+}
+
+/* Death theme */
+.game-over.death {
+  background: linear-gradient(135deg, #1a0a0a 0%, #2d1515 50%, #0f0505 100%);
+}
+
+/* Victory theme */
+.game-over.victory {
+  background: linear-gradient(135deg, #0a1a0a 0%, #1a2d15 50%, #050f05 100%);
+}
+
+.game-over-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  max-width: 600px;
+  text-align: center;
+  z-index: 1;
+}
+
+/* Title Section */
+.game-over-title {
+  margin-bottom: 2rem;
+  animation: titleReveal 1.5s ease-out;
+}
+
+@keyframes titleReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.title-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+.death-icon {
+  color: #ff4444;
+  text-shadow:
+    0 0 20px rgba(255, 68, 68, 0.5),
+    0 0 40px rgba(255, 68, 68, 0.3);
+}
+
+.victory-icon {
+  color: #ffd700;
+  text-shadow:
+    0 0 20px rgba(255, 215, 0, 0.6),
+    0 0 40px rgba(255, 215, 0, 0.4),
+    0 0 60px rgba(255, 215, 0, 0.2);
+}
+
+.game-over-title h1 {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: bold;
+  letter-spacing: 0.2em;
+  margin: 0;
+}
+
+.game-over.death .game-over-title h1 {
+  color: #ff6666;
+  text-shadow:
+    0 0 10px rgba(255, 68, 68, 0.5),
+    2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.game-over.victory .game-over-title h1 {
+  color: #ffd700;
+  text-shadow:
+    0 0 15px rgba(255, 215, 0, 0.5),
+    2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Narrative */
+.game-over-narrative {
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  line-height: 1.8;
+  margin-bottom: 2rem;
+  animation: narrativeFadeIn 1.5s ease-out 0.5s both;
+}
+
+@keyframes narrativeFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.game-over-narrative p {
+  margin: 0;
+  padding: 0.2em 0;
+}
+
+.game-over-narrative p.empty-line {
+  height: 0.8em;
+}
+
+.game-over.death .game-over-narrative {
+  color: #ccaaaa;
+}
+
+.game-over.victory .game-over-narrative {
+  color: #aaccaa;
+}
+
+/* Stats */
+.game-over-stats {
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.game-over-stats.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.game-over.death .game-over-stats {
+  border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+.game-over.victory .game-over-stats {
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.game-over-stats h2 {
+  font-size: 1rem;
+  font-weight: normal;
+  letter-spacing: 0.15em;
+  margin: 0 0 1rem 0;
+  color: #888;
+}
+
+.stats-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 100px;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.game-over.death .stat-value {
+  color: #ff8888;
+}
+
+.game-over.victory .stat-value {
+  color: #88ff88;
+}
+
+/* Play Again Prompt */
+.game-over-prompt {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.game-over-prompt.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.game-over-prompt p {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+  animation: promptPulse 2s ease-in-out infinite;
+}
+
+@keyframes promptPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.play-again-button {
+  background: transparent;
+  border: 2px solid;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+}
+
+.game-over.death .play-again-button {
+  border-color: #ff6666;
+  color: #ff6666;
+}
+
+.game-over.death .play-again-button:hover {
+  background: rgba(255, 102, 102, 0.2);
+  box-shadow: 0 0 20px rgba(255, 68, 68, 0.4);
+}
+
+.game-over.victory .play-again-button {
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
+.game-over.victory .play-again-button:hover {
+  background: rgba(255, 215, 0, 0.2);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+/* Ambient Overlay Effects */
+.ambient-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ambient-overlay.death {
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(139, 0, 0, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 0%, rgba(50, 0, 0, 0.1) 0%, transparent 40%);
+}
+
+.ambient-overlay.death::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.5) 100%);
+}
+
+.ambient-overlay.victory {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(100, 150, 50, 0.05) 0%, transparent 40%);
+}
+
+.ambient-overlay.victory::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+/* Floating particles effect for victory */
+.game-over.victory::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 20% 30%, rgba(255, 215, 0, 0.3), transparent),
+    radial-gradient(2px 2px at 40% 70%, rgba(255, 215, 0, 0.2), transparent),
+    radial-gradient(2px 2px at 60% 20%, rgba(255, 215, 0, 0.3), transparent),
+    radial-gradient(2px 2px at 80% 60%, rgba(255, 215, 0, 0.2), transparent),
+    radial-gradient(2px 2px at 10% 80%, rgba(255, 215, 0, 0.25), transparent),
+    radial-gradient(2px 2px at 90% 40%, rgba(255, 215, 0, 0.25), transparent);
+  animation: particleFloat 8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes particleFloat {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-20px);
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .game-over-content {
+    padding: 1rem;
+  }
+
+  .title-icon {
+    font-size: 3rem;
+  }
+
+  .stats-grid {
+    gap: 1rem;
+  }
+
+  .stat-item {
+    min-width: 80px;
+  }
+
+  .stat-value {
+    font-size: 1.4rem;
+  }
+}

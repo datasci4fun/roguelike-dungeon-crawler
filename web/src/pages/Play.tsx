@@ -14,6 +14,7 @@ import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
 import { FeatSelector } from '../components/FeatSelector';
 import { DebugToast } from '../components/DebugToast';
+import { GameOver } from '../components/GameOver';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
 
@@ -27,6 +28,7 @@ export function Play() {
   const [useTileGrid, setUseTileGrid] = useState(() => {
     try { return localStorage.getItem('useTileGrid') === '1'; } catch { return false; }
   });
+  const [showGameOver, setShowGameOver] = useState<'death' | 'victory' | null>(null);
 
   // Debug renderer controls (F8/F9/F10 hotkeys)
   const {
@@ -123,6 +125,9 @@ export function Play() {
   useEffect(() => {
     if (!isUnlocked || !gameState?.dungeon) return;
 
+    // Don't change music if game is over (that's handled separately)
+    if (gameState.game_state === 'DEAD' || gameState.game_state === 'VICTORY') return;
+
     const level = gameState.dungeon.level;
     if (level === lastLevelRef.current) return;
 
@@ -133,11 +138,28 @@ export function Play() {
     if (trackId) {
       crossfadeTo(trackId);
     }
-  }, [gameState?.dungeon?.level, isUnlocked, crossfadeTo]);
+  }, [gameState?.dungeon?.level, gameState?.game_state, isUnlocked, crossfadeTo]);
+
+  // Detect game over state and show cinematic overlay
+  useEffect(() => {
+    if (gameState?.game_state === 'DEAD') {
+      setShowGameOver('death');
+    } else if (gameState?.game_state === 'VICTORY') {
+      setShowGameOver('victory');
+    }
+  }, [gameState?.game_state]);
+
+  // Handle music change from GameOver component
+  const handleGameOverMusic = useCallback((trackId: string) => {
+    if (isUnlocked) {
+      crossfadeTo(trackId);
+    }
+  }, [isUnlocked, crossfadeTo]);
 
   // Handle new game - redirect to character creation
   const handleNewGame = useCallback(() => {
     if (gameState?.game_state === 'DEAD' || gameState?.game_state === 'VICTORY' || !gameState) {
+      setShowGameOver(null);
       navigate('/character-creation');
     }
   }, [gameState, navigate]);
@@ -429,6 +451,20 @@ export function Play() {
 
       {/* Debug Toast */}
       <DebugToast message={toastMessage} onDismiss={clearToast} />
+
+      {/* Game Over Overlay */}
+      {showGameOver && gameState?.player && (
+        <GameOver
+          type={showGameOver}
+          stats={{
+            level: gameState.player.level,
+            kills: gameState.player.kills,
+            dungeonLevel: gameState.dungeon?.level,
+          }}
+          onPlayAgain={handleNewGame}
+          onMusicChange={handleGameOverMusic}
+        />
+      )}
     </div>
   );
 }
