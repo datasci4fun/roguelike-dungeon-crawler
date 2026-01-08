@@ -36,7 +36,8 @@
 .vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 20%, rgba(0, 0, 0, 0.8) 100%);
+  /* Vignette centered lower to avoid darkening the header */
+  background: radial-gradient(ellipse at 50% 60%, transparent 30%, rgba(0, 0, 0, 0.6) 100%);
 }
 
 /* ============================================
