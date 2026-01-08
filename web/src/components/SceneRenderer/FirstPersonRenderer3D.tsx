@@ -377,26 +377,27 @@ export function FirstPersonRenderer3D({
       // Use rowIndex as depth (0 = player position, 1 = one tile ahead, etc.)
       const depth = rowIndex;
 
-      // Find leftmost and rightmost walls, and any center walls
+      // Determine walls based on offset position relative to center (offset 0)
+      // Left wall = any wall at negative offset (to player's left)
+      // Right wall = any wall at positive offset (to player's right)
+      // Front wall = wall at offset 0 (directly ahead)
       let hasLeftWall = false;
       let hasRightWall = false;
       const frontWallTiles: Array<{ x: number; tile: string }> = [];
 
       for (const tile of row) {
         const tileChar = tile.tile_actual || tile.tile;
-        const tileX = tile.offset ?? tile.x ?? 0;
+        const tileX = tile.offset ?? 0;
 
-        if (isWallTile(tileChar)) {
-          // Leftmost tile in row is left wall
-          if (tileX === Math.min(...row.map(t => t.offset ?? t.x ?? 0))) {
+        if (isWallTile(tileChar) || isDoorTile(tileChar)) {
+          if (tileX < 0) {
+            // Wall to the left of center
             hasLeftWall = true;
-          }
-          // Rightmost tile in row is right wall
-          else if (tileX === Math.max(...row.map(t => t.offset ?? t.x ?? 0))) {
+          } else if (tileX > 0) {
+            // Wall to the right of center
             hasRightWall = true;
-          }
-          // Center walls are front walls
-          else {
+          } else {
+            // Wall at center (front wall / blocking path)
             frontWallTiles.push({ x: tileX, tile: tileChar });
           }
         }
@@ -413,20 +414,9 @@ export function FirstPersonRenderer3D({
 
     // Player position floor/ceiling is now handled by the main tile loop below
 
-    // Build continuous side walls
-    // Find the depth range where we have continuous side walls
-    let leftWallEndDepth = 0;
-    let rightWallEndDepth = 0;
-
-    for (const info of depthInfo) {
-      if (info.hasLeftWall) leftWallEndDepth = Math.max(leftWallEndDepth, info.depth);
-      if (info.hasRightWall) rightWallEndDepth = Math.max(rightWallEndDepth, info.depth);
-    }
-
-    // Helper to create wall material for corridor walls (uses UV tiling, not texture repeat)
+    // Helper to create wall material for corridor walls
     const createCorridorWallMaterial = (isLeftWall: boolean): THREE.MeshStandardMaterial => {
       const baseTex = isLeftWall ? sceneRef.current!.textures.wallLeft : sceneRef.current!.textures.wallRight;
-      // Textures already have RepeatWrapping set from loadTexture
       return new THREE.MeshStandardMaterial({
         map: baseTex,
         color: materials.wall.color,
@@ -434,75 +424,38 @@ export function FirstPersonRenderer3D({
       });
     };
 
-    // Create left wall as a single elongated box from depth 0 to end
-    let leftWallZStart = 0, leftWallZEnd = 0;
-    if (leftWallEndDepth > 0) {
-      const wallLength = leftWallEndDepth * TILE_SIZE + TILE_SIZE;
-      const lengthTiles = wallLength / TILE_SIZE;
+    // Build side walls per-depth (only where walls actually exist)
+    // This properly handles corridors opening up to rooms
+    for (const info of depthInfo) {
+      const z = -(info.depth * TILE_SIZE);
 
-      // Create geometry with proper UV tiling for the inner face
-      const wallGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, wallLength);
+      // Create left wall segment if there's a wall at this depth
+      if (info.hasLeftWall) {
+        const wallGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, TILE_SIZE);
+        const leftWallMat = createCorridorWallMaterial(true);
+        const leftWall = new THREE.Mesh(wallGeom, leftWallMat);
+        leftWall.position.set(-CORRIDOR_HALF_WIDTH, WALL_HEIGHT / 2, z);
+        geometryGroup.add(leftWall);
 
-      // Manually adjust UVs for proper tiling - BoxGeometry face order: +X, -X, +Y, -Y, +Z, -Z
-      // Each face has 4 vertices (2 triangles = 6 indices, but 4 unique verts)
-      // For +X face (inner face of left wall): vertices 0-3, UVs should tile along Z and Y
-      const uvs = wallGeom.attributes.uv.array as Float32Array;
-      // +X face vertices are indices 0-3 (first 4 vertices in position array for +X face)
-      // UV layout for +X: U maps to -Z, V maps to +Y
-      // We want U to repeat 'lengthTiles' times, V to repeat based on height
-      const heightTiles = WALL_HEIGHT / TILE_SIZE;
-      // Face +X (indices 0-7 in uv array = 4 vertices * 2 components)
-      uvs[0] = lengthTiles; uvs[1] = heightTiles;  // top-right
-      uvs[2] = 0;           uvs[3] = heightTiles;  // top-left
-      uvs[4] = lengthTiles; uvs[5] = 0;            // bottom-right
-      uvs[6] = 0;           uvs[7] = 0;            // bottom-left
-      wallGeom.attributes.uv.needsUpdate = true;
+        if (debugShowWallMarkers) {
+          console.log(`[3D] Left wall segment at depth ${info.depth}, z=${z}`);
+        }
+      }
 
-      const leftWallMat = createCorridorWallMaterial(true);
-      const leftWall = new THREE.Mesh(wallGeom, leftWallMat);
-      const zCenter = -(wallLength / 2 - TILE_SIZE / 2);
-      leftWall.position.set(-CORRIDOR_HALF_WIDTH, WALL_HEIGHT / 2, zCenter);
-      geometryGroup.add(leftWall);
+      // Create right wall segment if there's a wall at this depth
+      if (info.hasRightWall) {
+        const wallGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, TILE_SIZE);
+        const rightWallMat = createCorridorWallMaterial(false);
+        const rightWall = new THREE.Mesh(wallGeom, rightWallMat);
+        rightWall.position.set(CORRIDOR_HALF_WIDTH, WALL_HEIGHT / 2, z);
+        geometryGroup.add(rightWall);
 
-      leftWallZStart = zCenter + wallLength / 2;
-      leftWallZEnd = zCenter - wallLength / 2;
-
-      if (debugShowWallMarkers) {
-        console.log(`[3D] Left wall: x=${-CORRIDOR_HALF_WIDTH}, z from ${leftWallZStart.toFixed(2)} to ${leftWallZEnd.toFixed(2)}, length=${wallLength}, tiles=${lengthTiles}`);
+        if (debugShowWallMarkers) {
+          console.log(`[3D] Right wall segment at depth ${info.depth}, z=${z}`);
+        }
       }
     }
 
-    // Create right wall as a single elongated box
-    let rightWallZStart = 0, rightWallZEnd = 0;
-    if (rightWallEndDepth > 0) {
-      const wallLength = rightWallEndDepth * TILE_SIZE + TILE_SIZE;
-      const lengthTiles = wallLength / TILE_SIZE;
-
-      const wallGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, wallLength);
-
-      // For -X face (inner face of right wall): vertices 4-7 (indices 8-15 in uv array)
-      const uvs = wallGeom.attributes.uv.array as Float32Array;
-      const heightTiles = WALL_HEIGHT / TILE_SIZE;
-      // Face -X (indices 8-15 in uv array)
-      uvs[8] = 0;           uvs[9] = heightTiles;   // top-left
-      uvs[10] = lengthTiles; uvs[11] = heightTiles; // top-right
-      uvs[12] = 0;           uvs[13] = 0;           // bottom-left
-      uvs[14] = lengthTiles; uvs[15] = 0;           // bottom-right
-      wallGeom.attributes.uv.needsUpdate = true;
-
-      const rightWallMat = createCorridorWallMaterial(false);
-      const rightWall = new THREE.Mesh(wallGeom, rightWallMat);
-      const zCenter = -(wallLength / 2 - TILE_SIZE / 2);
-      rightWall.position.set(CORRIDOR_HALF_WIDTH, WALL_HEIGHT / 2, zCenter);
-      geometryGroup.add(rightWall);
-
-      rightWallZStart = zCenter + wallLength / 2;
-      rightWallZEnd = zCenter - wallLength / 2;
-
-      if (debugShowWallMarkers) {
-        console.log(`[3D] Right wall: x=${CORRIDOR_HALF_WIDTH}, z from ${rightWallZStart.toFixed(2)} to ${rightWallZEnd.toFixed(2)}, length=${wallLength}, tiles=${lengthTiles}`);
-      }
-    }
 
     // Add front walls and floor/ceiling tiles
     for (const info of depthInfo) {
@@ -529,11 +482,7 @@ export function FirstPersonRenderer3D({
           console.log(`[3D] End wall at depth ${info.depth}: x from ${endWallXMin} to ${endWallXMax}, z from ${endWallZFront} to ${endWallZBack}`);
 
           // Check connections
-          const leftSideWallInnerX = -CORRIDOR_HALF_WIDTH + TILE_SIZE / 2;
-          const rightSideWallInnerX = CORRIDOR_HALF_WIDTH - TILE_SIZE / 2;
-          console.log(`[3D] Connection check: Left side wall inner edge=${leftSideWallInnerX}, End wall left edge=${endWallXMin}`);
-          console.log(`[3D] Connection check: Right side wall inner edge=${rightSideWallInnerX}, End wall right edge=${endWallXMax}`);
-          console.log(`[3D] Connection check: Side walls end at z=${leftWallZEnd.toFixed(2)}, End wall front face at z=${endWallZFront}`);
+          console.log(`[3D] End wall at depth ${info.depth}, z=${z}`);
         }
       } else {
         // Add individual front wall tiles (walls not at the corridor end)
@@ -546,42 +495,23 @@ export function FirstPersonRenderer3D({
       }
     }
 
-    // Add visual debug markers at wall corners if enabled
+    // Add visual debug markers for wall segments if enabled
     if (debugShowWallMarkers) {
       const markerGeom = new THREE.SphereGeometry(0.1, 8, 8);
-
-      // Create markers for important corner positions
       const markers: { pos: [number, number, number]; label: string; color: number }[] = [];
 
-      // Left wall corners (if exists)
-      if (leftWallEndDepth > 0) {
-        const leftX = -CORRIDOR_HALF_WIDTH;
-        // Near corner (front of left wall)
-        markers.push({ pos: [leftX - TILE_SIZE/2, WALL_HEIGHT, leftWallZStart], label: 'L-near-outer', color: 0xff0000 });
-        markers.push({ pos: [leftX + TILE_SIZE/2, WALL_HEIGHT, leftWallZStart], label: 'L-near-inner', color: 0xff8800 });
-        // Far corner (back of left wall)
-        markers.push({ pos: [leftX - TILE_SIZE/2, WALL_HEIGHT, leftWallZEnd], label: 'L-far-outer', color: 0x00ff00 });
-        markers.push({ pos: [leftX + TILE_SIZE/2, WALL_HEIGHT, leftWallZEnd], label: 'L-far-inner', color: 0x88ff00 });
-      }
-
-      // Right wall corners (if exists)
-      if (rightWallEndDepth > 0) {
-        const rightX = CORRIDOR_HALF_WIDTH;
-        markers.push({ pos: [rightX - TILE_SIZE/2, WALL_HEIGHT, rightWallZStart], label: 'R-near-inner', color: 0x0088ff });
-        markers.push({ pos: [rightX + TILE_SIZE/2, WALL_HEIGHT, rightWallZStart], label: 'R-near-outer', color: 0x0000ff });
-        markers.push({ pos: [rightX - TILE_SIZE/2, WALL_HEIGHT, rightWallZEnd], label: 'R-far-inner', color: 0x00ffff });
-        markers.push({ pos: [rightX + TILE_SIZE/2, WALL_HEIGHT, rightWallZEnd], label: 'R-far-outer', color: 0x00ff88 });
-      }
-
-      // End wall corners (find the depth with center wall)
-      const endWallInfo = depthInfo.find(d => d.frontWallTiles.some(t => t.x === 0));
-      if (endWallInfo) {
-        const endZ = -(endWallInfo.depth * TILE_SIZE);
-        const fullWidth = CORRIDOR_HALF_WIDTH * 2 + TILE_SIZE;
-        markers.push({ pos: [-fullWidth/2, WALL_HEIGHT, endZ + TILE_SIZE/2], label: 'End-L-front', color: 0xff00ff });
-        markers.push({ pos: [fullWidth/2, WALL_HEIGHT, endZ + TILE_SIZE/2], label: 'End-R-front', color: 0xff00ff });
-        markers.push({ pos: [-fullWidth/2, WALL_HEIGHT, endZ - TILE_SIZE/2], label: 'End-L-back', color: 0x8800ff });
-        markers.push({ pos: [fullWidth/2, WALL_HEIGHT, endZ - TILE_SIZE/2], label: 'End-R-back', color: 0x8800ff });
+      // Mark each wall segment position
+      for (const info of depthInfo) {
+        const z = -(info.depth * TILE_SIZE);
+        if (info.hasLeftWall) {
+          markers.push({ pos: [-CORRIDOR_HALF_WIDTH, WALL_HEIGHT, z], label: `L-d${info.depth}`, color: 0xff0000 });
+        }
+        if (info.hasRightWall) {
+          markers.push({ pos: [CORRIDOR_HALF_WIDTH, WALL_HEIGHT, z], label: `R-d${info.depth}`, color: 0x0000ff });
+        }
+        if (info.frontWallTiles.length > 0) {
+          markers.push({ pos: [0, WALL_HEIGHT, z], label: `F-d${info.depth}`, color: 0xff00ff });
+        }
       }
 
       // Add all markers to scene
