@@ -500,6 +500,11 @@ function renderGameState(terminal: Terminal, state: FullGameState, isSpectator =
     return;
   }
 
+  if (state.ui_mode === 'READING' && state.reading) {
+    renderReadingScreen(terminal, state);
+    return;
+  }
+
   // Default: render game view
   renderGameView(terminal, state, isSpectator);
 }
@@ -551,10 +556,10 @@ function renderGameView(terminal: Terminal, state: FullGameState, isSpectator = 
     `  ${COLORS.yellow}Kills: ${player.kills}${COLORS.reset}`
   );
 
-  // XP bar
-  const xpPercent = player.xp_to_level > 0 ? player.xp / player.xp_to_level : 0;
+  // XP bar (clamp values to prevent negative repeat)
+  const xpPercent = player.xp_to_level > 0 ? Math.min(1, player.xp / player.xp_to_level) : 0;
   const xpBarWidth = 20;
-  const xpFilled = Math.floor(xpPercent * xpBarWidth);
+  const xpFilled = Math.max(0, Math.min(xpBarWidth, Math.floor(xpPercent * xpBarWidth)));
   const xpBar = '█'.repeat(xpFilled) + '░'.repeat(xpBarWidth - xpFilled);
   terminal.writeln(
     `${COLORS.dim} Lv.${player.level} [${COLORS.magenta}${xpBar}${COLORS.dim}] ${player.xp}/${player.xp_to_level} XP${COLORS.reset}`
@@ -854,6 +859,39 @@ function renderMessageLog(terminal: Terminal, state: FullGameState) {
 
   terminal.writeln('');
   terminal.writeln(`${COLORS.dim}  [W/↑] Scroll up  [S/↓] Scroll down  [ESC] Close${COLORS.reset}`);
+}
+
+function renderReadingScreen(terminal: Terminal, state: FullGameState) {
+  const { reading } = state;
+  if (!reading) return;
+
+  terminal.writeln('');
+  terminal.writeln(`${COLORS.brightYellow}  ╔══════════════════════════════════════════════════╗${COLORS.reset}`);
+  terminal.writeln(`${COLORS.brightYellow}  ║${COLORS.reset} ${COLORS.brightWhite}${reading.title.padEnd(49)}${COLORS.reset}${COLORS.brightYellow}║${COLORS.reset}`);
+  terminal.writeln(`${COLORS.brightYellow}  ╚══════════════════════════════════════════════════╝${COLORS.reset}`);
+  terminal.writeln('');
+
+  // Word-wrap and display content paragraphs
+  const maxWidth = 50;
+  reading.content.forEach((paragraph) => {
+    // Word wrap the paragraph
+    const words = paragraph.split(' ');
+    let currentLine = '  ';
+    words.forEach((word) => {
+      if (currentLine.length + word.length + 1 > maxWidth + 2) {
+        terminal.writeln(`${COLORS.white}${currentLine}${COLORS.reset}`);
+        currentLine = '  ' + word;
+      } else {
+        currentLine += (currentLine.length > 2 ? ' ' : '') + word;
+      }
+    });
+    if (currentLine.length > 2) {
+      terminal.writeln(`${COLORS.white}${currentLine}${COLORS.reset}`);
+    }
+    terminal.writeln(''); // Blank line between paragraphs
+  });
+
+  terminal.writeln(`${COLORS.dim}  Press any key to close${COLORS.reset}`);
 }
 
 function getRarityColor(rarity: string): string {

@@ -7,7 +7,7 @@ import { useAudioManager } from '../hooks/useAudioManager';
 import { useSfxGameEvents, useSfxCommands } from '../hooks/useSfxGameEvents';
 import { useDebugRenderer } from '../hooks/useDebugRenderer';
 import { GameTerminal } from '../components/GameTerminal';
-import { FirstPersonRenderer, type CorridorInfoEntry } from '../components/SceneRenderer';
+import { FirstPersonRenderer, FirstPersonRenderer3D, type CorridorInfoEntry } from '../components/SceneRenderer';
 import { CharacterHUD } from '../components/CharacterHUD';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
@@ -15,6 +15,7 @@ import { AchievementToast } from '../components/AchievementToast';
 import { FeatSelector } from '../components/FeatSelector';
 import { DebugToast } from '../components/DebugToast';
 import { GameOver } from '../components/GameOver';
+import { LoreJournal } from '../components/LoreJournal';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
 
@@ -28,7 +29,11 @@ export function Play() {
   const [useTileGrid, setUseTileGrid] = useState(() => {
     try { return localStorage.getItem('useTileGrid') === '1'; } catch { return false; }
   });
+  const [use3DMode, setUse3DMode] = useState(() => {
+    try { return localStorage.getItem('use3DMode') === '1'; } catch { return false; }
+  });
   const [showGameOver, setShowGameOver] = useState<'death' | 'victory' | null>(null);
+  const [showLoreJournal, setShowLoreJournal] = useState(false);
 
   // Debug renderer controls (F8/F9/F10 hotkeys)
   const {
@@ -219,6 +224,11 @@ export function Play() {
     try { localStorage.setItem('useTileGrid', useTileGrid ? '1' : '0'); } catch {}
   }, [useTileGrid]);
 
+  // Persist 3D mode preference
+  useEffect(() => {
+    try { localStorage.setItem('use3DMode', use3DMode ? '1' : '0'); } catch {}
+  }, [use3DMode]);
+
   // Debug hotkeys (F8: wireframe, F9: occluded, F10: snapshot)
   useEffect(() => {
     if (!debugEnabled) return;
@@ -264,6 +274,31 @@ export function Play() {
     gameState?.player,
   ]);
 
+  // Lore Journal hotkey (J key)
+  useEffect(() => {
+    const handleJournalKey = (e: KeyboardEvent) => {
+      // Don't trigger when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      // Don't trigger when in a game UI mode (inventory, dialog, etc)
+      if (gameState?.ui_mode && gameState.ui_mode !== 'GAME') {
+        return;
+      }
+
+      if (e.key === 'j' || e.key === 'J') {
+        e.preventDefault();
+        setShowLoreJournal((prev) => !prev);
+      } else if (e.key === 'Escape' && showLoreJournal) {
+        e.preventDefault();
+        setShowLoreJournal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleJournalKey);
+    return () => window.removeEventListener('keydown', handleJournalKey);
+  }, [gameState?.ui_mode, showLoreJournal]);
+
   // Callback to capture corridor info from renderer
   const handleCorridorInfo = useCallback((info: CorridorInfoEntry[]) => {
     corridorInfoRef.current = info;
@@ -308,17 +343,27 @@ export function Play() {
 
             {showSceneView && (
               <div className="scene-wrapper">
-                <FirstPersonRenderer
-                  view={gameState?.first_person_view}
-                  playerPos={gameState?.player ? { x: gameState.player.x, y: gameState.player.y } : undefined}
-                  settings={{ biome: 'dungeon', useTileGrid }}
-                  width={800}
-                  height={600}
-                  enableAnimations={true}
-                  debugShowWireframe={showWireframe}
-                  debugShowOccluded={showOccluded}
-                  onCorridorInfo={handleCorridorInfo}
-                />
+                {use3DMode ? (
+                  <FirstPersonRenderer3D
+                    view={gameState?.first_person_view}
+                    playerPos={gameState?.player ? { x: gameState.player.x, y: gameState.player.y } : undefined}
+                    settings={{ biome: 'dungeon', useTileGrid }}
+                    width={800}
+                    height={600}
+                  />
+                ) : (
+                  <FirstPersonRenderer
+                    view={gameState?.first_person_view}
+                    playerPos={gameState?.player ? { x: gameState.player.x, y: gameState.player.y } : undefined}
+                    settings={{ biome: 'dungeon', useTileGrid }}
+                    width={800}
+                    height={600}
+                    enableAnimations={true}
+                    debugShowWireframe={showWireframe}
+                    debugShowOccluded={showOccluded}
+                    onCorridorInfo={handleCorridorInfo}
+                  />
+                )}
                 {/* Character HUD overlay */}
                 {gameState?.player?.race && (
                   <CharacterHUD
@@ -355,6 +400,29 @@ export function Play() {
               />
               Tile Grid
             </label>
+
+            <label className="scene-toggle">
+              <input
+                type="checkbox"
+                checked={use3DMode}
+                onChange={(e) => setUse3DMode(e.target.checked)}
+                disabled={!showSceneView}
+              />
+              3D Mode
+            </label>
+
+            <button
+              className="journal-btn"
+              onClick={() => setShowLoreJournal(true)}
+              title="Open Lore Journal (J)"
+            >
+              Journal
+              {gameState?.lore_journal && gameState.lore_journal.discovered_count > 0 && (
+                <span className="journal-count">
+                  {gameState.lore_journal.discovered_count}
+                </span>
+              )}
+            </button>
           </div>
 
           <div className="game-status">
@@ -463,6 +531,16 @@ export function Play() {
           }}
           onPlayAgain={handleNewGame}
           onMusicChange={handleGameOverMusic}
+        />
+      )}
+
+      {/* Lore Journal Modal */}
+      {showLoreJournal && gameState?.lore_journal && (
+        <LoreJournal
+          entries={gameState.lore_journal.entries}
+          discoveredCount={gameState.lore_journal.discovered_count}
+          totalCount={gameState.lore_journal.total_count}
+          onClose={() => setShowLoreJournal(false)}
         />
       )}
     </div>

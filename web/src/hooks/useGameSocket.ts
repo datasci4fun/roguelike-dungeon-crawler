@@ -200,6 +200,19 @@ export interface FullGameState {
     title: string;
     message: string;
   };
+  reading?: {
+    title: string;
+    content: string[];
+  };
+  lore_journal?: {
+    entries: Array<{
+      id: string;
+      title: string;
+      content: string[];
+    }>;
+    discovered_count: number;
+    total_count: number;
+  };
   first_person_view?: FirstPersonView;
 }
 
