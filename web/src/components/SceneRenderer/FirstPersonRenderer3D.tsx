@@ -7,7 +7,7 @@
  * Accepts the same props as FirstPersonRenderer for easy swapping.
  */
 
-import { useRef, useEffect, useMemo, useCallback } from 'react';
+import { useRef, useEffect, useMemo, useCallback, useState } from 'react';
 import * as THREE from 'three';
 import type { FirstPersonView } from '../../hooks/useGameSocket';
 import { getBiome, type BiomeId } from './biomes';
@@ -40,6 +40,7 @@ interface FirstPersonRenderer3DProps {
   settings?: Partial<RenderSettings>;
   debugShowOccluded?: boolean;
   debugShowWireframe?: boolean;
+  debugShowWallMarkers?: boolean;
 }
 
 // Check tile types
@@ -53,6 +54,7 @@ export function FirstPersonRenderer3D({
   height = 300,
   enableAnimations = true,
   settings: userSettings,
+  debugShowWallMarkers = false,
 }: FirstPersonRenderer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
@@ -74,6 +76,12 @@ export function FirstPersonRenderer3D({
       wallLeft: THREE.Texture;
       wallRight: THREE.Texture;
     };
+    // Tile variants for position-based selection
+    variants: {
+      floor: THREE.Texture[];
+      ceiling: THREE.Texture[];
+      wallFront: THREE.Texture[];
+    };
     // Camera control state
     controls: {
       isDragging: boolean;
@@ -89,6 +97,9 @@ export function FirstPersonRenderer3D({
   );
 
   const biome = useMemo(() => getBiome(settings.biome), [settings.biome]);
+
+  // Track when tile variants are loaded (triggers geometry rebuild)
+  const [variantsLoaded, setVariantsLoaded] = useState(0);
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -149,6 +160,41 @@ export function FirstPersonRenderer3D({
       return tex;
     };
 
+    // Try to load a texture, return null if it doesn't exist
+    const tryLoadTexture = (path: string): Promise<THREE.Texture | null> => {
+      return new Promise((resolve) => {
+        const tex = new THREE.Texture();
+        const img = new Image();
+        img.onload = () => {
+          tex.image = img;
+          tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+          tex.magFilter = THREE.NearestFilter;
+          tex.minFilter = THREE.NearestMipMapLinearFilter;
+          tex.needsUpdate = true;
+          resolve(tex);
+        };
+        img.onerror = () => resolve(null);
+        img.src = path;
+      });
+    };
+
+    // Load tile variants (floor_var1.png, floor_var2.png, etc.)
+    const loadVariants = async (tileType: string): Promise<THREE.Texture[]> => {
+      const variants: THREE.Texture[] = [loadTexture(`${basePath}/${tileType}.png`)];
+      for (let i = 1; i <= 10; i++) {
+        const varTex = await tryLoadTexture(`${basePath}/${tileType}_var${i}.png`);
+        if (varTex) {
+          variants.push(varTex);
+        } else {
+          break;
+        }
+      }
+      if (variants.length > 1) {
+        console.log(`[3D] Loaded ${variants.length} variants for ${tileType}`);
+      }
+      return variants;
+    };
+
     const textures = {
       floor: loadTexture(`${basePath}/floor.png`),
       ceiling: loadTexture(`${basePath}/ceiling.png`),
@@ -156,6 +202,11 @@ export function FirstPersonRenderer3D({
       wallLeft: loadTexture(`${basePath}/wall_left.png`),
       wallRight: loadTexture(`${basePath}/wall_right.png`),
     };
+
+    // Load variants asynchronously
+    const floorVariantsPromise = loadVariants('floor');
+    const ceilingVariantsPromise = loadVariants('ceiling');
+    const wallFrontVariantsPromise = loadVariants('wall_front');
 
     // Materials
     const floorColor = new THREE.Color(
@@ -208,6 +259,11 @@ export function FirstPersonRenderer3D({
       geometryGroup,
       materials,
       textures,
+      variants: {
+        floor: [textures.floor],
+        ceiling: [textures.ceiling],
+        wallFront: [textures.wallFront],
+      },
       controls: {
         isDragging: false,
         yaw: 0,
@@ -215,6 +271,19 @@ export function FirstPersonRenderer3D({
         keys: new Set(),
       },
     };
+
+    // Load variants asynchronously and update when ready
+    Promise.all([floorVariantsPromise, ceilingVariantsPromise, wallFrontVariantsPromise]).then(
+      ([floorVars, ceilingVars, wallFrontVars]) => {
+        if (sceneRef.current) {
+          sceneRef.current.variants.floor = floorVars;
+          sceneRef.current.variants.ceiling = ceilingVars;
+          sceneRef.current.variants.wallFront = wallFrontVars;
+          // Trigger geometry rebuild with new variants
+          setVariantsLoaded(prev => prev + 1);
+        }
+      }
+    );
 
     // Animation loop
     let time = 0;
@@ -358,12 +427,47 @@ export function FirstPersonRenderer3D({
     // Find max depth for corridor length
     const maxDepth = Math.max(...depthInfo.map(d => d.depth), 0);
 
-    // Add floor at player position (depth 0)
-    const playerFloor = new THREE.PlaneGeometry(TILE_SIZE * 2, TILE_SIZE);
-    const playerFloorMesh = new THREE.Mesh(playerFloor, materials.floor);
+    // Position hash for deterministic variant selection (matches TileManager)
+    const positionHash = (x: number, depth: number): number => {
+      const hash = Math.abs(x * 73856093 + depth * 19349663);
+      return hash;
+    };
+
+    // Get variant texture based on position
+    const getVariantTexture = (variants: THREE.Texture[], x: number, depth: number): THREE.Texture => {
+      if (variants.length <= 1) return variants[0];
+      const idx = positionHash(x, depth) % variants.length;
+      return variants[idx];
+    };
+
+    // Get current variants
+    const { variants } = sceneRef.current!;
+
+    // Add floor at player position (depth 0) - use variant
+    const playerFloorTex = getVariantTexture(variants.floor, 0, 0);
+    const playerFloorMat = new THREE.MeshStandardMaterial({
+      map: playerFloorTex,
+      color: materials.floor.color,
+      roughness: 0.8,
+    });
+    const playerFloor = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
+    const playerFloorMesh = new THREE.Mesh(playerFloor, playerFloorMat);
     playerFloorMesh.rotation.x = -Math.PI / 2;
     playerFloorMesh.position.set(0, 0, 0);
     geometryGroup.add(playerFloorMesh);
+
+    // Add ceiling at player position (depth 0) - use variant
+    const playerCeilingTex = getVariantTexture(variants.ceiling, 0, 0);
+    const playerCeilingMat = new THREE.MeshStandardMaterial({
+      map: playerCeilingTex,
+      color: materials.ceiling.color,
+      roughness: 0.9,
+    });
+    const playerCeiling = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
+    const playerCeilingMesh = new THREE.Mesh(playerCeiling, playerCeilingMat);
+    playerCeilingMesh.rotation.x = Math.PI / 2;
+    playerCeilingMesh.position.set(0, WALL_HEIGHT, 0);
+    geometryGroup.add(playerCeilingMesh);
 
     // Build continuous side walls
     // Find the depth range where we have continuous side walls
@@ -375,31 +479,85 @@ export function FirstPersonRenderer3D({
       if (info.hasRightWall) rightWallEndDepth = Math.max(rightWallEndDepth, info.depth);
     }
 
+    // Helper to create wall material for corridor walls (uses UV tiling, not texture repeat)
+    const createCorridorWallMaterial = (isLeftWall: boolean): THREE.MeshStandardMaterial => {
+      const baseTex = isLeftWall ? sceneRef.current!.textures.wallLeft : sceneRef.current!.textures.wallRight;
+      // Textures already have RepeatWrapping set from loadTexture
+      return new THREE.MeshStandardMaterial({
+        map: baseTex,
+        color: materials.wall.color,
+        roughness: 0.7,
+      });
+    };
+
     // Create left wall as a single elongated box from depth 0 to end
+    let leftWallZStart = 0, leftWallZEnd = 0;
     if (leftWallEndDepth > 0) {
       const wallLength = leftWallEndDepth * TILE_SIZE + TILE_SIZE;
+      const lengthTiles = wallLength / TILE_SIZE;
+
+      // Create geometry with proper UV tiling for the inner face
       const wallGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, wallLength);
-      const leftWall = new THREE.Mesh(wallGeom, materials.wall);
-      // Position at left edge, centered along the corridor length
-      leftWall.position.set(
-        -CORRIDOR_HALF_WIDTH,
-        WALL_HEIGHT / 2,
-        -(wallLength / 2 - TILE_SIZE / 2)
-      );
+
+      // Manually adjust UVs for proper tiling - BoxGeometry face order: +X, -X, +Y, -Y, +Z, -Z
+      // Each face has 4 vertices (2 triangles = 6 indices, but 4 unique verts)
+      // For +X face (inner face of left wall): vertices 0-3, UVs should tile along Z and Y
+      const uvs = wallGeom.attributes.uv.array as Float32Array;
+      // +X face vertices are indices 0-3 (first 4 vertices in position array for +X face)
+      // UV layout for +X: U maps to -Z, V maps to +Y
+      // We want U to repeat 'lengthTiles' times, V to repeat based on height
+      const heightTiles = WALL_HEIGHT / TILE_SIZE;
+      // Face +X (indices 0-7 in uv array = 4 vertices * 2 components)
+      uvs[0] = lengthTiles; uvs[1] = heightTiles;  // top-right
+      uvs[2] = 0;           uvs[3] = heightTiles;  // top-left
+      uvs[4] = lengthTiles; uvs[5] = 0;            // bottom-right
+      uvs[6] = 0;           uvs[7] = 0;            // bottom-left
+      wallGeom.attributes.uv.needsUpdate = true;
+
+      const leftWallMat = createCorridorWallMaterial(true);
+      const leftWall = new THREE.Mesh(wallGeom, leftWallMat);
+      const zCenter = -(wallLength / 2 - TILE_SIZE / 2);
+      leftWall.position.set(-CORRIDOR_HALF_WIDTH, WALL_HEIGHT / 2, zCenter);
       geometryGroup.add(leftWall);
+
+      leftWallZStart = zCenter + wallLength / 2;
+      leftWallZEnd = zCenter - wallLength / 2;
+
+      if (debugShowWallMarkers) {
+        console.log(`[3D] Left wall: x=${-CORRIDOR_HALF_WIDTH}, z from ${leftWallZStart.toFixed(2)} to ${leftWallZEnd.toFixed(2)}, length=${wallLength}, tiles=${lengthTiles}`);
+      }
     }
 
     // Create right wall as a single elongated box
+    let rightWallZStart = 0, rightWallZEnd = 0;
     if (rightWallEndDepth > 0) {
       const wallLength = rightWallEndDepth * TILE_SIZE + TILE_SIZE;
+      const lengthTiles = wallLength / TILE_SIZE;
+
       const wallGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, wallLength);
-      const rightWall = new THREE.Mesh(wallGeom, materials.wall);
-      rightWall.position.set(
-        CORRIDOR_HALF_WIDTH,
-        WALL_HEIGHT / 2,
-        -(wallLength / 2 - TILE_SIZE / 2)
-      );
+
+      // For -X face (inner face of right wall): vertices 4-7 (indices 8-15 in uv array)
+      const uvs = wallGeom.attributes.uv.array as Float32Array;
+      const heightTiles = WALL_HEIGHT / TILE_SIZE;
+      // Face -X (indices 8-15 in uv array)
+      uvs[8] = 0;           uvs[9] = heightTiles;   // top-left
+      uvs[10] = lengthTiles; uvs[11] = heightTiles; // top-right
+      uvs[12] = 0;           uvs[13] = 0;           // bottom-left
+      uvs[14] = lengthTiles; uvs[15] = 0;           // bottom-right
+      wallGeom.attributes.uv.needsUpdate = true;
+
+      const rightWallMat = createCorridorWallMaterial(false);
+      const rightWall = new THREE.Mesh(wallGeom, rightWallMat);
+      const zCenter = -(wallLength / 2 - TILE_SIZE / 2);
+      rightWall.position.set(CORRIDOR_HALF_WIDTH, WALL_HEIGHT / 2, zCenter);
       geometryGroup.add(rightWall);
+
+      rightWallZStart = zCenter + wallLength / 2;
+      rightWallZEnd = zCenter - wallLength / 2;
+
+      if (debugShowWallMarkers) {
+        console.log(`[3D] Right wall: x=${CORRIDOR_HALF_WIDTH}, z from ${rightWallZStart.toFixed(2)} to ${rightWallZEnd.toFixed(2)}, length=${wallLength}, tiles=${lengthTiles}`);
+      }
     }
 
     // Add front walls and floor/ceiling tiles
@@ -418,6 +576,21 @@ export function FirstPersonRenderer3D({
         const endWall = new THREE.Mesh(endWallGeom, materials.wall);
         endWall.position.set(0, WALL_HEIGHT / 2, z);
         geometryGroup.add(endWall);
+
+        if (debugShowWallMarkers) {
+          const endWallXMin = -fullWidth / 2;
+          const endWallXMax = fullWidth / 2;
+          const endWallZFront = z + TILE_SIZE / 2;
+          const endWallZBack = z - TILE_SIZE / 2;
+          console.log(`[3D] End wall at depth ${info.depth}: x from ${endWallXMin} to ${endWallXMax}, z from ${endWallZFront} to ${endWallZBack}`);
+
+          // Check connections
+          const leftSideWallInnerX = -CORRIDOR_HALF_WIDTH + TILE_SIZE / 2;
+          const rightSideWallInnerX = CORRIDOR_HALF_WIDTH - TILE_SIZE / 2;
+          console.log(`[3D] Connection check: Left side wall inner edge=${leftSideWallInnerX}, End wall left edge=${endWallXMin}`);
+          console.log(`[3D] Connection check: Right side wall inner edge=${rightSideWallInnerX}, End wall right edge=${endWallXMax}`);
+          console.log(`[3D] Connection check: Side walls end at z=${leftWallZEnd.toFixed(2)}, End wall front face at z=${endWallZFront}`);
+        }
       } else {
         // Add individual front wall tiles (walls not at the corridor end)
         for (const frontWall of info.frontWallTiles) {
@@ -426,6 +599,55 @@ export function FirstPersonRenderer3D({
           wall.position.set(frontWall.x * TILE_SIZE, WALL_HEIGHT / 2, z);
           geometryGroup.add(wall);
         }
+      }
+    }
+
+    // Add visual debug markers at wall corners if enabled
+    if (debugShowWallMarkers) {
+      const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      const markerGeom = new THREE.SphereGeometry(0.1, 8, 8);
+
+      // Create markers for important corner positions
+      const markers: { pos: [number, number, number]; label: string; color: number }[] = [];
+
+      // Left wall corners (if exists)
+      if (leftWallEndDepth > 0) {
+        const leftX = -CORRIDOR_HALF_WIDTH;
+        // Near corner (front of left wall)
+        markers.push({ pos: [leftX - TILE_SIZE/2, WALL_HEIGHT, leftWallZStart], label: 'L-near-outer', color: 0xff0000 });
+        markers.push({ pos: [leftX + TILE_SIZE/2, WALL_HEIGHT, leftWallZStart], label: 'L-near-inner', color: 0xff8800 });
+        // Far corner (back of left wall)
+        markers.push({ pos: [leftX - TILE_SIZE/2, WALL_HEIGHT, leftWallZEnd], label: 'L-far-outer', color: 0x00ff00 });
+        markers.push({ pos: [leftX + TILE_SIZE/2, WALL_HEIGHT, leftWallZEnd], label: 'L-far-inner', color: 0x88ff00 });
+      }
+
+      // Right wall corners (if exists)
+      if (rightWallEndDepth > 0) {
+        const rightX = CORRIDOR_HALF_WIDTH;
+        markers.push({ pos: [rightX - TILE_SIZE/2, WALL_HEIGHT, rightWallZStart], label: 'R-near-inner', color: 0x0088ff });
+        markers.push({ pos: [rightX + TILE_SIZE/2, WALL_HEIGHT, rightWallZStart], label: 'R-near-outer', color: 0x0000ff });
+        markers.push({ pos: [rightX - TILE_SIZE/2, WALL_HEIGHT, rightWallZEnd], label: 'R-far-inner', color: 0x00ffff });
+        markers.push({ pos: [rightX + TILE_SIZE/2, WALL_HEIGHT, rightWallZEnd], label: 'R-far-outer', color: 0x00ff88 });
+      }
+
+      // End wall corners (find the depth with center wall)
+      const endWallInfo = depthInfo.find(d => d.frontWallTiles.some(t => t.x === 0));
+      if (endWallInfo) {
+        const endZ = -(endWallInfo.depth * TILE_SIZE);
+        const fullWidth = CORRIDOR_HALF_WIDTH * 2 + TILE_SIZE;
+        markers.push({ pos: [-fullWidth/2, WALL_HEIGHT, endZ + TILE_SIZE/2], label: 'End-L-front', color: 0xff00ff });
+        markers.push({ pos: [fullWidth/2, WALL_HEIGHT, endZ + TILE_SIZE/2], label: 'End-R-front', color: 0xff00ff });
+        markers.push({ pos: [-fullWidth/2, WALL_HEIGHT, endZ - TILE_SIZE/2], label: 'End-L-back', color: 0x8800ff });
+        markers.push({ pos: [fullWidth/2, WALL_HEIGHT, endZ - TILE_SIZE/2], label: 'End-R-back', color: 0x8800ff });
+      }
+
+      // Add all markers to scene
+      for (const marker of markers) {
+        const mat = new THREE.MeshBasicMaterial({ color: marker.color });
+        const mesh = new THREE.Mesh(markerGeom, mat);
+        mesh.position.set(...marker.pos);
+        geometryGroup.add(mesh);
+        console.log(`[3D] Marker ${marker.label}: (${marker.pos[0]}, ${marker.pos[1]}, ${marker.pos[2]})`);
       }
     }
 
@@ -439,16 +661,28 @@ export function FirstPersonRenderer3D({
         continue;
       }
 
-      // Floor tile (corridor center)
+      // Floor tile (corridor center) - use position-based variant
+      const floorTex = getVariantTexture(variants.floor, 0, d);
+      const floorMat = new THREE.MeshStandardMaterial({
+        map: floorTex,
+        color: materials.floor.color,
+        roughness: 0.8,
+      });
       const floorGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
-      const floor = new THREE.Mesh(floorGeom, materials.floor);
+      const floor = new THREE.Mesh(floorGeom, floorMat);
       floor.rotation.x = -Math.PI / 2;
       floor.position.set(0, 0, z);
       geometryGroup.add(floor);
 
-      // Ceiling tile
+      // Ceiling tile - use position-based variant
+      const ceilingTex = getVariantTexture(variants.ceiling, 0, d);
+      const ceilingMat = new THREE.MeshStandardMaterial({
+        map: ceilingTex,
+        color: materials.ceiling.color,
+        roughness: 0.9,
+      });
       const ceilingGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
-      const ceiling = new THREE.Mesh(ceilingGeom, materials.ceiling);
+      const ceiling = new THREE.Mesh(ceilingGeom, ceilingMat);
       ceiling.rotation.x = Math.PI / 2;
       ceiling.position.set(0, WALL_HEIGHT, z);
       geometryGroup.add(ceiling);
@@ -488,7 +722,7 @@ export function FirstPersonRenderer3D({
       geometryGroup.add(entityMesh);
     }
 
-  }, [view]);
+  }, [view, debugShowWallMarkers, variantsLoaded]);
 
   // Update camera based on facing direction
   useEffect(() => {

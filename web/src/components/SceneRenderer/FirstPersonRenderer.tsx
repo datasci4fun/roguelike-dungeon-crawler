@@ -703,11 +703,11 @@ export function FirstPersonRenderer({
       const leftBound = -3;
       const rightBound = 3;
 
-      // Draw ceiling grid (from back to front)
-      drawCeilingGrid(tileContext, 1, maxVisibleDepth, leftBound, rightBound);
+      // Draw ceiling grid (from back to front) - start at depth 0 for player position
+      drawCeilingGrid(tileContext, 0, maxVisibleDepth, leftBound, rightBound);
 
-      // Draw floor grid (from back to front)
-      drawFloorGrid(tileContext, 1, maxVisibleDepth, leftBound, rightBound);
+      // Draw floor grid (from back to front) - start at depth 0 for player position
+      drawFloorGrid(tileContext, 0, maxVisibleDepth, leftBound, rightBound);
     }
 
     // Draw from back to front (painter's algorithm)
@@ -899,7 +899,8 @@ export function FirstPersonRenderer({
     // Draw immediate side walls based on tiles beside player (not in front)
     if (playerSideInfo?.leftWall) {
       if (settings.useTileGrid && tilesLoaded) {
-        drawWallWithTexture(tileContext, 'left', 0.3, -1, 1);
+        // Use endDepth=1 to match the non-tile version (0.3 → 1.0)
+        drawWallWithTexture(tileContext, 'left', 0.3, -1, 1, 1);
       } else {
         drawCorridorWall(ctx, 'left', 0.3, 1, width, height, timeRef.current, enableAnimations, nearWallOptions);
       }
@@ -909,7 +910,12 @@ export function FirstPersonRenderer({
       fillZBufferInterpolated(zBuffer, nearProj.x, farProj.x, 0.3, 1);
     }
     if (playerSideInfo?.rightWall) {
-      drawCorridorWall(ctx, 'right', 0.3, 1, width, height, timeRef.current, enableAnimations, nearWallOptions);
+      if (settings.useTileGrid && tilesLoaded) {
+        // Use endDepth=1 to match the non-tile version (0.3 → 1.0)
+        drawWallWithTexture(tileContext, 'right', 0.3, -1, 1, 1);
+      } else {
+        drawCorridorWall(ctx, 'right', 0.3, 1, width, height, timeRef.current, enableAnimations, nearWallOptions);
+      }
       // Fill zBuffer for immediate right wall with interpolated depth
       const nearProj = getProjection(width, height, 0.3, 1);
       const farProj = getProjection(width, height, 1, 1);

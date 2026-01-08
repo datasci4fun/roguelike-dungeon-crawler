@@ -189,6 +189,7 @@ interface CustomParams {
   // Debug settings
   debugShowOccluded: boolean;
   debugShowWireframe: boolean;
+  debugShowWallMarkers: boolean;
   // Renderer selection
   use3DRenderer: boolean;
 }
@@ -216,6 +217,7 @@ const DEFAULT_PARAMS: CustomParams = {
   // Debug defaults
   debugShowOccluded: false,
   debugShowWireframe: false,
+  debugShowWallMarkers: false,
   // Renderer defaults
   use3DRenderer: false,
 };
@@ -1277,6 +1279,17 @@ export function FirstPersonTestPage() {
             <p className="tile-grid-hint">
               Yellow edges show wall boundaries (offset ±1)
             </p>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={params.debugShowWallMarkers}
+                onChange={(e) => setParams({ ...params, debugShowWallMarkers: e.target.checked })}
+              />
+              Show Wall Markers (3D)
+            </label>
+            <p className="tile-grid-hint">
+              Colored spheres at wall corners, console logs geometry
+            </p>
           </div>
 
           {/* Renderer Selection */}
@@ -1319,6 +1332,7 @@ export function FirstPersonTestPage() {
                     torchIntensity: params.torchIntensity,
                     useTileGrid: params.useTileGrid,
                   }}
+                  debugShowWallMarkers={params.debugShowWallMarkers}
                 />
               ) : (
                 <FirstPersonRenderer

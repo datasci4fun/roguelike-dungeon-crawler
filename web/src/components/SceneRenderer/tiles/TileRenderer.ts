@@ -381,13 +381,15 @@ export function drawCeilingGrid(
 
 /**
  * Draw a wall segment with texture
+ * @param endDepth - For side walls, the far edge depth (defaults to depth + 1)
  */
 export function drawWallWithTexture(
   context: TileRenderContext,
   side: 'front' | 'left' | 'right',
   depth: number,
   leftOffset: number,
-  rightOffset: number
+  rightOffset: number,
+  endDepth?: number
 ): void {
   const { ctx, canvasWidth, canvasHeight, biome, brightness } = context;
 
@@ -413,8 +415,9 @@ export function drawWallWithTexture(
     ];
   } else {
     const xOffset = side === 'left' ? -1 : 1;
+    const farDepth = endDepth !== undefined ? endDepth : depth + 1;
     const near = getProjection(canvasWidth, canvasHeight, depth, xOffset);
-    const far = getProjection(canvasWidth, canvasHeight, depth + 1, xOffset);
+    const far = getProjection(canvasWidth, canvasHeight, farDepth, xOffset);
     corners = [
       { x: near.x, y: near.wallTop },
       { x: far.x, y: far.wallTop },
@@ -467,7 +470,8 @@ export function drawWallWithTexture(
       // For right walls, flip texture horizontally (wall goes right-to-left on screen)
       const flipHorizontal = side === 'right';
       // Pass depth values for perspective-correct texture mapping
-      drawTexturedWallQuad(ctx, tileImage, corners, depthFade * brightness, flipHorizontal, depth, depth + 1);
+      const wallFarDepth = endDepth !== undefined ? endDepth : depth + 1;
+      drawTexturedWallQuad(ctx, tileImage, corners, depthFade * brightness, flipHorizontal, depth, wallFarDepth);
     }
   } else {
     // Fallback: colored quad
