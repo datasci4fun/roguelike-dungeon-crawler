@@ -706,10 +706,10 @@ export function FirstPersonRenderer({
         }
       }
 
-      // Determine corridor walls - check for ANY wall on left/right side of center
-      // This ensures continuous corridor walls even when tile data has walls at varying offsets
-      const leftWall = wallPositions.some(w => w.offset < 0);
-      const rightWall = wallPositions.some(w => w.offset > 0);
+      // Determine corridor walls - only walls at offset ±1 block the immediate corridor sides
+      // Walls at offset -2 or beyond are visible but don't block the view at offset -1
+      const leftWall = wallPositions.some(w => w.offset === -1);
+      const rightWall = wallPositions.some(w => w.offset === 1);
 
       // Check if center tile is water (only if visible and not a wall)
       const isWater = centerVisible && !centerIsWall && isWaterTile(centerTile?.tile || '.');
@@ -856,15 +856,18 @@ export function FirstPersonRenderer({
         const rightProj = getProjection(width, height, depth, rightOffset);
         fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
       }
-      // For open rooms: draw walls at edges even if center is not blocked
-      else if (info.wallPositions.length > 0 && !info.leftWall && !info.rightWall) {
-        // Find the leftmost and rightmost wall positions
-        const leftMostWall = Math.min(...info.wallPositions.map(w => w.offset));
-        const rightMostWall = Math.max(...info.wallPositions.map(w => w.offset));
+      // Draw walls at positions beyond the corridor edges (offset < -1 or > 1)
+      // These are visible in the distance if there's no corridor wall blocking them
+      if (info.wallPositions.length > 0) {
+        // Get walls on left side (offset < 0) that aren't blocked by corridor wall
+        const leftSideWalls = info.wallPositions.filter(w => w.offset < 0);
+        // Get walls on right side (offset > 0) that aren't blocked by corridor wall
+        const rightSideWalls = info.wallPositions.filter(w => w.offset > 0);
 
-        // Draw left edge wall if there's one
-        if (leftMostWall < 0) {
-          const wallTile = info.wallPositions.find(w => w.offset === leftMostWall)?.tile || '#';
+        // Draw left side wall at leftmost position (only if no corridor wall blocking at -1)
+        if (!info.leftWall && leftSideWalls.length > 0) {
+          const leftMostWall = Math.min(...leftSideWalls.map(w => w.offset));
+          const wallTile = leftSideWalls.find(w => w.offset === leftMostWall)?.tile || '#';
           // Draw a partial front wall on the left side
           if (settings.useTileGrid && tilesLoaded) {
             drawWallWithTexture(tileContext, 'front', depth, leftMostWall - 0.5, leftMostWall + 0.5);
@@ -877,9 +880,10 @@ export function FirstPersonRenderer({
           fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
         }
 
-        // Draw right edge wall if there's one
-        if (rightMostWall > 0) {
-          const wallTile = info.wallPositions.find(w => w.offset === rightMostWall)?.tile || '#';
+        // Draw right side wall at rightmost position (only if no corridor wall blocking at +1)
+        if (!info.rightWall && rightSideWalls.length > 0) {
+          const rightMostWall = Math.max(...rightSideWalls.map(w => w.offset));
+          const wallTile = rightSideWalls.find(w => w.offset === rightMostWall)?.tile || '#';
           // Draw a partial front wall on the right side
           if (settings.useTileGrid && tilesLoaded) {
             drawWallWithTexture(tileContext, 'front', depth, rightMostWall - 0.5, rightMostWall + 0.5);
@@ -893,7 +897,9 @@ export function FirstPersonRenderer({
         }
 
         // If there's a continuous wall across the back (all positions are walls), draw full back wall
-        if (info.wallPositions.length >= 3) {
+        if (info.wallPositions.length >= 3 && !info.leftWall && !info.rightWall) {
+          const leftMostWall = Math.min(...info.wallPositions.map(w => w.offset));
+          const rightMostWall = Math.max(...info.wallPositions.map(w => w.offset));
           // Check if walls span most of the view
           const row = rows[d];
           const totalTiles = row?.length || 0;
