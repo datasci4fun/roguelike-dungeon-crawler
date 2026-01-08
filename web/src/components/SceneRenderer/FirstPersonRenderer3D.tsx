@@ -7,7 +7,7 @@
  * Accepts the same props as FirstPersonRenderer for easy swapping.
  */
 
-import { useRef, useEffect, useMemo, useCallback, useState } from 'react';
+import { useRef, useEffect, useMemo, useCallback } from 'react';
 import * as THREE from 'three';
 import type { FirstPersonView } from '../../hooks/useGameSocket';
 import { getBiome, type BiomeId } from './biomes';
@@ -98,9 +98,6 @@ export function FirstPersonRenderer3D({
 
   const biome = useMemo(() => getBiome(settings.biome), [settings.biome]);
 
-  // Track when tile variants are loaded (triggers geometry rebuild)
-  const [variantsLoaded, setVariantsLoaded] = useState(0);
-
   // Initialize Three.js scene
   useEffect(() => {
     if (!containerRef.current) return;
@@ -113,7 +110,8 @@ export function FirstPersonRenderer3D({
       biome.fogColor[2] / 255
     );
     scene.background = bgColor;
-    scene.fog = new THREE.Fog(bgColor, 1, 15 * settings.fogDensity);
+    // Fog: starts at 2 tiles, full opacity at 8 tiles (adjustable via fogDensity)
+    scene.fog = new THREE.Fog(bgColor, 2 * settings.fogDensity, 8 * settings.fogDensity);
 
     // Camera - positioned at origin looking forward (into -Z)
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 100);
@@ -132,21 +130,39 @@ export function FirstPersonRenderer3D({
     }
     containerRef.current.appendChild(renderer.domElement);
 
-    // Lighting
+    // Lighting - dim ambient for atmosphere, strong torch for player illumination
     const ambientLight = new THREE.AmbientLight(
       new THREE.Color(
         biome.lightColor[0] / 255,
         biome.lightColor[1] / 255,
         biome.lightColor[2] / 255
       ),
-      0.3 * settings.brightness
+      0.05 * settings.brightness // Very dim ambient - darkness is the default
     );
     scene.add(ambientLight);
 
-    // Point light at camera (torch)
-    const torchLight = new THREE.PointLight(0xffaa55, settings.torchIntensity, 12);
+    // Point light at camera (torch) - high intensity with quadratic falloff
+    // Three.js uses physically correct lighting: intensity / distance^2
+    // Need high intensity to illuminate nearby surfaces while falling off quickly
+    const torchLight = new THREE.PointLight(
+      0xffaa55,                    // Warm torch color
+      8 * settings.torchIntensity, // High intensity for visibility
+      8,                           // Max distance (falls off to ~0 at this distance)
+      2                            // Decay exponent (2 = physically correct inverse square)
+    );
     torchLight.position.copy(camera.position);
     scene.add(torchLight);
+
+    // Secondary fill light to prevent pure black in shadows
+    const fillLight = new THREE.PointLight(
+      0x4466aa,                    // Cool blue fill
+      1.5 * settings.torchIntensity,
+      6,
+      2
+    );
+    fillLight.position.copy(camera.position);
+    fillLight.position.y += 0.5;  // Slightly above camera
+    scene.add(fillLight);
 
     // Load textures
     const textureLoader = new THREE.TextureLoader();
@@ -272,18 +288,8 @@ export function FirstPersonRenderer3D({
       },
     };
 
-    // Load variants asynchronously and update when ready
-    Promise.all([floorVariantsPromise, ceilingVariantsPromise, wallFrontVariantsPromise]).then(
-      ([floorVars, ceilingVars, wallFrontVars]) => {
-        if (sceneRef.current) {
-          sceneRef.current.variants.floor = floorVars;
-          sceneRef.current.variants.ceiling = ceilingVars;
-          sceneRef.current.variants.wallFront = wallFrontVars;
-          // Trigger geometry rebuild with new variants
-          setVariantsLoaded(prev => prev + 1);
-        }
-      }
-    );
+    // Note: Variants are loaded but not currently used in 3D mode
+    // to avoid tile flickering when the view changes (relative depth shifts)
 
     // Animation loop
     let time = 0;
@@ -328,10 +334,14 @@ export function FirstPersonRenderer3D({
 
       // Update torch light position
       torchLight.position.copy(camera.position);
+      fillLight.position.copy(camera.position);
+      fillLight.position.y += 0.5;
 
       // Subtle torch flicker
       if (enableAnimations) {
-        torchLight.intensity = settings.torchIntensity * (0.9 + Math.sin(time * 5) * 0.1);
+        const flicker = 0.85 + Math.sin(time * 5) * 0.1 + Math.sin(time * 13) * 0.05;
+        torchLight.intensity = 8 * settings.torchIntensity * flicker;
+        fillLight.intensity = 1.5 * settings.torchIntensity * flicker;
       }
 
       renderer.render(scene, camera);
@@ -427,47 +437,7 @@ export function FirstPersonRenderer3D({
     // Find max depth for corridor length
     const maxDepth = Math.max(...depthInfo.map(d => d.depth), 0);
 
-    // Position hash for deterministic variant selection (matches TileManager)
-    const positionHash = (x: number, depth: number): number => {
-      const hash = Math.abs(x * 73856093 + depth * 19349663);
-      return hash;
-    };
-
-    // Get variant texture based on position
-    const getVariantTexture = (variants: THREE.Texture[], x: number, depth: number): THREE.Texture => {
-      if (variants.length <= 1) return variants[0];
-      const idx = positionHash(x, depth) % variants.length;
-      return variants[idx];
-    };
-
-    // Get current variants
-    const { variants } = sceneRef.current!;
-
-    // Add floor at player position (depth 0) - use variant
-    const playerFloorTex = getVariantTexture(variants.floor, 0, 0);
-    const playerFloorMat = new THREE.MeshStandardMaterial({
-      map: playerFloorTex,
-      color: materials.floor.color,
-      roughness: 0.8,
-    });
-    const playerFloor = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
-    const playerFloorMesh = new THREE.Mesh(playerFloor, playerFloorMat);
-    playerFloorMesh.rotation.x = -Math.PI / 2;
-    playerFloorMesh.position.set(0, 0, 0);
-    geometryGroup.add(playerFloorMesh);
-
-    // Add ceiling at player position (depth 0) - use variant
-    const playerCeilingTex = getVariantTexture(variants.ceiling, 0, 0);
-    const playerCeilingMat = new THREE.MeshStandardMaterial({
-      map: playerCeilingTex,
-      color: materials.ceiling.color,
-      roughness: 0.9,
-    });
-    const playerCeiling = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
-    const playerCeilingMesh = new THREE.Mesh(playerCeiling, playerCeilingMat);
-    playerCeilingMesh.rotation.x = Math.PI / 2;
-    playerCeilingMesh.position.set(0, WALL_HEIGHT, 0);
-    geometryGroup.add(playerCeilingMesh);
+    // Player position floor/ceiling is now handled by the main tile loop below
 
     // Build continuous side walls
     // Find the depth range where we have continuous side walls
@@ -651,41 +621,37 @@ export function FirstPersonRenderer3D({
       }
     }
 
-    // Add floor and ceiling for each depth in the corridor
-    for (let d = 1; d <= maxDepth; d++) {
-      const z = -(d * TILE_SIZE);
-      const info = depthInfo.find(i => i.depth === d);
+    // Add floor and ceiling tiles based on actual view data
+    // This handles both corridors and open rooms correctly
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      const row = rows[rowIndex];
+      if (!row || row.length === 0) continue;
 
-      // Skip if this is a full front wall (no floor needed)
-      if (info?.frontWallTiles.some(t => t.x === 0)) {
-        continue;
+      const depth = row[0]?.y ?? rowIndex;
+      const z = -(depth * TILE_SIZE);
+
+      for (const tile of row) {
+        const tileChar = tile.tile_actual || tile.tile;
+        const tileX = tile.offset ?? tile.x ?? 0;
+        const x = tileX * TILE_SIZE;
+
+        // Only create floor/ceiling for walkable tiles (floor, doors, stairs, water)
+        if (isFloorTile(tileChar) || isDoorTile(tileChar) || tileChar === '=' || tileChar === '>' || tileChar === '<') {
+          // Floor tile
+          const floorGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
+          const floor = new THREE.Mesh(floorGeom, materials.floor);
+          floor.rotation.x = -Math.PI / 2;
+          floor.position.set(x, 0, z);
+          geometryGroup.add(floor);
+
+          // Ceiling tile
+          const ceilingGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
+          const ceiling = new THREE.Mesh(ceilingGeom, materials.ceiling);
+          ceiling.rotation.x = Math.PI / 2;
+          ceiling.position.set(x, WALL_HEIGHT, z);
+          geometryGroup.add(ceiling);
+        }
       }
-
-      // Floor tile (corridor center) - use position-based variant
-      const floorTex = getVariantTexture(variants.floor, 0, d);
-      const floorMat = new THREE.MeshStandardMaterial({
-        map: floorTex,
-        color: materials.floor.color,
-        roughness: 0.8,
-      });
-      const floorGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
-      const floor = new THREE.Mesh(floorGeom, floorMat);
-      floor.rotation.x = -Math.PI / 2;
-      floor.position.set(0, 0, z);
-      geometryGroup.add(floor);
-
-      // Ceiling tile - use position-based variant
-      const ceilingTex = getVariantTexture(variants.ceiling, 0, d);
-      const ceilingMat = new THREE.MeshStandardMaterial({
-        map: ceilingTex,
-        color: materials.ceiling.color,
-        roughness: 0.9,
-      });
-      const ceilingGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
-      const ceiling = new THREE.Mesh(ceilingGeom, ceilingMat);
-      ceiling.rotation.x = Math.PI / 2;
-      ceiling.position.set(0, WALL_HEIGHT, z);
-      geometryGroup.add(ceiling);
     }
 
     // Add entities as simple billboards/sprites
@@ -722,7 +688,7 @@ export function FirstPersonRenderer3D({
       geometryGroup.add(entityMesh);
     }
 
-  }, [view, debugShowWallMarkers, variantsLoaded]);
+  }, [view, debugShowWallMarkers]);
 
   // Update camera based on facing direction
   useEffect(() => {
