@@ -785,19 +785,23 @@ export function FirstPersonRenderer({
     }
 
     // Pre-calculate visible corridor widths from player forward
-    // Once a corridor wall appears at a depth, it restricts visibility for all subsequent depths
+    // Corridor walls restrict visibility for SUBSEQUENT depths, not the current depth
+    // This ensures walls at the edge of visibility are still drawn
     const visibleWidths: { left: number; right: number }[] = [];
     let cumulativeLeft = playerSideInfo?.leftWall ? -1 : -2;
     let cumulativeRight = playerSideInfo?.rightWall ? 1 : 2;
 
     for (let d = 0; d < maxDepth; d++) {
+      // Store visibility BEFORE applying current depth's corridor walls
+      // This allows walls at the edge of visibility to be drawn at this depth
+      visibleWidths[d] = { left: cumulativeLeft, right: cumulativeRight };
+
       const info = corridorInfo[d];
       if (info) {
-        // Corridor walls at this depth restrict visibility for this and subsequent depths
+        // Corridor walls at this depth restrict visibility for SUBSEQUENT depths only
         if (info.leftWall) cumulativeLeft = Math.max(cumulativeLeft, -1);
         if (info.rightWall) cumulativeRight = Math.min(cumulativeRight, 1);
       }
-      visibleWidths[d] = { left: cumulativeLeft, right: cumulativeRight };
     }
 
     // Draw from back to front (painter's algorithm)
