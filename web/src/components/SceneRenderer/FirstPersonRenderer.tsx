@@ -237,6 +237,30 @@ export function FirstPersonRenderer({
   const animationRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
 
+  // Animation state for smooth movement
+  const animationState = useRef({
+    // Movement animation (depth offset)
+    moveProgress: 1,      // 0 = start, 1 = complete
+    moveDepthOffset: 0,   // Starting depth offset (animates to 0)
+    // Turn animation (horizontal offset)
+    turnProgress: 1,      // 0 = start, 1 = complete
+    turnXOffset: 0,       // Starting X offset (animates to 0)
+    // Head bob
+    bobPhase: 0,
+    // Previous view state for change detection
+    prevRowsJson: '',
+    prevFacingDx: 0,
+    prevFacingDy: -1,
+    // Timing
+    lastTime: 0,
+  });
+
+  // Animation constants
+  const MOVE_DURATION = 0.15; // seconds
+  const TURN_DURATION = 0.12; // seconds
+  const HEAD_BOB_AMPLITUDE = 3; // pixels
+  const HEAD_BOB_FREQUENCY = 12; // Hz
+
   // Merge user settings with defaults
   const settings: RenderSettings = { ...DEFAULT_SETTINGS, ...userSettings };
   const biome = getBiome(settings.biome);
@@ -488,12 +512,62 @@ export function FirstPersonRenderer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    timeRef.current = time / 1000; // Convert to seconds
+    const currentTime = time / 1000; // Convert to seconds
+    const deltaTime = animationState.current.lastTime > 0
+      ? currentTime - animationState.current.lastTime
+      : 0.016;
+    animationState.current.lastTime = currentTime;
+    timeRef.current = currentTime;
+
+    // Update animation progress
+    const anim = animationState.current;
+    if (anim.moveProgress < 1) {
+      anim.moveProgress += deltaTime / MOVE_DURATION;
+      if (anim.moveProgress > 1) anim.moveProgress = 1;
+    }
+    if (anim.turnProgress < 1) {
+      anim.turnProgress += deltaTime / TURN_DURATION;
+      if (anim.turnProgress > 1) anim.turnProgress = 1;
+    }
+
+    // Update head bob phase during movement
+    if (anim.moveProgress < 1 && enableAnimations) {
+      anim.bobPhase += deltaTime * HEAD_BOB_FREQUENCY * Math.PI * 2;
+    }
+
+    // Ease function (ease out cubic)
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    // Calculate animated offsets
+    const moveEase = easeOut(anim.moveProgress);
+    const depthOffset = anim.moveDepthOffset * (1 - moveEase);
+
+    const turnEase = easeOut(anim.turnProgress);
+    const xOffset = anim.turnXOffset * (1 - turnEase);
+
+    // Head bob (vertical offset)
+    const headBob = anim.moveProgress < 1 && enableAnimations
+      ? Math.sin(anim.bobPhase) * HEAD_BOB_AMPLITUDE
+      : 0;
 
     // Clear canvas with biome fog color
     const fogColor = adjustBrightness(biome.fogColor, settings.brightness);
     ctx.fillStyle = rgbToString(fogColor);
     ctx.fillRect(0, 0, width, height);
+
+    // Apply animation transforms (turn offset + head bob + movement zoom)
+    ctx.save();
+    ctx.translate(xOffset, headBob);
+
+    // Movement zoom effect: when moving forward, start zoomed out and zoom in
+    if (depthOffset > 0.001) {
+      const scale = 1 / (1 + depthOffset * 0.15);
+      const centerX = width / 2;
+      const centerY = height / 2;
+      ctx.translate(centerX, centerY);
+      ctx.scale(scale, scale);
+      ctx.translate(-centerX, -centerY);
+    }
 
     // Draw floor and ceiling with perspective and biome colors
     drawFloorAndCeilingBiome(ctx, width, height, timeRef.current, enableAnimations, biome, settings.brightness);
@@ -1023,6 +1097,9 @@ export function FirstPersonRenderer({
       drawDebugWireframe(ctx, width, height, maxDepth, corridorInfo);
     }
 
+    // Restore canvas state (undo animation transforms)
+    ctx.restore();
+
     // Continue animation loop
     if (enableAnimations) {
       animationRef.current = requestAnimationFrame(render);
@@ -1043,6 +1120,42 @@ export function FirstPersonRenderer({
       }
     };
   }, [enableAnimations, render]);
+
+  // Detect view changes and trigger animations
+  useEffect(() => {
+    if (!view || !view.rows) return;
+
+    const anim = animationState.current;
+    const currentRowsJson = JSON.stringify(view.rows.map(row => row?.map(t => `${t.x},${t.y}`)));
+    const { dx, dy } = view.facing;
+
+    // Check for turn (facing changed)
+    if (dx !== anim.prevFacingDx || dy !== anim.prevFacingDy) {
+      // Calculate turn direction using cross product
+      const cross = anim.prevFacingDx * dy - anim.prevFacingDy * dx;
+
+      if (cross !== 0 && enableAnimations) {
+        // Start turn animation
+        // cross > 0 = turning right, cross < 0 = turning left
+        anim.turnProgress = 0;
+        anim.turnXOffset = cross > 0 ? width * 0.3 : -width * 0.3;
+      }
+
+      anim.prevFacingDx = dx;
+      anim.prevFacingDy = dy;
+    }
+    // Check for movement (rows changed but facing same)
+    else if (currentRowsJson !== anim.prevRowsJson && anim.prevRowsJson !== '') {
+      if (enableAnimations) {
+        // Start movement animation
+        anim.moveProgress = 0;
+        anim.moveDepthOffset = 1; // One tile depth offset
+        anim.bobPhase = 0;
+      }
+    }
+
+    anim.prevRowsJson = currentRowsJson;
+  }, [view, width, enableAnimations]);
 
   // Re-render when view changes (without animations)
   useEffect(() => {
