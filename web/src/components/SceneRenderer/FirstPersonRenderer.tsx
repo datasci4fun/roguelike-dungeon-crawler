@@ -632,10 +632,10 @@ export function FirstPersonRenderer({
         }
       }
 
-      // Determine corridor walls at canonical offsets ±1
-      // leftWall/rightWall mean "wall at offset -1/+1" for corridor rendering
-      const leftWall = wallPositions.some(w => w.offset === -1);
-      const rightWall = wallPositions.some(w => w.offset === 1);
+      // Determine corridor walls - check for ANY wall on left/right side of center
+      // This ensures continuous corridor walls even when tile data has walls at varying offsets
+      const leftWall = wallPositions.some(w => w.offset < 0);
+      const rightWall = wallPositions.some(w => w.offset > 0);
 
       // Check if center tile is water (only if visible and not a wall)
       const isWater = centerVisible && !centerIsWall && isWaterTile(centerTile?.tile || '.');
