@@ -187,6 +187,96 @@ BOSS_ABILITIES = {
         range=5,
         description='Lightning that can jump to nearby targets',
     ),
+
+    # v5.0 New boss abilities for expanded dungeon
+
+    # Frost Giant abilities
+    'ice_blast': BossAbility(
+        name='Ice Blast',
+        ability_type=AbilityType.AOE_ATTACK,
+        cooldown=4,
+        damage=10,
+        range=3,
+        description='Blasts freezing ice in all directions',
+    ),
+    'freeze_ground': BossAbility(
+        name='Freeze Ground',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=6,
+        damage=0,
+        range=2,
+        description='Freezes the ground, slowing enemies',
+    ),
+
+    # Spider Queen abilities
+    'web_trap': BossAbility(
+        name='Web Trap',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=4,
+        damage=0,
+        range=4,
+        description='Shoots sticky web to immobilize target',
+    ),
+    'poison_bite': BossAbility(
+        name='Poison Bite',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=3,
+        damage=8,
+        range=1,
+        description='Venomous bite that poisons the target',
+    ),
+    'summon_spiders': BossAbility(
+        name='Summon Spiders',
+        ability_type=AbilityType.SUMMON,
+        cooldown=5,
+        damage=0,
+        range=0,
+        description='Summons spider minions to attack',
+    ),
+
+    # Flame Lord abilities
+    'lava_pool': BossAbility(
+        name='Lava Pool',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=5,
+        damage=6,
+        range=3,
+        description='Creates a pool of lava that burns',
+    ),
+    'inferno': BossAbility(
+        name='Inferno',
+        ability_type=AbilityType.AOE_ATTACK,
+        cooldown=6,
+        damage=15,
+        range=2,
+        description='Erupts in flames, damaging all nearby',
+    ),
+
+    # Rat King abilities
+    'summon_swarm': BossAbility(
+        name='Summon Swarm',
+        ability_type=AbilityType.SUMMON,
+        cooldown=4,
+        damage=0,
+        range=0,
+        description='Summons a swarm of rats',
+    ),
+    'plague_bite': BossAbility(
+        name='Plague Bite',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=3,
+        damage=8,
+        range=1,
+        description='Diseased bite that weakens the target',
+    ),
+    'burrow': BossAbility(
+        name='Burrow',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=5,
+        damage=0,
+        range=0,
+        description='Burrows underground to reposition',
+    ),
 }
 
 
@@ -228,6 +318,17 @@ def execute_ability(
         'fire_bolt': _execute_fire_bolt,
         'ice_shard': _execute_ice_shard,
         'chain_lightning': _execute_chain_lightning,
+        # v5.0 new boss abilities
+        'ice_blast': _execute_ice_blast,
+        'freeze_ground': _execute_freeze_ground,
+        'web_trap': _execute_web_trap,
+        'poison_bite': _execute_poison_bite,
+        'summon_spiders': _execute_summon_spiders,
+        'lava_pool': _execute_lava_pool,
+        'inferno': _execute_inferno,
+        'summon_swarm': _execute_summon_swarm,
+        'plague_bite': _execute_plague_bite,
+        'burrow': _execute_burrow,
     }
 
     handler = handlers.get(ability_name)
@@ -588,4 +689,233 @@ def _execute_chain_lightning(
             msg += f" {stun_msg}"
 
         return True, msg, damage
+    return False, "", 0
+
+
+# =============================================================================
+# v5.0 New Boss Ability Handlers
+# =============================================================================
+
+def _execute_ice_blast(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """AOE ice attack that damages and freezes."""
+    from ..core.constants import StatusEffectType
+
+    distance = max(abs(player.x - caster.x), abs(player.y - caster.y))
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        freeze_msg = player.apply_status_effect(StatusEffectType.FREEZE, caster.name)
+        return True, f"The {caster.name} unleashes an ice blast for {damage} damage! {freeze_msg}", damage
+    return False, "", 0
+
+
+def _execute_freeze_ground(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Creates frozen ground that slows the player."""
+    from ..core.constants import StatusEffectType
+
+    distance = max(abs(player.x - caster.x), abs(player.y - caster.y))
+    if distance <= ability.range + 1:
+        slow_msg = player.apply_status_effect(StatusEffectType.SLOW, caster.name)
+        return True, f"The {caster.name} freezes the ground! {slow_msg}", 0
+    return False, "", 0
+
+
+def _execute_web_trap(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Immobilizes the player with sticky webs."""
+    from ..core.constants import StatusEffectType
+
+    distance = abs(player.x - caster.x) + abs(player.y - caster.y)
+    if distance <= ability.range:
+        stun_msg = player.apply_status_effect(StatusEffectType.STUN, caster.name)
+        return True, f"The {caster.name} shoots sticky webbing! {stun_msg}", 0
+    return False, "", 0
+
+
+def _execute_poison_bite(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Melee attack that poisons the target."""
+    from ..core.constants import StatusEffectType
+
+    distance = max(abs(player.x - caster.x), abs(player.y - caster.y))
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        poison_msg = player.apply_status_effect(StatusEffectType.POISON, caster.name)
+        return True, f"The {caster.name} bites with venomous fangs for {damage} damage! {poison_msg}", damage
+    return False, "", 0
+
+
+def _execute_summon_spiders(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Summons spider minions."""
+    from .entities import Enemy
+    from ..core.constants import EnemyType
+
+    num_spiders = random.randint(2, 3)
+    spawned = 0
+
+    for _ in range(num_spiders):
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                if dx == 0 and dy == 0:
+                    continue
+                nx, ny = caster.x + dx, caster.y + dy
+                if (dungeon.is_walkable(nx, ny) and
+                    not entity_manager.get_enemy_at(nx, ny) and
+                    (nx != player.x or ny != player.y)):
+                    # Use goblin as stand-in for spider minion
+                    spider = Enemy(nx, ny, enemy_type=EnemyType.GOBLIN, is_elite=False)
+                    spider.name = "Spider"
+                    spider.symbol = 's'
+                    entity_manager.enemies.append(spider)
+                    spawned += 1
+                    break
+            if spawned >= num_spiders:
+                break
+
+    if spawned > 0:
+        return True, f"The {caster.name} summons {spawned} spiders!", 0
+    return False, "", 0
+
+
+def _execute_lava_pool(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Creates a damaging lava pool (deals damage if player is close)."""
+    from ..core.constants import StatusEffectType
+
+    distance = max(abs(player.x - caster.x), abs(player.y - caster.y))
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        burn_msg = player.apply_status_effect(StatusEffectType.BURN, caster.name)
+        return True, f"The {caster.name} creates a pool of molten lava! {damage} damage! {burn_msg}", damage
+    return True, f"The {caster.name} creates a pool of molten lava!", 0
+
+
+def _execute_inferno(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Massive AOE fire attack."""
+    from ..core.constants import StatusEffectType
+
+    distance = max(abs(player.x - caster.x), abs(player.y - caster.y))
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        burn_msg = player.apply_status_effect(StatusEffectType.BURN, caster.name)
+        return True, f"The {caster.name} erupts in an inferno for {damage} damage! {burn_msg}", damage
+    return False, "", 0
+
+
+def _execute_summon_swarm(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Summons a swarm of rat minions."""
+    from .entities import Enemy
+    from ..core.constants import EnemyType
+
+    num_rats = random.randint(3, 5)
+    spawned = 0
+
+    for _ in range(num_rats):
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                if dx == 0 and dy == 0:
+                    continue
+                nx, ny = caster.x + dx, caster.y + dy
+                if (dungeon.is_walkable(nx, ny) and
+                    not entity_manager.get_enemy_at(nx, ny) and
+                    (nx != player.x or ny != player.y)):
+                    # Use goblin as stand-in for rat minion
+                    rat = Enemy(nx, ny, enemy_type=EnemyType.GOBLIN, is_elite=False)
+                    rat.name = "Rat"
+                    rat.symbol = 'r'
+                    rat.hp = rat.hp // 2  # Weaker than goblins
+                    entity_manager.enemies.append(rat)
+                    spawned += 1
+                    break
+            if spawned >= num_rats:
+                break
+
+    if spawned > 0:
+        return True, f"The {caster.name} summons a swarm of {spawned} rats!", 0
+    return False, "", 0
+
+
+def _execute_plague_bite(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Diseased bite that poisons and weakens."""
+    from ..core.constants import StatusEffectType
+
+    distance = max(abs(player.x - caster.x), abs(player.y - caster.y))
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        poison_msg = player.apply_status_effect(StatusEffectType.POISON, caster.name)
+        weak_msg = player.apply_status_effect(StatusEffectType.WEAK, caster.name)
+        return True, f"The {caster.name} delivers a plague-ridden bite for {damage} damage! {poison_msg} {weak_msg}", damage
+    return False, "", 0
+
+
+def _execute_burrow(
+    ability: BossAbility,
+    caster: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Burrows underground and repositions."""
+    # Find a new position near the player
+    for _ in range(10):
+        dx = random.randint(-3, 3)
+        dy = random.randint(-3, 3)
+        nx, ny = player.x + dx, player.y + dy
+        if (dungeon.is_walkable(nx, ny) and
+            not entity_manager.get_enemy_at(nx, ny) and
+            (nx != player.x or ny != player.y)):
+            caster.x = nx
+            caster.y = ny
+            return True, f"The {caster.name} burrows underground and emerges nearby!", 0
+
     return False, "", 0

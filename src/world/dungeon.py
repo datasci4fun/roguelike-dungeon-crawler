@@ -923,11 +923,21 @@ class Dungeon:
 
     def _get_torch_type_for_theme(self) -> str:
         """Get the appropriate torch type for the current theme."""
-        if self.theme == DungeonTheme.CAVE:
-            return "sconce"  # Simple wall-mounted
-        elif self.theme == DungeonTheme.TREASURY:
-            return "brazier"  # Ornate
+        if self.theme == DungeonTheme.STONE:
+            return "wall"  # Standard dungeon torches
+        elif self.theme == DungeonTheme.ICE:
+            return "crystal"  # Cold blue crystal lights
+        elif self.theme == DungeonTheme.FOREST:
+            return "sconce"  # Natural bioluminescence
+        elif self.theme == DungeonTheme.VOLCANIC:
+            return "brazier"  # Fire braziers
+        elif self.theme == DungeonTheme.CRYPT:
+            return "wall"  # Eerie torches
+        elif self.theme == DungeonTheme.SEWER:
+            return "sconce"  # Dim wall-mounted lights
         elif self.theme == DungeonTheme.LIBRARY:
             return "sconce"  # Clean, functional
+        elif self.theme == DungeonTheme.CRYSTAL:
+            return "crystal"  # Bright crystal formations
         else:
-            return "wall"  # Standard torch
+            return "wall"  # Default
