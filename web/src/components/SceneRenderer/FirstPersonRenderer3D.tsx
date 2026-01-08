@@ -219,10 +219,10 @@ export function FirstPersonRenderer3D({
       wallRight: loadTexture(`${basePath}/wall_right.png`),
     };
 
-    // Load variants asynchronously
-    const floorVariantsPromise = loadVariants('floor');
-    const ceilingVariantsPromise = loadVariants('ceiling');
-    const wallFrontVariantsPromise = loadVariants('wall_front');
+    // Trigger async variant loading for caching (results not awaited here)
+    void loadVariants('floor');
+    void loadVariants('ceiling');
+    void loadVariants('wall_front');
 
     // Materials
     const floorColor = new THREE.Color(
@@ -434,9 +434,6 @@ export function FirstPersonRenderer3D({
       });
     }
 
-    // Find max depth for corridor length
-    const maxDepth = Math.max(...depthInfo.map(d => d.depth), 0);
-
     // Player position floor/ceiling is now handled by the main tile loop below
 
     // Build continuous side walls
@@ -574,7 +571,6 @@ export function FirstPersonRenderer3D({
 
     // Add visual debug markers at wall corners if enabled
     if (debugShowWallMarkers) {
-      const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
       const markerGeom = new THREE.SphereGeometry(0.1, 8, 8);
 
       // Create markers for important corner positions
