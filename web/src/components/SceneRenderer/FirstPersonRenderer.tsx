@@ -784,6 +784,22 @@ export function FirstPersonRenderer({
       drawFloorGrid(tileContext, 0, maxVisibleDepth, leftBound, rightBound);
     }
 
+    // Pre-calculate visible corridor widths from player forward
+    // Once a corridor wall appears at a depth, it restricts visibility for all subsequent depths
+    const visibleWidths: { left: number; right: number }[] = [];
+    let cumulativeLeft = playerSideInfo?.leftWall ? -1 : -2;
+    let cumulativeRight = playerSideInfo?.rightWall ? 1 : 2;
+
+    for (let d = 0; d < maxDepth; d++) {
+      const info = corridorInfo[d];
+      if (info) {
+        // Corridor walls at this depth restrict visibility for this and subsequent depths
+        if (info.leftWall) cumulativeLeft = Math.max(cumulativeLeft, -1);
+        if (info.rightWall) cumulativeRight = Math.min(cumulativeRight, 1);
+      }
+      visibleWidths[d] = { left: cumulativeLeft, right: cumulativeRight };
+    }
+
     // Draw from back to front (painter's algorithm)
     // Start from row 1 (depth 1) since row 0 is beside player, not in front
     for (let d = maxDepth - 1; d >= 1; d--) {
@@ -791,10 +807,13 @@ export function FirstPersonRenderer({
       const nextDepth = d + 1;
       const info = corridorInfo[d];
 
-      // Determine floor/ceiling width based on whether there are walls
-      // In open rooms (no walls), extend floor/ceiling to fill more of the view
-      const leftOffset = info.leftWall ? -1 : -2;
-      const rightOffset = info.rightWall ? 1 : 2;
+      // Get the visible width at this depth (cumulative from player forward)
+      const visibleLeft = visibleWidths[d]?.left ?? -2;
+      const visibleRight = visibleWidths[d]?.right ?? 2;
+
+      // Use visible width for floor/ceiling so they match the view constraints
+      const leftOffset = visibleLeft;
+      const rightOffset = visibleRight;
 
       // Biome options for floor/ceiling/wall rendering
       const renderOptions = { biome, brightness: settings.brightness };
@@ -845,27 +864,28 @@ export function FirstPersonRenderer({
       }
 
       // Draw front wall if this depth is blocked (center blocked)
+      // Use VISIBLE width (cumulative from player) so the wall fills the entire view
       if (info.frontWall) {
         if (settings.useTileGrid && tilesLoaded) {
-          drawWallWithTexture(tileContext, 'front', depth, leftOffset, rightOffset);
+          drawWallWithTexture(tileContext, 'front', depth, visibleLeft, visibleRight);
         } else {
-          drawFrontWall(ctx, depth, leftOffset, rightOffset, width, height, info.frontWall, timeRef.current, enableAnimations, wallOptions);
+          drawFrontWall(ctx, depth, visibleLeft, visibleRight, width, height, info.frontWall, timeRef.current, enableAnimations, wallOptions);
         }
         // Fill zBuffer for front wall
-        const leftProj = getProjection(width, height, depth, leftOffset);
-        const rightProj = getProjection(width, height, depth, rightOffset);
+        const leftProj = getProjection(width, height, depth, visibleLeft);
+        const rightProj = getProjection(width, height, depth, visibleRight);
         fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
       }
       // Draw walls at positions beyond the corridor edges (offset < -1 or > 1)
-      // These are visible in the distance if there's no corridor wall blocking them
+      // These are visible only if the cumulative visibility extends that far
       if (info.wallPositions.length > 0) {
-        // Get walls on left side (offset < 0) that aren't blocked by corridor wall
-        const leftSideWalls = info.wallPositions.filter(w => w.offset < 0);
-        // Get walls on right side (offset > 0) that aren't blocked by corridor wall
-        const rightSideWalls = info.wallPositions.filter(w => w.offset > 0);
+        // Get walls on left side that are within visible range and beyond the corridor edge
+        const leftSideWalls = info.wallPositions.filter(w => w.offset < -1 && w.offset >= visibleLeft);
+        // Get walls on right side that are within visible range and beyond the corridor edge
+        const rightSideWalls = info.wallPositions.filter(w => w.offset > 1 && w.offset <= visibleRight);
 
-        // Draw left side wall at leftmost position (only if no corridor wall blocking at -1)
-        if (!info.leftWall && leftSideWalls.length > 0) {
+        // Draw left side wall at leftmost position (only if visible width extends past -1)
+        if (visibleLeft < -1 && leftSideWalls.length > 0) {
           const leftMostWall = Math.min(...leftSideWalls.map(w => w.offset));
           const wallTile = leftSideWalls.find(w => w.offset === leftMostWall)?.tile || '#';
           // Draw a partial front wall on the left side
@@ -880,8 +900,8 @@ export function FirstPersonRenderer({
           fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
         }
 
-        // Draw right side wall at rightmost position (only if no corridor wall blocking at +1)
-        if (!info.rightWall && rightSideWalls.length > 0) {
+        // Draw right side wall at rightmost position (only if visible width extends past +1)
+        if (visibleRight > 1 && rightSideWalls.length > 0) {
           const rightMostWall = Math.max(...rightSideWalls.map(w => w.offset));
           const wallTile = rightSideWalls.find(w => w.offset === rightMostWall)?.tile || '#';
           // Draw a partial front wall on the right side
@@ -897,7 +917,7 @@ export function FirstPersonRenderer({
         }
 
         // If there's a continuous wall across the back (all positions are walls), draw full back wall
-        if (info.wallPositions.length >= 3 && !info.leftWall && !info.rightWall) {
+        if (info.wallPositions.length >= 3 && visibleLeft < -1 && visibleRight > 1) {
           const leftMostWall = Math.min(...info.wallPositions.map(w => w.offset));
           const rightMostWall = Math.max(...info.wallPositions.map(w => w.offset));
           // Check if walls span most of the view
