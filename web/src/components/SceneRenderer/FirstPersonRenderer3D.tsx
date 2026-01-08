@@ -302,71 +302,163 @@ export function FirstPersonRenderer3D({
     const rows = view.rows;
     if (!rows || rows.length === 0) return;
 
+    // Analyze corridor structure - find consistent wall positions
+    // In a corridor, we want continuous side walls regardless of tile x positions
+    const CORRIDOR_HALF_WIDTH = TILE_SIZE; // Corridor walls at ±TILE_SIZE
+
+    // Track which depths have walls and front walls
+    const depthInfo: {
+      depth: number;
+      hasLeftWall: boolean;
+      hasRightWall: boolean;
+      hasFrontWall: boolean;
+      frontWallTiles: Array<{ x: number; tile: string }>;
+    }[] = [];
+
+    for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+      const row = rows[rowIndex];
+      if (!row || row.length === 0) continue;
+
+      const depth = row[0]?.y ?? rowIndex;
+
+      // Find leftmost and rightmost walls, and any center walls
+      let hasLeftWall = false;
+      let hasRightWall = false;
+      const frontWallTiles: Array<{ x: number; tile: string }> = [];
+
+      for (const tile of row) {
+        const tileChar = tile.tile_actual || tile.tile;
+        const tileX = tile.offset ?? tile.x ?? 0;
+
+        if (isWallTile(tileChar)) {
+          // Leftmost tile in row is left wall
+          if (tileX === Math.min(...row.map(t => t.offset ?? t.x ?? 0))) {
+            hasLeftWall = true;
+          }
+          // Rightmost tile in row is right wall
+          else if (tileX === Math.max(...row.map(t => t.offset ?? t.x ?? 0))) {
+            hasRightWall = true;
+          }
+          // Center walls are front walls
+          else {
+            frontWallTiles.push({ x: tileX, tile: tileChar });
+          }
+        }
+      }
+
+      depthInfo.push({
+        depth,
+        hasLeftWall,
+        hasRightWall,
+        hasFrontWall: frontWallTiles.length > 0,
+        frontWallTiles,
+      });
+    }
+
+    // Find max depth for corridor length
+    const maxDepth = Math.max(...depthInfo.map(d => d.depth), 0);
+
     // Add floor at player position (depth 0)
-    const playerFloor = new THREE.PlaneGeometry(TILE_SIZE * 3, TILE_SIZE);
+    const playerFloor = new THREE.PlaneGeometry(TILE_SIZE * 2, TILE_SIZE);
     const playerFloorMesh = new THREE.Mesh(playerFloor, materials.floor);
     playerFloorMesh.rotation.x = -Math.PI / 2;
     playerFloorMesh.position.set(0, 0, 0);
     geometryGroup.add(playerFloorMesh);
 
-    // Build geometry from view data
-    // Each row is at a different depth (z coordinate)
-    // Each tile in a row has an offset (x coordinate)
-    for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-      const row = rows[rowIndex];
-      if (!row) continue;
+    // Build continuous side walls
+    // Find the depth range where we have continuous side walls
+    let leftWallEndDepth = 0;
+    let rightWallEndDepth = 0;
 
-      // Use tile.y for depth if available, otherwise use row index
-      // Depth starts at 1 (just in front of player)
-      const depth = row[0]?.y ?? (rowIndex + 1);
-      const z = -(depth * TILE_SIZE);
+    for (const info of depthInfo) {
+      if (info.hasLeftWall) leftWallEndDepth = Math.max(leftWallEndDepth, info.depth);
+      if (info.hasRightWall) rightWallEndDepth = Math.max(rightWallEndDepth, info.depth);
+    }
 
-      for (const tile of row) {
-        const tileChar = tile.tile_actual || tile.tile;
-        // x is the lateral offset from center (-2, -1, 0, 1, 2)
-        const lateralOffset = tile.offset ?? tile.x ?? 0;
-        const x = lateralOffset * TILE_SIZE;
+    // Create left wall as a single elongated box from depth 0 to end
+    if (leftWallEndDepth > 0) {
+      const wallLength = leftWallEndDepth * TILE_SIZE + TILE_SIZE;
+      const wallGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, wallLength);
+      const leftWall = new THREE.Mesh(wallGeom, materials.wall);
+      // Position at left edge, centered along the corridor length
+      leftWall.position.set(
+        -CORRIDOR_HALF_WIDTH,
+        WALL_HEIGHT / 2,
+        -(wallLength / 2 - TILE_SIZE / 2)
+      );
+      geometryGroup.add(leftWall);
+    }
 
-        if (isWallTile(tileChar)) {
-          // Wall block
+    // Create right wall as a single elongated box
+    if (rightWallEndDepth > 0) {
+      const wallLength = rightWallEndDepth * TILE_SIZE + TILE_SIZE;
+      const wallGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, wallLength);
+      const rightWall = new THREE.Mesh(wallGeom, materials.wall);
+      rightWall.position.set(
+        CORRIDOR_HALF_WIDTH,
+        WALL_HEIGHT / 2,
+        -(wallLength / 2 - TILE_SIZE / 2)
+      );
+      geometryGroup.add(rightWall);
+    }
+
+    // Add front walls and floor/ceiling tiles
+    for (const info of depthInfo) {
+      const z = -(info.depth * TILE_SIZE);
+
+      // If there's a front wall at center (x=0), create a full end wall spanning corridor width
+      if (info.frontWallTiles.some(t => t.x === 0)) {
+        // Create a single wall spanning the full corridor width
+        // Width needs to span from left wall inner edge to right wall inner edge
+        // Side walls are at ±CORRIDOR_HALF_WIDTH with width TILE_SIZE
+        // So inner edges are at ±(CORRIDOR_HALF_WIDTH - TILE_SIZE/2)
+        // But we want to connect TO the side walls, so we span full width
+        const fullWidth = CORRIDOR_HALF_WIDTH * 2 + TILE_SIZE; // Full width including overlapping with side walls
+        const endWallGeom = new THREE.BoxGeometry(fullWidth, WALL_HEIGHT, TILE_SIZE);
+        const endWall = new THREE.Mesh(endWallGeom, materials.wall);
+        endWall.position.set(0, WALL_HEIGHT / 2, z);
+        geometryGroup.add(endWall);
+      } else {
+        // Add individual front wall tiles (walls not at the corridor end)
+        for (const frontWall of info.frontWallTiles) {
           const wallGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, TILE_SIZE);
           const wall = new THREE.Mesh(wallGeom, materials.wall);
-          wall.position.set(x, WALL_HEIGHT / 2, z);
+          wall.position.set(frontWall.x * TILE_SIZE, WALL_HEIGHT / 2, z);
           geometryGroup.add(wall);
-        } else if (isDoorTile(tileChar)) {
-          // Door (thinner wall)
-          const doorGeom = new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, 0.3);
-          const door = new THREE.Mesh(doorGeom, materials.door);
-          door.position.set(x, WALL_HEIGHT / 2, z);
-          geometryGroup.add(door);
-
-          // Floor under door
-          const floorGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
-          const floor = new THREE.Mesh(floorGeom, materials.floor);
-          floor.rotation.x = -Math.PI / 2;
-          floor.position.set(x, 0, z);
-          geometryGroup.add(floor);
-        } else if (isFloorTile(tileChar) || tile.walkable) {
-          // Floor tile
-          const floorGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
-          const floor = new THREE.Mesh(floorGeom, materials.floor);
-          floor.rotation.x = -Math.PI / 2;
-          floor.position.set(x, 0, z);
-          geometryGroup.add(floor);
-
-          // Ceiling tile
-          const ceilingGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
-          const ceiling = new THREE.Mesh(ceilingGeom, materials.ceiling);
-          ceiling.rotation.x = Math.PI / 2;
-          ceiling.position.set(x, WALL_HEIGHT, z);
-          geometryGroup.add(ceiling);
         }
       }
     }
 
+    // Add floor and ceiling for each depth in the corridor
+    for (let d = 1; d <= maxDepth; d++) {
+      const z = -(d * TILE_SIZE);
+      const info = depthInfo.find(i => i.depth === d);
+
+      // Skip if this is a full front wall (no floor needed)
+      if (info?.frontWallTiles.some(t => t.x === 0)) {
+        continue;
+      }
+
+      // Floor tile (corridor center)
+      const floorGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
+      const floor = new THREE.Mesh(floorGeom, materials.floor);
+      floor.rotation.x = -Math.PI / 2;
+      floor.position.set(0, 0, z);
+      geometryGroup.add(floor);
+
+      // Ceiling tile
+      const ceilingGeom = new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE);
+      const ceiling = new THREE.Mesh(ceilingGeom, materials.ceiling);
+      ceiling.rotation.x = Math.PI / 2;
+      ceiling.position.set(0, WALL_HEIGHT, z);
+      geometryGroup.add(ceiling);
+    }
+
     // Add entities as simple billboards/sprites
+    // Entity offset is in corridor-relative units (-1 to +1 spans corridor width)
+    // Corridor width in world units is TILE_SIZE, so offset maps to TILE_SIZE/2 on each side
     for (const entity of view.entities) {
-      const x = entity.offset * TILE_SIZE;
+      const x = entity.offset * (TILE_SIZE / 2);
       const z = -entity.distance * TILE_SIZE;
       const y = entity.type === 'item' ? 0.3 : CAMERA_HEIGHT * 0.8;
 
