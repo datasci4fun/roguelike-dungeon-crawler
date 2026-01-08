@@ -168,6 +168,7 @@ class PlayerClass(Enum):
     WARRIOR = auto()
     MAGE = auto()
     ROGUE = auto()
+    CLERIC = auto()
 
 
 # Race stat modifiers and special traits
@@ -253,6 +254,15 @@ CLASS_STATS = {
         'def_modifier': -1,
         'active_abilities': ['backstab', 'smoke_bomb'],
         'passive_abilities': ['critical_strike'],
+    },
+    PlayerClass.CLERIC: {
+        'name': 'Cleric',
+        'description': 'Divine light in darkness',
+        'hp_modifier': 2,
+        'atk_modifier': 0,
+        'def_modifier': 1,
+        'active_abilities': ['heal', 'smite'],
+        'passive_abilities': ['divine_protection'],
     },
 }
 

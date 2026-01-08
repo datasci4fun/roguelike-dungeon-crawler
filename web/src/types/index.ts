@@ -31,7 +31,7 @@ export interface RegisterData {
 
 // Character Creation types
 export type RaceId = 'HUMAN' | 'ELF' | 'DWARF' | 'HALFLING' | 'ORC';
-export type ClassId = 'WARRIOR' | 'MAGE' | 'ROGUE';
+export type ClassId = 'WARRIOR' | 'MAGE' | 'ROGUE' | 'CLERIC';
 
 export interface RaceDefinition {
   id: RaceId;

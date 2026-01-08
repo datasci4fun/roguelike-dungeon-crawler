@@ -92,6 +92,16 @@ export const CLASSES: Record<ClassId, ClassDefinition> = {
     active_abilities: ['backstab', 'smoke_bomb'],
     passive_abilities: ['critical_strike'],
   },
+  CLERIC: {
+    id: 'CLERIC',
+    name: 'Cleric',
+    description: 'Divine light in darkness',
+    hp_modifier: 2,
+    atk_modifier: 0,
+    def_modifier: 1,
+    active_abilities: ['heal', 'smite'],
+    passive_abilities: ['divine_protection'],
+  },
 };
 
 // Ability descriptions for display
@@ -137,6 +147,20 @@ export const ABILITY_DESCRIPTIONS: Record<string, { name: string; description: s
   critical_strike: {
     name: 'Critical Strike',
     description: '20% chance for double damage (passive)',
+  },
+  heal: {
+    name: 'Heal',
+    description: 'Restore 10 HP to yourself',
+    cooldown: 5,
+  },
+  smite: {
+    name: 'Smite',
+    description: '6 damage, 2x to undead',
+    cooldown: 3,
+  },
+  divine_protection: {
+    name: 'Divine Protection',
+    description: '20% damage reduction (passive)',
   },
 };
 

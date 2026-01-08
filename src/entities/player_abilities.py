@@ -130,6 +130,35 @@ PLAYER_ABILITIES = {
         category=AbilityCategory.PASSIVE,
         passive_bonus=0.20,
     ),
+
+    # ========== CLERIC ABILITIES ==========
+    'heal': PlayerAbility(
+        id='heal',
+        name='Heal',
+        description='Restore 10 HP to yourself',
+        category=AbilityCategory.ACTIVE,
+        cooldown=5,
+        target_type=TargetType.SELF,
+        damage=-10,  # Negative damage = healing
+    ),
+    'smite': PlayerAbility(
+        id='smite',
+        name='Smite',
+        description='Holy strike dealing 6 damage, 2x to undead',
+        category=AbilityCategory.ACTIVE,
+        cooldown=3,
+        target_type=TargetType.SINGLE,
+        range=1,
+        damage=6,
+        damage_multiplier=2.0,  # Double vs undead (handled in combat)
+    ),
+    'divine_protection': PlayerAbility(
+        id='divine_protection',
+        name='Divine Protection',
+        description='20% of incoming damage is negated by divine favor',
+        category=AbilityCategory.PASSIVE,
+        passive_bonus=0.20,
+    ),
 }
 
 
