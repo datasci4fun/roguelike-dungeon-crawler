@@ -82,12 +82,12 @@ export function FirstPersonRenderer3D({
       ceiling: THREE.Texture[];
       wallFront: THREE.Texture[];
     };
-    // Camera control state
+    // Camera control state - limited look-around (head movement)
     controls: {
       isDragging: boolean;
-      yaw: number;
-      pitch: number;
-      keys: Set<string>;
+      lookYaw: number;    // Offset from base facing direction (limited range)
+      lookPitch: number;  // Up/down look offset (limited range)
+      baseYaw: number;    // Base yaw from character facing direction
     };
   } | null>(null);
 
@@ -282,9 +282,9 @@ export function FirstPersonRenderer3D({
       },
       controls: {
         isDragging: false,
-        yaw: 0,
-        pitch: 0,
-        keys: new Set(),
+        lookYaw: 0,
+        lookPitch: 0,
+        baseYaw: 0,
       },
     };
 
@@ -298,41 +298,16 @@ export function FirstPersonRenderer3D({
 
       time += 0.016;
 
-      // Handle keyboard movement
       const { controls } = sceneRef.current;
-      const speed = 0.1;
 
-      // Get forward and right vectors based on camera rotation
-      const forward = new THREE.Vector3(0, 0, -1);
-      forward.applyQuaternion(camera.quaternion);
-      forward.y = 0;
-      forward.normalize();
+      // Apply camera rotation: base facing + limited look offset
+      const totalYaw = controls.baseYaw + controls.lookYaw;
+      camera.rotation.set(controls.lookPitch, totalYaw, 0, 'YXZ');
 
-      const right = new THREE.Vector3(1, 0, 0);
-      right.applyQuaternion(camera.quaternion);
-      right.y = 0;
-      right.normalize();
+      // Camera stays fixed at player position (grid-based movement only)
+      camera.position.set(0, CAMERA_HEIGHT, 0);
 
-      if (controls.keys.has('w') || controls.keys.has('arrowup')) {
-        camera.position.addScaledVector(forward, speed);
-      }
-      if (controls.keys.has('s') || controls.keys.has('arrowdown')) {
-        camera.position.addScaledVector(forward, -speed);
-      }
-      if (controls.keys.has('a') || controls.keys.has('arrowleft')) {
-        camera.position.addScaledVector(right, -speed);
-      }
-      if (controls.keys.has('d') || controls.keys.has('arrowright')) {
-        camera.position.addScaledVector(right, speed);
-      }
-      if (controls.keys.has('e') || controls.keys.has(' ')) {
-        camera.position.y += speed;
-      }
-      if (controls.keys.has('q') || controls.keys.has('shift')) {
-        camera.position.y -= speed;
-      }
-
-      // Update torch light position
+      // Update torch light position to follow camera
       torchLight.position.copy(camera.position);
       fillLight.position.copy(camera.position);
       fillLight.position.y += 0.5;
@@ -686,67 +661,48 @@ export function FirstPersonRenderer3D({
 
   }, [view, debugShowWallMarkers]);
 
-  // Update camera based on facing direction
+  // Update camera base direction when character facing changes
   useEffect(() => {
     if (!sceneRef.current || !view) return;
 
-    const { camera } = sceneRef.current;
+    const { controls } = sceneRef.current;
 
-    // Reset camera to origin
-    camera.position.set(0, CAMERA_HEIGHT, 0);
-
-    // Set rotation based on facing
+    // Calculate base yaw from facing direction
     const { dx, dy } = view.facing;
+    let baseYaw = 0;
     if (dx === 0 && dy === -1) {
       // North - looking into -Z
-      camera.rotation.set(0, 0, 0);
+      baseYaw = 0;
     } else if (dx === 0 && dy === 1) {
       // South - looking into +Z
-      camera.rotation.set(0, Math.PI, 0);
+      baseYaw = Math.PI;
     } else if (dx === 1 && dy === 0) {
       // East - looking into +X
-      camera.rotation.set(0, -Math.PI / 2, 0);
+      baseYaw = -Math.PI / 2;
     } else if (dx === -1 && dy === 0) {
       // West - looking into -X
-      camera.rotation.set(0, Math.PI / 2, 0);
+      baseYaw = Math.PI / 2;
     }
+
+    // Update base yaw and reset look offsets when facing changes
+    controls.baseYaw = baseYaw;
+    controls.lookYaw = 0;
+    controls.lookPitch = 0;
   }, [view?.facing]);
 
-  // Keyboard event handlers
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!sceneRef.current) return;
-      sceneRef.current.controls.keys.add(e.key.toLowerCase());
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (!sceneRef.current) return;
-      sceneRef.current.controls.keys.delete(e.key.toLowerCase());
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, []);
-
-  // Mouse event handlers for camera rotation
+  // Mouse event handlers for limited look-around (head movement)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!sceneRef.current) return;
-    if (e.button === 2) { // Right click
+    // Allow both left-click and right-click for looking around
+    if (e.button === 0 || e.button === 2) {
       sceneRef.current.controls.isDragging = true;
       e.preventDefault();
     }
   }, []);
 
-  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+  const handleMouseUp = useCallback(() => {
     if (!sceneRef.current) return;
-    if (e.button === 2) {
-      sceneRef.current.controls.isDragging = false;
-    }
+    sceneRef.current.controls.isDragging = false;
   }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -754,17 +710,21 @@ export function FirstPersonRenderer3D({
     if (!sceneRef.current.controls.isDragging) return;
 
     const sensitivity = 0.003;
-    const { camera, controls } = sceneRef.current;
+    const { controls } = sceneRef.current;
 
-    // Update yaw and pitch
-    controls.yaw -= e.movementX * sensitivity;
-    controls.pitch -= e.movementY * sensitivity;
+    // Limited look-around range (head movement without turning body)
+    const MAX_LOOK_YAW = Math.PI / 6;    // ±30 degrees left/right
+    const MAX_LOOK_PITCH = Math.PI / 9;  // ±20 degrees up/down
 
-    // Clamp pitch to prevent flipping
-    controls.pitch = Math.max(-Math.PI / 2 + 0.1, Math.min(Math.PI / 2 - 0.1, controls.pitch));
+    // Update look offsets
+    controls.lookYaw -= e.movementX * sensitivity;
+    controls.lookPitch -= e.movementY * sensitivity;
 
-    // Apply rotation using Euler angles
-    camera.rotation.set(controls.pitch, controls.yaw, 0, 'YXZ');
+    // Clamp to limited range (can only look a bit to each side)
+    controls.lookYaw = Math.max(-MAX_LOOK_YAW, Math.min(MAX_LOOK_YAW, controls.lookYaw));
+    controls.lookPitch = Math.max(-MAX_LOOK_PITCH, Math.min(MAX_LOOK_PITCH, controls.lookPitch));
+
+    // Note: actual camera rotation is applied in the animation loop
   }, []);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
