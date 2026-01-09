@@ -49,6 +49,31 @@ export function Play() {
   } = useDebugRenderer();
   const corridorInfoRef = useRef<CorridorInfoEntry[]>([]);
 
+  // Track scene container size for responsive renderer
+  const sceneContainerRef = useRef<HTMLDivElement>(null);
+  const [sceneSize, setSceneSize] = useState({ width: 800, height: 600 });
+
+  useEffect(() => {
+    const container = sceneContainerRef.current;
+    if (!container) return;
+
+    const updateSize = () => {
+      const rect = container.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setSceneSize({ width: rect.width, height: rect.height });
+      }
+    };
+
+    // Initial size
+    updateSize();
+
+    // Watch for resize
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(container);
+
+    return () => observer.disconnect();
+  }, [showSceneView]);
+
   // Audio management
   const { crossfadeTo, isUnlocked, unlockAudio } = useAudioManager();
   const lastLevelRef = useRef<number | null>(null);
@@ -342,20 +367,20 @@ export function Play() {
             </div>
 
             {showSceneView && (
-              <div className="scene-wrapper">
+              <div className="scene-wrapper" ref={sceneContainerRef}>
                 {use3DMode ? (
                   <FirstPersonRenderer3D
                     view={gameState?.first_person_view}
                     settings={{ biome: 'dungeon', useTileGrid }}
-                    width={800}
-                    height={600}
+                    width={sceneSize.width}
+                    height={sceneSize.height}
                   />
                 ) : (
                   <FirstPersonRenderer
                     view={gameState?.first_person_view}
                     settings={{ biome: 'dungeon', useTileGrid }}
-                    width={800}
-                    height={600}
+                    width={sceneSize.width}
+                    height={sceneSize.height}
                     enableAnimations={true}
                     debugShowWireframe={showWireframe}
                     debugShowOccluded={showOccluded}

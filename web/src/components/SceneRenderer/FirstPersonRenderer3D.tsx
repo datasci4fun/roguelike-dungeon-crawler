@@ -55,7 +55,6 @@ interface FirstPersonRenderer3DProps {
 // Check tile types
 const isWallTile = (tile: string) => tile === '#';
 const isDoorTile = (tile: string) => tile === 'D' || tile === 'd' || tile === '+';
-const isFloorTile = (tile: string) => tile === '.' || tile === '>' || tile === '<';
 
 export function FirstPersonRenderer3D({
   view,
