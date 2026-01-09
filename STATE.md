@@ -1,8 +1,8 @@
 # Project State
 
-**Last Updated:** 2026-01-08
-**Branch:** develop
-**Version:** v4.8.0 (3D Lighting & Open Room Rendering)
+**Last Updated:** 2026-01-09
+**Branch:** master
+**Version:** v5.0.0 (First-Person Rendering Overhaul)
 
 ---
 
@@ -16,9 +16,44 @@
 
 ---
 
-## Current Version: v4.8.0
+## Current Version: v5.0.0
 
-### Completed Features (v4.8.0)
+### Completed Features (v5.0.0)
+
+| Feature | Status |
+|---------|--------|
+| Dynamic LOS-based render distance | ✅ |
+| Smooth movement/turn animations (2D & 3D) | ✅ |
+| Map memory for explored tiles | ✅ |
+| Reworked fog curves (smoother falloff) | ✅ |
+| Front wall span fix (no side leaks) | ✅ |
+| Pure tile-based 3D geometry | ✅ |
+| Shared geometry caching (3D perf) | ✅ |
+| Parallax skybox system | ✅ |
+
+### v5.0.0 Changes
+
+**2D Canvas FirstPersonRenderer:**
+- Fixed front wall span to cover full opening (derived from contiguous wall run)
+- Gate floor/ceiling rendering behind blocking walls (hasFloor)
+- Persistent map memory for explored-but-not-visible tiles (tile_actual for geometry, dim brightness)
+- Reworked fog curves in projection.ts with smoother ramps
+- Added parallax skybox that shifts with player rotation
+
+**Server First-Person View:**
+- Replaced fixed depth=8 with dynamic LOS depth (raycast forward until OOB/blocking)
+- Added safety cap, decoupled width scaling from dynamic depth
+- Updated entity visibility to use max_distance=depth
+
+**3D Three.js FirstPersonRenderer3D:**
+- Pure tile-based geometry (render every wall tile at its offset/depth)
+- Floor+ceiling planes for non-wall tiles
+- Explored-tile memory with dim materials
+- Shared geometry caching (PlaneGeometry, BoxGeometry)
+- Safe group clearing that disposes only non-shared resources
+- Smooth movement and turn animations
+
+### v4.8.0 Features
 
 | Feature | Status |
 |---------|--------|
@@ -37,72 +72,20 @@
 | Triangle-based 2D texture mapping | ✅ |
 | Floor/ceiling tile variants | ✅ |
 | Wall UV tiling (no stretching) | ✅ |
-| Depth 0 floor/ceiling tiles | ✅ |
-| Bidirectional slice rendering | ✅ |
-| Debug wall markers (3D) | ✅ |
-| Gap-free canvas rendering | ✅ |
 
-### v4.6.0 Features
-
-| Feature | Status |
-|---------|--------|
-| Debug hotkeys (F8/F9/F10) | ✅ |
-| Z-buffer occlusion for entities | ✅ |
-| corridorInfo visibility fix | ✅ |
-| top_down_window in snapshots | ✅ |
-| useDebugRenderer hook | ✅ |
-| DebugToast component | ✅ |
-| Test page occlusion scenarios | ✅ |
-| Corridor wall canonical offset fix | ✅ |
-| tile_actual for fogged wall geometry | ✅ |
-| OOB tile placeholder fix + offset field | ✅ |
-
-### Recent Changes (v4.8.0)
-
-**3D Lighting System** - Complete lighting overhaul for atmospheric dungeon rendering:
-- Torch light: PointLight with intensity 8, distance 8, decay 2 (physically correct inverse-square falloff)
-- Fill light: Blue-tinted PointLight (0x4466aa) at intensity 1.5 to prevent pure black shadows
-- Ambient light: Reduced from 0.3 to 0.05 for dark atmosphere by default
-- Fog: Range changed from (1, 15) to (2, 8) for visible depth effect
-- Flickering: Dual sine wave animation (5Hz + 13Hz) for organic torch effect
-
-**Open Room Rendering** - Fixed 3D renderer to properly display open rooms:
-- Now iterates through ALL tiles in view data (not just center x=0)
-- Creates floor/ceiling geometry for each walkable tile at correct position
-- Properly handles corridors, open rooms, and mixed layouts
-
-**Stable Tile Materials** - Removed variant-based material selection in 3D:
-- Variants used relative depth for hash, causing tiles to change when player moved
-- Now uses shared materials for all floor/ceiling tiles
-- Prevents visual flickering in explore mode
-
-### Key Files (v4.8.0)
+### Key Files (v5.0.0)
 
 | File | Purpose |
 |------|---------|
-| `web/src/components/SceneRenderer/FirstPersonRenderer3D.tsx` | Three.js 3D renderer with lighting |
-
-### Key Files (v4.7.0)
-
-| File | Purpose |
-|------|---------|
-| `web/src/components/SceneRenderer/tiles/TileRenderer.ts` | Triangle-based 2D texture mapping |
-| `web/src/components/SceneRenderer/tiles/TileManager.ts` | Tile variant loading |
-| `web/src/pages/FirstPersonTestPage.tsx` | Test page with 2D/3D toggle |
-| `web/src/components/SceneRenderer/DebugScene3D.tsx` | 3D debug visualization |
-
-### Key Files (v4.6.0)
-
-| File | Purpose |
-|------|---------|
-| `web/src/hooks/useDebugRenderer.ts` | Debug state management |
-| `web/src/components/DebugToast.tsx` | Debug feedback UI |
-| `web/src/components/SceneRenderer/FirstPersonRenderer.tsx` | 2D canvas renderer |
-| `server/app/services/game_session.py` | top_down_window generation |
+| `web/src/components/SceneRenderer/FirstPersonRenderer.tsx` | 2D canvas renderer with animations |
+| `web/src/components/SceneRenderer/FirstPersonRenderer3D.tsx` | Three.js 3D renderer |
+| `web/src/components/SceneRenderer/projection.ts` | Fog curves and perspective math |
+| `web/src/components/SceneRenderer/skybox.ts` | Parallax background system |
+| `server/app/services/game_session.py` | Dynamic LOS view generation |
 
 ---
 
-## Next Version: v4.9.0 (Save System)
+## Next Version: v5.1.0
 
 | Feature | Description |
 |---------|-------------|
