@@ -41,6 +41,35 @@ export const PROJECTION_CONFIG = {
 };
 
 /**
+ * Fog/brightness tuning in tile-depth units.
+ * Goal: avoid "depth 1 -> 2 instantly dark" banding by delaying and smoothing ramps.
+ */
+export const FOG_CONFIG = {
+  // Brightness fade (used by walls/floor/ceiling via getDepthFade)
+  fadeNear: 1.0,     // tiles: start darkening after ~1 tile
+  fadeFar: 7.0,      // tiles: reach minFade around here
+  nearFade: 0.85,    // brightness multiplier at/near fadeNear (keeps close walls from being too dark)
+
+  // Fog opacity (used by floor overlays + entity overlays via getFogAmount)
+  fogNear: 2.0,      // tiles: start fogging after ~2 tiles
+  fogFar: 8.0,       // tiles: reach maxFog around here (your renderer depth is 8)
+};
+
+function clamp01(t: number): number {
+  return Math.max(0, Math.min(1, t));
+}
+
+function smoothstep01(t: number): number {
+  // cubic Hermite: smooth in/out
+  return t * t * (3 - 2 * t);
+}
+
+function smoothstep(edge0: number, edge1: number, x: number): number {
+  if (edge1 <= edge0) return x >= edge1 ? 1 : 0;
+  return smoothstep01(clamp01((x - edge0) / (edge1 - edge0)));
+}
+
+/**
  * Calculate perspective projection for a point at given depth
  *
  * Uses true perspective projection matching Three.js camera behavior.
@@ -105,10 +134,11 @@ export function seededRandom(seed: number): number {
  * Minimum ensures walls are always at least somewhat visible
  */
 export function getDepthFade(depth: number, minFade: number = 0.25): number {
-  // Exponential falloff with higher minimum so distant walls stay visible
-  // depth 1: ~0.6, depth 2: ~0.36, depth 3+: ~0.25 minimum
-  const falloff = Math.pow(0.6, depth);
-  return Math.max(minFade, falloff);
+  // Smooth ramp instead of steep exponential. Keeps early depths from snapping dark.
+  const { fadeNear, fadeFar, nearFade } = FOG_CONFIG;
+  const startFade = Math.max(nearFade, minFade);
+  const t = smoothstep(fadeNear, fadeFar, depth);
+  return startFade - (startFade - minFade) * t;
 }
 
 /**
@@ -117,10 +147,10 @@ export function getDepthFade(depth: number, minFade: number = 0.25): number {
  * Walls must always be visible if in FOV - can't have floating torches
  */
 export function getFogAmount(depth: number, maxFog: number = 0.6): number {
-  // Fog increases with distance but caps at 60% so walls remain clearly visible
-  // depth 1: ~0.35, depth 2: ~0.58, depth 3+: capped at 0.60
-  const fog = 1 - Math.pow(0.65, depth);
-  return Math.min(maxFog, fog);
+  // Smooth ramp; starts later and reaches maxFog near your view max depth.
+  const { fogNear, fogFar } = FOG_CONFIG;
+  const t = smoothstep(fogNear, fogFar, depth);
+  return maxFog * t;
 }
 
 /**
