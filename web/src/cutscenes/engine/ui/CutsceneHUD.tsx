@@ -2,7 +2,7 @@
  * CutsceneHUD - Progress indicator and controls overlay
  */
 
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import './CutsceneHUD.scss';
 
 interface CutsceneHUDProps {

@@ -11,5 +11,5 @@ export { cutsceneCatalog, getCutscene, listCutscenes } from './catalog';
 
 // Individual cutscenes
 export { introCutscene } from './intro';
-export { victoryCutscene } from './victory';
-export { gameOverCutscene } from './game_over';
+export { victoryCutscene, createVictoryCutscene } from './victory';
+export { gameOverCutscene, createGameOverCutscene } from './game_over';

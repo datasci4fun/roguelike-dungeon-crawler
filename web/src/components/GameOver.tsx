@@ -3,6 +3,10 @@
  * Shows narrative epilogue, run statistics, and play again prompt.
  */
 import { useState, useEffect, useCallback } from 'react';
+import { GameOverGhostLore } from './GameOverGhostLore';
+import { VictoryGhostLore } from './VictoryGhostLore';
+import type { DeathFateId } from './GameOverCutscene';
+import type { VictoryLegacyId } from './VictoryCutscene';
 import './GameOver.css';
 
 interface PlayerStats {
@@ -18,6 +22,8 @@ interface GameOverProps {
   stats: PlayerStats;
   onPlayAgain: () => void;
   onMusicChange?: (trackId: string) => void;
+  deathFate?: DeathFateId;
+  victoryLegacy?: VictoryLegacyId;
 }
 
 const DEATH_NARRATIVE = [
@@ -40,7 +46,7 @@ const VICTORY_NARRATIVE = [
   'Your legend will echo through the ages.',
 ];
 
-export function GameOver({ type, stats, onPlayAgain, onMusicChange }: GameOverProps) {
+export function GameOver({ type, stats, onPlayAgain, onMusicChange, deathFate, victoryLegacy }: GameOverProps) {
   const [fadeIn, setFadeIn] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -114,6 +120,16 @@ export function GameOver({ type, stats, onPlayAgain, onMusicChange }: GameOverPr
             </p>
           ))}
         </div>
+
+        {/* Ghost Lore Panel (death only) */}
+        {isDeath && deathFate && deathFate !== 'unknown' && (
+          <GameOverGhostLore fate={deathFate} />
+        )}
+
+        {/* Victory Lore Panel (victory only) */}
+        {!isDeath && victoryLegacy && victoryLegacy !== 'unknown' && (
+          <VictoryGhostLore legacy={victoryLegacy} />
+        )}
 
         {/* Stats */}
         <div className={`game-over-stats ${showStats ? 'visible' : ''}`}>

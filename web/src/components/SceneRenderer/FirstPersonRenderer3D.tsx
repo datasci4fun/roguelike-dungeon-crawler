@@ -50,6 +50,7 @@ interface FirstPersonRenderer3DProps {
   debugShowOccluded?: boolean;
   debugShowWireframe?: boolean;
   debugShowWallMarkers?: boolean;
+  deathCamActive?: boolean;
 }
 
 // Check tile types
@@ -63,6 +64,7 @@ export function FirstPersonRenderer3D({
   enableAnimations = true,
   settings: userSettings,
   debugShowWallMarkers = false,
+  deathCamActive = false,
 }: FirstPersonRenderer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prevViewRef = useRef<{ rowsJson: string; facing: { dx: number; dy: number } } | null>(null);
@@ -132,6 +134,19 @@ export function FirstPersonRenderer3D({
       prevFacingDy: number;
       // Entity animations - track previous positions
       entityPositions: Map<string, { x: number; z: number; targetX: number; targetZ: number; progress: number }>;
+      // Death camera animation
+      deathCam: {
+        active: boolean;
+        t: number;
+        duration: number;
+        startX: number;
+        startY: number;
+        startZ: number;
+        startPitch: number;
+        startYaw: number;
+        startRoll: number;
+        rollDir: 1 | -1;
+      };
     };
   } | null>(null);
 
@@ -141,6 +156,40 @@ export function FirstPersonRenderer3D({
   );
 
   const biome = useMemo(() => getBiome(settings.biome), [settings.biome]);
+
+  // Death camera activation tracking
+  const prevDeathRef = useRef(false);
+
+  useEffect(() => {
+    const rising = deathCamActive && !prevDeathRef.current;
+    const falling = !deathCamActive && prevDeathRef.current;
+    prevDeathRef.current = deathCamActive;
+
+    if (!sceneRef.current) return;
+
+    const { camera, animation, controls } = sceneRef.current;
+
+    if (rising) {
+      // Snapshot current camera pose
+      animation.deathCam.active = true;
+      animation.deathCam.t = 0;
+      animation.deathCam.startX = camera.position.x;
+      animation.deathCam.startY = camera.position.y;
+      animation.deathCam.startZ = camera.position.z;
+      animation.deathCam.startPitch = camera.rotation.x;
+      animation.deathCam.startYaw = camera.rotation.y;
+      animation.deathCam.startRoll = camera.rotation.z;
+      animation.deathCam.rollDir = Math.random() < 0.5 ? -1 : 1;
+
+      // Freeze look input immediately
+      controls.isDragging = false;
+    }
+
+    if (falling) {
+      animation.deathCam.active = false;
+      animation.deathCam.t = 0;
+    }
+  }, [deathCamActive]);
 
   // Initialize Three.js scene
   useEffect(() => {
@@ -389,6 +438,18 @@ export function FirstPersonRenderer3D({
         prevFacingDx: 0,
         prevFacingDy: -1, // Default facing north
         entityPositions: new Map(),
+        deathCam: {
+          active: false,
+          t: 0,
+          duration: 3.6,
+          startX: 0,
+          startY: CAMERA_HEIGHT,
+          startZ: 0,
+          startPitch: 0,
+          startYaw: 0,
+          startRoll: 0,
+          rollDir: -1 as 1 | -1,
+        },
       },
     };
 
@@ -407,6 +468,47 @@ export function FirstPersonRenderer3D({
       time += deltaTime;
 
       const { controls, animation } = sceneRef.current;
+      const death = animation.deathCam;
+
+      // Death camera override - completely takes over camera when active
+      if (death.active) {
+        death.t += deltaTime;
+        const p = Math.min(1, death.t / death.duration);
+
+        // Easing functions
+        const easeIn = p * p;
+        const easeOut = 1 - Math.pow(1 - p, 3);
+
+        // Target values (tune these for feel)
+        const groundY = 0.25;                              // Near floor
+        const rollTarget = death.rollDir * -0.24;          // ~-14deg
+        const pitchTarget = death.startPitch + 0.75;       // ~43deg looking down
+        const driftX = death.rollDir * 0.10;
+        const driftZ = 0.12;
+
+        // Add a tiny dying wobble
+        const wobble = Math.sin(p * Math.PI * 3) * (1 - p) * 0.03;
+
+        const x = death.startX + driftX * easeOut;
+        const y = death.startY + (groundY - death.startY) * easeIn;
+        const z = death.startZ + driftZ * easeOut;
+
+        const pitch = death.startPitch + (pitchTarget - death.startPitch) * easeOut + wobble;
+        const yaw = death.startYaw; // Freeze yaw at moment of death
+        const roll = death.startRoll + (rollTarget - death.startRoll) * easeOut;
+
+        camera.position.set(x, y, z);
+        camera.rotation.set(pitch, yaw, roll, 'YXZ');
+
+        // Update torch light position
+        torchLight.position.copy(camera.position);
+        fillLight.position.copy(camera.position);
+        fillLight.position.y += 0.5;
+
+        renderer.render(scene, camera);
+        sceneRef.current.animationId = requestAnimationFrame(animate);
+        return;
+      }
 
       // Update movement animation
       if (animation.moveProgress < 1) {

@@ -356,3 +356,114 @@ $black: #000;
 .cutscene-player.cs-scene-you .caption-line.empty-line {
   min-height: 0.55em;       // tighter blank beats
 }
+
+// ============================================
+// DEATH TYPOGRAPHY
+// YOU DIED - Dark Souls inspired massive red text
+// ============================================
+
+$death-red: #8b0000;
+$death-red-bright: #c41e3a;
+$death-red-glow: rgba(139, 0, 0, 0.6);
+
+// YOU DIED title treatment
+.caption-line.death-title {
+  color: $death-red;
+  font-weight: 900;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-shadow:
+    0 0 20px $death-red-glow,
+    0 0 40px $death-red-glow,
+    0 0 60px rgba(139, 0, 0, 0.4),
+    0 2px 0 rgba(0, 0, 0, 0.8);
+
+  // Slower, heavier reveal
+  --rc-rise: 24px;
+  --rc-char-stagger: 40ms;
+  --rc-char-dur: 1200ms;
+}
+
+// Fate/claim text - slightly dimmer, smaller
+.caption-line.death-claim {
+  color: $death-red-bright;
+  font-weight: 700;
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  letter-spacing: 0.15em;
+  text-shadow:
+    0 0 15px $death-red-glow,
+    0 0 30px rgba(139, 0, 0, 0.3);
+
+  --rc-rise: 16px;
+  --rc-char-stagger: 20ms;
+  --rc-char-dur: 900ms;
+}
+
+// Whispered fate lines
+.caption-line.death-whisper {
+  color: rgba(139, 0, 0, 0.7);
+  font-style: italic;
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 10px rgba(139, 0, 0, 0.3);
+
+  --rc-rise: 10px;
+  --rc-char-stagger: 15ms;
+  --rc-char-dur: 700ms;
+}
+
+// ============================================
+// DEATH SCENE LAYOUT TUNING
+// ============================================
+
+// Fall scene - text starts normal, then fades
+.cutscene-player.cs-scene-fall .caption-line {
+  --rc-rise: 18px;
+  --rc-char-stagger: 8ms;
+  --rc-char-dur: 480ms;
+}
+
+// You Died scene - center the massive title
+.cutscene-player.cs-scene-you-died .retro-caption.caption-center {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.cutscene-player.cs-scene-you-died .caption-line {
+  padding: 0.5em 0;
+  line-height: 1.4;
+}
+
+// Abyss Claims scene - ominous, slower
+.cutscene-player.cs-scene-abyss-claims .caption-line {
+  --rc-rise: 14px;
+  --rc-char-stagger: 18ms;
+  --rc-char-dur: 800ms;
+}
+
+.cutscene-player.cs-scene-abyss-claims .caption-line.death-claim {
+  --rc-char-stagger: 25ms;
+  --rc-char-dur: 1000ms;
+}
+
+// Fate scenes - ethereal, almost fading
+.cutscene-player.cs-scene-fate-echo .caption-line,
+.cutscene-player.cs-scene-fate-hollowed .caption-line,
+.cutscene-player.cs-scene-fate-silence .caption-line {
+  --rc-rise: 12px;
+  --rc-char-stagger: 22ms;
+  --rc-char-dur: 900ms;
+}
+
+// Prompt scene - final question, clear and direct
+.cutscene-player.cs-scene-prompt .caption-line {
+  --rc-rise: 10px;
+  --rc-char-stagger: 12ms;
+  --rc-char-dur: 600ms;
+}
+
+.cutscene-player.cs-scene-prompt .caption-line.emphasis {
+  color: $death-red-bright;
+  text-shadow: 0 0 15px $death-red-glow;
+}

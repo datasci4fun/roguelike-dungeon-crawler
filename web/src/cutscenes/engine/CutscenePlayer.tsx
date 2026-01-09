@@ -37,6 +37,9 @@ export function CutscenePlayer({
 }: CutscenePlayerProps) {
   const [introComplete, setIntroComplete] = useState(false);
 
+  // Only show "Begin Your Adventure" button for the intro cutscene
+  const isIntroCutscene = cutscene.id === 'intro';
+
   const { state, currentScene, isLastScene, advance, goToScene } =
     useCutsceneTimeline(cutscene, {
       // In debug mode: we still want fade-in + visible state, but NO auto transitions
@@ -44,7 +47,7 @@ export function CutscenePlayer({
       debugMode: DEBUG_MODE,
       onSceneChange,
       onComplete: () => {
-        if (isLastScene) {
+        if (isIntroCutscene && isLastScene) {
           setIntroComplete(true);
         } else {
           onComplete();
@@ -227,6 +230,7 @@ export function CutscenePlayer({
   return (
     <div
       className={containerClass}
+      data-fade={state.fadeState}
       onClick={canClickAdvance ? handleAdvance : undefined}
     >
       {/* Background layer */}
@@ -259,7 +263,7 @@ export function CutscenePlayer({
             config={currentScene.captions}
             isActive={state.fadeState !== 'in'}
             onComplete={() => {
-              if (isLastScene) setIntroComplete(true);
+              if (isIntroCutscene && isLastScene) setIntroComplete(true);
             }}
             onLineRevealDone={handleLineRevealDone}
             key={`${currentScene.meta.id}:${state.currentSceneIndex}:${(state as any).sceneRunId ?? 0}`}
@@ -286,6 +290,14 @@ export function CutscenePlayer({
         ].join(' ')}
       />
 
+      {/* DEATH OVERLAYS - activated by scene ID */}
+      <div className="cs-death-vignette" />
+      <div className="cs-blood-curtain" />
+      <div className="cs-eyelids">
+        <div className="cs-eyelid cs-eyelid-top" />
+        <div className="cs-eyelid cs-eyelid-bottom" />
+      </div>
+
       {/* FADE CURTAIN (namespaced) — hides scene swaps & prevents underlying UI flashes */}
       <div
         className={`cs-curtain cs-curtain-${state.fadeState}`}
@@ -297,8 +309,8 @@ export function CutscenePlayer({
         }
       />
 
-      {/* Begin button for last scene */}
-      {introComplete && (
+      {/* Begin button for last scene (intro cutscene only) */}
+      {isIntroCutscene && introComplete && (
         <div className="begin-container">
           <button
             className="begin-adventure-button"

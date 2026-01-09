@@ -15,6 +15,8 @@ import { AchievementToast } from '../components/AchievementToast';
 import { FeatSelector } from '../components/FeatSelector';
 import { DebugToast } from '../components/DebugToast';
 import { GameOver } from '../components/GameOver';
+import { GameOverCutscene, type DeathFateId } from '../components/GameOverCutscene';
+import { VictoryCutscene, type VictoryLegacyId } from '../components/VictoryCutscene';
 import { LoreJournal } from '../components/LoreJournal';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
@@ -33,6 +35,10 @@ export function Play() {
     try { return localStorage.getItem('use3DMode') === '1'; } catch { return false; }
   });
   const [showGameOver, setShowGameOver] = useState<'death' | 'victory' | null>(null);
+  const [deathCutsceneComplete, setDeathCutsceneComplete] = useState(false);
+  const [deathFate, setDeathFate] = useState<DeathFateId>('unknown');
+  const [victoryCutsceneComplete, setVictoryCutsceneComplete] = useState(false);
+  const [victoryLegacy, setVictoryLegacy] = useState<VictoryLegacyId>('unknown');
   const [showLoreJournal, setShowLoreJournal] = useState(false);
 
   // Debug renderer controls (F8/F9/F10 hotkeys)
@@ -190,6 +196,10 @@ export function Play() {
   const handleNewGame = useCallback(() => {
     if (gameState?.game_state === 'DEAD' || gameState?.game_state === 'VICTORY' || !gameState) {
       setShowGameOver(null);
+      setDeathCutsceneComplete(false);
+      setDeathFate('unknown');
+      setVictoryCutsceneComplete(false);
+      setVictoryLegacy('unknown');
       navigate('/character-creation');
     }
   }, [gameState, navigate]);
@@ -374,6 +384,7 @@ export function Play() {
                     settings={{ biome: 'dungeon', useTileGrid }}
                     width={sceneSize.width}
                     height={sceneSize.height}
+                    deathCamActive={gameState?.game_state === 'DEAD'}
                   />
                 ) : (
                   <FirstPersonRenderer
@@ -543,8 +554,31 @@ export function Play() {
       {/* Debug Toast */}
       <DebugToast message={toastMessage} onDismiss={clearToast} />
 
-      {/* Game Over Overlay */}
+      {/* Death Cutscene - plays before stats summary */}
+      {showGameOver === 'death' && !deathCutsceneComplete && (
+        <GameOverCutscene
+          onComplete={() => setDeathCutsceneComplete(true)}
+          onSkip={() => setDeathCutsceneComplete(true)}
+          onMusicChange={handleGameOverMusic}
+          onFateSelected={setDeathFate}
+        />
+      )}
+
+      {/* Victory Cutscene - plays before stats summary */}
+      {showGameOver === 'victory' && !victoryCutsceneComplete && (
+        <VictoryCutscene
+          onComplete={() => setVictoryCutsceneComplete(true)}
+          onSkip={() => setVictoryCutsceneComplete(true)}
+          onMusicChange={handleGameOverMusic}
+          onLegacySelected={setVictoryLegacy}
+        />
+      )}
+
+      {/* Game Over Stats Summary - shows after cutscene completes */}
       {showGameOver && gameState?.player && (
+        (showGameOver === 'death' && deathCutsceneComplete) ||
+        (showGameOver === 'victory' && victoryCutsceneComplete)
+      ) && (
         <GameOver
           type={showGameOver}
           stats={{
@@ -554,6 +588,8 @@ export function Play() {
           }}
           onPlayAgain={handleNewGame}
           onMusicChange={handleGameOverMusic}
+          deathFate={deathFate}
+          victoryLegacy={victoryLegacy}
         />
       )}
 

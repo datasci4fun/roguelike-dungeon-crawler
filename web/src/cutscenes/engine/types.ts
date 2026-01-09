@@ -81,7 +81,7 @@ export interface CaptionLine {
   effect?: TextEffect;
   delay?: number; // ms before this line appears
   duration?: number; // ms to display (for auto-advance)
-  style?: 'normal' | 'emphasis' | 'dramatic' | 'whisper';
+  style?: 'normal' | 'emphasis' | 'dramatic' | 'whisper' | 'death-title' | 'death-claim' | 'death-whisper';
 }
 
 export interface CaptionConfig {
