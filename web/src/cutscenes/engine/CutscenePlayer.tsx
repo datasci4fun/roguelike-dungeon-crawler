@@ -221,6 +221,7 @@ export function CutscenePlayer({
             onComplete={() => {
               if (isLastScene) setIntroComplete(true);
             }}
+            onLineRevealDone={handleLineRevealDone}
             key={`${currentScene.meta.id}:${state.currentSceneIndex}:${(state as any).sceneRunId ?? 0}`}
           />
         )

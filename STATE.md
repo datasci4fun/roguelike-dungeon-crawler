@@ -1,8 +1,8 @@
 # Project State
 
-**Last Updated:** 2026-01-08
-**Branch:** master
-**Version:** v5.1.0 (Cinematic Intro & Responsive View)
+**Last Updated:** 2026-01-09
+**Branch:** develop
+**Version:** v5.2.0 (Modular Cutscene Engine)
 
 ---
 
@@ -16,9 +16,78 @@
 
 ---
 
-## Current Version: v5.1.0
+## Current Version: v5.2.0
 
-### Completed Features (v5.1.0)
+### Completed Features (v5.2.0)
+
+| Feature | Status |
+|---------|--------|
+| Modular cutscene engine architecture | ✅ |
+| Retro CRT phosphor text reveal | ✅ |
+| Per-character staggered ignition animation | ✅ |
+| FX system (flash, shake, flicker, pressure) | ✅ |
+| FX cues tied to caption line completion | ✅ |
+| Scene-scoped CSS classes for per-scene styling | ✅ |
+| Debug mode panel for scene iteration | ✅ |
+| 7-scene intro cutscene with effects | ✅ |
+| Victory and game_over cutscene stubs | ✅ |
+
+### v5.2.0 Architecture
+
+```
+web/src/cutscenes/
+├── engine/
+│   ├── hooks/          # useCutsceneTimeline, useFxBus
+│   ├── layers/         # SceneBackground, Particles, FX, CRT
+│   ├── text/           # RetroCaption with phosphor reveal
+│   ├── ui/             # CutsceneHUD
+│   ├── CutscenePlayer.tsx
+│   └── types.ts
+├── intro/
+│   └── scenes/         # 00_Title through 06_You
+├── victory/            # Stub for future
+└── game_over/          # Stub for future
+```
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| Scene transitions | Fade in/visible/out with configurable durations |
+| FX cues | Effects triggered on caption line completion |
+| Pressure pulse | Screen-wide dramatic darkening effect |
+| Transition curtain | Clean scene swaps without UI flashes |
+| Scene-scoped CSS | Per-scene styling via `.cs-scene-{id}` classes |
+| Debug mode | Set `DEBUG_MODE = true` in CutscenePlayer.tsx |
+
+### Intro Scenes
+
+| Scene | Description | Particles |
+|-------|-------------|-----------|
+| 00_Title | ASCII art title reveal | none |
+| 01_Kingdom | Establishing shot | stars |
+| 02_Darkness | The catastrophe | ash |
+| 03_Underground | Ancient depths | mist |
+| 04_Centuries | Time passage | magic |
+| 05_Present | Return to entrance | embers |
+| 06_You | Player vow with fxCues | embers |
+
+### Key Files (v5.2.0)
+
+| File | Purpose |
+|------|---------|
+| `web/src/cutscenes/engine/CutscenePlayer.tsx` | Main orchestrator |
+| `web/src/cutscenes/engine/types.ts` | Type definitions |
+| `web/src/cutscenes/engine/hooks/useCutsceneTimeline.ts` | Scene progression |
+| `web/src/cutscenes/engine/hooks/useFxBus.ts` | FX management |
+| `web/src/cutscenes/engine/text/RetroCaption.tsx` | CRT text reveal |
+| `web/src/cutscenes/intro/config.ts` | Intro cutscene config |
+
+---
+
+## Previous Versions
+
+### v5.1.0 Features
 
 | Feature | Status |
 |---------|--------|
@@ -26,26 +95,7 @@
 | Parallax backgrounds per scene | ✅ |
 | Particle effects (stars, embers, dust, darkness) | ✅ |
 | Scene transitions with solid black (no bleed) | ✅ |
-| "Begin Your Adventure" button on final scene | ✅ |
-| 3-second pause at end of each scene | ✅ |
 | Responsive 3D/2D renderer (fills container) | ✅ |
-
-### v5.1.0 Changes
-
-**Cinematic Intro (GameIntro.tsx/css):**
-- 7 scenes: Title, Kingdom, Darkness, Underground, Depths, Present, Your Story
-- Scene-specific CSS backgrounds with parallax layers
-- Particle systems: stars, embers, dust, darkness particles
-- Fixed fade transitions (content fades, background stays solid black)
-- Progressive line reveal with 600ms delays
-- 3-second pause at end of each scene before transition
-- "Begin Your Adventure" button appears after final scene
-- Cinematic letterbox bars and progress indicator dots
-
-**Responsive Renderer (Play.tsx/css):**
-- Added ResizeObserver to track scene container size
-- 3D/2D renderers now fill 100% of available space
-- Removed hardcoded 800x600 dimensions
 
 ### v5.0.0 Features
 
@@ -54,25 +104,12 @@
 | Dynamic LOS-based render distance | ✅ |
 | Smooth movement/turn animations (2D & 3D) | ✅ |
 | Map memory for explored tiles | ✅ |
-| Reworked fog curves (smoother falloff) | ✅ |
-| Front wall span fix (no side leaks) | ✅ |
 | Pure tile-based 3D geometry | ✅ |
-| Shared geometry caching (3D perf) | ✅ |
 | Parallax skybox system | ✅ |
-
-### Key Files (v5.1.0)
-
-| File | Purpose |
-|------|---------|
-| `web/src/components/GameIntro.tsx` | Cinematic intro with scenes |
-| `web/src/components/GameIntro.css` | Scene backgrounds and animations |
-| `web/src/pages/Play.tsx` | Responsive renderer sizing |
-| `web/src/components/SceneRenderer/FirstPersonRenderer.tsx` | 2D canvas renderer |
-| `web/src/components/SceneRenderer/FirstPersonRenderer3D.tsx` | Three.js 3D renderer |
 
 ---
 
-## Next Version: v5.2.0
+## Next Version: v5.3.0
 
 | Feature | Description |
 |---------|-------------|
