@@ -96,7 +96,7 @@ export function useSoundEffect() {
   }, []);
 
   // Play a sound effect by ID
-  const play = useCallback((sfxId: SfxId) => {
+  const play = useCallback((sfxId: SfxId, opts?: { volume?: number }) => {
     // Check if audio is unlocked and volume is audible
     if (!isUnlocked) return;
 
@@ -112,7 +112,8 @@ export function useSoundEffect() {
     try {
       const ctx = getAudioContext();
       const now = ctx.currentTime;
-      const masterVolume = volume * (definition.volume ?? 1);
+      const perCallVolume = opts?.volume ?? 1;
+      const masterVolume = volume * (definition.volume ?? 1) * perCallVolume;
 
       // Play all notes in the definition
       for (const note of definition.notes) {

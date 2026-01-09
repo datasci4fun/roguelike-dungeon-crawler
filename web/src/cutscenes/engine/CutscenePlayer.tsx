@@ -3,7 +3,7 @@
  * Orchestrates all layers and handles scene progression
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CutscenePlayerProps, FxType, FadeStyle } from './types';
 import { useCutsceneTimeline } from './hooks/useCutsceneTimeline';
 import { useFxBus } from './hooks/useFxBus';
@@ -33,6 +33,7 @@ export function CutscenePlayer({
   onSkip,
   onSceneChange,
   onMusicChange,
+  onSfxPlay,
 }: CutscenePlayerProps) {
   const [introComplete, setIntroComplete] = useState(false);
 
@@ -60,6 +61,54 @@ export function CutscenePlayer({
     pressureIntensity,
   } = useFxBus();
 
+  // SFX cooldown to prevent rapid-fire audio stacking
+  const sfxLastPlayedRef = useRef<Record<string, number>>({});
+
+  // FX -> SFX bridge (optional). Keeps visuals decoupled from audio system.
+  const triggerEffectWithSfx = useCallback(
+    (ev: any) => {
+      triggerEffect(ev);
+
+      if (!onSfxPlay || !ev?.type || ev.type === 'none') return;
+      const intensity: 'light' | 'medium' | 'heavy' = ev.intensity ?? 'medium';
+
+      const map: Record<string, Record<string, string>> = {
+        flash: {
+          light: 'sfx_lightning_soft',
+          medium: 'sfx_lightning',
+          heavy: 'sfx_thunder_clap',
+        },
+        pressure: {
+          light: 'sfx_rumble_soft',
+          medium: 'sfx_rumble',
+          heavy: 'sfx_rumble_heavy',
+        },
+        shake: {
+          light: 'sfx_stone_shift',
+          medium: 'sfx_impact',
+          heavy: 'sfx_impact_heavy',
+        },
+        flicker: {
+          light: 'sfx_power_tick',
+          medium: 'sfx_power_buzz',
+          heavy: 'sfx_power_surge',
+        },
+      };
+
+      const id = map[ev.type]?.[intensity];
+      if (id) {
+        // Cooldown check to prevent rapid-fire stacking
+        const now = performance.now();
+        const last = sfxLastPlayedRef.current[id] ?? 0;
+        if (now - last < 150) return;
+        sfxLastPlayedRef.current[id] = now;
+
+        onSfxPlay(id, { volume: intensity === 'heavy' ? 1 : 0.85 });
+      }
+    },
+    [triggerEffect, onSfxPlay]
+  );
+
   // Trigger music on mount
   useEffect(() => {
     if (cutscene.music) {
@@ -77,7 +126,7 @@ export function CutscenePlayer({
     currentScene.effects.forEach((effect, index) => {
       const delay = timings[index] || 0;
       const timer = window.setTimeout(() => {
-        triggerEffect(effect);
+        triggerEffectWithSfx(effect);
       }, delay);
       timers.push(timer);
     });
@@ -85,7 +134,7 @@ export function CutscenePlayer({
     return () => {
       timers.forEach(clearTimeout);
     };
-  }, [currentScene, triggerEffect]);
+  }, [currentScene, triggerEffectWithSfx]);
 
   // Scene-specific music changes
   useEffect(() => {
@@ -142,11 +191,11 @@ export function CutscenePlayer({
           text.includes(target);
 
         if (match) {
-          for (const ev of cue.events ?? []) triggerEffect(ev);
+          for (const ev of cue.events ?? []) triggerEffectWithSfx(ev);
         }
       }
     },
-    [currentScene, triggerEffect]
+    [currentScene, triggerEffectWithSfx]
   );
 
   if (!currentScene) {
@@ -231,6 +280,10 @@ export function CutscenePlayer({
       {cutscene.crtEffect !== false && (
         <CrtLayer enabled={true} intensity="light" />
       )}
+
+      {/* Letterbox bars */}
+      <div className="cs-letterbox cs-letterbox-top" />
+      <div className="cs-letterbox cs-letterbox-bottom" />
 
       {/* ✅ NEW: PRESSURE PULSE (global dim) */}
       <div
@@ -319,18 +372,18 @@ export function CutscenePlayer({
             {/* ✅ NEW: Pressure debug trigger */}
             <button
               className="debug-action-btn"
-              onClick={() => triggerEffect({ type: 'pressure', intensity: 'medium' })}
+              onClick={() => triggerEffectWithSfx({ type: 'pressure', intensity: 'medium' })}
             >
               🕳 Pressure
             </button>
 
-            <button className="debug-action-btn" onClick={() => triggerEffect({ type: 'flash', intensity: 'medium' })}>
+            <button className="debug-action-btn" onClick={() => triggerEffectWithSfx({ type: 'flash', intensity: 'medium' })}>
               ⚡ Flash
             </button>
-            <button className="debug-action-btn" onClick={() => triggerEffect({ type: 'shake', intensity: 'medium' })}>
+            <button className="debug-action-btn" onClick={() => triggerEffectWithSfx({ type: 'shake', intensity: 'medium' })}>
               📳 Shake
             </button>
-            <button className="debug-action-btn" onClick={() => triggerEffect({ type: 'flicker', intensity: 'medium' })}>
+            <button className="debug-action-btn" onClick={() => triggerEffectWithSfx({ type: 'flicker', intensity: 'medium' })}>
               💡 Flicker
             </button>
           </div>

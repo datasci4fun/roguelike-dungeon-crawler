@@ -155,6 +155,7 @@ export interface CutsceneCallbacks {
   onSkip?: () => void;
   onSceneChange?: (sceneIndex: number, sceneId: string) => void;
   onMusicChange?: (trackId: string) => void;
+  onSfxPlay?: (sfxId: string, opts?: { volume?: number }) => void;
 }
 
 // ============================================

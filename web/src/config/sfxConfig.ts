@@ -34,7 +34,20 @@ export type SfxId =
   // Abilities
   | 'ability_ready'
   | 'ability_use'
-  | 'ability_fail';
+  | 'ability_fail'
+  // Cinematics
+  | 'sfx_lightning_soft'
+  | 'sfx_lightning'
+  | 'sfx_thunder_clap'
+  | 'sfx_rumble_soft'
+  | 'sfx_rumble'
+  | 'sfx_rumble_heavy'
+  | 'sfx_stone_shift'
+  | 'sfx_impact'
+  | 'sfx_impact_heavy'
+  | 'sfx_power_tick'
+  | 'sfx_power_buzz'
+  | 'sfx_power_surge';
 
 export type OscillatorType = 'sine' | 'square' | 'sawtooth' | 'triangle';
 
@@ -64,6 +77,8 @@ export interface SfxDefinition {
 const QUICK_ENV: SfxEnvelope = { attack: 0.01, decay: 0.05, sustain: 0.3, release: 0.1 };
 const PUNCH_ENV: SfxEnvelope = { attack: 0.005, decay: 0.1, sustain: 0.2, release: 0.15 };
 const SOFT_ENV: SfxEnvelope = { attack: 0.02, decay: 0.1, sustain: 0.5, release: 0.2 };
+const RUMBLE_ENV: SfxEnvelope = { attack: 0.02, decay: 0.2, sustain: 0.7, release: 0.35 };
+const BUZZ_ENV: SfxEnvelope = { attack: 0.01, decay: 0.08, sustain: 0.25, release: 0.12 };
 
 export const SFX_DEFINITIONS: Record<SfxId, SfxDefinition> = {
   // Movement
@@ -246,5 +261,111 @@ export const SFX_DEFINITIONS: Record<SfxId, SfxDefinition> = {
       { frequency: 200, type: 'sine', duration: 0.15, envelope: SOFT_ENV, pitchBend: -100 },
     ],
     volume: 0.4,
+  },
+
+  // ============================================================
+  // Cinematics (procedural)
+  // ============================================================
+
+  sfx_lightning_soft: {
+    notes: [
+      { frequency: 1200, type: 'square', duration: 0.06, envelope: QUICK_ENV, pitchBend: -700, volume: 0.55 },
+      { frequency: 360, type: 'sawtooth', duration: 0.12, envelope: PUNCH_ENV, pitchBend: -160, volume: 0.35 },
+      { frequency: 90, type: 'sine', duration: 0.18, delay: 0.02, envelope: SOFT_ENV, pitchBend: -20, volume: 0.25 },
+    ],
+    volume: 0.55,
+  },
+
+  sfx_lightning: {
+    notes: [
+      { frequency: 1700, type: 'square', duration: 0.05, envelope: QUICK_ENV, pitchBend: -1200, volume: 0.6 },
+      { frequency: 620, type: 'sawtooth', duration: 0.11, envelope: PUNCH_ENV, pitchBend: -260, volume: 0.4 },
+      { frequency: 140, type: 'square', duration: 0.12, delay: 0.05, envelope: PUNCH_ENV, pitchBend: -60, volume: 0.25 },
+      { frequency: 70, type: 'sine', duration: 0.28, delay: 0.03, envelope: SOFT_ENV, pitchBend: -18, volume: 0.25 },
+    ],
+    volume: 0.65,
+  },
+
+  sfx_thunder_clap: {
+    notes: [
+      { frequency: 80, type: 'sawtooth', duration: 0.22, envelope: PUNCH_ENV, pitchBend: -40, volume: 0.5 },
+      { frequency: 55, type: 'sine', duration: 0.95, delay: 0.05, envelope: RUMBLE_ENV, pitchBend: -25, volume: 0.45 },
+      { frequency: 42, type: 'triangle', duration: 1.1, delay: 0.08, envelope: RUMBLE_ENV, pitchBend: -18, volume: 0.35 },
+    ],
+    volume: 0.7,
+  },
+
+  sfx_rumble_soft: {
+    notes: [
+      { frequency: 70, type: 'sine', duration: 0.45, envelope: RUMBLE_ENV, pitchBend: -10, volume: 0.35 },
+      { frequency: 95, type: 'triangle', duration: 0.32, delay: 0.04, envelope: SOFT_ENV, pitchBend: -12, volume: 0.2 },
+    ],
+    volume: 0.55,
+  },
+
+  sfx_rumble: {
+    notes: [
+      { frequency: 60, type: 'sine', duration: 0.75, envelope: RUMBLE_ENV, pitchBend: -18, volume: 0.45 },
+      { frequency: 88, type: 'square', duration: 0.22, delay: 0.06, envelope: SOFT_ENV, pitchBend: -10, volume: 0.18 },
+    ],
+    volume: 0.65,
+  },
+
+  sfx_rumble_heavy: {
+    notes: [
+      { frequency: 48, type: 'sine', duration: 1.2, envelope: RUMBLE_ENV, pitchBend: -30, volume: 0.55 },
+      { frequency: 72, type: 'sawtooth', duration: 0.42, delay: 0.08, envelope: SOFT_ENV, pitchBend: -18, volume: 0.22 },
+      { frequency: 110, type: 'square', duration: 0.18, delay: 0.12, envelope: QUICK_ENV, pitchBend: -40, volume: 0.15 },
+    ],
+    volume: 0.75,
+  },
+
+  sfx_stone_shift: {
+    notes: [
+      { frequency: 160, type: 'square', duration: 0.18, envelope: SOFT_ENV, pitchBend: -80, volume: 0.45 },
+      { frequency: 70, type: 'sine', duration: 0.32, delay: 0.06, envelope: SOFT_ENV, pitchBend: -15, volume: 0.25 },
+    ],
+    volume: 0.55,
+  },
+
+  sfx_impact: {
+    notes: [
+      { frequency: 240, type: 'sawtooth', duration: 0.12, envelope: PUNCH_ENV, pitchBend: -160, volume: 0.55 },
+      { frequency: 130, type: 'square', duration: 0.10, delay: 0.03, envelope: QUICK_ENV, pitchBend: -60, volume: 0.25 },
+    ],
+    volume: 0.65,
+  },
+
+  sfx_impact_heavy: {
+    notes: [
+      { frequency: 190, type: 'sawtooth', duration: 0.18, envelope: PUNCH_ENV, pitchBend: -140, volume: 0.6 },
+      { frequency: 95, type: 'square', duration: 0.18, delay: 0.04, envelope: PUNCH_ENV, pitchBend: -55, volume: 0.28 },
+      { frequency: 60, type: 'sine', duration: 0.45, delay: 0.06, envelope: SOFT_ENV, pitchBend: -12, volume: 0.25 },
+    ],
+    volume: 0.75,
+  },
+
+  sfx_power_tick: {
+    notes: [
+      { frequency: 980, type: 'sine', duration: 0.045, envelope: QUICK_ENV, pitchBend: -140, volume: 0.5 },
+    ],
+    volume: 0.35,
+  },
+
+  sfx_power_buzz: {
+    notes: [
+      { frequency: 420, type: 'square', duration: 0.18, envelope: BUZZ_ENV, pitchBend: 20, volume: 0.35 },
+      { frequency: 620, type: 'triangle', duration: 0.16, delay: 0.03, envelope: BUZZ_ENV, pitchBend: -30, volume: 0.25 },
+    ],
+    volume: 0.4,
+  },
+
+  sfx_power_surge: {
+    notes: [
+      { frequency: 520, type: 'triangle', duration: 0.22, envelope: SOFT_ENV, pitchBend: 380, volume: 0.35 },
+      { frequency: 820, type: 'sine', duration: 0.18, delay: 0.07, envelope: SOFT_ENV, pitchBend: -220, volume: 0.3 },
+      { frequency: 240, type: 'square', duration: 0.12, delay: 0.09, envelope: QUICK_ENV, pitchBend: -60, volume: 0.18 },
+    ],
+    volume: 0.5,
   },
 };

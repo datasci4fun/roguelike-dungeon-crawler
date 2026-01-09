@@ -4,6 +4,8 @@
  */
 
 import { CutscenePlayer, introCutscene } from '../cutscenes';
+import { useSoundEffect } from '../hooks/useSoundEffect';
+import type { SfxId } from '../config/sfxConfig';
 
 interface GameIntroProps {
   onComplete: () => void;
@@ -12,6 +14,8 @@ interface GameIntroProps {
 }
 
 export function GameIntro({ onComplete, onSkip, onMusicChange }: GameIntroProps) {
+  const { play } = useSoundEffect();
+
   return (
     <CutscenePlayer
       cutscene={introCutscene}
@@ -19,6 +23,7 @@ export function GameIntro({ onComplete, onSkip, onMusicChange }: GameIntroProps)
       onComplete={onComplete}
       onSkip={onSkip}
       onMusicChange={onMusicChange}
+      onSfxPlay={(id, opts) => play(id as SfxId, opts)}
     />
   );
 }

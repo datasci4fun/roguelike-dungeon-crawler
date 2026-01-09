@@ -335,3 +335,24 @@ $black: #000;
   --rc-char-stagger: 14ms;
   --rc-char-dur: 620ms;
 }
+
+// ============================================
+// SCENE-SPECIFIC LAYOUT (You)
+// Tighten vertical rhythm so long stanza doesn't collide with HUD/nav.
+// ============================================
+
+.cutscene-player.cs-scene-you .retro-caption.caption-center {
+  top: 46%;                 // lift the whole block slightly
+  transform: translateY(-50%);
+}
+
+.cutscene-player.cs-scene-you .caption-line {
+  padding: 0.12em 0;        // tighter than default 0.3em
+  line-height: 1.52;        // tighter than default 1.8
+  min-height: 1.55em;       // reduce reserved height per line
+  font-size: clamp(0.95rem, 2.2vw, 1.25rem);
+}
+
+.cutscene-player.cs-scene-you .caption-line.empty-line {
+  min-height: 0.55em;       // tighter blank beats
+}
