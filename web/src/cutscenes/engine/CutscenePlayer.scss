@@ -1,0 +1,399 @@
+/**
+ * CutscenePlayer - Main player container styles
+ */
+
+$gold: #ffd700;
+$black: #000;
+
+// ============================================
+// BASE
+// ============================================
+.cutscene-player {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: $black;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.cutscene-player.intro-complete {
+  cursor: default;
+}
+
+.cutscene-player.debug-mode {
+  cursor: default;
+}
+
+// ============================================
+// TRANSITION CURTAIN (namespaced; prevents UI flashes)
+// ============================================
+.cs-curtain {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  z-index: 4000; // below debug panel, above everything else
+  opacity: 0;
+}
+
+.cs-curtain-in {
+  opacity: 1;
+  animation: csCurtainToClear var(--cs-curtain-in-ms, 300ms) ease-out both;
+}
+
+.cs-curtain-visible {
+  opacity: 0;
+}
+
+.cs-curtain-out {
+  opacity: 0;
+  animation: csCurtainToBlack var(--cs-curtain-out-ms, 300ms) ease-in both;
+}
+
+@keyframes csCurtainToClear {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes csCurtainToBlack {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ============================================
+// SHAKE EFFECT
+// ============================================
+.cutscene-player.cutscene-shake {
+  animation: shakeAnim 0.6s ease-out;
+}
+
+@keyframes shakeAnim {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5px, -3px); }
+  20% { transform: translate(5px, 3px); }
+  30% { transform: translate(-4px, 2px); }
+  40% { transform: translate(4px, -2px); }
+  50% { transform: translate(-3px, 3px); }
+  60% { transform: translate(3px, -3px); }
+  70% { transform: translate(-2px, 1px); }
+  80% { transform: translate(2px, -1px); }
+}
+
+// ============================================
+// BEGIN BUTTON
+// ============================================
+.begin-container {
+  position: absolute;
+  bottom: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+}
+
+.begin-adventure-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 3rem;
+  padding: 1rem 3rem;
+  font-size: 1.4rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  color: $gold;
+  background: linear-gradient(
+    to bottom,
+    rgba(80, 60, 20, 0.8),
+    rgba(40, 30, 10, 0.9)
+  );
+  border: 2px solid $gold;
+  border-radius: 8px;
+  cursor: pointer;
+  text-shadow:
+    0 0 10px rgba($gold, 0.5),
+    0 0 20px rgba($gold, 0.3),
+    0 0 40px rgba($gold, 0.2);
+  box-shadow:
+    0 0 20px rgba($gold, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  animation:
+    buttonAppear 0.8s ease-out,
+    buttonGlow 2s ease-in-out infinite alternate;
+
+  &:hover {
+    transform: scale(1.05);
+    background: linear-gradient(
+      to bottom,
+      rgba(100, 80, 30, 0.9),
+      rgba(60, 45, 15, 0.95)
+    );
+    box-shadow:
+      0 0 40px rgba($gold, 0.5),
+      0 0 60px rgba($gold, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  .button-icon {
+    font-size: 1.2rem;
+    animation: buttonIconPulse 1.5s ease-in-out infinite;
+  }
+
+  .button-text {
+    text-transform: uppercase;
+  }
+}
+
+@keyframes buttonAppear {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes buttonGlow {
+  from {
+    box-shadow:
+      0 0 20px rgba($gold, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  to {
+    box-shadow:
+      0 0 30px rgba($gold, 0.5),
+      0 0 50px rgba($gold, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+}
+
+@keyframes buttonIconPulse {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+// ============================================
+// DEBUG PANEL
+// ============================================
+.debug-panel {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: min(360px, calc(100vw - 28px));
+  z-index: 5000;
+
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid rgba($gold, 0.35);
+  border-radius: 10px;
+  padding: 12px;
+
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: rgba(255, 255, 255, 0.9);
+
+  box-shadow:
+    0 0 30px rgba(0, 0, 0, 0.6),
+    0 0 18px rgba($gold, 0.12);
+
+  pointer-events: auto;
+}
+
+.debug-title {
+  color: $gold;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.debug-info {
+  font-size: 0.85rem;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 10px;
+
+  strong { color: $gold; }
+}
+
+.debug-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.debug-action-btn,
+.debug-scene-btn,
+.debug-exit-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: transform 0.08s ease, background 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
+
+  &:active { transform: translateY(1px); }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.debug-scene-list {
+  display: grid;
+  gap: 6px;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 4px;
+  margin-bottom: 10px;
+}
+
+.debug-scene-btn.active {
+  border-color: rgba($gold, 0.65);
+  background: rgba($gold, 0.08);
+  color: $gold;
+}
+
+.debug-exit-btn {
+  width: 100%;
+  border-color: rgba(255, 80, 80, 0.35);
+  background: rgba(255, 80, 80, 0.06);
+
+  &:hover {
+    border-color: rgba(255, 80, 80, 0.55);
+    background: rgba(255, 80, 80, 0.12);
+  }
+}
+
+// ============================================
+// VIGNETTE OVERLAY
+// ============================================
+.cutscene-player::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba($black, 0.6) 100%
+  );
+  pointer-events: none;
+  z-index: 50;
+}
+
+// ============================================
+// FILM GRAIN
+// ============================================
+.cutscene-player::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 51;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  animation: grainShift 0.5s steps(10) infinite;
+}
+
+// ============================================
+// SCENE-SPECIFIC TUNING (Kingdom)
+// Slower “ignite” per glyph without changing line holds
+// ============================================
+
+.cutscene-player.cs-scene-kingdom .caption-line.normal {
+  --rc-char-stagger: 14ms;
+  --rc-char-dur: 760ms;
+  --rc-rise: 10px;
+}
+
+.cutscene-player.cs-scene-kingdom .caption-line.emphasis {
+  --rc-char-stagger: 12ms;
+  --rc-char-dur: 740ms;
+}
+
+.cutscene-player.cs-scene-kingdom .caption-line.dramatic {
+  --rc-char-stagger: 2ms;
+  --rc-char-dur: 920ms;
+}
+
+.cutscene-player.cs-scene-kingdom .caption-line.whisper {
+  --rc-char-stagger: 18ms;
+  --rc-char-dur: 860ms;
+}
+
+
+// ============================================
+// SCENE-SPECIFIC TUNING (Darkness)
+// Faster, harsher “ignite” with more rise + a touch more blur
+// ============================================
+
+.cutscene-player.cs-scene-darkness .caption-line {
+  --rc-rise: 16px;
+  --rc-char-stagger: 6ms;
+  --rc-char-dur: 420ms;
+}
+
+.cutscene-player.cs-scene-darkness .caption-line.dramatic {
+  --rc-rise: 18px;
+  --rc-char-stagger: 1ms;
+  --rc-char-dur: 560ms;
+}
+
+.cutscene-player.cs-scene-darkness .caption-line.whisper {
+  --rc-rise: 12px;
+  --rc-char-stagger: 9ms;
+  --rc-char-dur: 520ms;
+}
+
+// ============================================
+// PRESSURE PULSE (global dim)
+// ============================================
+.cs-pressure {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  pointer-events: none;
+  z-index: 3500; // above scene + CRT, below curtain (4000) and debug (5000)
+  opacity: 0;
+}
+
+.cs-pressure-light  { --cs-pressure-max: 0.22; --cs-pressure-dur: 450ms; }
+.cs-pressure-medium { --cs-pressure-max: 0.40; --cs-pressure-dur: 900ms; }
+.cs-pressure-heavy  { --cs-pressure-max: 0.55; --cs-pressure-dur: 1350ms; }
+
+.cs-pressure.active {
+  animation: csPressurePulse var(--cs-pressure-dur, 900ms) ease-out both;
+}
+
+@keyframes csPressurePulse {
+  0%   { opacity: 0; }
+  18%  { opacity: var(--cs-pressure-max, 0.4); }
+  60%  { opacity: calc(var(--cs-pressure-max, 0.4) * 0.85); }
+  100% { opacity: 0; }
+}
+
+
+@keyframes grainShift {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-1%, -1%); }
+  20% { transform: translate(1%, 1%); }
+  30% { transform: translate(-1%, 1%); }
+  40% { transform: translate(1%, -1%); }
+  50% { transform: translate(-1%, 0); }
+  60% { transform: translate(1%, 0); }
+  70% { transform: translate(0, 1%); }
+  80% { transform: translate(0, -1%); }
+  90% { transform: translate(1%, 1%); }
+}

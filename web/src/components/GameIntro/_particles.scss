@@ -1,0 +1,137 @@
+// ============================================
+// PARTICLES SYSTEM
+// ============================================
+
+@use 'variables' as *;
+@use 'mixins' as *;
+
+.particles {
+  @include absolute-fill;
+  pointer-events: none;
+  z-index: $z-particles;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  height: var(--size);
+  animation-delay: var(--delay);
+  animation-duration: var(--duration);
+  animation-iteration-count: infinite;
+}
+
+// Star particles
+.particles-stars .particle {
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+  animation-name: starTwinkle;
+}
+
+// Ember particles
+.particles-embers .particle {
+  background: radial-gradient(
+    circle,
+    rgba($ember-orange, 1) 0%,
+    rgba($ember-red, 0.8) 50%,
+    transparent 100%
+  );
+  animation-name: emberFloat;
+}
+
+// Dust particles
+.particles-dust .particle {
+  background: rgba(150, 140, 120, 0.4);
+  animation-name: dustDrift;
+}
+
+// Darkness particles (larger, more menacing)
+.particles-darkness .particle {
+  background: radial-gradient(
+    circle,
+    rgba(50, 0, 30, 0.8) 0%,
+    transparent 70%
+  );
+  width: calc(var(--size) * 3);
+  height: calc(var(--size) * 3);
+  animation-name: darknessDrift;
+}
+
+// NEW: Magical sparkle particles
+.particles-magic .particle {
+  background: radial-gradient(
+    circle,
+    rgba($gold, 1) 0%,
+    rgba($gold, 0.5) 30%,
+    transparent 70%
+  );
+  box-shadow:
+    0 0 6px rgba($gold, 0.8),
+    0 0 12px rgba($gold, 0.4);
+  animation-name: magicSparkle;
+}
+
+@keyframes magicSparkle {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  20% {
+    opacity: 1;
+    transform: scale(1) rotate(90deg);
+  }
+  80% {
+    opacity: 0.8;
+    transform: scale(0.8) rotate(270deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(360deg);
+  }
+}
+
+// NEW: Ash/cinder particles for underground
+.particles-ash .particle {
+  background: rgba(80, 80, 80, 0.6);
+  animation-name: ashFall;
+}
+
+@keyframes ashFall {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) translateX(0) rotate(0deg);
+  }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.4; }
+  100% {
+    opacity: 0;
+    transform: translateY(100px) translateX(30px) rotate(180deg);
+  }
+}
+
+// NEW: Mist/fog particles for depths
+.particles-mist .particle {
+  background: radial-gradient(
+    ellipse,
+    rgba(100, 100, 120, 0.3) 0%,
+    transparent 70%
+  );
+  width: calc(var(--size) * 5);
+  height: calc(var(--size) * 3);
+  border-radius: 50%;
+  animation-name: mistFloat;
+}
+
+@keyframes mistFloat {
+  0%, 100% {
+    opacity: 0.2;
+    transform: translateX(0) scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: translateX(20px) scale(1.2);
+  }
+}

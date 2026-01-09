@@ -1,8 +1,8 @@
 # Project State
 
-**Last Updated:** 2026-01-09
+**Last Updated:** 2026-01-08
 **Branch:** master
-**Version:** v5.0.0 (First-Person Rendering Overhaul)
+**Version:** v5.1.0 (Cinematic Intro & Responsive View)
 
 ---
 
@@ -16,9 +16,38 @@
 
 ---
 
-## Current Version: v5.0.0
+## Current Version: v5.1.0
 
-### Completed Features (v5.0.0)
+### Completed Features (v5.1.0)
+
+| Feature | Status |
+|---------|--------|
+| Cinematic intro with 7 narrative scenes | ✅ |
+| Parallax backgrounds per scene | ✅ |
+| Particle effects (stars, embers, dust, darkness) | ✅ |
+| Scene transitions with solid black (no bleed) | ✅ |
+| "Begin Your Adventure" button on final scene | ✅ |
+| 3-second pause at end of each scene | ✅ |
+| Responsive 3D/2D renderer (fills container) | ✅ |
+
+### v5.1.0 Changes
+
+**Cinematic Intro (GameIntro.tsx/css):**
+- 7 scenes: Title, Kingdom, Darkness, Underground, Depths, Present, Your Story
+- Scene-specific CSS backgrounds with parallax layers
+- Particle systems: stars, embers, dust, darkness particles
+- Fixed fade transitions (content fades, background stays solid black)
+- Progressive line reveal with 600ms delays
+- 3-second pause at end of each scene before transition
+- "Begin Your Adventure" button appears after final scene
+- Cinematic letterbox bars and progress indicator dots
+
+**Responsive Renderer (Play.tsx/css):**
+- Added ResizeObserver to track scene container size
+- 3D/2D renderers now fill 100% of available space
+- Removed hardcoded 800x600 dimensions
+
+### v5.0.0 Features
 
 | Feature | Status |
 |---------|--------|
@@ -31,61 +60,19 @@
 | Shared geometry caching (3D perf) | ✅ |
 | Parallax skybox system | ✅ |
 
-### v5.0.0 Changes
-
-**2D Canvas FirstPersonRenderer:**
-- Fixed front wall span to cover full opening (derived from contiguous wall run)
-- Gate floor/ceiling rendering behind blocking walls (hasFloor)
-- Persistent map memory for explored-but-not-visible tiles (tile_actual for geometry, dim brightness)
-- Reworked fog curves in projection.ts with smoother ramps
-- Added parallax skybox that shifts with player rotation
-
-**Server First-Person View:**
-- Replaced fixed depth=8 with dynamic LOS depth (raycast forward until OOB/blocking)
-- Added safety cap, decoupled width scaling from dynamic depth
-- Updated entity visibility to use max_distance=depth
-
-**3D Three.js FirstPersonRenderer3D:**
-- Pure tile-based geometry (render every wall tile at its offset/depth)
-- Floor+ceiling planes for non-wall tiles
-- Explored-tile memory with dim materials
-- Shared geometry caching (PlaneGeometry, BoxGeometry)
-- Safe group clearing that disposes only non-shared resources
-- Smooth movement and turn animations
-
-### v4.8.0 Features
-
-| Feature | Status |
-|---------|--------|
-| 3D torch lighting with falloff | ✅ |
-| Blue fill light for shadows | ✅ |
-| Atmospheric fog (2-8 tiles) | ✅ |
-| Flickering torch animation | ✅ |
-| Open room floor/ceiling rendering | ✅ |
-| Stable tile materials (no flicker) | ✅ |
-
-### v4.7.0 Features
-
-| Feature | Status |
-|---------|--------|
-| Three.js 3D first-person renderer | ✅ |
-| Triangle-based 2D texture mapping | ✅ |
-| Floor/ceiling tile variants | ✅ |
-| Wall UV tiling (no stretching) | ✅ |
-
-### Key Files (v5.0.0)
+### Key Files (v5.1.0)
 
 | File | Purpose |
 |------|---------|
-| `web/src/components/SceneRenderer/FirstPersonRenderer.tsx` | 2D canvas renderer with animations |
+| `web/src/components/GameIntro.tsx` | Cinematic intro with scenes |
+| `web/src/components/GameIntro.css` | Scene backgrounds and animations |
+| `web/src/pages/Play.tsx` | Responsive renderer sizing |
+| `web/src/components/SceneRenderer/FirstPersonRenderer.tsx` | 2D canvas renderer |
 | `web/src/components/SceneRenderer/FirstPersonRenderer3D.tsx` | Three.js 3D renderer |
-| `web/src/components/SceneRenderer/projection.ts` | Fog curves and perspective math |
-| `web/src/components/SceneRenderer/skybox.ts` | Parallax background system |
-| `server/app/services/game_session.py` | Dynamic LOS view generation |
 
 ---
 
-## Next Version: v5.1.0
+## Next Version: v5.2.0
 
 | Feature | Description |
 |---------|-------------|

@@ -1,0 +1,337 @@
+/**
+ * RetroCaption - Cinematic text styles (CRT phosphor)
+ */
+
+$gold: #ffd700;
+$text-primary: #e0e0e0;
+$text-dim: #a0a0a0;
+$text-muted: #707070;
+$black: #000;
+
+// ============================================
+// BASE
+// ============================================
+.retro-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  padding: 2rem;
+  text-align: center;
+}
+
+// ============================================
+// POSITIONS
+// ============================================
+.caption-center {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.caption-bottom {
+  bottom: 15%;
+}
+
+.caption-top {
+  top: 15%;
+}
+
+// ============================================
+// CONTENT
+// ============================================
+.caption-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.caption-line {
+  margin: 0;
+  padding: 0.3em 0;
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  line-height: 1.8;
+  color: $text-primary;
+
+  // Critical: reserve line height so the block never “grows” and recenters
+  min-height: 1.8em;
+
+  // Per-line phosphor defaults (can be overridden by style classes)
+  --rc-rise: 12px;
+  --rc-char-stagger: 10ms;
+  --rc-char-dur: 560ms;
+}
+
+.caption-line.empty-line {
+  min-height: 0.8em;
+}
+
+// Hide non-fade lines entirely until revealed
+.caption-line.is-hidden:not(.effect-fade):not(.empty-line) {
+  opacity: 0;
+}
+
+// ============================================
+// TEXT STYLES
+// ============================================
+.caption-line.normal {
+  color: $text-primary;
+  --rc-rise: 12px;
+  --rc-char-stagger: 10ms;
+  --rc-char-dur: 560ms;
+}
+
+.caption-line.emphasis {
+  color: $gold;
+  text-shadow: 0 0 10px rgba($gold, 0.5);
+
+  --rc-rise: 10px;
+  --rc-char-stagger: 8ms;
+  --rc-char-dur: 520ms;
+}
+
+.caption-line.dramatic {
+  color: $gold;
+  font-weight: bold;
+  font-size: 1.2em;
+  text-shadow:
+    0 0 10px rgba($gold, 0.5),
+    0 0 20px rgba($gold, 0.3),
+    0 0 40px rgba($gold, 0.2);
+
+  // Title “stamp”: minimal stagger so it hits together
+  --rc-rise: 14px;
+  --rc-char-stagger: 0ms;
+  --rc-char-dur: 720ms;
+}
+
+.caption-line.whisper {
+  color: $text-dim;
+  font-style: italic;
+  font-size: 0.9em;
+
+  // softer, slower
+  --rc-rise: 8px;
+  --rc-char-stagger: 14ms;
+  --rc-char-dur: 640ms;
+}
+
+// ============================================
+// EFFECT: PHOSPHOR FADE-UP (per character)
+// ============================================
+.caption-line.effect-fade .retro-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(var(--rc-rise));
+  filter: blur(0.8px);
+  will-change: opacity, transform, filter, text-shadow;
+}
+
+// When line is revealed, animate characters into place
+.caption-line.effect-fade.is-revealed .retro-char {
+  animation: rc_phosphorRise var(--rc-char-dur) cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  animation-delay: calc(var(--rc-char-index) * var(--rc-char-stagger));
+}
+
+// ============================================
+// EFFECT: GLITCH (kept for later scenes)
+// ============================================
+.caption-line.effect-glitch {
+  position: relative;
+  opacity: 1;
+
+  &::before,
+  &::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+  }
+
+  &::before {
+    color: #ff0040;
+    animation: rc_glitchLeft 4s ease-in-out infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+  }
+
+  &::after {
+    color: #00ffff;
+    animation: rc_glitchRight 4s ease-in-out infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+  }
+}
+
+// ============================================
+// EFFECT: FLICKER (kept for later scenes)
+// ============================================
+.caption-line.effect-flicker {
+  opacity: 1;
+  animation: rc_textFlicker 3s ease-in-out infinite;
+}
+
+// ============================================
+// KEYFRAMES (namespaced)
+// ============================================
+@keyframes rc_phosphorRise {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--rc-rise));
+    filter: blur(1px);
+    text-shadow: 0 0 10px rgba(255, 200, 80, 0);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-1px);
+    filter: blur(0px);
+    text-shadow: 0 0 16px rgba(255, 200, 80, 0.35);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px);
+    filter: blur(0px);
+    text-shadow: 0 0 12px rgba(255, 200, 80, 0.18);
+  }
+}
+
+@keyframes rc_glitchLeft {
+  0%, 88%, 100% { transform: translateX(0); opacity: 0; }
+  89%, 91% { transform: translateX(-3px); opacity: 0.5; }
+}
+
+@keyframes rc_glitchRight {
+  0%, 88%, 100% { transform: translateX(0); opacity: 0; }
+  89%, 91% { transform: translateX(3px); opacity: 0.5; }
+}
+
+@keyframes rc_textFlicker {
+  0%, 90%, 94%, 98%, 100% { opacity: 1; }
+  92% { opacity: 0.7; }
+  96% { opacity: 0.85; }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .retro-caption {
+    padding: 1rem;
+  }
+
+  .caption-line {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .caption-line.dramatic {
+    font-size: 1.1em;
+  }
+}
+
+
+// ============================================
+// SCENE-SPECIFIC TUNING (Underground)
+// Slower, lower rise — feels heavy and constrained.
+// ============================================
+
+.cutscene-player.cs-scene-underground .caption-line {
+  --rc-rise: 10px;
+  --rc-char-stagger: 12ms;
+  --rc-char-dur: 640ms;
+}
+
+.cutscene-player.cs-scene-underground .caption-line.dramatic {
+  --rc-rise: 12px;
+  --rc-char-stagger: 2ms;
+  --rc-char-dur: 820ms;
+}
+
+.cutscene-player.cs-scene-underground .caption-line.whisper {
+  --rc-rise: 8px;
+  --rc-char-stagger: 16ms;
+  --rc-char-dur: 720ms;
+}
+
+// ============================================
+// SCENE-SPECIFIC TUNING (Depths / Centuries)
+// Hypnotic pacing, low rise, slightly slower reveal.
+// ============================================
+
+.cutscene-player.cs-scene-depths .caption-line {
+  --rc-rise: 9px;
+  --rc-char-stagger: 13ms;
+  --rc-char-dur: 660ms;
+}
+
+.cutscene-player.cs-scene-depths .caption-line.dramatic {
+  --rc-rise: 12px;
+  --rc-char-stagger: 2ms;
+  --rc-char-dur: 860ms;
+}
+
+.cutscene-player.cs-scene-depths .caption-line.whisper {
+  --rc-rise: 7px;
+  --rc-char-stagger: 17ms;
+  --rc-char-dur: 740ms;
+}
+
+.cutscene-player.cs-scene-depths .caption-line.emphasis {
+  --rc-rise: 10px;
+  --rc-char-stagger: 10ms;
+  --rc-char-dur: 720ms;
+}
+
+
+// ============================================
+// SCENE-SPECIFIC TUNING (Present)
+// Clean, steady, colder. Less rise, moderate speed.
+// ============================================
+
+.cutscene-player.cs-scene-present .caption-line {
+  --rc-rise: 9px;
+  --rc-char-stagger: 11ms;
+  --rc-char-dur: 600ms;
+}
+
+.cutscene-player.cs-scene-present .caption-line.dramatic {
+  --rc-rise: 12px;
+  --rc-char-stagger: 2ms;
+  --rc-char-dur: 820ms;
+}
+
+.cutscene-player.cs-scene-present .caption-line.whisper {
+  --rc-rise: 7px;
+  --rc-char-stagger: 15ms;
+  --rc-char-dur: 700ms;
+}
+
+
+// ============================================
+// SCENE-SPECIFIC TUNING (You)
+// Snappier than Present, less chaotic than Darkness.
+// Commands feel like ritual hits.
+// ============================================
+
+.cutscene-player.cs-scene-you .caption-line {
+  --rc-rise: 12px;
+  --rc-char-stagger: 9ms;
+  --rc-char-dur: 520ms;
+}
+
+.cutscene-player.cs-scene-you .caption-line.dramatic {
+  --rc-rise: 16px;
+  --rc-char-stagger: 1ms;
+  --rc-char-dur: 760ms;
+}
+
+.cutscene-player.cs-scene-you .caption-line.emphasis {
+  --rc-rise: 12px;
+  --rc-char-stagger: 7ms;
+  --rc-char-dur: 560ms;
+}
+
+.cutscene-player.cs-scene-you .caption-line.whisper {
+  --rc-rise: 8px;
+  --rc-char-stagger: 14ms;
+  --rc-char-dur: 620ms;
+}

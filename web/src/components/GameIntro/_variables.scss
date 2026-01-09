@@ -1,0 +1,57 @@
+// ============================================
+// VARIABLES
+// ============================================
+
+// Colors - Primary
+$gold: #ffd700;
+$gold-dim: rgba(255, 215, 0, 0.5);
+$gold-glow: rgba(255, 215, 0, 0.3);
+
+// Colors - Text
+$text-primary: #e0e0e0;
+$text-dim: #888;
+$text-muted: #666;
+$text-dark: #555;
+
+// Colors - Backgrounds
+$black: #000;
+$near-black: #0a0a0f;
+$dark-blue: #0a1628;
+$dark-purple: #1a1a2e;
+
+// Colors - Effects
+$ember-orange: rgb(255, 150, 50);
+$ember-red: rgb(255, 100, 30);
+$blood-red: rgb(200, 0, 50);
+$torch-glow: rgba(255, 150, 50, 0.1);
+$eye-red: rgba(255, 50, 50, 0.8);
+
+// Timing
+$fade-fast: 0.3s;
+$fade-normal: 0.8s;
+$fade-slow: 1s;
+$glow-duration: 3s;
+$parallax-slow: 20s;
+$parallax-mid: 15s;
+$parallax-fast: 10s;
+
+// Z-index scale
+$z-particles: 4;
+$z-ambient: 5;
+$z-vignette: 6;
+$z-content: 10;
+$z-progress: 20;
+$z-controls: 20;
+$z-bars: 100;
+$z-overlay: 1000;
+
+// Spacing
+$content-max-width: 900px;
+$narrative-max-width: 700px;
+$cinematic-bar-height: 8vh;
+$cinematic-bar-mobile: 5vh;
+$cinematic-bar-small: 3vh;
+
+// Breakpoints
+$breakpoint-tablet: 768px;
+$breakpoint-mobile: 480px;
