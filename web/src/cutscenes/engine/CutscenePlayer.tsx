@@ -3,7 +3,7 @@
  * Orchestrates all layers and handles scene progression
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { CutscenePlayerProps, FxType, FadeStyle } from './types';
 import { useCutsceneTimeline } from './hooks/useCutsceneTimeline';
 import { useFxBus } from './hooks/useFxBus';
@@ -61,9 +61,6 @@ export function CutscenePlayer({
     pressureIntensity,
   } = useFxBus();
 
-  // SFX cooldown to prevent rapid-fire audio stacking
-  const sfxLastPlayedRef = useRef<Record<string, number>>({});
-
   // FX -> SFX bridge (optional). Keeps visuals decoupled from audio system.
   const triggerEffectWithSfx = useCallback(
     (ev: any) => {
@@ -97,12 +94,6 @@ export function CutscenePlayer({
 
       const id = map[ev.type]?.[intensity];
       if (id) {
-        // Cooldown check to prevent rapid-fire stacking
-        const now = performance.now();
-        const last = sfxLastPlayedRef.current[id] ?? 0;
-        if (now - last < 150) return;
-        sfxLastPlayedRef.current[id] = now;
-
         onSfxPlay(id, { volume: intensity === 'heavy' ? 1 : 0.85 });
       }
     },
