@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-09
 **Branch:** develop
-**Version:** v5.2.0 (Modular Cutscene Engine)
+**Version:** v5.3.0 (Cinematics V2 - Death & Victory Cutscenes)
 
 ---
 
@@ -16,23 +16,24 @@
 
 ---
 
-## Current Version: v5.2.0
+## Current Version: v5.3.0
 
-### Completed Features (v5.2.0)
+### Completed Features (v5.3.0)
 
 | Feature | Status |
 |---------|--------|
-| Modular cutscene engine architecture | ✅ |
-| Retro CRT phosphor text reveal | ✅ |
-| Per-character staggered ignition animation | ✅ |
-| FX system (flash, shake, flicker, pressure) | ✅ |
-| FX cues tied to caption line completion | ✅ |
-| Scene-scoped CSS classes for per-scene styling | ✅ |
-| Debug mode panel for scene iteration | ✅ |
-| 7-scene intro cutscene with effects | ✅ |
-| Victory and game_over cutscene stubs | ✅ |
+| Death cutscene (5-scene cinematic sequence) | ✅ |
+| Victory cutscene (3-scene cinematic sequence) | ✅ |
+| Random death fate variants (Echo, Hollowed, Silence) | ✅ |
+| Random victory legacy variants (Beacon, Champion, Archivist) | ✅ |
+| Ghost lore panels on summary screens | ✅ |
+| Death camera effect in 3D renderer | ✅ |
+| Death overlays (vignette, blood curtain, eyelids) | ✅ |
+| File-based cinematic SFX with procedural fallback | ✅ |
+| Factory pattern for cutscene creation (useState) | ✅ |
+| FX cues synced to caption line completion | ✅ |
 
-### v5.2.0 Architecture
+### v5.3.0 Architecture
 
 ```
 web/src/cutscenes/
@@ -45,47 +46,65 @@ web/src/cutscenes/
 │   └── types.ts
 ├── intro/
 │   └── scenes/         # 00_Title through 06_You
-├── victory/            # Stub for future
-└── game_over/          # Stub for future
+├── victory/
+│   └── scenes/         # 00_Seal, 01_World, 02_Legend (+ legacy variants)
+└── game_over/
+    └── scenes/         # 00_Fall, 01_YouDied, 02_AbyssClaims, 03_Fate (variants), 04_Prompt
 ```
 
-### Key Features
+### Death Cutscene Scenes
 
-| Feature | Description |
-|---------|-------------|
-| Scene transitions | Fade in/visible/out with configurable durations |
-| FX cues | Effects triggered on caption line completion |
-| Pressure pulse | Screen-wide dramatic darkening effect |
-| Transition curtain | Clean scene swaps without UI flashes |
-| Scene-scoped CSS | Per-scene styling via `.cs-scene-{id}` classes |
-| Debug mode | Set `DEBUG_MODE = true` in CutscenePlayer.tsx |
+| Scene | Description | FX |
+|-------|-------------|-----|
+| 00_Fall | Camera slumps, world fades | Death cam (3D), overlays |
+| 01_YouDied | "YOU DIED" title reveal | Flash, pressure |
+| 02_AbyssClaims | Narrative transition | Flicker |
+| 03_Fate | Random variant (Echo/Hollowed/Silence) | Per-variant FX |
+| 04_Prompt | "Press any key" prompt | None |
 
-### Intro Scenes
+### Victory Cutscene Scenes
 
-| Scene | Description | Particles |
-|-------|-------------|-----------|
-| 00_Title | ASCII art title reveal | none |
-| 01_Kingdom | Establishing shot | stars |
-| 02_Darkness | The catastrophe | ash |
-| 03_Underground | Ancient depths | mist |
-| 04_Centuries | Time passage | magic |
-| 05_Present | Return to entrance | embers |
-| 06_You | Player vow with fxCues | embers |
+| Scene | Description | FX |
+|-------|-------------|-----|
+| 00_Seal | "THE LAST SEAL" - abyss made to sleep | Flash, pressure |
+| 01_World | "THE WORLD ABOVE" - return to surface | Light pressure |
+| 02_Legend | Random legacy variant + final motif | Heavy flash/pressure |
 
-### Key Files (v5.2.0)
+### Ghost Lore Panels
+
+| Type | Variants | Summary Panel |
+|------|----------|---------------|
+| Death | Echo, Hollowed, Silence | GameOverGhostLore |
+| Victory | Beacon, Champion, Archivist | VictoryGhostLore |
+
+### Key Files (v5.3.0)
 
 | File | Purpose |
 |------|---------|
-| `web/src/cutscenes/engine/CutscenePlayer.tsx` | Main orchestrator |
-| `web/src/cutscenes/engine/types.ts` | Type definitions |
-| `web/src/cutscenes/engine/hooks/useCutsceneTimeline.ts` | Scene progression |
-| `web/src/cutscenes/engine/hooks/useFxBus.ts` | FX management |
-| `web/src/cutscenes/engine/text/RetroCaption.tsx` | CRT text reveal |
-| `web/src/cutscenes/intro/config.ts` | Intro cutscene config |
+| `web/src/components/GameOverCutscene.tsx` | Death cutscene wrapper |
+| `web/src/components/VictoryCutscene.tsx` | Victory cutscene wrapper |
+| `web/src/components/GameOverGhostLore.tsx` | Death fate lore panel |
+| `web/src/components/VictoryGhostLore.tsx` | Victory legacy lore panel |
+| `web/src/cutscenes/game_over/config.ts` | createGameOverCutscene factory |
+| `web/src/cutscenes/victory/config.ts` | createVictoryCutscene factory |
+| `web/src/components/SceneRenderer/FirstPersonRenderer3D.tsx` | Death camera effect |
 
 ---
 
 ## Previous Versions
+
+### v5.2.0 Features
+
+| Feature | Status |
+|---------|--------|
+| Modular cutscene engine architecture | ✅ |
+| Retro CRT phosphor text reveal | ✅ |
+| Per-character staggered ignition animation | ✅ |
+| FX system (flash, shake, flicker, pressure) | ✅ |
+| FX cues tied to caption line completion | ✅ |
+| Scene-scoped CSS classes for per-scene styling | ✅ |
+| Debug mode panel for scene iteration | ✅ |
+| 7-scene intro cutscene with effects | ✅ |
 
 ### v5.1.0 Features
 
@@ -109,7 +128,7 @@ web/src/cutscenes/
 
 ---
 
-## Next Version: v5.3.0
+## Next Version: v5.4.0
 
 | Feature | Description |
 |---------|-------------|
@@ -123,6 +142,7 @@ web/src/cutscenes/
 - Weather effects (rain/dripping)
 - Ambient sounds
 - 3D tile variants (requires world coordinates in view data)
+- Victorious ghost behavior (beacon/champion/archivist AI)
 
 ---
 

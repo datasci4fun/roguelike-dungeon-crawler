@@ -2,7 +2,7 @@
 
 A terminal-based roguelike with procedural dungeons, first-person 3D view, multiplayer backend, and React web frontend.
 
-**Current Version:** v4.6.0 (Debug Tooling & Rendering Fixes)
+**Current Version:** v5.3.0 (Cinematics V2 - Death & Victory Cutscenes)
 
 ## Quick Start
 

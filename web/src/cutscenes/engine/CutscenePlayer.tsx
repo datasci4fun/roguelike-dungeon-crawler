@@ -33,8 +33,12 @@ export function CutscenePlayer({
   onSkip,
   onSceneChange,
   onMusicChange,
+  onSfxPlay,
 }: CutscenePlayerProps) {
   const [introComplete, setIntroComplete] = useState(false);
+
+  // Only show "Begin Your Adventure" button for the intro cutscene
+  const isIntroCutscene = cutscene.id === 'intro';
 
   const { state, currentScene, isLastScene, advance, goToScene } =
     useCutsceneTimeline(cutscene, {
@@ -43,7 +47,7 @@ export function CutscenePlayer({
       debugMode: DEBUG_MODE,
       onSceneChange,
       onComplete: () => {
-        if (isLastScene) {
+        if (isIntroCutscene && isLastScene) {
           setIntroComplete(true);
         } else {
           onComplete();
@@ -59,6 +63,45 @@ export function CutscenePlayer({
     pressurePulseId,
     pressureIntensity,
   } = useFxBus();
+
+  // FX -> SFX bridge (optional). Keeps visuals decoupled from audio system.
+  const triggerEffectWithSfx = useCallback(
+    (ev: any) => {
+      triggerEffect(ev);
+
+      if (!onSfxPlay || !ev?.type || ev.type === 'none') return;
+      const intensity: 'light' | 'medium' | 'heavy' = ev.intensity ?? 'medium';
+
+      const map: Record<string, Record<string, string>> = {
+        flash: {
+          light: 'sfx_lightning_soft',
+          medium: 'sfx_lightning',
+          heavy: 'sfx_thunder_clap',
+        },
+        pressure: {
+          light: 'sfx_rumble_soft',
+          medium: 'sfx_rumble',
+          heavy: 'sfx_rumble_heavy',
+        },
+        shake: {
+          light: 'sfx_stone_shift',
+          medium: 'sfx_impact',
+          heavy: 'sfx_impact_heavy',
+        },
+        flicker: {
+          light: 'sfx_power_tick',
+          medium: 'sfx_power_buzz',
+          heavy: 'sfx_power_surge',
+        },
+      };
+
+      const id = map[ev.type]?.[intensity];
+      if (id) {
+        onSfxPlay(id, { volume: intensity === 'heavy' ? 1 : 0.85 });
+      }
+    },
+    [triggerEffect, onSfxPlay]
+  );
 
   // Trigger music on mount
   useEffect(() => {
@@ -77,7 +120,7 @@ export function CutscenePlayer({
     currentScene.effects.forEach((effect, index) => {
       const delay = timings[index] || 0;
       const timer = window.setTimeout(() => {
-        triggerEffect(effect);
+        triggerEffectWithSfx(effect);
       }, delay);
       timers.push(timer);
     });
@@ -85,7 +128,7 @@ export function CutscenePlayer({
     return () => {
       timers.forEach(clearTimeout);
     };
-  }, [currentScene, triggerEffect]);
+  }, [currentScene, triggerEffectWithSfx]);
 
   // Scene-specific music changes
   useEffect(() => {
@@ -142,11 +185,11 @@ export function CutscenePlayer({
           text.includes(target);
 
         if (match) {
-          for (const ev of cue.events ?? []) triggerEffect(ev);
+          for (const ev of cue.events ?? []) triggerEffectWithSfx(ev);
         }
       }
     },
-    [currentScene, triggerEffect]
+    [currentScene, triggerEffectWithSfx]
   );
 
   if (!currentScene) {
@@ -187,6 +230,7 @@ export function CutscenePlayer({
   return (
     <div
       className={containerClass}
+      data-fade={state.fadeState}
       onClick={canClickAdvance ? handleAdvance : undefined}
     >
       {/* Background layer */}
@@ -219,7 +263,7 @@ export function CutscenePlayer({
             config={currentScene.captions}
             isActive={state.fadeState !== 'in'}
             onComplete={() => {
-              if (isLastScene) setIntroComplete(true);
+              if (isIntroCutscene && isLastScene) setIntroComplete(true);
             }}
             onLineRevealDone={handleLineRevealDone}
             key={`${currentScene.meta.id}:${state.currentSceneIndex}:${(state as any).sceneRunId ?? 0}`}
@@ -232,6 +276,10 @@ export function CutscenePlayer({
         <CrtLayer enabled={true} intensity="light" />
       )}
 
+      {/* Letterbox bars */}
+      <div className="cs-letterbox cs-letterbox-top" />
+      <div className="cs-letterbox cs-letterbox-bottom" />
+
       {/* ✅ NEW: PRESSURE PULSE (global dim) */}
       <div
         key={`pressure:${pressurePulseId}`}
@@ -241,6 +289,14 @@ export function CutscenePlayer({
           hasPressure ? 'active' : '',
         ].join(' ')}
       />
+
+      {/* DEATH OVERLAYS - activated by scene ID */}
+      <div className="cs-death-vignette" />
+      <div className="cs-blood-curtain" />
+      <div className="cs-eyelids">
+        <div className="cs-eyelid cs-eyelid-top" />
+        <div className="cs-eyelid cs-eyelid-bottom" />
+      </div>
 
       {/* FADE CURTAIN (namespaced) — hides scene swaps & prevents underlying UI flashes */}
       <div
@@ -253,8 +309,8 @@ export function CutscenePlayer({
         }
       />
 
-      {/* Begin button for last scene */}
-      {introComplete && (
+      {/* Begin button for last scene (intro cutscene only) */}
+      {isIntroCutscene && introComplete && (
         <div className="begin-container">
           <button
             className="begin-adventure-button"
@@ -319,18 +375,18 @@ export function CutscenePlayer({
             {/* ✅ NEW: Pressure debug trigger */}
             <button
               className="debug-action-btn"
-              onClick={() => triggerEffect({ type: 'pressure', intensity: 'medium' })}
+              onClick={() => triggerEffectWithSfx({ type: 'pressure', intensity: 'medium' })}
             >
               🕳 Pressure
             </button>
 
-            <button className="debug-action-btn" onClick={() => triggerEffect({ type: 'flash', intensity: 'medium' })}>
+            <button className="debug-action-btn" onClick={() => triggerEffectWithSfx({ type: 'flash', intensity: 'medium' })}>
               ⚡ Flash
             </button>
-            <button className="debug-action-btn" onClick={() => triggerEffect({ type: 'shake', intensity: 'medium' })}>
+            <button className="debug-action-btn" onClick={() => triggerEffectWithSfx({ type: 'shake', intensity: 'medium' })}>
               📳 Shake
             </button>
-            <button className="debug-action-btn" onClick={() => triggerEffect({ type: 'flicker', intensity: 'medium' })}>
+            <button className="debug-action-btn" onClick={() => triggerEffectWithSfx({ type: 'flicker', intensity: 'medium' })}>
               💡 Flicker
             </button>
           </div>

@@ -3,7 +3,9 @@
  * This replaces the original GameIntro with the modular cutscene system
  */
 
+import { useEffect } from 'react';
 import { CutscenePlayer, introCutscene } from '../cutscenes';
+import { useCinematicSfx } from '../hooks/useCinematicSfx';
 
 interface GameIntroProps {
   onComplete: () => void;
@@ -12,6 +14,13 @@ interface GameIntroProps {
 }
 
 export function GameIntro({ onComplete, onSkip, onMusicChange }: GameIntroProps) {
+  const { play, preloadAll } = useCinematicSfx();
+
+  // Preload cinematic SFX so file-based audio is ready before first FX triggers
+  useEffect(() => {
+    preloadAll();
+  }, [preloadAll]);
+
   return (
     <CutscenePlayer
       cutscene={introCutscene}
@@ -19,6 +28,7 @@ export function GameIntro({ onComplete, onSkip, onMusicChange }: GameIntroProps)
       onComplete={onComplete}
       onSkip={onSkip}
       onMusicChange={onMusicChange}
+      onSfxPlay={play}
     />
   );
 }
