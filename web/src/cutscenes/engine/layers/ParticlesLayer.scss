@@ -1,0 +1,238 @@
+/**
+ * ParticlesLayer - Particle effect styles
+ */
+
+$gold: #ffd700;
+$ember-orange: #ff6030;
+$blood-red: #8b0000;
+
+@mixin absolute-fill {
+  position: absolute;
+  inset: 0;
+}
+
+// ============================================
+// BASE
+// ============================================
+.particles-layer {
+  @include absolute-fill;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: var(--particle-opacity, 1);
+}
+
+.particle {
+  position: absolute;
+  left: var(--x, 50%);
+  top: var(--y, 50%);
+  width: var(--size, 3px);
+  height: var(--size, 3px);
+  border-radius: 50%;
+
+  animation-delay: var(--delay, 0s);
+  animation-duration: var(--duration, 4s);
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+
+  // new tuning knobs (safe defaults)
+  filter: blur(var(--blur, 0px));
+  opacity: var(--p-opacity, 1);
+}
+
+// ============================================
+// STARS
+// ============================================
+.particles-stars .particle {
+  background: white;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  animation-name: twinkle;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: calc(var(--p-opacity, 1) * 0.35); transform: scale(0.85); }
+  50% { opacity: var(--p-opacity, 1); transform: scale(1.2); }
+}
+
+// ============================================
+// EMBERS
+// ============================================
+.particles-embers .particle {
+  background: $ember-orange;
+  box-shadow: 0 0 6px $ember-orange;
+  animation-name: emberRise;
+}
+
+@keyframes emberRise {
+  0% {
+    opacity: var(--p-opacity, 1);
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) scale(0.5);
+  }
+}
+
+// ============================================
+// DUST  (tuned for Kingdom: warm, subtle, looping drift)
+// ============================================
+.particles-dust .particle {
+  background: rgba(255, 245, 220, 0.7);
+  box-shadow: 0 0 6px rgba(255, 230, 180, 0.25);
+  mix-blend-mode: screen;
+  animation-name: dustFloat;
+}
+
+@keyframes dustFloat {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+    opacity: calc(var(--p-opacity, 1) * 0.35);
+  }
+  25% {
+    transform: translate3d(var(--dx1, 10px), var(--dy1, -6px), 0);
+    opacity: calc(var(--p-opacity, 1) * 0.55);
+  }
+  50% {
+    transform: translate3d(var(--dx2, -12px), var(--dy2, 8px), 0);
+    opacity: calc(var(--p-opacity, 1) * 0.42);
+  }
+  75% {
+    transform: translate3d(var(--dx3, 8px), var(--dy3, -6px), 0);
+    opacity: calc(var(--p-opacity, 1) * 0.5);
+  }
+}
+
+// ============================================
+// DARKNESS
+// ============================================
+.particles-darkness .particle {
+  background: transparent;
+  box-shadow:
+    0 0 20px rgba(0, 0, 0, 0.8),
+    0 0 40px rgba(20, 0, 20, 0.5);
+  width: calc(var(--size) * 5);
+  height: calc(var(--size) * 5);
+  animation-name: shadowPulse;
+}
+
+@keyframes shadowPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: calc(var(--p-opacity, 1) * 0.6);
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: var(--p-opacity, 1);
+  }
+}
+
+// ============================================
+// MAGIC
+// ============================================
+.particles-magic .particle {
+  background: $gold;
+  box-shadow: 0 0 10px $gold, 0 0 20px rgba($gold, 0.5);
+  animation-name: magicSparkle;
+}
+
+@keyframes magicSparkle {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: var(--p-opacity, 1);
+    transform: scale(1.5) rotate(180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0) rotate(360deg);
+  }
+}
+
+// ============================================
+// ASH
+// ============================================
+.particles-ash .particle {
+  background: rgba(80, 80, 80, 0.6);
+  animation-name: ashFall;
+}
+
+@keyframes ashFall {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) rotate(0deg);
+  }
+  20% {
+    opacity: calc(var(--p-opacity, 1) * 0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100px) rotate(360deg);
+  }
+}
+
+// ============================================
+// MIST
+// ============================================
+.particles-mist .particle {
+  background: rgba(200, 200, 220, 0.1);
+  width: calc(var(--size) * 20);
+  height: calc(var(--size) * 10);
+  border-radius: 50%;
+  filter: blur(var(--blur, 10px));
+  animation-name: mistDrift;
+}
+
+@keyframes mistDrift {
+  0%, 100% {
+    transform: translateX(0) scaleX(1);
+    opacity: calc(var(--p-opacity, 1) * 0.25);
+  }
+  50% {
+    transform: translateX(50px) scaleX(1.2);
+    opacity: calc(var(--p-opacity, 1) * 0.45);
+  }
+}
+
+
+// Darkness scene: make the corruption feel denser and less “soft”
+.cutscene-player.cs-scene-darkness .particles-darkness .particle {
+  box-shadow:
+    0 0 24px rgba(0, 0, 0, 0.9),
+    0 0 60px rgba(30, 0, 40, 0.55);
+}
+
+
+// Underground scene: cooler, less sunlit dust (torch haze / cave air)
+.cutscene-player.cs-scene-underground .particles-dust .particle {
+  background: rgba(190, 195, 205, 0.35);
+  box-shadow: 0 0 6px rgba(160, 170, 190, 0.18);
+  mix-blend-mode: normal;
+}
+
+
+// Depths scene: mist feels like cold breath / memory
+.cutscene-player.cs-scene-depths .particles-mist .particle {
+  background: rgba(170, 180, 210, 0.08);
+  filter: blur(calc(var(--blur, 10px) * 1.15));
+}
+
+
+// Present scene: embers should feel colder and less “campfire”
+.cutscene-player.cs-scene-present .particles-embers .particle {
+  background: rgba(210, 220, 255, 0.55);
+  box-shadow: 0 0 6px rgba(160, 180, 255, 0.25);
+  filter: blur(calc(var(--blur, 0px) + 0.2px));
+}
+
+// Present scene: slow the rise so it’s subtle (still uses emberRise keyframes)
+.cutscene-player.cs-scene-present .particles-embers .particle {
+  animation-timing-function: ease-in-out;
+}
+
+// "You" scene: embers feel alive and hot
+.cutscene-player.cs-scene-you .particles-embers .particle {
+  background: rgba(255, 150, 80, 0.9);
+  box-shadow: 0 0 10px rgba(255, 120, 60, 0.55);
+}

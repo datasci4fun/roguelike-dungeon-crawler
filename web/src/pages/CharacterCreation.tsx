@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
 import { useAudioManager } from '../hooks/useAudioManager';
-import { GameIntro } from '../components/GameIntro';
+import { GameIntro } from '../components/GameIntroNew';
 import type { RaceId, ClassId } from '../hooks/useGameSocket';
 import { RACES, CLASSES, ABILITY_DESCRIPTIONS, calculateStats } from '../data/characterData';
 import './CharacterCreation.css';

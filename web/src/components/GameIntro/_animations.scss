@@ -1,0 +1,267 @@
+// ============================================
+// ANIMATIONS
+// ============================================
+
+// Base fade animations
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+// Parallax layer animations
+@keyframes parallaxFar {
+  from { transform: scale(1.05) translateX(-1%); }
+  to { transform: scale(1.1) translateX(1%); }
+}
+
+@keyframes parallaxMid {
+  from { transform: translateX(-2%) translateY(-1%); }
+  to { transform: translateX(2%) translateY(1%); }
+}
+
+@keyframes parallaxNear {
+  from { transform: translateX(-3%); }
+  to { transform: translateX(3%); }
+}
+
+// Title animations
+@keyframes titleReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes titleGlow {
+  from {
+    text-shadow:
+      0 0 10px rgba(255, 215, 0, 0.5),
+      0 0 20px rgba(255, 215, 0, 0.3),
+      0 0 40px rgba(255, 215, 0, 0.2);
+    filter: brightness(1);
+  }
+  to {
+    text-shadow:
+      0 0 20px rgba(255, 215, 0, 0.8),
+      0 0 40px rgba(255, 215, 0, 0.5),
+      0 0 60px rgba(255, 215, 0, 0.3),
+      0 0 80px rgba(255, 215, 0, 0.15);
+    filter: brightness(1.15);
+  }
+}
+
+@keyframes subtitleFade {
+  from {
+    opacity: 0;
+    letter-spacing: 1em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: 0.5em;
+  }
+}
+
+@keyframes taglineFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Narrative animations
+@keyframes narrativeEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lineReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sceneTitleGlow {
+  from {
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+  }
+  to {
+    text-shadow:
+      0 0 20px rgba(255, 215, 0, 0.6),
+      0 0 40px rgba(255, 215, 0, 0.3);
+  }
+}
+
+// Button animations
+@keyframes buttonAppear {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes buttonGlow {
+  from {
+    box-shadow:
+      0 0 20px rgba(255, 215, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  to {
+    box-shadow:
+      0 0 40px rgba(255, 215, 0, 0.5),
+      0 0 60px rgba(255, 215, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+}
+
+// Pulse animations
+@keyframes promptPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
+// Scene-specific animations
+@keyframes darknessFlicker {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(0.95); }
+}
+
+@keyframes darknessPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+@keyframes shadowsMove {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(2%) translateY(-1%); }
+  50% { transform: translateX(-1%) translateY(2%); }
+  75% { transform: translateX(-2%) translateY(-1%); }
+}
+
+@keyframes cracksGlow {
+  from { opacity: 0.3; }
+  to { opacity: 0.7; }
+}
+
+@keyframes torchFlicker {
+  0%, 100% { opacity: 0.8; }
+  25% { opacity: 0.9; }
+  50% { opacity: 1; }
+  75% { opacity: 0.85; }
+}
+
+@keyframes eyesBlink {
+  0%, 45%, 55%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes fogDrift {
+  from { transform: translateX(-5%); }
+  to { transform: translateX(5%); }
+}
+
+@keyframes entranceGlow {
+  from { opacity: 0.6; }
+  to { opacity: 1; }
+}
+
+// Particle animations
+@keyframes starTwinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes emberFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(0);
+  }
+  10% { opacity: 1; }
+  90% { opacity: 0.8; }
+  100% {
+    opacity: 0;
+    transform: translateY(-100px) translateX(20px);
+  }
+}
+
+@keyframes dustDrift {
+  0%, 100% {
+    opacity: 0.2;
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(-30px) translateX(15px);
+  }
+}
+
+@keyframes darknessDrift {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.5) translateY(-20px);
+  }
+}
+
+// NEW: Enhanced animations for visual flair
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
+@keyframes runeGlow {
+  0%, 100% {
+    opacity: 0.3;
+    filter: blur(2px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(0px);
+  }
+}
+
+@keyframes lightningFlash {
+  0%, 89%, 91%, 93%, 100% { opacity: 0; }
+  90%, 92% { opacity: 0.1; }
+}
+
+@keyframes mysticalOrb {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(180deg); }
+  100% { transform: translateY(0) rotate(360deg); }
+}

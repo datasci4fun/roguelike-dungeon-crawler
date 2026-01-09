@@ -1,0 +1,145 @@
+// ============================================
+// MIXINS
+// ============================================
+
+@use 'sass:color';
+@use 'sass:math';
+@use 'variables' as *;
+
+// Glow text effect
+@mixin glow-text($color: $gold, $intensity: 1) {
+  $base: 10px * $intensity;
+  text-shadow:
+    0 0 $base rgba($color, 0.5),
+    0 0 $base * 2 rgba($color, 0.3),
+    0 0 $base * 4 rgba($color, 0.2);
+}
+
+// Enhanced glow (for hover/active states)
+@mixin glow-text-intense($color: $gold) {
+  text-shadow:
+    0 0 20px rgba($color, 0.8),
+    0 0 40px rgba($color, 0.5),
+    0 0 60px rgba($color, 0.3);
+}
+
+// Box glow effect
+@mixin glow-box($color: $gold, $intensity: 1) {
+  $base: 20px * $intensity;
+  box-shadow:
+    0 0 $base rgba($color, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+@mixin glow-box-intense($color: $gold) {
+  box-shadow:
+    0 0 40px rgba($color, 0.5),
+    0 0 60px rgba($color, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+// Absolute fill
+@mixin absolute-fill {
+  position: absolute;
+  inset: 0;
+}
+
+// Flex center
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-column-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+// Background layer base
+@mixin bg-layer-base {
+  @include absolute-fill;
+  background-size: cover;
+  background-position: center;
+  transition: transform 8s ease-out, opacity 2s ease;
+}
+
+// Scene background gradient
+@mixin scene-gradient($colors...) {
+  background: linear-gradient(to bottom, $colors);
+}
+
+// Radial glow
+@mixin radial-glow($color, $size: 50%, $opacity: 0.3) {
+  background: radial-gradient(
+    ellipse at center,
+    rgba($color, $opacity) 0%,
+    transparent $size
+  );
+}
+
+// Parallax animation generator
+@mixin parallax-keyframes($name, $x-start: -1%, $x-end: 1%, $y-start: 0, $y-end: 0, $scale-start: 1, $scale-end: 1) {
+  @keyframes #{$name} {
+    from {
+      transform: scale($scale-start) translateX($x-start) translateY($y-start);
+    }
+    to {
+      transform: scale($scale-end) translateX($x-end) translateY($y-end);
+    }
+  }
+}
+
+// Fade animation generator
+@mixin fade-keyframes($name, $from: 0, $to: 1) {
+  @keyframes #{$name} {
+    from { opacity: $from; }
+    to { opacity: $to; }
+  }
+}
+
+// Pulse animation generator
+@mixin pulse-keyframes($name, $min-opacity: 0.5, $max-opacity: 1) {
+  @keyframes #{$name} {
+    0%, 100% { opacity: $min-opacity; }
+    50% { opacity: $max-opacity; }
+  }
+}
+
+// Responsive font size
+@mixin fluid-type($min-size, $max-size, $min-vw: 320px, $max-vw: 1200px) {
+  font-size: clamp(#{$min-size}, calc(#{$min-size} + (#{strip-unit($max-size)} - #{strip-unit($min-size)}) * ((100vw - #{$min-vw}) / (#{strip-unit($max-vw)} - #{strip-unit($min-vw)}))), #{$max-size});
+}
+
+// Strip unit helper
+@function strip-unit($number) {
+  @if type-of($number) == 'number' and not unitless($number) {
+    @return math.div($number, ($number * 0 + 1));
+  }
+  @return $number;
+}
+
+// Generate star field
+@mixin star-field($count: 7) {
+  $stars: ();
+  $positions: (
+    (20%, 30%, 0.8),
+    (40%, 20%, 0.6),
+    (60%, 40%, 0.7),
+    (80%, 25%, 0.5),
+    (50%, 15%, 0.9),
+    (30%, 45%, 0.4),
+    (70%, 35%, 0.6)
+  );
+
+  @each $pos in $positions {
+    $x: nth($pos, 1);
+    $y: nth($pos, 2);
+    $opacity: nth($pos, 3);
+    $stars: append($stars, radial-gradient(1px 1px at $x $y, rgba(255, 255, 255, $opacity), transparent), comma);
+  }
+
+  background: $stars;
+}

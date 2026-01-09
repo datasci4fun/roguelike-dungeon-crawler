@@ -1,0 +1,611 @@
+/**
+ * GameIntro - Cinematic intro with visual scenes and effects
+ * Converted to SCSS with enhanced visual effects
+ */
+
+// Import partials
+@use 'variables' as *;
+@use 'mixins' as *;
+@use 'animations';
+@use 'particles';
+@use 'scenes';
+
+// ============================================
+// BASE LAYOUT
+// ============================================
+.game-intro {
+  position: fixed;
+  inset: 0;
+  z-index: $z-overlay;
+  @include flex-column-center;
+  color: $text-primary;
+  cursor: pointer;
+  overflow: hidden;
+  background: $black; // Always solid black - never fades
+}
+
+// Content wrapper - handles fading so background stays solid
+.intro-content-wrapper {
+  @include absolute-fill;
+  @include flex-column-center;
+  z-index: $z-content;
+  transition: opacity $fade-normal ease;
+}
+
+// Fade states - only affect content, not background
+.game-intro.fade-in {
+  .intro-content-wrapper,
+  .scene-background,
+  .particles,
+  .ambient-overlay {
+    animation: fadeIn $fade-slow ease-out forwards;
+  }
+}
+
+.game-intro.fade-visible .intro-content-wrapper {
+  opacity: 1;
+}
+
+// Content fades out between scenes
+.intro-content-wrapper.content-fade-out {
+  animation: fadeOut $fade-normal ease-in forwards;
+}
+
+// ============================================
+// CINEMATIC BARS (letterbox effect)
+// ============================================
+.cinematic-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: $cinematic-bar-height;
+  background: $black;
+  z-index: $z-bars;
+
+  &.top { top: 0; }
+  &.bottom { bottom: 0; }
+}
+
+// ============================================
+// AMBIENT OVERLAY & VIGNETTE
+// ============================================
+.ambient-overlay {
+  @include absolute-fill;
+  pointer-events: none;
+  z-index: $z-ambient;
+}
+
+// Vignette effect
+.game-intro::after {
+  content: '';
+  @include absolute-fill;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba($black, 0.6) 100%
+  );
+  pointer-events: none;
+  z-index: $z-vignette;
+}
+
+// NEW: Film grain overlay for cinematic feel
+.game-intro::before {
+  content: '';
+  @include absolute-fill;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: $z-vignette + 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  animation: grainShift 0.5s steps(10) infinite;
+}
+
+@keyframes grainShift {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-1%, -1%); }
+  20% { transform: translate(1%, 1%); }
+  30% { transform: translate(-1%, 1%); }
+  40% { transform: translate(1%, -1%); }
+  50% { transform: translate(-1%, 0); }
+  60% { transform: translate(1%, 0); }
+  70% { transform: translate(0, 1%); }
+  80% { transform: translate(0, -1%); }
+  90% { transform: translate(1%, 1%); }
+}
+
+// ============================================
+// CONTENT
+// ============================================
+.intro-content {
+  position: relative;
+  z-index: $z-content;
+  flex: 1;
+  @include flex-column-center;
+  padding: 2rem;
+  max-width: $content-max-width;
+  text-align: center;
+}
+
+// ============================================
+// TITLE SCREEN
+// ============================================
+.title-screen {
+  animation: titleReveal 2s ease-out;
+}
+
+.title-art {
+  font-family: monospace;
+  font-size: clamp(0.5rem, 2vw, 1rem);
+  line-height: 1.2;
+  color: $gold;
+  @include glow-text($gold, 1.5);
+  margin: 0;
+  white-space: pre;
+  animation: titleGlow $glow-duration ease-in-out infinite alternate;
+}
+
+.title-subtitle {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: bold;
+  letter-spacing: 0.5em;
+  margin-top: 2rem;
+  color: white;
+  text-shadow:
+    2px 2px 4px rgba($black, 0.8),
+    0 0 30px $gold-glow;
+  animation: subtitleFade 2s ease-out 0.5s both;
+
+  // NEW: Shimmer effect on subtitle
+  background: linear-gradient(
+    90deg,
+    white 0%,
+    white 40%,
+    $gold 50%,
+    white 60%,
+    white 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation:
+    subtitleFade 2s ease-out 0.5s both,
+    shimmer 8s ease-in-out 3s infinite;
+}
+
+.title-tagline {
+  font-size: clamp(0.9rem, 2vw, 1.4rem);
+  color: $text-dim;
+  margin-top: 1rem;
+  font-style: italic;
+  animation: taglineFade 2s ease-out 1s both;
+}
+
+.title-prompt {
+  margin-top: 3rem;
+  font-size: 1rem;
+  color: $text-muted;
+  animation:
+    promptPulse 2s ease-in-out infinite,
+    fadeIn 2s ease-out 1.5s both;
+}
+
+// ============================================
+// NARRATIVE SCREEN
+// ============================================
+.narrative-screen {
+  animation: narrativeEnter $fade-slow ease-out;
+}
+
+.scene-title {
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  color: $gold;
+  margin-bottom: 2rem;
+  font-weight: normal;
+  letter-spacing: 0.3em;
+  @include glow-text($gold, 1);
+  animation: sceneTitleGlow $glow-duration ease-in-out infinite alternate;
+}
+
+.narrative-text {
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
+  line-height: 2;
+  max-width: $narrative-max-width;
+}
+
+.narrative-line {
+  margin: 0;
+  padding: 0.2em 0;
+  opacity: 0;
+  animation: lineReveal 0.6s ease-out forwards;
+  animation-delay: calc(var(--line-index, 0) * 0.15s); // Slightly slower reveal
+
+  &.empty-line {
+    height: 0.8em;
+  }
+}
+
+// ============================================
+// BEGIN ADVENTURE BUTTON
+// ============================================
+.begin-adventure-button {
+  margin-top: 3rem;
+  padding: 1rem 3rem;
+  font-size: 1.4rem;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  color: $gold;
+  background: linear-gradient(
+    to bottom,
+    rgba(80, 60, 20, 0.8),
+    rgba(40, 30, 10, 0.9)
+  );
+  border: 2px solid $gold;
+  border-radius: 8px;
+  cursor: pointer;
+  @include glow-text($gold, 1);
+  @include glow-box($gold, 1);
+  transition: all $fade-fast ease;
+  animation:
+    buttonAppear $fade-normal ease-out,
+    buttonGlow 2s ease-in-out infinite alternate;
+
+  &:hover {
+    transform: scale(1.05);
+    background: linear-gradient(
+      to bottom,
+      rgba(100, 80, 30, 0.9),
+      rgba(60, 45, 15, 0.95)
+    );
+    @include glow-box-intense($gold);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+// When intro is complete, change cursor style
+.game-intro.intro-complete {
+  cursor: default;
+}
+
+// ============================================
+// PROGRESS INDICATOR
+// ============================================
+.scene-progress {
+  position: absolute;
+  bottom: 12vh;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: $z-progress;
+}
+
+.progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(white, 0.2);
+  transition: all $fade-fast ease;
+
+  &.active {
+    background: $gold;
+    box-shadow: 0 0 10px $gold-dim;
+    transform: scale(1.2);
+  }
+
+  &.complete {
+    background: $gold-dim;
+  }
+}
+
+// ============================================
+// CONTROLS
+// ============================================
+.intro-controls {
+  position: absolute;
+  bottom: 2vh;
+  left: 0;
+  right: 0;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: $z-controls;
+}
+
+.control-hint {
+  font-size: 0.9rem;
+  color: $text-dark;
+  animation: hintPulse 2s ease-in-out infinite;
+}
+
+.skip-button {
+  background: transparent;
+  border: 1px solid rgba(white, 0.15);
+  color: $text-dark;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(white, 0.05);
+    border-color: rgba(white, 0.3);
+    color: $text-dim;
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: $breakpoint-tablet) {
+  .intro-content {
+    padding: 1rem;
+  }
+
+  .title-art {
+    font-size: 0.4rem;
+  }
+
+  .title-subtitle {
+    letter-spacing: 0.3em;
+  }
+
+  .narrative-text {
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  .cinematic-bar {
+    height: $cinematic-bar-mobile;
+  }
+
+  .scene-progress {
+    bottom: 8vh;
+  }
+
+  .intro-controls {
+    flex-direction: column;
+    gap: 0.5rem;
+    bottom: 1vh;
+  }
+}
+
+@media (max-width: $breakpoint-mobile) {
+  .title-art {
+    font-size: 0.32rem;
+  }
+
+  .cinematic-bar {
+    height: $cinematic-bar-small;
+  }
+}
+
+// ============================================
+// NEW ENHANCEMENTS
+// ============================================
+
+// Scanline effect (subtle CRT feel)
+.game-intro.scanlines::after {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba($black, 0.03) 2px,
+      rgba($black, 0.03) 4px
+    ),
+    radial-gradient(ellipse at center, transparent 30%, rgba($black, 0.6) 100%);
+}
+
+// Lightning flash overlay for dramatic moments
+.lightning-flash {
+  @include absolute-fill;
+  background: white;
+  pointer-events: none;
+  z-index: $z-vignette + 2;
+  animation: lightningFlash 10s ease-in-out infinite;
+}
+
+// Dramatic text emphasis class
+.text-dramatic {
+  color: $gold;
+  font-weight: bold;
+  @include glow-text($gold, 1);
+}
+
+// Blood red text for dark scenes
+.text-ominous {
+  color: $blood-red;
+  text-shadow: 0 0 10px rgba($blood-red, 0.5);
+}
+
+// ============================================
+// RETRO CRT EFFECTS
+// ============================================
+
+.game-intro.retro-crt {
+  &::after {
+    background:
+      radial-gradient(ellipse at center, transparent 50%, rgba($black, 0.4) 100%),
+      radial-gradient(ellipse at center, transparent 0%, rgba($black, 0.2) 80%);
+  }
+}
+
+.scanlines {
+  @include absolute-fill;
+  pointer-events: none;
+  z-index: $z-vignette + 3;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 1px,
+    rgba($black, 0.06) 1px,
+    rgba($black, 0.06) 2px
+  );
+}
+
+.crt-overlay {
+  @include absolute-fill;
+  pointer-events: none;
+  z-index: $z-vignette + 2;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 30, 0.08) 100%);
+}
+
+// ============================================
+// TYPEWRITER TEXT
+// ============================================
+
+.typewriter-text {
+  display: inline;
+}
+
+.cursor {
+  display: inline-block;
+  color: $gold;
+  margin-left: 1px;
+  font-weight: normal;
+  &.hidden { visibility: hidden; }
+  &.blink-off { opacity: 0; }
+}
+
+// Remove jumpy animation - typewriter handles reveal
+.narrative-line {
+  opacity: 1;
+  animation: none;
+  min-height: 1.6em;
+  &.empty-line { min-height: 0.6em; }
+}
+
+// ============================================
+// LIGHTNING FLASH
+// ============================================
+
+.lightning-flash {
+  @include absolute-fill;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(220,220,255,0.8) 50%, rgba(255,255,255,0.9) 100%);
+  pointer-events: none;
+  z-index: $z-bars + 10;
+}
+
+// ============================================
+// SCREEN SHAKE
+// ============================================
+
+.game-intro.screen-shake {
+  animation: screenShake 0.6s ease-out;
+}
+
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5px, -3px); }
+  20% { transform: translate(5px, 3px); }
+  30% { transform: translate(-4px, 2px); }
+  40% { transform: translate(4px, -2px); }
+  50% { transform: translate(-3px, 3px); }
+  60% { transform: translate(3px, -3px); }
+  70% { transform: translate(-2px, 1px); }
+  80% { transform: translate(2px, -1px); }
+}
+
+// ============================================
+// FLICKER EFFECT
+// ============================================
+
+.game-intro.flicker-effect .scene-background,
+.game-intro.flicker-effect .intro-content {
+  animation: subtleFlicker 5s ease-in-out infinite;
+}
+
+@keyframes subtleFlicker {
+  0%, 91%, 94%, 97%, 100% { opacity: 1; }
+  92% { opacity: 0.85; }
+  95% { opacity: 0.9; }
+}
+
+// ============================================
+// GLITCH TEXT
+// ============================================
+
+.glitch-text {
+  position: relative;
+  &::before, &::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+  }
+  &::before {
+    color: #ff0040;
+    animation: glitchLeft 4s ease-in-out infinite;
+    clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+  }
+  &::after {
+    color: #00ffff;
+    animation: glitchRight 4s ease-in-out infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes glitchLeft {
+  0%, 88%, 100% { transform: translateX(0); opacity: 0; }
+  89%, 91% { transform: translateX(-3px); opacity: 0.5; }
+}
+
+@keyframes glitchRight {
+  0%, 88%, 100% { transform: translateX(0); opacity: 0; }
+  89%, 91% { transform: translateX(3px); opacity: 0.5; }
+}
+
+// ============================================
+// TITLE ENHANCEMENTS
+// ============================================
+
+.title-version {
+  font-size: 0.75rem;
+  color: $text-dark;
+  margin-top: 0.5rem;
+  font-family: monospace;
+  letter-spacing: 0.1em;
+}
+
+.title-prompt .blink {
+  display: inline-block;
+  animation: promptBlink 1s step-end infinite;
+  margin-right: 0.5rem;
+  color: $gold;
+}
+
+@keyframes promptBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+// ============================================
+// BUTTON ICON
+// ============================================
+
+.begin-adventure-button {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  .button-icon {
+    font-size: 1.2rem;
+    animation: buttonIconPulse 1.5s ease-in-out infinite;
+  }
+  .button-text {
+    text-transform: uppercase;
+  }
+}
+
+@keyframes buttonIconPulse {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}

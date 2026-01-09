@@ -3,7 +3,7 @@
  * animated particles, and typewriter text effects.
  */
 import { useState, useEffect, useCallback, useRef } from 'react';
-import './GameIntro.css';
+import './GameIntro/GameIntro.scss';
 
 interface GameIntroProps {
   onComplete: () => void;
