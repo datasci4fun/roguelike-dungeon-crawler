@@ -353,7 +353,6 @@ export function Play() {
                 ) : (
                   <FirstPersonRenderer
                     view={gameState?.first_person_view}
-                    playerPos={gameState?.player ? { x: gameState.player.x, y: gameState.player.y } : undefined}
                     settings={{ biome: 'dungeon', useTileGrid }}
                     width={800}
                     height={600}

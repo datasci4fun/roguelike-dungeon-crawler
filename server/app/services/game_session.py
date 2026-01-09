@@ -691,8 +691,29 @@ class GameSessionManager:
         perp_dy = facing_dx
 
         # View parameters
-        depth = 8  # How far ahead to look
-        base_width = 9  # Width at far end (wider to capture room walls)
+        # Render as far as we can see straight ahead (until OOB or blocking tile),
+        # instead of a fixed arbitrary distance.
+        max_depth = 0
+        step = 1
+        while True:
+            cx = player.x + facing_dx * step
+            cy = player.y + facing_dy * step
+            if not (0 <= cx < dungeon.width and 0 <= cy < dungeon.height):
+                break
+            max_depth = step
+            # Stop AFTER including the blocking tile (we can see the wall itself).
+            if dungeon.is_blocking_sight(cx, cy):
+                break
+            step += 1
+
+        # Safety cap (keeps payload bounded on larger maps; still "all LOS" for typical dungeon sizes)
+        MAX_FP_DEPTH = max(dungeon.width, dungeon.height)
+        depth = min(max_depth, MAX_FP_DEPTH)
+
+        # Width scaling tuned for the original depth=8 look (keeps framing consistent even if depth grows)
+        REFERENCE_DEPTH = 8
+        base_width = 9
+        MAX_HALF_WIDTH = 25
 
         rows = []
         entities_in_view = []
@@ -704,8 +725,12 @@ class GameSessionManager:
             row_center_x = player.x + facing_dx * d
             row_center_y = player.y + facing_dy * d
 
-            # Width at this depth (perspective - wider at distance)
-            half_width = (base_width * d) // depth + 1
+            # Width at this depth (perspective)
+            # IMPORTANT: do NOT divide by "depth" (which is now dynamic),
+            # or the view gets unnaturally narrow as depth increases.
+            half_width = (base_width * d) // REFERENCE_DEPTH + 1
+            if half_width > MAX_HALF_WIDTH:
+                half_width = MAX_HALF_WIDTH
 
             for w in range(-half_width, half_width + 1):
                 tile_x = row_center_x + perp_dx * w
@@ -733,7 +758,7 @@ class GameSessionManager:
                                 continue
                             try:
                                 if (enemy.is_alive() and enemy.x == tile_x and enemy.y == tile_y and
-                                    self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
+                                    self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy, max_distance=depth)):
                                     entity_here = {
                                         "type": "enemy",
                                         "name": enemy.name if hasattr(enemy, 'name') and enemy.name else "enemy",
@@ -758,7 +783,7 @@ class GameSessionManager:
                                     continue
                                 try:
                                     if (item.x == tile_x and item.y == tile_y and
-                                        self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
+                                        self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy, max_distance=depth)):
                                         entity_here = {
                                             "type": "item",
                                             "name": item.name if hasattr(item, 'name') and item.name else "item",
@@ -778,7 +803,7 @@ class GameSessionManager:
                         trap = engine.trap_manager.get_trap_at(tile_x, tile_y)
                         if (trap and not trap.hidden and trap.trap_type and
                             hasattr(trap.trap_type, 'name') and
-                            self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy)):
+                            self._is_in_fov_cone(player.x, player.y, tile_x, tile_y, facing_dx, facing_dy, max_distance=depth)):
                             try:
                                 trap_type_name = trap.trap_type.name.lower() if trap.trap_type else "spike"
                                 trap_name = trap.name if hasattr(trap, 'name') and trap.name else "trap"

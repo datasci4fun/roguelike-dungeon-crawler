@@ -15,6 +15,7 @@ import { drawDustParticles, drawFogWisps, isWaterTile, drawWaterSegment } from '
 import { drawTorches } from './lighting';
 import { getBiome, rgbToString, adjustBrightness, type BiomeTheme, type BiomeId } from './biomes';
 import { drawFloorGrid, drawCeilingGrid, drawWallWithTexture, useTileSet, type TileRenderContext } from './tiles';
+import { drawSkybox } from './skybox';
 
 /**
  * Draw floor and ceiling with biome-specific colors
@@ -86,16 +87,14 @@ const DEFAULT_SETTINGS: RenderSettings = {
 
 /**
  * Corridor info computed during render - exported for debug snapshots
+ * Simplified: only tracks walls at offsets -1, 0, +1 (matching 3D renderer)
  */
 export interface CorridorInfoEntry {
   depth: number;
   leftWall: boolean;
   rightWall: boolean;
   frontWall: string | null;
-  wallPositions: { offset: number; tile: string }[];
   isWater: boolean;
-  // Visibility bounds for debugging
-  visibleRange?: { min: number; max: number } | null; // null = no visible tiles
 }
 
 interface FirstPersonRendererProps {
@@ -106,8 +105,6 @@ interface FirstPersonRendererProps {
   settings?: Partial<RenderSettings>;
   debugShowOccluded?: boolean; // Show red silhouettes for occluded entities
   debugShowWireframe?: boolean; // Show yellow wireframe for walls/corridors
-  // Optional: if provided, used for offset derivation when server omits tile.offset
-  playerPos?: { x: number; y: number };
   onCorridorInfo?: (info: CorridorInfoEntry[]) => void; // Callback with derived corridor info for debug
 }
 
@@ -230,12 +227,35 @@ export function FirstPersonRenderer({
   settings: userSettings,
   debugShowOccluded = false,
   debugShowWireframe = false,
-  playerPos,
   onCorridorInfo,
 }: FirstPersonRendererProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
+
+  // Animation state for smooth movement
+  const animationState = useRef({
+    // Movement animation (depth offset)
+    moveProgress: 1,      // 0 = start, 1 = complete
+    moveDepthOffset: 0,   // Starting depth offset (animates to 0)
+    // Turn animation (horizontal offset)
+    turnProgress: 1,      // 0 = start, 1 = complete
+    turnXOffset: 0,       // Starting X offset (animates to 0)
+    // Head bob
+    bobPhase: 0,
+    // Previous view state for change detection
+    prevRowsJson: '',
+    prevFacingDx: 0,
+    prevFacingDy: -1,
+    // Timing
+    lastTime: 0,
+  });
+
+  // Animation constants
+  const MOVE_DURATION = 0.15; // seconds
+  const TURN_DURATION = 0.12; // seconds
+  const HEAD_BOB_AMPLITUDE = 3; // pixels
+  const HEAD_BOB_FREQUENCY = 12; // Hz
 
   // Merge user settings with defaults
   const settings: RenderSettings = { ...DEFAULT_SETTINGS, ...userSettings };
@@ -302,7 +322,7 @@ export function FirstPersonRenderer({
 
     // Draw corridor boundary lines (walls at offset ±1)
     // Yellow for wall edges, cyan for depth markers
-    for (let d = 1; d <= Math.min(maxDepth, 8); d++) {
+    for (let d = 1; d <= Math.max(0, maxDepth - 1); d++) {
       const depth = d;
       const nextDepth = d + 1;
       const info = corridorInfo[d] || { leftWall: false, rightWall: false, frontWall: null };
@@ -337,16 +357,22 @@ export function FirstPersonRenderer({
       ctx.lineTo(rightNear.x, rightNear.wallTop);
       ctx.stroke();
 
-      // Draw front wall if present (orange)
+      // Draw front wall if present (orange) — match renderer span (prev-depth opening)
       if (info.frontWall) {
+        const prevInfo = corridorInfo[Math.max(0, depth - 1)] || { leftWall: false, rightWall: false, frontWall: null };
+        const frontLeft = prevInfo.leftWall ? -1 : -2;
+        const frontRight = prevInfo.rightWall ? 1 : 2;
+        const frontL = getProjection(canvasWidth, canvasHeight, depth, frontLeft);
+        const frontR = getProjection(canvasWidth, canvasHeight, depth, frontRight);
+
         ctx.strokeStyle = '#ff8800';
         ctx.lineWidth = 3;
         ctx.setLineDash([]);
         ctx.beginPath();
-        ctx.moveTo(leftNear.x, leftNear.wallTop);
-        ctx.lineTo(rightNear.x, rightNear.wallTop);
-        ctx.lineTo(rightNear.x, rightNear.wallBottom);
-        ctx.lineTo(leftNear.x, leftNear.wallBottom);
+        ctx.moveTo(frontL.x, frontL.wallTop);
+        ctx.lineTo(frontR.x, frontR.wallTop);
+        ctx.lineTo(frontR.x, frontR.wallBottom);
+        ctx.lineTo(frontL.x, frontL.wallBottom);
         ctx.closePath();
         ctx.stroke();
       }
@@ -488,12 +514,79 @@ export function FirstPersonRenderer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    timeRef.current = time / 1000; // Convert to seconds
+    const currentTime = time / 1000; // Convert to seconds
+    const deltaTime = animationState.current.lastTime > 0
+      ? currentTime - animationState.current.lastTime
+      : 0.016;
+    animationState.current.lastTime = currentTime;
+    timeRef.current = currentTime;
+
+    // Update animation progress
+    const anim = animationState.current;
+    if (anim.moveProgress < 1) {
+      anim.moveProgress += deltaTime / MOVE_DURATION;
+      if (anim.moveProgress > 1) anim.moveProgress = 1;
+    }
+    if (anim.turnProgress < 1) {
+      anim.turnProgress += deltaTime / TURN_DURATION;
+      if (anim.turnProgress > 1) anim.turnProgress = 1;
+    }
+
+    // Update head bob phase during movement
+    if (anim.moveProgress < 1 && enableAnimations) {
+      anim.bobPhase += deltaTime * HEAD_BOB_FREQUENCY * Math.PI * 2;
+    }
+
+    // Ease function (ease out cubic)
+    const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+
+    // Calculate animated offsets
+    const moveEase = easeOut(anim.moveProgress);
+    const depthOffset = anim.moveDepthOffset * (1 - moveEase);
+
+    const turnEase = easeOut(anim.turnProgress);
+    const xOffset = anim.turnXOffset * (1 - turnEase);
+
+    // Head bob (vertical offset)
+    const headBob = anim.moveProgress < 1 && enableAnimations
+      ? Math.sin(anim.bobPhase) * HEAD_BOB_AMPLITUDE
+      : 0;
 
     // Clear canvas with biome fog color
     const fogColor = adjustBrightness(biome.fogColor, settings.brightness);
     ctx.fillStyle = rgbToString(fogColor);
     ctx.fillRect(0, 0, width, height);
+
+    // Apply animation transforms (turn offset + head bob + movement zoom)
+    ctx.save();
+    ctx.translate(xOffset, headBob);
+
+    // Movement zoom effect: when moving forward, start zoomed out and zoom in
+    if (depthOffset > 0.001) {
+      const scale = 1 / (1 + depthOffset * 0.15);
+      const centerX = width / 2;
+      const centerY = height / 2;
+      ctx.translate(centerX, centerY);
+      ctx.scale(scale, scale);
+      ctx.translate(-centerX, -centerY);
+    }
+
+    // Draw parallax skybox (distant background)
+    // Shows through gaps in the dungeon and creates depth illusion
+    if (view?.facing) {
+      // Calculate extra parallax offset during turn animation
+      // Skybox moves slower than foreground (inverted direction)
+      const skyboxParallaxOffset = xOffset * 0.5;
+      drawSkybox(ctx, {
+        biome: settings.biome,
+        facingDx: view.facing.dx,
+        facingDy: view.facing.dy,
+        canvasWidth: width,
+        canvasHeight: height,
+        brightness: settings.brightness,
+        extraParallaxOffset: skyboxParallaxOffset,
+      });
+    }
 
     // Draw floor and ceiling with perspective and biome colors
     drawFloorAndCeilingBiome(ctx, width, height, timeRef.current, enableAnimations, biome, settings.brightness);
@@ -518,140 +611,124 @@ export function FirstPersonRenderer({
     const rows = view.rows;
     const maxDepth = rows.length;
 
-    // --- Derived offset fallback ---
-    // Server is expected to send tile.offset (w), but if it is missing or rows are sparse/ragged,
-    // derive offset from world coords relative to the row center at depth d.
-    // Facing basis:
-    //   forward = (dx, dy)
-    //   right/perp = (-dy, dx)  (matches server)
-    const facing = view.facing;
-    const perp_dx = -facing.dy;
-    const perp_dy = facing.dx;
-
-    // Infer player position if not provided:
-    // Depth 0 row is a lateral slice centered on player (d=0).
-    // We find the median tile along the perp axis as the center.
-    const inferPlayerPos = (): { x: number; y: number } | null => {
-      if (!rows[0] || rows[0].length === 0) return null;
-      const r0 = rows[0].filter(t => typeof t.x === 'number' && typeof t.y === 'number');
-      if (r0.length === 0) return null;
-      const scored = r0
-        .map(t => ({ t, s: (t.x * perp_dx + t.y * perp_dy) }))
-        .sort((a, b) => a.s - b.s);
-      const mid = scored[Math.floor(scored.length / 2)].t;
-      return { x: mid.x, y: mid.y };
-    };
-
-    const derivedPlayer = playerPos ?? inferPlayerPos();
-
-    const getTileOffset = (tileData: { offset?: number; x: number; y: number }, depth: number): number => {
-      if (typeof tileData.offset === 'number') return tileData.offset;
-      if (!derivedPlayer) return 0; // safe fallback; prevents "no visible tiles" collapse
-      const centerX = derivedPlayer.x + facing.dx * depth;
-      const centerY = derivedPlayer.y + facing.dy * depth;
-      return (tileData.x - centerX) * perp_dx + (tileData.y - centerY) * perp_dy;
-    };
-
+    // Simple offset getter - trust server's offset field directly
+    const getOffset = (tile: { offset?: number }) => tile.offset ?? 0;
 
     // Find the corridor configuration at each depth
-    // Track: side walls, front walls, and any walls in the row for open room rendering
+    // Simplified: only check walls at offsets -1, 0, +1 (matching 3D renderer approach)
     const corridorInfo: {
       leftWall: boolean;
       rightWall: boolean;
       hasFloor: boolean;
       frontWall: string | null;
-      // For open rooms: track positions of all walls in this row
-      wallPositions: { offset: number; tile: string }[];
+      // If center is blocked, span of the contiguous wall-run that includes offset 0.
+      // (Used to draw far/room end-walls wider than just -1..+1)
+      frontSpan: { left: number; right: number } | null;
+      // Visibility flags (true = currently visible in LOS, false = memory/explored)
+      leftWallVisible: boolean;
+      rightWallVisible: boolean;
+      frontWallVisible: boolean;
+      floorVisible: boolean;
       // Track hidden secret door positions for visual hints
       secretPositions: { offset: number }[];
       // Track if floor is water for water reflections
       isWater: boolean;
       // Track stairs positions
       stairsPositions: { offset: number; direction: 'down' | 'up' }[];
-      // Visible range for debugging
-      visibleRange: { min: number; max: number } | null;
     }[] = [];
 
     for (let d = 0; d < maxDepth; d++) {
       const row = rows[d];
       if (!row || row.length === 0) {
-        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: '#', wallPositions: [], secretPositions: [], isWater: false, stairsPositions: [], visibleRange: null });
+        // Empty row means no tile data - treat as fog boundary (no walls rendered)
+        corridorInfo.push({
+          leftWall: false,
+          rightWall: false,
+          hasFloor: false,
+          frontWall: null,
+          frontSpan: null,
+          leftWallVisible: false,
+          rightWallVisible: false,
+          frontWallVisible: false,
+          floorVisible: false,
+          secretPositions: [],
+          isWater: false,
+          stairsPositions: [],
+        });
         continue;
       }
 
-      // Use tile.offset field from server (not array index) for correct offset mapping
-      // This handles sparse rows where OOB tiles are omitted
-
-      // Find the range of VISIBLE tile offsets in this row
-      let minVisOffset = Infinity;
-      let maxVisOffset = -Infinity;
-      for (const tileData of row) {
-        if (tileData.visible) {
-          const off = getTileOffset(tileData, d);
-          if (off < minVisOffset) minVisOffset = off;
-          if (off > maxVisOffset) maxVisOffset = off;
-        }
-      }
-
-      // If no visible tiles in this row, treat as fog boundary
-      if (minVisOffset === Infinity) {
-        corridorInfo.push({ leftWall: true, rightWall: true, hasFloor: false, frontWall: null, wallPositions: [], secretPositions: [], isWater: false, stairsPositions: [], visibleRange: null });
-        continue;
-      }
-
-      // Find center tile (offset === 0)
-      const centerTile = row.find(t => getTileOffset(t, d) === 0);
-      const centerVisible = centerTile?.visible ?? false;
-
-      // Check if center is blocked (front wall) - ONLY if center is visible
+      // Simple wall detection: check only offsets -1, 0, +1
+      let leftWall = false;
+      let rightWall = false;
       let frontWall: string | null = null;
       let centerIsWall = false;
-      if (centerVisible && centerTile) {
-        const centerTileType = centerTile.tile_actual ?? centerTile.tile;
-        centerIsWall = isWallTile(centerTileType) || isDoorTile(centerTileType);
-        frontWall = centerIsWall ? centerTileType : null;
-      }
-
-      // Track wall positions using tile.offset and tile_actual for geometry
-      const wallPositions: { offset: number; tile: string }[] = [];
-      // Track positions with hidden secrets for visual hints (visible only)
+      let centerTile: typeof row[0] | undefined;
+      let leftWallVisible = false;
+      let rightWallVisible = false;
+      let frontWallVisible = false;
+      let floorVisible = false;
       const secretPositions: { offset: number }[] = [];
+      const stairsPositions: { offset: number; direction: 'down' | 'up' }[] = [];
+      // Track visible wall/door offsets so we can expand the front wall span when center is blocked
+      const wallOffsets = new Set<number>();
 
-      // Scan ALL tiles using tile_actual for geometry decisions
-      // Use tile.offset directly (not array index) for correct offset mapping
-      for (const tileData of row) {
-        const actualTile = tileData.tile_actual ?? tileData.tile;
-        const offset = getTileOffset(tileData, d);
-        if (isWallTile(actualTile) || isDoorTile(actualTile)) {
-          wallPositions.push({ offset, tile: actualTile });
+      for (const tile of row) {
+        // IMPORTANT: Don't skip explored-but-not-visible tiles.
+        // They contain tile_actual for persistent geometry memory.
+        const isVisible = tile.visible === true;
+
+        const offset = getOffset(tile);
+        const tileChar = tile.tile_actual ?? tile.tile;
+
+        // Check for walls at corridor positions
+        if (isWallTile(tileChar) || isDoorTile(tileChar)) {
+          wallOffsets.add(offset);
+          if (offset === -1) leftWall = true;
+          else if (offset === 1) rightWall = true;
+          else if (offset === 0) {
+            frontWall = tileChar;
+            centerIsWall = true;
+          }
+          if (offset === -1 && isVisible) leftWallVisible = true;
+          if (offset === 1 && isVisible) rightWallVisible = true;
+          if (offset === 0 && isVisible) frontWallVisible = true;
         }
 
-        // Secret hints only for visible tiles
-        if (tileData.visible && tileData.has_secret) {
+        // Track center tile for water/floor detection
+        if (offset === 0) {
+          centerTile = tile;
+          if (isVisible) floorVisible = true;
+        }
+
+        // Secret hints
+        // Keep hints LOS-only (don’t leak hints through memory fog)
+        if (isVisible && tile.has_secret) {
           secretPositions.push({ offset });
         }
-      }
 
-      // Determine corridor walls - check for ANY wall on left/right side of center
-      // This ensures continuous corridor walls even when tile data has walls at varying offsets
-      const leftWall = wallPositions.some(w => w.offset < 0);
-      const rightWall = wallPositions.some(w => w.offset > 0);
-
-      // Check if center tile is water (only if visible and not a wall)
-      const isWater = centerVisible && !centerIsWall && isWaterTile(centerTile?.tile || '.');
-
-      // Track stairs positions (only for visible tiles)
-      const stairsPositions: { offset: number; direction: 'down' | 'up' }[] = [];
-      for (const tileData of row) {
-        if (!tileData.visible) continue;
-
-        const tile = tileData.tile;
-        const offset = getTileOffset(tileData, d);
-        if (isStairsDown(tile)) {
+        // Stairs
+        // Use tile_actual so stairs remain as discovered geometry under fog
+        if (isStairsDown(tileChar)) {
           stairsPositions.push({ offset, direction: 'down' });
-        } else if (isStairsUp(tile)) {
+        } else if (isStairsUp(tileChar)) {
           stairsPositions.push({ offset, direction: 'up' });
         }
+      }
+
+      // Check if center tile is water
+      const centerChar = centerTile ? (centerTile.tile_actual ?? centerTile.tile) : '';
+      const isWater = centerTile && !centerIsWall && isWaterTile(centerChar);
+
+      // If center is blocked, compute how wide the *actual* contiguous wall run is at this depth.
+      // This fixes cases where the far wall is wider than the corridor (-5..+5 etc) but we only drew -1..+1.
+      let frontSpan: { left: number; right: number } | null = null;
+      if (frontWall) {
+        let left = 0;
+        let right = 0;
+        while (wallOffsets.has(left - 1)) left -= 1;
+        while (wallOffsets.has(right + 1)) right += 1;
+        frontSpan = { left, right };
       }
 
       corridorInfo.push({
@@ -659,11 +736,14 @@ export function FirstPersonRenderer({
         rightWall,
         hasFloor: !centerIsWall,
         frontWall,
-        wallPositions,
+        frontSpan,
+        leftWallVisible,
+        rightWallVisible,
+        frontWallVisible,
+        floorVisible,
         secretPositions,
-        isWater,
+        isWater: isWater || false,
         stairsPositions,
-        visibleRange: { min: minVisOffset, max: maxVisOffset }, // Visible tile offsets
       });
     }
 
@@ -674,9 +754,7 @@ export function FirstPersonRenderer({
         leftWall: info.leftWall,
         rightWall: info.rightWall,
         frontWall: info.frontWall,
-        wallPositions: info.wallPositions,
         isWater: info.isWater,
-        visibleRange: info.visibleRange,
       }));
       onCorridorInfo(exportableInfo);
     }
@@ -696,12 +774,30 @@ export function FirstPersonRenderer({
       enableAnimations,
     };
 
+    // How bright explored-but-not-visible geometry stays (static map memory).
+    // 1.0 = same as visible, lower = dimmer “remembered” geometry.
+    const MEMORY_GEOMETRY_BRIGHTNESS = 0.65;
+
     // If tile grid mode is enabled, draw the entire floor/ceiling grid first
     if (settings.useTileGrid && tilesLoaded) {
-      // Calculate bounds based on what's visible
-      const maxVisibleDepth = Math.min(maxDepth, 8);
-      const leftBound = -3;
-      const rightBound = 3;
+      // Render whatever the server sent (no hard-coded 8)
+      const maxVisibleDepth = Math.max(0, maxDepth - 1);
+
+      // Expand bounds to cover the offsets actually present in view.rows
+      let leftBound = 0;
+      let rightBound = 0;
+      for (const row of rows) {
+        if (!row) continue;
+        for (const t of row) {
+          const o = getOffset(t);
+          if (o < leftBound) leftBound = o;
+          if (o > rightBound) rightBound = o;
+        }
+      }
+      // Safety clamp (optional): prevents huge grids if depth is very large
+      const MAX_GRID_HALF_WIDTH = 25;
+      leftBound = Math.max(leftBound, -MAX_GRID_HALF_WIDTH);
+      rightBound = Math.min(rightBound, MAX_GRID_HALF_WIDTH);
 
       // Draw ceiling grid (from back to front) - start at depth 0 for player position
       drawCeilingGrid(tileContext, 0, maxVisibleDepth, leftBound, rightBound);
@@ -717,39 +813,55 @@ export function FirstPersonRenderer({
       const nextDepth = d + 1;
       const info = corridorInfo[d];
 
-      // Determine floor/ceiling width based on whether there are walls
-      // In open rooms (no walls), extend floor/ceiling to fill more of the view
+      // Simplified: floor/ceiling width based on current depth's walls only
+      // If there's a wall at ±1, floor/ceiling stops there; otherwise extends to ±2
       const leftOffset = info.leftWall ? -1 : -2;
       const rightOffset = info.rightWall ? 1 : 2;
 
-      // Biome options for floor/ceiling/wall rendering
-      const renderOptions = { biome, brightness: settings.brightness };
+      // Floor/ceiling should persist as “known geometry” even when not currently visible.
+      const floorBrightness =
+        settings.brightness * (info.floorVisible ? 1 : MEMORY_GEOMETRY_BRIGHTNESS);
+      const renderOptions = { biome, brightness: floorBrightness };
 
-      // Skip floor/ceiling segment drawing if using tile grid mode
-      if (!settings.useTileGrid) {
-        // Draw ceiling segment
-        drawFloorSegment(ctx, depth, nextDepth, leftOffset, rightOffset, width, height, false, renderOptions);
+      // Only draw floor/ceiling when this slice actually has floor (center isn't blocked).
+      if (info.hasFloor) {
+        // Skip floor/ceiling segment drawing if using tile grid mode
+        if (!settings.useTileGrid) {
+          // Draw ceiling segment
+          drawFloorSegment(ctx, depth, nextDepth, leftOffset, rightOffset, width, height, false, renderOptions);
 
-        // Draw floor segment (or water if this is a water tile)
-        if (info.isWater) {
+          // Draw floor segment (or water if this is a water tile)
+          if (info.isWater) {
+            drawWaterSegment(ctx, depth, nextDepth, leftOffset, rightOffset, width, height, timeRef.current, enableAnimations, d);
+          } else {
+            drawFloorSegment(ctx, depth, nextDepth, leftOffset, rightOffset, width, height, true, renderOptions);
+          }
+        } else if (info.isWater) {
+          // Still draw water even in tile grid mode
           drawWaterSegment(ctx, depth, nextDepth, leftOffset, rightOffset, width, height, timeRef.current, enableAnimations, d);
-        } else {
-          drawFloorSegment(ctx, depth, nextDepth, leftOffset, rightOffset, width, height, true, renderOptions);
         }
-      } else if (info.isWater) {
-        // Still draw water even in tile grid mode
-        drawWaterSegment(ctx, depth, nextDepth, leftOffset, rightOffset, width, height, timeRef.current, enableAnimations, d);
       }
 
-      // Wall options (same as render options)
-      const wallOptions = renderOptions;
+      // Walls persist as “known geometry” too, but dim if not currently visible.
+      const leftWallOptions = {
+        biome,
+        brightness: settings.brightness * (info.leftWallVisible ? 1 : MEMORY_GEOMETRY_BRIGHTNESS),
+      };
+      const rightWallOptions = {
+        biome,
+        brightness: settings.brightness * (info.rightWallVisible ? 1 : MEMORY_GEOMETRY_BRIGHTNESS),
+      };
+      const frontWallOptions = {
+        biome,
+        brightness: settings.brightness * (info.frontWallVisible ? 1 : MEMORY_GEOMETRY_BRIGHTNESS),
+      };
 
       // Draw left corridor wall if there's a wall on the left
       if (info.leftWall) {
         if (settings.useTileGrid && tilesLoaded) {
-          drawWallWithTexture(tileContext, 'left', depth, -1, 1);
+          drawWallWithTexture({ ...tileContext, brightness: leftWallOptions.brightness }, 'left', depth, -1, 1);
         } else {
-          drawCorridorWall(ctx, 'left', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
+          drawCorridorWall(ctx, 'left', depth, nextDepth, width, height, timeRef.current, enableAnimations, leftWallOptions);
         }
         // Fill zBuffer for left corridor wall with interpolated depth
         const nearProj = getProjection(width, height, depth, -1);
@@ -760,9 +872,9 @@ export function FirstPersonRenderer({
       // Draw right corridor wall if there's a wall on the right
       if (info.rightWall) {
         if (settings.useTileGrid && tilesLoaded) {
-          drawWallWithTexture(tileContext, 'right', depth, -1, 1);
+          drawWallWithTexture({ ...tileContext, brightness: rightWallOptions.brightness }, 'right', depth, -1, 1);
         } else {
-          drawCorridorWall(ctx, 'right', depth, nextDepth, width, height, timeRef.current, enableAnimations, wallOptions);
+          drawCorridorWall(ctx, 'right', depth, nextDepth, width, height, timeRef.current, enableAnimations, rightWallOptions);
         }
         // Fill zBuffer for right corridor wall with interpolated depth
         const nearProj = getProjection(width, height, depth, 1);
@@ -772,72 +884,33 @@ export function FirstPersonRenderer({
 
       // Draw front wall if this depth is blocked (center blocked)
       if (info.frontWall) {
+        const span = info.frontSpan;
+        // For textured/tile-grid walls, keep integer offsets so we draw discrete tiles.
+        // For non-tile mode, expand to half-tile edges so a 1-tile wall has non-zero width.
+        const drawLeft =
+          (settings.useTileGrid && tilesLoaded)
+            ? (span ? span.left : -1)
+            : (span ? span.left - 0.5 : -1);
+        const drawRight =
+          (settings.useTileGrid && tilesLoaded)
+            ? (span ? span.right : 1)
+            : (span ? span.right + 0.5 : 1); 
+
         if (settings.useTileGrid && tilesLoaded) {
-          drawWallWithTexture(tileContext, 'front', depth, leftOffset, rightOffset);
+          drawWallWithTexture({ ...tileContext, brightness: frontWallOptions.brightness }, 'front', depth, drawLeft, drawRight);
         } else {
-          drawFrontWall(ctx, depth, leftOffset, rightOffset, width, height, info.frontWall, timeRef.current, enableAnimations, wallOptions);
+          drawFrontWall(ctx, depth, drawLeft, drawRight, width, height, info.frontWall, timeRef.current, enableAnimations, frontWallOptions);
         }
         // Fill zBuffer for front wall
-        const leftProj = getProjection(width, height, depth, leftOffset);
-        const rightProj = getProjection(width, height, depth, rightOffset);
+        // Always use half-tile edges for z-buffer coverage (prevents “1-column wall” when span is a single tile)
+        const zLeft = span ? span.left - 0.5 : drawLeft;
+        const zRight = span ? span.right + 0.5 : drawRight;
+        const leftProj = getProjection(width, height, depth, zLeft);
+        const rightProj = getProjection(width, height, depth, zRight);
         fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
       }
-      // For open rooms: draw walls at edges even if center is not blocked
-      else if (info.wallPositions.length > 0 && !info.leftWall && !info.rightWall) {
-        // Find the leftmost and rightmost wall positions
-        const leftMostWall = Math.min(...info.wallPositions.map(w => w.offset));
-        const rightMostWall = Math.max(...info.wallPositions.map(w => w.offset));
-
-        // Draw left edge wall if there's one
-        if (leftMostWall < 0) {
-          const wallTile = info.wallPositions.find(w => w.offset === leftMostWall)?.tile || '#';
-          // Draw a partial front wall on the left side
-          if (settings.useTileGrid && tilesLoaded) {
-            drawWallWithTexture(tileContext, 'front', depth, leftMostWall - 0.5, leftMostWall + 0.5);
-          } else {
-            drawFrontWall(ctx, depth, leftMostWall - 0.5, leftMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations, wallOptions);
-          }
-          // Fill zBuffer for partial left wall
-          const leftProj = getProjection(width, height, depth, leftMostWall - 0.5);
-          const rightProj = getProjection(width, height, depth, leftMostWall + 0.5);
-          fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
-        }
-
-        // Draw right edge wall if there's one
-        if (rightMostWall > 0) {
-          const wallTile = info.wallPositions.find(w => w.offset === rightMostWall)?.tile || '#';
-          // Draw a partial front wall on the right side
-          if (settings.useTileGrid && tilesLoaded) {
-            drawWallWithTexture(tileContext, 'front', depth, rightMostWall - 0.5, rightMostWall + 0.5);
-          } else {
-            drawFrontWall(ctx, depth, rightMostWall - 0.5, rightMostWall + 0.5, width, height, wallTile, timeRef.current, enableAnimations, wallOptions);
-          }
-          // Fill zBuffer for partial right wall
-          const leftProj = getProjection(width, height, depth, rightMostWall - 0.5);
-          const rightProj = getProjection(width, height, depth, rightMostWall + 0.5);
-          fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
-        }
-
-        // If there's a continuous wall across the back (all positions are walls), draw full back wall
-        if (info.wallPositions.length >= 3) {
-          // Check if walls span most of the view
-          const row = rows[d];
-          const totalTiles = row?.length || 0;
-          const wallCount = info.wallPositions.length;
-          if (wallCount >= totalTiles * 0.7) {
-            // Most of the row is walls - draw a full back wall
-            if (settings.useTileGrid && tilesLoaded) {
-              drawWallWithTexture(tileContext, 'front', depth, leftMostWall, rightMostWall);
-            } else {
-              drawFrontWall(ctx, depth, leftMostWall, rightMostWall, width, height, '#', timeRef.current, enableAnimations, wallOptions);
-            }
-            // Fill zBuffer for full back wall
-            const leftProj = getProjection(width, height, depth, leftMostWall);
-            const rightProj = getProjection(width, height, depth, rightMostWall);
-            fillZBuffer(zBuffer, leftProj.x, rightProj.x, depth);
-          }
-        }
-      }
+      // Note: Partial wall heuristics (walls at offsets beyond ±1) removed
+      // Simplified renderer only renders walls at offsets -1, 0, +1 (matching 3D renderer)
 
       // Draw secret hints for hidden secret doors in this row
       if (info.secretPositions.length > 0) {
@@ -894,7 +967,10 @@ export function FirstPersonRenderer({
     }
 
     // Wall options (same as render options)
-    const nearWallOptions = nearRenderOptions;
+    const nearWallOptions = {
+      biome,
+      brightness: settings.brightness * (playerSideInfo?.floorVisible ? 1 : 0.65),
+    };
 
     // Draw immediate side walls based on tiles beside player (not in front)
     if (playerSideInfo?.leftWall) {
@@ -1023,6 +1099,9 @@ export function FirstPersonRenderer({
       drawDebugWireframe(ctx, width, height, maxDepth, corridorInfo);
     }
 
+    // Restore canvas state (undo animation transforms)
+    ctx.restore();
+
     // Continue animation loop
     if (enableAnimations) {
       animationRef.current = requestAnimationFrame(render);
@@ -1043,6 +1122,42 @@ export function FirstPersonRenderer({
       }
     };
   }, [enableAnimations, render]);
+
+  // Detect view changes and trigger animations
+  useEffect(() => {
+    if (!view || !view.rows) return;
+
+    const anim = animationState.current;
+    const currentRowsJson = JSON.stringify(view.rows.map(row => row?.map(t => `${t.x},${t.y}`)));
+    const { dx, dy } = view.facing;
+
+    // Check for turn (facing changed)
+    if (dx !== anim.prevFacingDx || dy !== anim.prevFacingDy) {
+      // Calculate turn direction using cross product
+      const cross = anim.prevFacingDx * dy - anim.prevFacingDy * dx;
+
+      if (cross !== 0 && enableAnimations) {
+        // Start turn animation
+        // cross > 0 = turning right, cross < 0 = turning left
+        anim.turnProgress = 0;
+        anim.turnXOffset = cross > 0 ? width * 0.3 : -width * 0.3;
+      }
+
+      anim.prevFacingDx = dx;
+      anim.prevFacingDy = dy;
+    }
+    // Check for movement (rows changed but facing same)
+    else if (currentRowsJson !== anim.prevRowsJson && anim.prevRowsJson !== '') {
+      if (enableAnimations) {
+        // Start movement animation
+        anim.moveProgress = 0;
+        anim.moveDepthOffset = 1; // One tile depth offset
+        anim.bobPhase = 0;
+      }
+    }
+
+    anim.prevRowsJson = currentRowsJson;
+  }, [view, width, enableAnimations]);
 
   // Re-render when view changes (without animations)
   useEffect(() => {
