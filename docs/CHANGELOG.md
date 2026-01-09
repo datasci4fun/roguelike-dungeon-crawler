@@ -4,6 +4,65 @@ All notable changes to this project.
 
 ---
 
+## [5.3.0] - 2026-01-09 - Cinematics V2: Death & Victory Cutscenes
+
+### Added
+- **Death Cutscene**: 5-scene cinematic sequence (Fall, YouDied, AbyssClaims, Fate, Prompt)
+- **Victory Cutscene**: 3-scene cinematic sequence (Seal, World, Legend)
+- **Death Fate Variants**: Random selection (Echo, Hollowed, Silence) locked per death
+- **Victory Legacy Variants**: Random selection (Beacon, Champion, Archivist) locked per victory
+- **Ghost Lore Panels**: Fate/legacy-specific text on summary screens
+- **Death Camera Effect**: 3D renderer slump/roll/pitch animation on death
+- **Death Overlays**: Vignette, blood curtain, eyelids closing CSS effects
+- **Cinematic SFX**: File-based with procedural fallback
+- **Factory Pattern**: createGameOverCutscene() and createVictoryCutscene() for per-game-end randomization
+- **FX Cues**: Flash/pressure effects synced to caption line completion
+
+### Changed
+- Begin button restricted to intro cutscene only
+- Fall scene background transparent for 3D death cam visibility
+- Unified voice between cutscene and summary panel text
+
+---
+
+## [5.2.0] - 2026-01-08 - Modular Cutscene Engine
+
+### Added
+- **Modular Cutscene Architecture**: Reusable engine for all cinematics
+- **Retro CRT Text Reveal**: Phosphor ignition effect per character
+- **FX System**: Flash, shake, flicker, pressure effects
+- **FX Cues**: Effects tied to caption line completion
+- **Scene-Scoped CSS**: Per-scene styling via `.cs-scene-{id}` classes
+- **Debug Mode Panel**: Scene iteration tools for development
+- **7-Scene Intro Cutscene**: Full narrative with effects
+
+---
+
+## [5.1.0] - 2026-01-07 - Cinematic Intro & Responsive Renderer
+
+### Added
+- **Cinematic Intro**: 7 narrative scenes with parallax backgrounds
+- **Particle Effects**: Stars, embers, dust, darkness, magic, ash, mist
+- **Scene Transitions**: Solid black with no bleed-through
+- **Responsive 3D Renderer**: Fills container, adapts to resize
+
+### Fixed
+- Scene background transitions now use solid black curtain
+
+---
+
+## [5.0.0] - 2026-01-07 - 3D Movement Animations & Map Memory
+
+### Added
+- **Dynamic LOS Render Distance**: View distance based on line-of-sight
+- **Smooth Movement Animations**: 2D and 3D renderers
+- **Smooth Turn Animations**: Camera rotation interpolation
+- **Map Memory**: Explored tiles remain visible (dimmed)
+- **Pure Tile-Based 3D**: Geometry from tile data only
+- **Parallax Skybox**: Depth effect in 3D view
+
+---
+
 ## [4.6.0] - 2026-01-06 - Debug Tooling & Rendering Fixes
 
 ### Added
