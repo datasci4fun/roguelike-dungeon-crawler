@@ -1,15 +1,61 @@
 # Project State
 
 **Last Updated:** 2026-01-10
-**Branch:** feature/lore-compendium
+**Branch:** feature/zone-system
 **Version:** v5.4.0 (Lore Codex System)
 
 ---
 
-## In Progress: Lore Compendium
+## In Progress: Zone System (Vertical Slice)
 
-**Branch:** `feature/lore-compendium`
-**Commit:** `ea7a997` - feat: add comprehensive lore compendium with Skyfall Seed canon
+**Branch:** `feature/zone-system`
+**Commit:** `d7045b3` - feat: add zone system vertical slice (Floor 1)
+
+### Zone System Implementation (Floor 1 Complete)
+
+Room-based zone identity system that drives decoration, spawn bias, and lore drops:
+
+| Component | Status | Description |
+|-----------|--------|-------------|
+| Room.zone field | Done | Added to dataclass, defaults to "generic" |
+| _assign_zones() | Done | Floor 1 logic implemented |
+| Zone debug helpers | Done | get_zone_at(), get_room_at(), get_zone_summary() |
+| cell_blocks layout | Done | Interior walls + doors (rooms >= 8x6) |
+| Zone-aware spawns | Done | Enemy weight modifiers per zone |
+| Zone-aware lore | Done | Zone-specific spawn chances |
+
+### Floor 1 Zones (Stone Dungeon)
+
+| Zone | Assignment Rule | Special |
+|------|-----------------|---------|
+| intake_hall | Start room (rooms[0]) | 0% elite chance |
+| boss_approach | 1-2 nearest to boss room | Goblins x2.0 |
+| wardens_office | 1 mid-map anchor | 100% lore spawn |
+| cell_blocks | Weighted by size (10x8+) | Interior walls, goblins x1.5 |
+| guard_corridors | Elongated rooms (10x3) | Skeletons x1.4 |
+| record_vaults | 6x6+, fewer entrances | Lore x2.0 |
+| execution_chambers | 8x8+, far from start | Skeletons x1.2 |
+
+### Zone Docs Created
+
+Per-floor zone specification files in `docs/zones/`:
+- README.md (index + canonical zone IDs)
+- floor-1-stone-dungeon.md through floor-8-crystal.md
+- Full specs with eligibility, layout pass, spawns, lore pools
+
+### Next Steps
+
+- Implement remaining floors (2-8) zone logic
+- Add zone-specific decorations (use zone to select prop patterns)
+- Add visual zone indicators (debug overlay)
+- Test zone balance with gameplay
+
+---
+
+## Recently Completed: Lore Compendium
+
+**Branch:** `feature/lore-compendium-v2`
+**Commit:** `0a19be1` - docs: enhance zone specs with detailed implementation requirements
 
 ### New Lore Canon: The Skyfall Seed
 
