@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-09
 **Branch:** develop
-**Version:** v5.3.0 (Cinematics V2 - Death & Victory Cutscenes)
+**Version:** v5.4.0 (Lore Codex System)
 
 ---
 
@@ -16,9 +16,91 @@
 
 ---
 
-## Current Version: v5.3.0
+## Current Version: v5.4.0
 
-### Completed Features (v5.3.0)
+### Completed Features (v5.4.0)
+
+| Feature | Status |
+|---------|--------|
+| Immersive Lore Codex system (replaces journal button) | ✅ |
+| Category-based organization (History, Characters, Creatures, Locations, Artifacts) | ✅ |
+| ScrollPresentation with unroll animation | ✅ |
+| BookPresentation with page-turn effect | ✅ |
+| CreaturePresentation with animated Canvas 2D portraits | ✅ |
+| LocationPresentation with animated biome previews | ✅ |
+| Bestiary auto-discovery on first combat | ✅ |
+| Location auto-discovery on level visits | ✅ |
+| Fantasy grimoire aesthetic (amber/parchment styling) | ✅ |
+| Story manager state persistence in save/load | ✅ |
+
+### v5.4.0 Architecture
+
+```
+web/src/components/LoreCodex/
+├── components/
+│   ├── CodexSidebar.tsx        # Category navigation
+│   ├── CodexEntryList.tsx      # Entry list for selected category
+│   ├── CodexReader.tsx         # Routes to presentation components
+│   ├── ScrollPresentation.tsx  # Animated scroll unroll
+│   ├── BookPresentation.tsx    # Book with page turns
+│   ├── CreaturePresentation.tsx # Canvas 2D enemy portrait + stats
+│   └── LocationPresentation.tsx # Biome preview + level info
+├── hooks/
+│   └── useCodexState.ts        # Category/entry selection state
+├── utils/
+│   └── phosphorText.tsx        # Character-by-character reveal
+├── LoreCodex.tsx               # Main container
+├── LoreCodex.scss              # All styles (~1200 lines)
+├── types.ts                    # LoreEntry, CreatureEntry, LocationEntry
+└── index.ts                    # Exports
+```
+
+### Creature Bestiary Features
+
+| Feature | Description |
+|---------|-------------|
+| Animated portrait | Canvas 2D rendering with bob, breathe, sway animations |
+| Stats grid | HP (red), ATK (orange), XP (green), Level Range |
+| Boss badge | "BOSS" label + crown rendering for boss creatures |
+| Abilities list | Formatted ability names for bosses |
+| Resistances | Element-colored resistance tags |
+| First encounter text | Italic quote from ENEMY_ENCOUNTER_MESSAGES |
+
+### Location Codex Features
+
+| Feature | Description |
+|---------|-------------|
+| Biome preview | Animated Canvas with theme-specific visuals |
+| Level badge | "Level N" overlay on preview |
+| Intro message | LEVEL_INTRO_MESSAGES text |
+| Boss section | Guardian name + symbol if level has boss |
+| Creatures list | All enemies that spawn on this level |
+
+### Discovery System
+
+| Trigger | Method | Data Source |
+|---------|--------|-------------|
+| Combat (first attack) | `story_manager.encounter_enemy()` | combat_manager.py |
+| Game start | `story_manager.visit_level(1)` | engine.py |
+| Level descent | `story_manager.visit_level(n)` | level_manager.py |
+
+### Key Files (v5.4.0)
+
+| File | Purpose |
+|------|---------|
+| `src/story/story_manager.py` | get_bestiary_entries(), get_location_entries() |
+| `src/managers/combat_manager.py` | encounter_enemy() call on attack |
+| `src/managers/level_manager.py` | visit_level() call on descent |
+| `src/managers/serialization.py` | story_manager save/load |
+| `server/app/services/game_session.py` | Combines all entry types for frontend |
+| `web/src/hooks/useGameSocket.ts` | Extended LoreEntry types |
+| `web/src/pages/Play.tsx` | LoreCodex integration (J key) |
+
+---
+
+## Previous Versions
+
+### v5.3.0 Features
 
 | Feature | Status |
 |---------|--------|
@@ -32,66 +114,6 @@
 | File-based cinematic SFX with procedural fallback | ✅ |
 | Factory pattern for cutscene creation (useState) | ✅ |
 | FX cues synced to caption line completion | ✅ |
-
-### v5.3.0 Architecture
-
-```
-web/src/cutscenes/
-├── engine/
-│   ├── hooks/          # useCutsceneTimeline, useFxBus
-│   ├── layers/         # SceneBackground, Particles, FX, CRT
-│   ├── text/           # RetroCaption with phosphor reveal
-│   ├── ui/             # CutsceneHUD
-│   ├── CutscenePlayer.tsx
-│   └── types.ts
-├── intro/
-│   └── scenes/         # 00_Title through 06_You
-├── victory/
-│   └── scenes/         # 00_Seal, 01_World, 02_Legend (+ legacy variants)
-└── game_over/
-    └── scenes/         # 00_Fall, 01_YouDied, 02_AbyssClaims, 03_Fate (variants), 04_Prompt
-```
-
-### Death Cutscene Scenes
-
-| Scene | Description | FX |
-|-------|-------------|-----|
-| 00_Fall | Camera slumps, world fades | Death cam (3D), overlays |
-| 01_YouDied | "YOU DIED" title reveal | Flash, pressure |
-| 02_AbyssClaims | Narrative transition | Flicker |
-| 03_Fate | Random variant (Echo/Hollowed/Silence) | Per-variant FX |
-| 04_Prompt | "Press any key" prompt | None |
-
-### Victory Cutscene Scenes
-
-| Scene | Description | FX |
-|-------|-------------|-----|
-| 00_Seal | "THE LAST SEAL" - abyss made to sleep | Flash, pressure |
-| 01_World | "THE WORLD ABOVE" - return to surface | Light pressure |
-| 02_Legend | Random legacy variant + final motif | Heavy flash/pressure |
-
-### Ghost Lore Panels
-
-| Type | Variants | Summary Panel |
-|------|----------|---------------|
-| Death | Echo, Hollowed, Silence | GameOverGhostLore |
-| Victory | Beacon, Champion, Archivist | VictoryGhostLore |
-
-### Key Files (v5.3.0)
-
-| File | Purpose |
-|------|---------|
-| `web/src/components/GameOverCutscene.tsx` | Death cutscene wrapper |
-| `web/src/components/VictoryCutscene.tsx` | Victory cutscene wrapper |
-| `web/src/components/GameOverGhostLore.tsx` | Death fate lore panel |
-| `web/src/components/VictoryGhostLore.tsx` | Victory legacy lore panel |
-| `web/src/cutscenes/game_over/config.ts` | createGameOverCutscene factory |
-| `web/src/cutscenes/victory/config.ts` | createVictoryCutscene factory |
-| `web/src/components/SceneRenderer/FirstPersonRenderer3D.tsx` | Death camera effect |
-
----
-
-## Previous Versions
 
 ### v5.2.0 Features
 
@@ -128,7 +150,7 @@ web/src/cutscenes/
 
 ---
 
-## Next Version: v5.4.0
+## Next Version: v5.5.0
 
 | Feature | Description |
 |---------|-------------|
@@ -136,6 +158,7 @@ web/src/cutscenes/
 | Save on quit | Auto-save when quitting |
 | Load saved game | Restore from database |
 | Multiple slots | Multiple characters per account |
+| Character/Artifact/History presentations | Remaining codex category layouts |
 
 ### Deferred
 
