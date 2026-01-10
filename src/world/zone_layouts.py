@@ -383,9 +383,9 @@ def layout_webbed_gardens(dungeon: 'Dungeon', room: 'Room'):
             dungeon.tiles[ty][tx] = TileType.DEEP_WATER
 
 
-@register_layout(3, "nursery")
-def layout_nursery(dungeon: 'Dungeon', room: 'Room'):
-    """Create nursery high-danger room.
+@register_layout(3, "the_nursery")
+def layout_the_nursery(dungeon: 'Dungeon', room: 'Room'):
+    """Create the_nursery high-danger room.
 
     Heavy decoration density around edges (egg clusters),
     keep center navigable.

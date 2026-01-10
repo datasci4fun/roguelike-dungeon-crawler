@@ -165,7 +165,7 @@ FLOOR_2_CONFIG = FloorZoneConfig(
 
 # =============================================================================
 # FLOOR 3: Forest Depths (GROWTH)
-# Canonical zones: root_warrens, canopy_halls, webbed_gardens, nursery,
+# Canonical zones: root_warrens, canopy_halls, webbed_gardens, the_nursery,
 #                  digestion_chambers, druid_ring, boss_approach
 # =============================================================================
 FLOOR_3_CONFIG = FloorZoneConfig(
@@ -183,7 +183,7 @@ FLOOR_3_CONFIG = FloorZoneConfig(
         ),
         # Anchor zone - high-danger spawn pocket
         ZoneSpec(
-            zone_id="nursery",
+            zone_id="the_nursery",
             required_count=1,
             selection_rule="largest",  # Largest room far from start
             eligibility=min_size(8, 8),

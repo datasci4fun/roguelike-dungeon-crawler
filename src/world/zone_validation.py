@@ -74,29 +74,47 @@ def validate_floor(level: int, seeds: int = 20, verbose: bool = True) -> Dict:
         if zone_counter.get(config.start_zone, 0) == 0:
             errors.append(f"Seed {seed}: Start zone '{config.start_zone}' not found")
 
-        # Check for degenerate distribution (one zone > 70% of rooms)
+        # Check for degenerate distribution
         total_rooms = sum(zone_counter.values())
         for zone_id, count in zone_counter.items():
-            if count / total_rooms > 0.7 and zone_id != config.fallback_zone:
-                warnings.append(f"Seed {seed}: Zone '{zone_id}' dominates with {count}/{total_rooms} rooms ({100*count/total_rooms:.0f}%)")
+            pct = count / total_rooms if total_rooms > 0 else 0
+            # Non-fallback zones should not exceed 70%
+            if pct > 0.7 and zone_id != config.fallback_zone and zone_id != "generic":
+                errors.append(f"Seed {seed}: Zone '{zone_id}' dominates ({count}/{total_rooms} = {100*pct:.0f}%)")
+            # Fallback zone exceeding 80% suggests config problems
+            elif pct > 0.8 and zone_id == config.fallback_zone:
+                warnings.append(f"Seed {seed}: Fallback '{zone_id}' overused ({count}/{total_rooms} = {100*pct:.0f}%)")
 
         if verbose and seed < 5:  # Show first 5 seeds in detail
             print(f"Seed {seed}: {dict(zone_counter)}")
 
-    # Compute aggregate stats
+    # Compute aggregate stats with min/max
     zone_totals = Counter()
     zone_appearances = Counter()  # How many seeds each zone appeared in
+    zone_min: Dict[str, int] = {}
+    zone_max: Dict[str, int] = {}
 
     for zone_counter in all_zone_counts:
         for zone_id, count in zone_counter.items():
             zone_totals[zone_id] += count
             zone_appearances[zone_id] += 1
+            if zone_id not in zone_min or count < zone_min[zone_id]:
+                zone_min[zone_id] = count
+            if zone_id not in zone_max or count > zone_max[zone_id]:
+                zone_max[zone_id] = count
+
+    # Set min to 0 for zones that didn't appear in every seed
+    for zone_id in zone_totals:
+        if zone_appearances[zone_id] < seeds:
+            zone_min[zone_id] = 0
 
     stats = {
         'total_seeds': seeds,
         'zone_totals': dict(zone_totals),
         'zone_appearances': dict(zone_appearances),
-        'avg_per_seed': {z: zone_totals[z] / seeds for z in zone_totals}
+        'avg_per_seed': {z: zone_totals[z] / seeds for z in zone_totals},
+        'min_per_seed': zone_min,
+        'max_per_seed': zone_max,
     }
 
     passed = len(errors) == 0
@@ -105,11 +123,13 @@ def validate_floor(level: int, seeds: int = 20, verbose: bool = True) -> Dict:
         print(f"\n{'-'*40}")
         print("AGGREGATE STATS:")
         print(f"  Total rooms across all seeds: {sum(zone_totals.values())}")
-        print(f"  Zones by frequency:")
+        print(f"  Zones by frequency (avg / min-max):")
         for zone_id, total in zone_totals.most_common():
             avg = total / seeds
             appearances = zone_appearances[zone_id]
-            print(f"    {zone_id}: {total} total, {avg:.1f} avg/seed, appeared in {appearances}/{seeds} seeds")
+            min_c = zone_min.get(zone_id, 0)
+            max_c = zone_max.get(zone_id, 0)
+            print(f"    {zone_id}: {avg:.1f} avg ({min_c}-{max_c}), {appearances}/{seeds} seeds")
 
         print(f"\n{'-'*40}")
         print(f"RESULT: {'PASSED' if passed else 'FAILED'}")

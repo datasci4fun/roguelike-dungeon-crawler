@@ -110,12 +110,12 @@ class EntityManager:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
         # Floor 3 zone modifiers (Forest Depths)
-        # Canonical zones: root_warrens, canopy_halls, webbed_gardens, nursery,
+        # Canonical zones: root_warrens, canopy_halls, webbed_gardens, the_nursery,
         # digestion_chambers, druid_ring, boss_approach
         # Spider bias overall (reduce goblin/orc, keep skeleton for variety)
         elif level == 3:
             zone_modifiers = {
-                "nursery": {EnemyType.GOBLIN: 0.3, EnemyType.ORC: 0.2},  # Spider density x1.8
+                "the_nursery": {EnemyType.GOBLIN: 0.3, EnemyType.ORC: 0.2},  # Spider density x1.8
                 "webbed_gardens": {EnemyType.GOBLIN: 0.2, EnemyType.ORC: 0.2},  # Spider bias x2.0
                 "druid_ring": {EnemyType.GOBLIN: 0.5, EnemyType.SKELETON: 0.5},  # Low density
                 "digestion_chambers": {EnemyType.GOBLIN: 0.4},  # Low-to-normal
@@ -194,14 +194,14 @@ class EntityManager:
     def _get_floor3_lore_config(self) -> dict:
         """Floor 3 zone lore configuration.
 
-        Canonical zones: root_warrens, canopy_halls, webbed_gardens, nursery,
+        Canonical zones: root_warrens, canopy_halls, webbed_gardens, the_nursery,
         digestion_chambers, druid_ring, boss_approach
         """
         return {
             "druid_ring": (1.0, 1),            # Guaranteed 1 lore (anchor)
             "webbed_gardens": (0.3, 1),        # 20-35% chance, max 1
             "canopy_halls": (0.2, 1),          # 15-25% chance, max 1
-            "nursery": (0.15, 1),              # 10-20% chance, max 1
+            "the_nursery": (0.15, 1),              # 10-20% chance, max 1
             "digestion_chambers": (0.15, 1),   # 10-20% chance, max 1
             "root_warrens": (0.2, 1),          # 15-25% chance, max 1
             "boss_approach": (1.0, 1),         # Guaranteed 1 lore
