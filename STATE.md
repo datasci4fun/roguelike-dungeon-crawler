@@ -9,7 +9,7 @@
 ## In Progress: Zone System (Data-Driven)
 
 **Branch:** `feature/zone-system`
-**Commit:** `ac195d4` - feat: implement Floor 3 (Forest Depths) zone system
+**Commit:** `165eda7` - feat: implement Floor 4 (Mirror Valdris) zone system
 
 ### Zone System Architecture
 
@@ -67,6 +67,18 @@ Data-driven zone assignment with modular layout decorators:
 | digestion_chambers | 6x6+ | Central hazard pool |
 | boss_approach | Near boss (adaptive) | Spider bias x2, guaranteed lore |
 
+**Floor 4 - Mirror Valdris (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| courtyard_squares | Start room, 8x8+ | Optional fountain |
+| throne_hall_ruins | Required (largest, 10x8+) | Symmetric aisle markers |
+| oath_chambers | Required (center, 7x7+) | Ring geometry, 100% lore |
+| seal_chambers | High-weight (5x5+) | Corner workstations, 75% lore |
+| record_vaults | High-weight (5x5+) | Shelf rows, 75% lore |
+| mausoleum_district | 5x5+ | Tomb row pattern, skeleton x2 |
+| parade_corridors | Elongated fallback | Symmetric markers |
+| boss_approach | Near boss (adaptive) | Skeleton x1.6, guaranteed lore |
+
 ### Zone Assignment Guarantees
 
 - **Required zones always appear** (eligibility relaxed if needed)
@@ -75,7 +87,7 @@ Data-driven zone assignment with modular layout decorators:
 
 ### Next Steps
 
-- Implement Floors 4-8 configs
+- Implement Floors 5-8 configs (in order, with validation gate)
 - Add zone-specific decoration patterns
 - Wire has_ceiling/skybox_override for open-air rooms (Mirror Valdris)
 
