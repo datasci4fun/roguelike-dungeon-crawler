@@ -9,7 +9,7 @@
 ## In Progress: Zone System (Data-Driven)
 
 **Branch:** `feature/zone-system`
-**Commit:** Pending - Floor 2 correctness pass completed
+**Commit:** `ac195d4` - feat: implement Floor 3 (Forest Depths) zone system
 
 ### Zone System Architecture
 
@@ -56,6 +56,17 @@ Data-driven zone assignment with modular layout decorators:
 | diseased_pools | 5x5+ | Central water pool |
 | boss_approach | Near boss (adaptive) | Guaranteed lore |
 
+**Floor 3 - Forest Depths (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| root_warrens | Start room, weighted high | Chokepoint partitions |
+| druid_ring | Required (center, 8x8+) | Ritual ring, 100% lore |
+| nursery | Required (largest, 8x8+) | High danger, edge hazards |
+| canopy_halls | 8x8+ landmark | Optional water pool |
+| webbed_gardens | 6x6+ | Scattered hazards (traps) |
+| digestion_chambers | 6x6+ | Central hazard pool |
+| boss_approach | Near boss (adaptive) | Spider bias x2, guaranteed lore |
+
 ### Zone Assignment Guarantees
 
 - **Required zones always appear** (eligibility relaxed if needed)
@@ -64,7 +75,7 @@ Data-driven zone assignment with modular layout decorators:
 
 ### Next Steps
 
-- Implement Floors 3-8 configs
+- Implement Floors 4-8 configs
 - Add zone-specific decoration patterns
 - Wire has_ceiling/skybox_override for open-air rooms (Mirror Valdris)
 
