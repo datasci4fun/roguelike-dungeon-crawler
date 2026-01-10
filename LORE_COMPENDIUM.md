@@ -49,25 +49,23 @@
 >
 > No one returns with a story that holds.
 
----
-
-*Last week, your mother called you by a different name.*
-
-*Not as a mistake—like she had never known any other.*
-
-*In the town registry, your birth record has a thin blank line where your surname should be. The clerk smiles and asks if you are feeling well.*
-
-*A storm rolls over the hills that night.*
-
-*In the morning, your house key fits your door… and also your neighbor's. Your neighbor insists it has always been that way.*
-
-*At noon, the palace bell rings twice—two coronations, separated by a breath. The city applauds both.*
-
-*By evening, your brother's portrait is still on the mantle. But no one can remember who the boy is.*
-
-*That is when you understand: the Field is no longer underground.*
-
-*It is choosing what the world has always been.*
+> Last week, your mother called you by a different name.
+>
+> Not as a mistake—like she had never known any other.
+>
+> In the town registry, your birth record has a thin blank line where your surname should be. The clerk smiles and asks if you are feeling well.
+>
+> A storm rolls over the hills that night.
+>
+> In the morning, your house key fits your door… and also your neighbor's. Your neighbor insists it has always been that way.
+>
+> At noon, the palace bell rings twice—two coronations, separated by a breath. The city applauds both.
+>
+> By evening, your brother's portrait is still on the mantle. But no one can remember who the boy is.
+>
+> That is when you understand: the Field is no longer underground.
+>
+> It is choosing what the world has always been.
 
 ---
 
@@ -106,7 +104,7 @@ The dungeon beneath Valdris is not a structure. It is the Field's geography—re
 The Field is not omnipotent. It operates under constraints that make survival—and resistance—possible:
 
 - **It requires anchors.** The Field spreads through symbols of legitimate authority: crowns, seals, oaths, records, bloodlines. Without an anchor, it cannot edit.
-- **It edits consensus, not physics.** The Field changes what is *agreed upon*, not raw matter. A stone is a stone. But who *owns* the stone, who *named* the stone, what the stone *means*—these can be rewritten.
+- **It edits consensus, not physics.** The Field changes what is *agreed upon*, not raw matter. A stone is a stone. But who *owns* the stone, who *named* the stone, what the stone *means*—these can be rewritten. Geography is real; borders are negotiable. A river does not move, but the kingdom it belongs to can change overnight.
 - **It cannot rewrite the unwitnessed.** Events that leave no record, no memory, no trace are immune. This is why delvers matter—and why the Field consumes their stories on the way out. *Artifacts are witnesses. They carry edits into the surface world and make them harder to deny.*
 - **Storm pulses accelerate edits.** When lightning strikes the fault lines above the Seed, the Field *surges*. Major rewrites happen during storms.
 - **Seams are low-signal corridors.** The passages between pockets are where the Field's grip is thinnest. Travel is possible because the seams are not yet fully written.
@@ -220,7 +218,7 @@ The Rat King is not a creature but a *colony*—thousands of edited organisms bo
 
 **Monarchy Anchor:** The seals. Wax seals that authenticated royal decrees flow through here—carried by rats, duplicated, attached to contradictory documents. Decrees travel downstream; edits travel up.
 
-The seam to Level 3 climbs through root-choked passages where the sewage feeds something growing.
+The seam to Level 3 climbs through root-choked passages where the sewage feeds something growing. *What circulates eventually takes root. What connects eventually consumes.*
 
 **Warden:** The Rat King
 
@@ -344,7 +342,7 @@ The seam to Level 8 passes through cooling crystal veins where meaning has begun
 
 *This layer is the Field's lattice—the integration point where all pockets converge.* The crystals are not mineral. They are *solidified meaning*—the Seed's attempts to give its dreams physical form. At the center of the lattice lies the Star-Heart itself: a wound in spacetime that bleeds geometry.
 
-The Dragon Emperor was never a dragon. It was the last seal-warden, the guardian appointed by Valdris's founders to keep the Seed dormant. The Field could not destroy the warden, so it edited the warden into *serving* the Seed while *believing* it still guards against it.
+The Dragon Emperor was not born a dragon. It was the last seal-warden, the guardian appointed by Valdris's founders to keep the Seed dormant. The Field could not destroy the warden, so it edited the warden into *serving* the Seed while *believing* it still guards against it.
 
 If you slay the Dragon, you do not break the seal—you *become* the seal. Your will replaces the Dragon's. You choose whether the Seed sleeps or wakes.
 
@@ -571,9 +569,9 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 **What It Enforces:** Legitimacy by repetition. In the Regent's domain, the version that is witnessed most becomes the version that has always been.
 
 **Abilities:**
-- **Issue Decree** - Forces an edit: doors lock/unlock, guards change allegiance, names on plaques rewrite
-- **Seal of Authority** - Stamps a pattern onto reality; contradictions become coherent
-- **Summon Guard** - Calls the oath-bound dead from the Mausoleum District
+- **Issue Decree** - The Regent speaks, and the pocket listens. Doors that were locked become unlocked because the Regent declares they were never sealed. Guards who served one king now serve another because the Regent has rewritten their oaths. The decree is not magic—it is *bureaucracy made absolute*.
+- **Seal of Authority** - The Regent stamps reality like a clerk stamps a document. Where the seal lands, contradictions cease to conflict. Two truths coexist without friction. The paradox becomes *policy*.
+- **Summon Guard** - The oath-bound dead rise from the Mausoleum District, their swords drawn for a crown they cannot identify. They fight for the Regent because the Regent holds the ledger that proves their service never ended.
 
 ---
 
@@ -1575,7 +1573,7 @@ Complete floor reordering to create a logical "defense stack" progression:
 2. **Sewers of Valdris** — CIRCULATION (logistics layer)
 3. **Forest Depths** — GROWTH (organism layer)
 4. **Mirror Valdris** — LEGITIMACY (monarchy made physical) ← NEW
-5. **Ice Cavern** — STASIS (cognitive defense)
+5. **Ice Cavern** — STASIS (temporal defense)
 6. **Ancient Library** — COGNITION (cognitive defense)
 7. **Volcanic Depths** — TRANSFORMATION (physical defense)
 8. **Crystal Cave** — INTEGRATION (the lock)
