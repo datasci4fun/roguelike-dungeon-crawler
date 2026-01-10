@@ -91,14 +91,18 @@ class EntityManager:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
         # Floor 2 zone modifiers (Sewers)
+        # Canonical zones: waste_channels, carrier_nests, confluence_chambers,
+        # maintenance_tunnels, diseased_pools, seal_drifts, colony_heart, boss_approach
         elif level == 2:
             zone_modifiers = {
-                "carrier_nests": {EnemyType.GOBLIN: 0.5, EnemyType.SKELETON: 0.7},  # Rats bias (no rat type yet, reduce others)
+                "carrier_nests": {EnemyType.GOBLIN: 0.5, EnemyType.SKELETON: 0.7},  # Rats bias (reduce others)
                 "waste_channels": {EnemyType.SKELETON: 1.2},
                 "seal_drifts": {},  # Low combat, handled by density
                 "colony_heart": {EnemyType.GOBLIN: 0.3, EnemyType.SKELETON: 0.5},  # Rats dominate
+                "diseased_pools": {EnemyType.SKELETON: 1.3},  # Undead bias
+                "maintenance_tunnels": {},  # Default weights
                 "boss_approach": {EnemyType.GOBLIN: 0.3},  # Rats bias x2
-                "overflow_junction": {},
+                "confluence_chambers": {},  # Start zone, default weights
             }
             modifiers = zone_modifiers.get(zone, {})
             for i, enemy_type in enumerate(enemy_types):
@@ -150,15 +154,20 @@ class EntityManager:
         }
 
     def _get_floor2_lore_config(self) -> dict:
-        """Floor 2 zone lore configuration."""
+        """Floor 2 zone lore configuration.
+
+        Canonical zones: waste_channels, carrier_nests, confluence_chambers,
+        maintenance_tunnels, diseased_pools, seal_drifts, colony_heart, boss_approach
+        """
         return {
-            "colony_heart": (1.0, 1),     # Guaranteed 1 lore (anchor)
-            "seal_drifts": (0.7, 2),      # 70% chance, up to 2 lore (surface-doc biased)
-            "carrier_nests": (0.2, 1),    # 20% chance, max 1
-            "waste_channels": (0.15, 1),  # 15% chance, max 1
-            "drip_galleries": (0.3, 1),   # 30% chance, max 1
-            "boss_approach": (1.0, 1),    # Guaranteed 1 lore
-            "overflow_junction": (0.25, 1),  # 25% chance, max 1
+            "colony_heart": (1.0, 1),          # Guaranteed 1 lore (anchor)
+            "seal_drifts": (0.7, 2),           # 70% chance, up to 2 lore (surface-doc biased)
+            "carrier_nests": (0.2, 1),         # 20% chance, max 1
+            "waste_channels": (0.15, 1),       # 15% chance, max 1
+            "maintenance_tunnels": (0.25, 1),  # 25% chance, max 1
+            "diseased_pools": (0.3, 1),        # 30% chance, max 1
+            "boss_approach": (1.0, 1),         # Guaranteed 1 lore
+            "confluence_chambers": (0.25, 1),  # 25% chance, max 1 (start zone)
         }
 
     def _spawn_floor_lore(self, dungeon: 'Dungeon', player: Player, lore_entries: list, zone_config: dict):

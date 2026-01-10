@@ -9,7 +9,7 @@
 ## In Progress: Zone System (Data-Driven)
 
 **Branch:** `feature/zone-system`
-**Commit:** `5dc2bf5` - refactor: make zone system data-driven with Floor 2
+**Commit:** Pending - Floor 2 correctness pass completed
 
 ### Zone System Architecture
 
@@ -19,6 +19,7 @@ Data-driven zone assignment with modular layout decorators:
 |------|---------|
 | `zone_config.py` | FloorZoneConfig dataclass, eligibility predicates, per-floor configs |
 | `zone_layouts.py` | Layout decorator registry, ZONE_LAYOUTS[(floor, zone_id)] pattern |
+| `zone_validation.py` | Validation harness for testing zone assignment across seeds |
 | `dungeon.py` | Config-driven _assign_zones(), enhanced get_zone_summary() |
 | `entity_manager.py` | Zone-aware spawns and lore with per-floor configs |
 
@@ -28,6 +29,7 @@ Data-driven zone assignment with modular layout decorators:
 2. Add layout handlers to `zone_layouts.py` with `@register_layout(N, "zone_id")`
 3. Add spawn modifiers to `entity_manager._apply_zone_weights()`
 4. Add lore config to `entity_manager._get_floorN_lore_config()`
+5. Run validation: `python -c "from src.world.zone_validation import validate_floor; validate_floor(N)"`
 
 ### Implemented Floors
 
@@ -35,20 +37,30 @@ Data-driven zone assignment with modular layout decorators:
 | Zone | Rule | Special |
 |------|------|---------|
 | intake_hall | Start room | 0% elite |
-| wardens_office | Center anchor | 100% lore |
-| cell_blocks | 10x8+ | Interior walls, goblins x1.5 |
+| wardens_office | Required (center) | 100% lore |
+| record_vaults | Required (center, 5x5+) | 60% lore |
+| cell_blocks | 8x6+ | Interior walls, goblins x1.5 |
 | guard_corridors | Elongated | Skeletons x1.4 |
-| boss_approach | Near boss | Goblins x2.0, guaranteed lore |
+| execution_chambers | 7x7+ | Skeletons x1.2 |
+| boss_approach | Near boss (adaptive) | Goblins x2.0, guaranteed lore |
 
-**Floor 2 - Sewers:**
+**Floor 2 - Sewers (Canonical zones):**
 | Zone | Rule | Special |
 |------|------|---------|
-| overflow_junction | Start room | - |
-| colony_heart | Center anchor | Debris pools, 100% lore |
+| confluence_chambers | Start room | Central water feature |
+| colony_heart | Required (largest) | Debris pools, 100% lore |
+| seal_drifts | Required (center, 5x5+) | 70% lore, surface-doc biased |
+| carrier_nests | Required (4x4+) | Debris patches, rat bias |
 | waste_channels | Elongated | DEEP_WATER lanes |
-| seal_drifts | 6x6+ | 70% lore, surface-doc biased |
-| carrier_nests | 5x5+ | Rat bias (reduced others) |
-| boss_approach | Near boss | Guaranteed lore |
+| maintenance_tunnels | Any room | Sparse decoration |
+| diseased_pools | 5x5+ | Central water pool |
+| boss_approach | Near boss (adaptive) | Guaranteed lore |
+
+### Zone Assignment Guarantees
+
+- **Required zones always appear** (eligibility relaxed if needed)
+- **Boss approach count is adaptive** (reduced if not enough rooms)
+- **Validation harness** catches regressions across 20 seeds
 
 ### Next Steps
 

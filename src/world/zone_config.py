@@ -3,11 +3,12 @@
 Each floor defines its zones with:
 - eligibility: predicate function (room) -> bool
 - weight: relative spawn weight (higher = more likely)
-- required: zones that must appear exactly N times (anchors)
+- required_count: zones that must appear exactly N times (0 = not required)
+- selection_rule: how to pick rooms for required zones
 - fallback: default zone when nothing else fits
 """
 from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Callable, Dict, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .dungeon import Room
@@ -18,11 +19,14 @@ class ZoneSpec:
     """Specification for a single zone type."""
     zone_id: str
     weight: int = 1
-    # Eligibility predicate: (room) -> bool
+    # Eligibility predicate: (room) -> bool. None = any room eligible.
     eligibility: Callable[['Room'], bool] = None
-    # If set, this is a required zone (anchor) that appears exactly N times
+    # If > 0, this zone must appear exactly N times (assigned first)
     required_count: int = 0
-    # Selection rule for required zones: "center" (mid-map), "boss_near" (near boss)
+    # Selection rule for required zones:
+    #   "center" = prefer mid-map rooms
+    #   "largest" = prefer largest rooms by area
+    #   "boss_near" = prefer rooms near boss
     selection_rule: str = ""
 
 
@@ -31,13 +35,18 @@ class FloorZoneConfig:
     """Zone configuration for an entire floor."""
     floor_level: int
     zones: List[ZoneSpec] = field(default_factory=list)
-    # Special zone assignments
-    start_zone: str = "generic"  # Zone for start room
-    boss_approach_count: int = 2  # Number of boss approach rooms
-    fallback_zone: str = "generic"  # Default when no zone fits
+    # Zone for start room (player spawn)
+    start_zone: str = "generic"
+    # Number of boss approach rooms (1-3)
+    boss_approach_count: int = 2
+    # Default zone when no eligibility matches
+    fallback_zone: str = "generic"
 
 
+# =============================================================================
 # Eligibility predicates
+# =============================================================================
+
 def min_size(min_w: int, min_h: int) -> Callable[['Room'], bool]:
     """Room must be at least min_w x min_h (or transposed)."""
     def check(room: 'Room') -> bool:
@@ -61,6 +70,8 @@ def any_room(room: 'Room') -> bool:
 
 # =============================================================================
 # FLOOR 1: Stone Dungeon (MEMORY)
+# Canonical zones: cell_blocks, guard_corridors, wardens_office,
+#                  execution_chambers, record_vaults, intake_hall, boss_approach
 # =============================================================================
 FLOOR_1_CONFIG = FloorZoneConfig(
     floor_level=1,
@@ -68,71 +79,33 @@ FLOOR_1_CONFIG = FloorZoneConfig(
     boss_approach_count=2,
     fallback_zone="cell_blocks",
     zones=[
-        # Anchor zones (required)
+        # Required anchor zone
         ZoneSpec(
             zone_id="wardens_office",
             required_count=1,
             selection_rule="center",
         ),
-        # Regular zones (weighted random)
+        # Required zone for lore concentration
+        ZoneSpec(
+            zone_id="record_vaults",
+            required_count=1,
+            selection_rule="center",
+            eligibility=min_size(5, 5),
+        ),
+        # Weighted zones
         ZoneSpec(
             zone_id="cell_blocks",
             weight=4,
-            eligibility=min_size(10, 8),
+            eligibility=min_size(8, 6),
         ),
         ZoneSpec(
             zone_id="guard_corridors",
             weight=2,
-            eligibility=elongated(10, 4),
-        ),
-        ZoneSpec(
-            zone_id="record_vaults",
-            weight=2,
-            eligibility=min_size(6, 6),
+            eligibility=elongated(8, 5),
         ),
         ZoneSpec(
             zone_id="execution_chambers",
             weight=1,
-            eligibility=min_size(8, 8),
-        ),
-    ],
-)
-
-
-# =============================================================================
-# FLOOR 2: Sewers (THRESHOLD)
-# =============================================================================
-FLOOR_2_CONFIG = FloorZoneConfig(
-    floor_level=2,
-    start_zone="overflow_junction",
-    boss_approach_count=2,
-    fallback_zone="waste_channels",
-    zones=[
-        # Anchor zones
-        ZoneSpec(
-            zone_id="colony_heart",
-            required_count=1,
-            selection_rule="center",
-        ),
-        # Regular zones
-        ZoneSpec(
-            zone_id="waste_channels",
-            weight=4,
-            eligibility=elongated(8, 5),
-        ),
-        ZoneSpec(
-            zone_id="seal_drifts",
-            weight=2,
-            eligibility=min_size(6, 6),
-        ),
-        ZoneSpec(
-            zone_id="carrier_nests",
-            weight=3,
-            eligibility=min_size(5, 5),
-        ),
-        ZoneSpec(
-            zone_id="drip_galleries",
-            weight=2,
             eligibility=min_size(7, 7),
         ),
     ],
@@ -140,7 +113,58 @@ FLOOR_2_CONFIG = FloorZoneConfig(
 
 
 # =============================================================================
-# FLOORS 3-8: Placeholder configs (to be filled in)
+# FLOOR 2: Sewers of Valdris (CIRCULATION)
+# Canonical zones: waste_channels, carrier_nests, confluence_chambers,
+#                  maintenance_tunnels, diseased_pools, seal_drifts,
+#                  colony_heart, boss_approach
+# =============================================================================
+FLOOR_2_CONFIG = FloorZoneConfig(
+    floor_level=2,
+    start_zone="confluence_chambers",  # Canonical start zone
+    boss_approach_count=2,
+    fallback_zone="maintenance_tunnels",  # Safe fallback
+    zones=[
+        # Anchor zone - must pick largest room for set-piece feel
+        ZoneSpec(
+            zone_id="colony_heart",
+            required_count=1,
+            selection_rule="largest",
+        ),
+        # Required zone for lore/surface docs
+        ZoneSpec(
+            zone_id="seal_drifts",
+            required_count=1,
+            selection_rule="center",
+            eligibility=min_size(5, 5),
+        ),
+        # Required zone for rat clustering
+        ZoneSpec(
+            zone_id="carrier_nests",
+            required_count=1,
+            eligibility=min_size(4, 4),
+        ),
+        # Weighted zones
+        ZoneSpec(
+            zone_id="waste_channels",
+            weight=3,
+            eligibility=elongated(6, 5),
+        ),
+        ZoneSpec(
+            zone_id="maintenance_tunnels",
+            weight=2,
+            eligibility=any_room,  # Fallback-friendly
+        ),
+        ZoneSpec(
+            zone_id="diseased_pools",
+            weight=1,
+            eligibility=min_size(5, 5),
+        ),
+    ],
+)
+
+
+# =============================================================================
+# FLOORS 3-8: Placeholder configs (to be implemented)
 # =============================================================================
 FLOOR_3_CONFIG = FloorZoneConfig(floor_level=3, start_zone="generic", fallback_zone="generic")
 FLOOR_4_CONFIG = FloorZoneConfig(floor_level=4, start_zone="generic", fallback_zone="generic")

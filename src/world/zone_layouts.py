@@ -200,3 +200,95 @@ def layout_carrier_nests(dungeon: 'Dungeon', room: 'Room'):
         py = random.randint(room.y + 1, room.y + room.height - 2)
         if dungeon.tiles[py][px] == TileType.FLOOR:
             dungeon.tiles[py][px] = TileType.DEEP_WATER
+
+
+@register_layout(2, "seal_drifts")
+def layout_seal_drifts(dungeon: 'Dungeon', room: 'Room'):
+    """Create seal drift areas with surface debris accumulation.
+
+    Scattered shallow water patches representing surface runoff deposits.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 5 or room.height < 5:
+        return
+
+    # Scatter 2-3 small debris patches (surface detritus)
+    num_patches = random.randint(2, 3)
+    for _ in range(num_patches):
+        px = random.randint(room.x + 1, room.x + room.width - 2)
+        py = random.randint(room.y + 1, room.y + room.height - 2)
+        if dungeon.tiles[py][px] == TileType.FLOOR:
+            dungeon.tiles[py][px] = TileType.DEEP_WATER
+
+
+@register_layout(2, "diseased_pools")
+def layout_diseased_pools(dungeon: 'Dungeon', room: 'Room'):
+    """Create diseased pool areas with stagnant water.
+
+    Larger water patches representing contaminated pools.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 5 or room.height < 5:
+        return
+
+    # Create a central pool of water (2x2 or 3x3)
+    cx = room.x + room.width // 2
+    cy = room.y + room.height // 2
+
+    pool_size = 2 if room.width < 7 or room.height < 7 else 3
+
+    for dx in range(pool_size):
+        for dy in range(pool_size):
+            px = cx - pool_size // 2 + dx
+            py = cy - pool_size // 2 + dy
+            if (room.x + 1 <= px < room.x + room.width - 1 and
+                room.y + 1 <= py < room.y + room.height - 1):
+                if dungeon.tiles[py][px] == TileType.FLOOR:
+                    dungeon.tiles[py][px] = TileType.DEEP_WATER
+
+
+@register_layout(2, "maintenance_tunnels")
+def layout_maintenance_tunnels(dungeon: 'Dungeon', room: 'Room'):
+    """Maintenance tunnels - minimal decoration.
+
+    Clean corridors with occasional water drips.
+    """
+    from ..core.constants import TileType
+
+    # Only add sparse decoration to larger rooms
+    if room.width < 6 and room.height < 6:
+        return
+
+    # 30% chance for a single water drip patch
+    if random.random() < 0.3:
+        px = random.randint(room.x + 1, room.x + room.width - 2)
+        py = random.randint(room.y + 1, room.y + room.height - 2)
+        if dungeon.tiles[py][px] == TileType.FLOOR:
+            dungeon.tiles[py][px] = TileType.DEEP_WATER
+
+
+@register_layout(2, "confluence_chambers")
+def layout_confluence_chambers(dungeon: 'Dungeon', room: 'Room'):
+    """Confluence chambers - start zone where water flows converge.
+
+    Central water feature with walkable edges.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 6 or room.height < 6:
+        return
+
+    # Central shallow water patch (2x2) to suggest flow convergence
+    cx = room.x + room.width // 2
+    cy = room.y + room.height // 2
+
+    for dx in range(-1, 1):
+        for dy in range(-1, 1):
+            px = cx + dx
+            py = cy + dy
+            if (room.x + 2 <= px < room.x + room.width - 2 and
+                room.y + 2 <= py < room.y + room.height - 2):
+                if dungeon.tiles[py][px] == TileType.FLOOR:
+                    dungeon.tiles[py][px] = TileType.DEEP_WATER

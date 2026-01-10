@@ -318,6 +318,12 @@ class Dungeon:
 
         Uses data-driven config from zone_config.py.
         Zones drive decorations, spawn bias, and lore drops.
+
+        Assignment order:
+        1. Start room gets start_zone
+        2. Boss approach rooms (nearest to boss, prefer rooms with 2+ connections)
+        3. Required zones (anchors) assigned first by selection rule
+        4. Remaining rooms by weighted random eligibility
         """
         if not self.rooms or len(self.rooms) < 3:
             return
@@ -325,6 +331,11 @@ class Dungeon:
         config = get_floor_config(self.level)
         if not config or not config.zones:
             return  # No zone config for this floor
+
+        # Track for debug output
+        self._anchor_rooms = {}
+        self._approach_rooms = []
+        self._zone_warnings = []
 
         # 1. Assign start room zone
         start_room = self.rooms[0]
@@ -340,17 +351,16 @@ class Dungeon:
             bx, by = boss_center
             return ((cx - bx) ** 2 + (cy - by) ** 2) ** 0.5
 
-        other_rooms.sort(key=dist_to_boss)
+        # Sort by distance, but prefer larger rooms for boss approach
+        other_rooms.sort(key=lambda r: (dist_to_boss(r), -r.area()))
 
-        num_approach = min(config.boss_approach_count, len(other_rooms))
-        approach_rooms = []
+        # Count required zones to ensure we leave enough rooms for them
+        num_required_zones = sum(z.required_count for z in config.zones if z.required_count > 0)
+        max_approach = max(0, len(other_rooms) - num_required_zones)
+        num_approach = min(config.boss_approach_count, max_approach, len(other_rooms))
         for i in range(num_approach):
             other_rooms[i].zone = "boss_approach"
-            approach_rooms.append(other_rooms[i])
-
-        # Track assigned zones for debug
-        self._anchor_rooms = {}
-        self._approach_rooms = approach_rooms
+            self._approach_rooms.append(other_rooms[i])
 
         # 3. Assign required/anchor zones
         remaining = [r for r in other_rooms if r.zone == "generic"]
@@ -358,24 +368,40 @@ class Dungeon:
 
         for zone_spec in config.zones:
             if zone_spec.required_count > 0:
-                # This is an anchor zone
-                rooms_to_assign = min(zone_spec.required_count, len(remaining))
-                if rooms_to_assign == 0:
+                # Filter by eligibility if specified
+                if zone_spec.eligibility:
+                    eligible = [r for r in remaining if zone_spec.eligibility(r)]
+                else:
+                    eligible = remaining[:]
+
+                # Fallback: if eligibility too strict, use any remaining room
+                if not eligible and remaining:
+                    self._zone_warnings.append(
+                        f"Relaxed eligibility for required zone '{zone_spec.zone_id}'"
+                    )
+                    eligible = remaining[:]
+                elif not eligible:
+                    self._zone_warnings.append(
+                        f"No rooms available for required zone '{zone_spec.zone_id}'"
+                    )
                     continue
 
+                # Apply selection rule
                 if zone_spec.selection_rule == "center":
-                    # Sort by distance to map center
-                    remaining.sort(key=lambda r: abs(r.center()[0] - map_center[0]) +
-                                                  abs(r.center()[1] - map_center[1]))
+                    eligible.sort(key=lambda r: abs(r.center()[0] - map_center[0]) +
+                                                 abs(r.center()[1] - map_center[1]))
+                elif zone_spec.selection_rule == "largest":
+                    eligible.sort(key=lambda r: -r.area())
                 elif zone_spec.selection_rule == "boss_near":
-                    # Sort by distance to boss
-                    remaining.sort(key=dist_to_boss)
+                    eligible.sort(key=dist_to_boss)
 
+                # Assign required count
+                rooms_to_assign = min(zone_spec.required_count, len(eligible))
                 for i in range(rooms_to_assign):
-                    remaining[i].zone = zone_spec.zone_id
+                    eligible[i].zone = zone_spec.zone_id
                     if zone_spec.zone_id not in self._anchor_rooms:
                         self._anchor_rooms[zone_spec.zone_id] = []
-                    self._anchor_rooms[zone_spec.zone_id].append(remaining[i])
+                    self._anchor_rooms[zone_spec.zone_id].append(eligible[i])
 
                 remaining = [r for r in remaining if r.zone == "generic"]
 
@@ -614,6 +640,12 @@ class Dungeon:
 
         lines = [f"Floor {self.level} Zone Summary ({len(self.rooms)} rooms):"]
 
+        # Warnings first
+        if hasattr(self, '_zone_warnings') and self._zone_warnings:
+            lines.append("\n[!] WARNINGS:")
+            for warning in self._zone_warnings:
+                lines.append(f"  {warning}")
+
         # Zone counts
         zone_counts = {}
         for room in self.rooms:
@@ -629,7 +661,7 @@ class Dungeon:
             lines.append("\nAnchor rooms:")
             for zone_id, rooms in self._anchor_rooms.items():
                 for room in rooms:
-                    lines.append(f"  {zone_id}: ({room.x},{room.y}) {room.width}x{room.height}")
+                    lines.append(f"  {zone_id}: ({room.x},{room.y}) {room.width}x{room.height} area={room.area()}")
 
         # Boss approach rooms
         if hasattr(self, '_approach_rooms') and self._approach_rooms:
@@ -641,7 +673,7 @@ class Dungeon:
         # All rooms (detailed)
         lines.append("\nAll rooms:")
         for room in self.rooms:
-            lines.append(f"  ({room.x},{room.y}) {room.width}x{room.height}: {room.zone}")
+            lines.append(f"  ({room.x},{room.y}) {room.width}x{room.height} area={room.area()}: {room.zone}")
 
         return "\n".join(lines)
 
