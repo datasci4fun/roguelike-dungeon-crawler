@@ -182,7 +182,7 @@ You are not here to destroy evil. You are here to make the dream *sleep again*.
 
 ## The Dungeon Depths
 
-The dungeons beneath Valdris span eight distinct layers—not floors, but *pockets* of stabilized Field influence. Each pocket represents a different aspect of the Seed's dreaming mind.
+The dungeons beneath Valdris span eight distinct layers—not floors, but *pockets* of stabilized Field influence. Each pocket represents a different aspect of the Seed's dreaming mind, arranged as a defense stack: human metaphor traps give way to logistics and organism layers, then the monarchy itself made physical, then cognitive and transformative defenses, ending at the crystal lock.
 
 The corridors between pockets are seam lines: thinner regions where reality is less thoroughly edited. These seams are where survivors sometimes escape (though never with their stories intact).
 
@@ -199,30 +199,30 @@ The corridors between pockets are seam lines: thinner regions where reality is l
 
 **Monarchy Anchor:** The keys. Royal authority was once defined by who held the prison keys. The Field has been editing the meaning of "rightful jailer"—and through it, the meaning of "rightful ruler."
 
-The seam to Level 2 runs along a fault line where ice crystals have begun to form in the stone.
+The seam to Level 2 follows drainage channels where water has carved paths through the stone.
 
 **Warden:** The Goblin King
 
 ---
 
-### Level 2: The Ice Cavern
+### Level 2: The Sewers of Valdris
 
-**Theme:** Frozen caverns of eternal winter
-**The Field's Aspect:** STASIS (what cannot change)
+**Theme:** Flooded tunnels of disease and decay
+**The Field's Aspect:** CIRCULATION (what flows between)
 
-> "A biting cold grips you as you enter the Ice Cavern. Frost clings to every surface."
+> "The stench hits you first. The Sewers of Valdris stretch endlessly into darkness."
 
-*This layer is the Field's stasis—a pocket where the Seed dreams of stillness.* The cold is not temperature; it is the *absence of change*. Things frozen here do not age, decay, or alter. The giant sealed within the ice has been breathing the same breath for three hundred years.
+*This layer is the Field's circulation—a pocket where the Seed dreams of flow and connection.* The sewers are the lymphatic system of the dungeon, carrying edited matter between pockets. What enters as one thing may emerge as another. The rats are not vermin; they are *carriers*, transporting fragments of the Seed's influence upward and outward.
 
-Someone is attempting to thaw the cavern. The Field does not resist—it simply makes the thaw *part of the stasis*, an eternal process that will never complete.
+The Rat King is not a creature but a *colony*—thousands of edited organisms bound into a single distributed will.
 
-**Common Pockets:** Frozen Galleries, Ice Tombs, Crystal Grottos, Suspended Laboratories, The Breathing Chamber
+**Common Pockets:** Waste Channels, Carrier Nests, Confluence Chambers, Diseased Pools, The Colony Heart
 
-**Monarchy Anchor:** The treaties. Ancient pacts sealed in ice—agreements that cannot be broken because they cannot change. The Field is editing which treaties were ever signed.
+**Monarchy Anchor:** The seals. Wax seals that authenticated royal decrees flow through here—carried by rats, duplicated, attached to contradictory documents. Decrees travel downstream; edits travel up.
 
-The seam to Level 3 opens where root systems have cracked through the ice.
+The seam to Level 3 climbs through root-choked passages where the sewage feeds something growing.
 
-**Warden:** The Frost Giant
+**Warden:** The Rat King
 
 ---
 
@@ -239,78 +239,61 @@ The Spider Queen was human once—a druid who sought to contain the forest. The 
 
 **Common Pockets:** Root Warrens, Canopy Halls, Webbed Gardens, The Nursery, Digestion Chambers
 
-**Monarchy Anchor:** The family trees. Genealogies literally grow here—branching, grafting, sprouting phantom lineages. The Field cultivates succession crises.
+**Monarchy Anchor:** The family trees. Genealogies literally grow here—branching, grafting, sprouting phantom lineages. The Field cultivates succession crises like orchards.
 
-The seam to Level 4 descends through volcanic vents where the roots have charred.
+The seam to Level 4 opens where the forest gives way to architecture that looks *almost* familiar—streets, courtyards, banners.
 
 **Warden:** The Spider Queen
 
 ---
 
-### Level 4: The Volcanic Depths
+### Level 4: Mirror Valdris — The Counterfeit Court
 
-**Theme:** Molten caves of fire and brimstone
-**The Field's Aspect:** TRANSFORMATION (what cannot remain)
+**Theme:** A perfect imitation of the kingdom, rehearsed badly on purpose
+**The Field's Aspect:** LEGITIMACY (what is allowed to be true)
 
-> "Heat radiates from below. The Volcanic Depths glow with rivers of molten rock."
+> "You enter a street that should not exist underground. Above you is not a ceiling, but a sky that does not belong to any season."
 
-*This layer is the Field's crucible—a pocket where the Seed dreams of change through destruction.* What enters the magma does not die; it becomes something else. The ancient smiths who built their forges here thought they were harnessing natural heat. They were allowing the Field to teach them how to edit matter.
+*This layer is the Field's rehearsal chamber—a pocket where the Seed dreams of rule.* It has learned that Valdris resists not with armies, but with **agreement**: names in ledgers, wax on decrees, bells that declare a reign. So the Field built its own version of those things—close enough to pass at a glance, wrong enough to infect memory.
 
-The Flame Lord is not a creature of fire. It is fire that has been edited into *remembering* creaturehood.
+Here, the kingdom is present as a diorama: courtyards that open into impossible air, banners stitched with almost-correct sigils, streets that loop back into themselves with the confidence of official history. The palace bell tolls twice during storms. The crowd applauds both.
 
-**Common Pockets:** Forge Halls, Magma Channels, Cooling Chambers, Slag Pits, The Crucible Heart
+Rooms in this pocket do not feel "built." They feel **declared**. A door is true because a plaque says it is true. A hallway exists because an archive remembers it. A throne room is a throne room because the Field insists that it has always been one.
 
-**Monarchy Anchor:** The crown jewels. Regalia forged here contained the seal's earliest metals. The Field edits them to recognize different wearers.
+The Royal Guard of Valdris were interred in the Mausoleum District with oaths of eternal service. The Field honored those oaths literally. They serve still—but they no longer remember *which* crown they serve.
 
-The seam to Level 5 passes through cooling chambers where the dead have begun to stir.
+**Common Pockets:** Courtyard Squares, Throne Hall Ruins, Parade Corridors, Seal Chambers, Record Vaults, Mausoleum District, Oath Chambers
 
-**Warden:** The Flame Lord
+**Monarchy Anchor:** The crown and its paperwork—succession decrees, genealogies, seals, oaths. This is the pocket where the Field edits not stone, but *authority*.
 
----
+The seam to Level 5 forms where the imitation fails: ice grows into the marble as if trying to freeze the contradiction into place.
 
-### Level 5: The Ancient Crypt
-
-**Theme:** Tombs of the royal dead
-**The Field's Aspect:** PERSISTENCE (what refuses to end)
-
-> "A chill runs down your spine as you step into the Ancient Crypt. The dead do not rest here."
-
-*This layer is the Field's persistence—a pocket where the Seed dreams of continuity beyond cessation.* The Royal Guard of Valdris were interred here with oaths of eternal service. The Field honored those oaths literally. They serve still—but they no longer remember *what* they serve.
-
-The Lich Lord was the priest who conducted the burial rites. He did not raise the dead; the Field edited him into *having always been* raising them.
-
-**Common Pockets:** Royal Mausoleums, Guard Barracks, Oath Chambers, Bone Galleries, The Eternal Vigil
-
-**Monarchy Anchor:** The oaths. Every royal guard swore loyalty until death—and beyond. The Field edits *to whom* those oaths were sworn.
-
-The seam to Level 6 follows water channels where the blood of the undead has pooled.
-
-**Warden:** The Lich Lord
+**Warden:** The Regent of the Counterfeit Court
 
 ---
 
-### Level 6: The Sewers of Valdris
+### Level 5: The Ice Cavern
 
-**Theme:** Flooded tunnels of disease and decay
-**The Field's Aspect:** CIRCULATION (what flows between)
+**Theme:** Frozen caverns of eternal winter
+**The Field's Aspect:** STASIS (what cannot change)
 
-> "The stench hits you first. The Sewers of Valdris stretch endlessly into darkness."
+> "A biting cold grips you as you enter the Ice Cavern. Frost clings to every surface."
 
-*This layer is the Field's circulation—a pocket where the Seed dreams of flow and connection.* The sewers are the lymphatic system of the dungeon, carrying edited matter between pockets. What enters as one thing may emerge as another. The rats are not vermin; they are *carriers*, transporting fragments of the Seed's influence.
+*This layer is the Field's stasis—a pocket where the Seed dreams of stillness.* The cold is not temperature; it is the *absence of change*. Things frozen here do not age, decay, or alter. The giant sealed within the ice has been breathing the same breath for three hundred years.
 
-The Rat King is not a creature but a *colony*—thousands of edited organisms bound into a single distributed will.
+Someone is attempting to thaw the cavern. The Field does not resist—it simply makes the thaw *part of the stasis*, an eternal process that will never complete.
 
-**Common Pockets:** Waste Channels, Carrier Nests, Confluence Chambers, Diseased Pools, The Colony Heart
+**Common Pockets:** Frozen Galleries, Ice Tombs, Crystal Grottos, Suspended Laboratories, The Breathing Chamber
 
-**Monarchy Anchor:** The seals. Wax seals that authenticated royal decrees flow through here—carried by rats, duplicated, attached to contradictory documents.
+**Monarchy Anchor:** The treaties. Ancient pacts sealed in ice—agreements that cannot be broken because they cannot change. The Field is editing which treaties were ever signed, freezing contradictions into permanence.
 
-The seam to Level 7 climbs through dry passages where knowledge has begun to crystallize on the walls.
+The seam to Level 6 opens where the ice thins and knowledge begins to crystallize on the walls.
 
-**Warden:** The Rat King
+**Warden:** The Frost Giant
 
 ---
 
-### Level 7: The Ancient Library
+### Level 6: The Ancient Library
 
 **Theme:** Repository of forbidden knowledge
 **The Field's Aspect:** COGNITION (what can be known)
@@ -325,9 +308,30 @@ The Arcane Keeper is what remains of the head librarian: a consciousness that ca
 
 **Monarchy Anchor:** The records. Lineage catalogs, succession histories, the official truth of who ruled and when. The Field's mind. This is where history is *authored*.
 
-The seam to Level 8 descends through crystal-lined shafts where light bends in impossible angles.
+The seam to Level 7 descends through passages where the pages have begun to burn and the knowledge chars into something else.
 
 **Warden:** The Arcane Keeper
+
+---
+
+### Level 7: The Volcanic Depths
+
+**Theme:** Molten caves of fire and brimstone
+**The Field's Aspect:** TRANSFORMATION (what cannot remain)
+
+> "Heat radiates from below. The Volcanic Depths glow with rivers of molten rock."
+
+*This layer is the Field's crucible—a pocket where the Seed dreams of change through destruction.* What enters the magma does not die; it becomes something else. The ancient smiths who built their forges here thought they were harnessing natural heat. They were allowing the Field to teach them how to edit matter.
+
+The Flame Lord is not a creature of fire. It is fire that has been edited into *remembering* creaturehood.
+
+**Common Pockets:** Forge Halls, Magma Channels, Cooling Chambers, Slag Pits, The Crucible Heart
+
+**Monarchy Anchor:** The crown jewels. Regalia forged here contained the seal's earliest metals. The Field edits them to recognize different wearers—crowns that remember being worn by kings who never existed.
+
+The seam to Level 8 passes through cooling crystal veins where meaning has begun to solidify.
+
+**Warden:** The Flame Lord
 
 ---
 
@@ -516,21 +520,22 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 
 ---
 
-### Level 2: Frost Giant
-- **Symbol:** `F`
-- **HP:** 80 | **Damage:** 12 | **XP:** 300
+### Level 2: Rat King
+- **Symbol:** `R`
+- **HP:** 65 | **Damage:** 8 | **XP:** 300
 
-> "A towering giant encased in eternal ice"
+> "A grotesque fusion of rats bound by diseased flesh"
 
-**What It Was:** A Valdrian mage who attempted to freeze the Field's expansion. She succeeded—but became part of the stasis she created.
+**What It Was:** Thousands of individual rats that entered the sewers carrying fragments of edited matter.
 
-**What It Became:** The Giant is the Ice Cavern itself given a walking form. When she moves, the cold moves with her. She cannot leave the pocket; she *is* the pocket.
+**What It Became:** A distributed consciousness—the Field's immune system. The Rat King carries information between pockets, and when threatened, it can manifest a central node to defend itself.
 
-**What It Enforces:** Endless stasis. In the Frost Giant's domain, nothing may change. Progress is frozen. Decisions never resolve.
+**What It Enforces:** Enforced connection. In the Rat King's domain, nothing remains isolated. Everything flows. Everything spreads.
 
 **Abilities:**
-- **Ice Blast** - Extends the stasis field, freezing everything it touches
-- **Freeze Ground** - Makes the local reality temporarily adopt stasis rules
+- **Summon Swarm** - Calls fragments of itself from throughout the circulation system
+- **Plague Bite** - Injects foreign edits that conflict with the victim's pattern
+- **Burrow** - Redistributes its mass through the sewer network
 
 ---
 
@@ -553,9 +558,64 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 
 ---
 
-### Level 4: Flame Lord
+### Level 4: Regent of the Counterfeit Court
+- **Symbol:** `§`
+- **HP:** 85 | **Damage:** 12 | **XP:** 500
+
+> "A crowned silhouette that speaks in decrees, each sentence stamped with certainty."
+
+**What It Was:** A royal chancellor—keeper of seals, keeper of succession, the person whose job was to make truth official.
+
+**What It Became:** The Field edited bureaucracy into a creature. The Regent does not swing a sword; it declares outcomes. It produces documents that overwrite memory. It walks the counterfeit halls ensuring the pocket remains coherent, even when the coherence contains two mutually exclusive kings.
+
+**What It Enforces:** Legitimacy by repetition. In the Regent's domain, the version that is witnessed most becomes the version that has always been.
+
+**Abilities:**
+- **Issue Decree** - Forces an edit: doors lock/unlock, guards change allegiance, names on plaques rewrite
+- **Seal of Authority** - Stamps a pattern onto reality; contradictions become coherent
+- **Summon Guard** - Calls the oath-bound dead from the Mausoleum District
+
+---
+
+### Level 5: Frost Giant
+- **Symbol:** `F`
+- **HP:** 90 | **Damage:** 14 | **XP:** 600
+
+> "A towering giant encased in eternal ice"
+
+**What It Was:** A Valdrian mage who attempted to freeze the Field's expansion. She succeeded—but became part of the stasis she created.
+
+**What It Became:** The Giant is the Ice Cavern itself given a walking form. When she moves, the cold moves with her. She cannot leave the pocket; she *is* the pocket.
+
+**What It Enforces:** Endless stasis. In the Frost Giant's domain, nothing may change. Progress is frozen. Decisions never resolve.
+
+**Abilities:**
+- **Ice Blast** - Extends the stasis field, freezing everything it touches
+- **Freeze Ground** - Makes the local reality temporarily adopt stasis rules
+
+---
+
+### Level 6: Arcane Keeper
+- **Symbol:** `A`
+- **HP:** 95 | **Damage:** 15 | **XP:** 700
+
+> "A spectral guardian of forbidden knowledge"
+
+**What It Was:** The head librarian of Valdris's arcane archives—a scholar who believed understanding the Field would lead to controlling it.
+
+**What It Became:** The Field understood *him* first. Now he is the library's index, a consciousness that cannot distinguish between knowing something and *being* known by it.
+
+**What It Enforces:** Knowledge as consumption. In the Arcane Keeper's domain, to understand something is to become it—and to be understood is to be owned.
+
+**Abilities:**
+- **Arcane Bolt** - Fires concentrated meaning (burns like fire, cuts like ice, logic breaks where it lands)
+- **Teleport** - Moves by *being remembered elsewhere*
+
+---
+
+### Level 7: Flame Lord
 - **Symbol:** `Φ`
-- **HP:** 100 | **Damage:** 15 | **XP:** 500
+- **HP:** 110 | **Damage:** 17 | **XP:** 850
 
 > "A being of pure fire born from the volcanic depths"
 
@@ -569,61 +629,6 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 - **Fire Breath** - Exposes targets to unfiltered transformation
 - **Lava Pool** - Creates zones where matter forgets its form
 - **Inferno** - Maximizes the crucible's editing intensity
-
----
-
-### Level 5: Lich Lord
-- **Symbol:** `L`
-- **HP:** 90 | **Damage:** 12 | **XP:** 600
-
-> "An ancient undead sorcerer crackling with dark energy"
-
-**What It Was:** The high priest who interred the Royal Guard with oaths of eternal service. His ritual *worked*—too well.
-
-**What It Became:** The Field edited his priesthood into something recursive. He is simultaneously the priest who binds the dead and the dead who are bound. He cannot stop the ritual; he *is* the ritual.
-
-**What It Enforces:** Oath-bound persistence. In the Lich Lord's domain, promises cannot be broken—even by death.
-
-**Abilities:**
-- **Raise Dead** - Completes another iteration of the binding
-- **Life Drain** - Borrows existence from victims to sustain the loop
-
----
-
-### Level 6: Rat King
-- **Symbol:** `R`
-- **HP:** 85 | **Damage:** 11 | **XP:** 700
-
-> "A grotesque fusion of rats bound by diseased flesh"
-
-**What It Was:** Thousands of individual rats that entered the sewers carrying fragments of edited matter.
-
-**What It Became:** A distributed consciousness—the Field's immune system. The Rat King carries information between pockets, and when threatened, it can manifest a central node to defend itself.
-
-**What It Enforces:** Enforced connection. In the Rat King's domain, nothing remains isolated. Everything flows. Everything spreads.
-
-**Abilities:**
-- **Summon Swarm** - Calls fragments of itself from throughout the circulation system
-- **Plague Bite** - Injects foreign edits that conflict with the victim's pattern
-- **Burrow** - Redistributes its mass through the sewer network
-
----
-
-### Level 7: Arcane Keeper
-- **Symbol:** `A`
-- **HP:** 80 | **Damage:** 14 | **XP:** 800
-
-> "A spectral guardian of forbidden knowledge"
-
-**What It Was:** The head librarian of Valdris's arcane archives—a scholar who believed understanding the Field would lead to controlling it.
-
-**What It Became:** The Field understood *him* first. Now he is the library's index, a consciousness that cannot distinguish between knowing something and *being* known by it.
-
-**What It Enforces:** Knowledge as consumption. In the Arcane Keeper's domain, to understand something is to become it—and to be understood is to be owned.
-
-**Abilities:**
-- **Arcane Bolt** - Fires concentrated meaning (burns like fire, cuts like ice, logic breaks where it lands)
-- **Teleport** - Moves by *being remembered elsewhere*
 
 ---
 
@@ -918,7 +923,118 @@ Not all lore is written. The dungeon itself bears witness:
 
 ---
 
-### Level 2: Ice Cavern
+### Level 2: Sewers
+
+#### Sewer Worker's Note
+*Found as: Scroll (water-damaged)*
+
+> "The rats are not acting like rats.
+>
+> They are carrying things. Organized. Purposeful.
+>
+> I followed them today. They were carrying pieces of a *person*.
+> Not eating. Carrying. Assembling.
+>
+> I don't think it's the same person they took apart."
+
+---
+
+#### Health Warden's Warning
+*Found as: Official notice*
+
+> "SEWERS CONDEMNED BY ORDER OF THE CROWN
+>
+> THE CROWN
+>
+> WHICH CROWN
+>
+> [The rest of the notice repeats 'WHICH CROWN' until the paper runs out.]"
+
+---
+
+### Level 3: Forest Depths
+
+#### Druid's Log
+*Found as: Scroll (wrapped in leaves)*
+
+> "Week 1: I am making progress. The forest responds to pruning.
+>
+> Week 10: I have contained most of the growth. The Queen helps.
+>
+> Week 100: I am the Queen. The Queen is the forest. The forest helps.
+>
+> Week 1: I am making progress."
+
+---
+
+#### Note Wrapped in Silk
+*Found as: Cocoon*
+
+> "If you can read this, the silk has not finished editing you yet.
+>
+> Run.
+>
+> If you cannot run, forget.
+>
+> If you cannot forget, become."
+
+---
+
+### Level 4: Mirror Valdris
+
+#### Succession Decree (Contradictory)
+*Found as: Two scrolls with identical seals*
+
+> Decree A: "By right of blood, Prince Aldric II shall inherit the throne upon the King's death."
+>
+> Decree B: "By right of blood, Prince Aldric III shall inherit the throne upon the King's death."
+>
+> [Both scrolls bear the same date. Both signatures match. The princes have never met, yet both remember the other at their christening.]
+
+---
+
+#### Tomb Inscription (Mausoleum District)
+*Found as: Stone carving*
+
+> "Here lies the Royal Guard of Valdris.
+>
+> In death as in life, they serve the crown.
+>
+> They have risen. They cannot stop rising.
+>
+> THE KINGDOM WILL NOT STOP CALLING."
+
+---
+
+#### The Regent's Ledger
+*Found as: Book (entries in multiple hands, all identical)*
+
+> "Coronation witnessed: 3rd of Spring, Year 847.
+>
+> Coronation witnessed: 3rd of Spring, Year 847.
+>
+> Coronation witnessed: 3rd of Spring, Year 847.
+>
+> [Three different kings. Three different hands. The same moment, repeated.]"
+
+---
+
+#### Priest's Confession (Oath Chambers)
+*Found as: Book*
+
+> "Forgive me. The ritual was meant to bind them to *service*.
+>
+> But service to what? The crown? Which crown?
+>
+> There are two crowns now. Both genuine. Both calling.
+>
+> The dead rise for both. The dead fight themselves.
+>
+> I cannot stop the ritual. I *am* the ritual."
+
+---
+
+### Level 5: Ice Cavern
 
 #### Frozen Explorer's Journal
 *Found as: Scroll (preserved in ice)*
@@ -956,135 +1072,7 @@ Not all lore is written. The dungeon itself bears witness:
 
 ---
 
-### Level 3: Forest Depths
-
-#### Druid's Log
-*Found as: Scroll (wrapped in leaves)*
-
-> "Week 1: I am making progress. The forest responds to pruning.
->
-> Week 10: I have contained most of the growth. The Queen helps.
->
-> Week 100: I am the Queen. The Queen is the forest. The forest helps.
->
-> Week 1: I am making progress."
-
----
-
-#### Note Wrapped in Silk
-*Found as: Cocoon*
-
-> "If you can read this, the silk has not finished editing you yet.
->
-> Run.
->
-> If you cannot run, forget.
->
-> If you cannot forget, become."
-
----
-
-### Level 4: Volcanic Depths
-
-#### Master Smith's Final Record
-*Found as: Metal plate (heat-resistant)*
-
-> "We thought we were forging weapons.
->
-> The forge was forging *us*.
->
-> Every blade we made, we made the Flame Lord stronger.
-> Every armor we shaped, we shaped ourselves into fuel.
->
-> I have destroyed my tools. The forge still burns.
-> It does not need us anymore. It has learned how we work."
-
----
-
-#### Obsidian Tablet
-*Found as: Volcanic glass*
-
-> "THE FLAME LORD IS NOT EVIL
->
-> THE FLAME LORD IS CHANGE
->
-> WHAT ENTERS FIRE BECOMES FIRE
->
-> WHAT BECOMES FIRE CANNOT RETURN"
-
----
-
-### Level 5: Ancient Crypt
-
-#### Tomb Inscription (Version A)
-*Found as: Stone carving*
-
-> "Here lies the Royal Guard of Valdris.
->
-> In death as in life, they serve the crown.
->
-> May they rise when the kingdom calls."
-
----
-
-#### Tomb Inscription (Version B)
-*Found as: Stone carving, same location, same stone*
-
-> "Here lies the Royal Guard of Valdris.
->
-> In death as in life, they serve the crown.
->
-> They have risen. They cannot stop rising.
->
-> THE KINGDOM WILL NOT STOP CALLING."
-
----
-
-#### Priest's Confession
-*Found as: Book*
-
-> "Forgive me. The ritual was meant to bind them to *service*.
->
-> But service to what? The crown? Which crown?
->
-> There are two crowns now. Both genuine. Both calling.
->
-> The dead rise for both. The dead fight themselves.
->
-> I cannot stop the ritual. I *am* the ritual."
-
----
-
-### Level 6: Sewers
-
-#### Sewer Worker's Note
-*Found as: Scroll (water-damaged)*
-
-> "The rats are not acting like rats.
->
-> They are carrying things. Organized. Purposeful.
->
-> I followed them today. They were carrying pieces of a *person*.
-> Not eating. Carrying. Assembling.
->
-> I don't think it's the same person they took apart."
-
----
-
-#### Health Warden's Warning
-*Found as: Official notice*
-
-> "SEWERS CONDEMNED BY ORDER OF THE CROWN
->
-> THE CROWN
->
-> WHICH CROWN
->
-> [The rest of the notice repeats 'WHICH CROWN' until the paper runs out.]"
-
----
-
-### Level 7: Ancient Library
+### Level 6: Ancient Library
 
 #### Arcane Research Notes
 *Found as: Book (partially burned)*
@@ -1116,6 +1104,36 @@ Not all lore is written. The dungeon itself bears witness:
 > Version observed at 3:10: "Valdris has always existed. There was no founding."
 >
 > [The book's spine reads: "THE OFFICIAL HISTORY (FINAL VERSION)"]
+
+---
+
+### Level 7: Volcanic Depths
+
+#### Master Smith's Final Record
+*Found as: Metal plate (heat-resistant)*
+
+> "We thought we were forging weapons.
+>
+> The forge was forging *us*.
+>
+> Every blade we made, we made the Flame Lord stronger.
+> Every armor we shaped, we shaped ourselves into fuel.
+>
+> I have destroyed my tools. The forge still burns.
+> It does not need us anymore. It has learned how we work."
+
+---
+
+#### Obsidian Tablet
+*Found as: Volcanic glass*
+
+> "THE FLAME LORD IS NOT EVIL
+>
+> THE FLAME LORD IS CHANGE
+>
+> WHAT ENTERS FIRE BECOMES FIRE
+>
+> WHAT BECOMES FIRE CANNOT RETURN"
 
 ---
 
@@ -1547,6 +1565,37 @@ This document supersedes the original LORE_COMPENDIUM.md. The following elements
 9. **Dragon consistency fix** — Lesser dragons are "splinters of the rewritten pattern"
 
 10. **Level 3 terminology fix** — GROWTH aspect used consistently
+
+### v3 Biome Restructure (Session 3)
+
+Complete floor reordering to create a logical "defense stack" progression:
+
+**New Floor Order:**
+1. **Stone Dungeon** — MEMORY (human metaphor trap)
+2. **Sewers of Valdris** — CIRCULATION (logistics layer)
+3. **Forest Depths** — GROWTH (organism layer)
+4. **Mirror Valdris** — LEGITIMACY (monarchy made physical) ← NEW
+5. **Ice Cavern** — STASIS (cognitive defense)
+6. **Ancient Library** — COGNITION (cognitive defense)
+7. **Volcanic Depths** — TRANSFORMATION (physical defense)
+8. **Crystal Cave** — INTEGRATION (the lock)
+
+**Major Changes:**
+- **Ancient Crypt removed as separate floor** — content absorbed into Level 4 (Mausoleum District, Oath Chambers)
+- **Lich Lord removed as Warden** — oath-bound dead now serve the Regent
+- **New Warden: Regent of the Counterfeit Court** — bureaucracy made creature, enforces legitimacy by repetition
+- **New Level 4 prose** — Kingdom pocket with counterfeit streets, doubled bells, contradictory sigils
+- **Discoverable lore reordered** — now includes Mirror Valdris entries (Succession Decree, Regent's Ledger)
+
+**Updated Monarchy Anchors:**
+- Level 1: Keys (jailer authority)
+- Level 2: Seals (decrees flowing downstream)
+- Level 3: Family trees (genealogies as growth)
+- Level 4: Crown and paperwork (legitimacy)
+- Level 5: Treaties (frozen pacts)
+- Level 6: Records (official history)
+- Level 7: Crown jewels (recognition)
+- Level 8: Crown meaning itself
 
 ### Preserved Elements
 
