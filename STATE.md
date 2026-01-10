@@ -6,49 +6,55 @@
 
 ---
 
-## In Progress: Zone System (Vertical Slice)
+## In Progress: Zone System (Data-Driven)
 
 **Branch:** `feature/zone-system`
-**Commit:** `d7045b3` - feat: add zone system vertical slice (Floor 1)
+**Commit:** `5dc2bf5` - refactor: make zone system data-driven with Floor 2
 
-### Zone System Implementation (Floor 1 Complete)
+### Zone System Architecture
 
-Room-based zone identity system that drives decoration, spawn bias, and lore drops:
+Data-driven zone assignment with modular layout decorators:
 
-| Component | Status | Description |
-|-----------|--------|-------------|
-| Room.zone field | Done | Added to dataclass, defaults to "generic" |
-| _assign_zones() | Done | Floor 1 logic implemented |
-| Zone debug helpers | Done | get_zone_at(), get_room_at(), get_zone_summary() |
-| cell_blocks layout | Done | Interior walls + doors (rooms >= 8x6) |
-| Zone-aware spawns | Done | Enemy weight modifiers per zone |
-| Zone-aware lore | Done | Zone-specific spawn chances |
+| File | Purpose |
+|------|---------|
+| `zone_config.py` | FloorZoneConfig dataclass, eligibility predicates, per-floor configs |
+| `zone_layouts.py` | Layout decorator registry, ZONE_LAYOUTS[(floor, zone_id)] pattern |
+| `dungeon.py` | Config-driven _assign_zones(), enhanced get_zone_summary() |
+| `entity_manager.py` | Zone-aware spawns and lore with per-floor configs |
 
-### Floor 1 Zones (Stone Dungeon)
+### Adding a New Floor
 
-| Zone | Assignment Rule | Special |
-|------|-----------------|---------|
-| intake_hall | Start room (rooms[0]) | 0% elite chance |
-| boss_approach | 1-2 nearest to boss room | Goblins x2.0 |
-| wardens_office | 1 mid-map anchor | 100% lore spawn |
-| cell_blocks | Weighted by size (10x8+) | Interior walls, goblins x1.5 |
-| guard_corridors | Elongated rooms (10x3) | Skeletons x1.4 |
-| record_vaults | 6x6+, fewer entrances | Lore x2.0 |
-| execution_chambers | 8x8+, far from start | Skeletons x1.2 |
+1. Add `FLOOR_N_CONFIG` to `zone_config.py` with zone specs
+2. Add layout handlers to `zone_layouts.py` with `@register_layout(N, "zone_id")`
+3. Add spawn modifiers to `entity_manager._apply_zone_weights()`
+4. Add lore config to `entity_manager._get_floorN_lore_config()`
 
-### Zone Docs Created
+### Implemented Floors
 
-Per-floor zone specification files in `docs/zones/`:
-- README.md (index + canonical zone IDs)
-- floor-1-stone-dungeon.md through floor-8-crystal.md
-- Full specs with eligibility, layout pass, spawns, lore pools
+**Floor 1 - Stone Dungeon:**
+| Zone | Rule | Special |
+|------|------|---------|
+| intake_hall | Start room | 0% elite |
+| wardens_office | Center anchor | 100% lore |
+| cell_blocks | 10x8+ | Interior walls, goblins x1.5 |
+| guard_corridors | Elongated | Skeletons x1.4 |
+| boss_approach | Near boss | Goblins x2.0, guaranteed lore |
+
+**Floor 2 - Sewers:**
+| Zone | Rule | Special |
+|------|------|---------|
+| overflow_junction | Start room | - |
+| colony_heart | Center anchor | Debris pools, 100% lore |
+| waste_channels | Elongated | DEEP_WATER lanes |
+| seal_drifts | 6x6+ | 70% lore, surface-doc biased |
+| carrier_nests | 5x5+ | Rat bias (reduced others) |
+| boss_approach | Near boss | Guaranteed lore |
 
 ### Next Steps
 
-- Implement remaining floors (2-8) zone logic
-- Add zone-specific decorations (use zone to select prop patterns)
-- Add visual zone indicators (debug overlay)
-- Test zone balance with gameplay
+- Implement Floors 3-8 configs
+- Add zone-specific decoration patterns
+- Wire has_ceiling/skybox_override for open-air rooms (Mirror Valdris)
 
 ---
 
