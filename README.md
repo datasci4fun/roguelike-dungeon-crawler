@@ -2,7 +2,7 @@
 
 A terminal-based roguelike with procedural dungeons, first-person 3D view, multiplayer backend, and React web frontend.
 
-**Current Version:** v5.3.0 (Cinematics V2 - Death & Victory Cutscenes)
+**Current Version:** v5.4.0 (Lore Codex System)
 
 ## Quick Start
 
@@ -31,6 +31,7 @@ python main.py
 | **Enemies** | 12 enemy types + 5 bosses with unique abilities and AI |
 | **Items** | Weapons, armor, shields, rings, amulets, potions, scrolls |
 | **Visuals** | First-person 3D renderer, 8 biome themes, torch lighting |
+| **Lore** | Codex system with bestiary, locations, scrolls, books |
 | **Multiplayer** | Accounts, leaderboards, ghost replays, real-time chat |
 | **Mobile** | Touch controls, PWA installable |
 
@@ -41,6 +42,7 @@ python main.py
 | WASD/Arrows | Move |
 | Q/E | Turn left/right |
 | I | Inventory |
+| J | Lore Codex |
 | F | Search for secrets |
 | C/M/? | Character/Messages/Help |
 | X | Quit |
