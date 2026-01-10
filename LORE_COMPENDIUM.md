@@ -79,6 +79,19 @@ Where the Field touches, legitimacy becomes fluid. Authority can be rewritten. A
 
 The dungeon beneath Valdris is not a structure. It is the Field's geography—reality folded into layers, each layer a pocket where the edits have crystallized into stable (if nightmarish) forms. The corridors between pockets are seam lines, thinner regions where the Field's grip is weaker.
 
+### Rules of the Field
+
+The Field is not omnipotent. It operates under constraints that make survival—and resistance—possible:
+
+- **It requires anchors.** The Field spreads through symbols of legitimate authority: crowns, seals, oaths, records, bloodlines. Without an anchor, it cannot edit.
+- **It edits consensus, not physics.** The Field changes what is *agreed upon*, not raw matter. A stone is a stone. But who *owns* the stone, who *named* the stone, what the stone *means*—these can be rewritten.
+- **It cannot rewrite the unwitnessed.** Events that leave no record, no memory, no trace are immune. This is why delvers matter—and why the Field consumes their stories on the way out.
+- **Storm pulses accelerate edits.** When lightning strikes the fault lines above the Seed, the Field *surges*. Major rewrites happen during storms.
+- **Seams are low-signal corridors.** The passages between pockets are where the Field's grip is thinnest. Travel is possible because the seams are not yet fully written.
+- **Contradictions can coexist.** The Field does not resolve paradoxes; it makes them *both true*. Two histories, two kings, two versions—all equally real until one is witnessed more than the other.
+
+Understanding these rules will not save you. But it may help you know *when* you are being edited.
+
 ### How It Spreads
 
 The Field spreads through *narrative substitution*. It anchors itself to symbols of legitimate authority—crowns, bloodlines, oaths, seals. Once anchored, it can edit the meaning of those symbols, and everyone who believes in them changes with the edit.
@@ -94,6 +107,21 @@ Despite the danger, people keep descending. Why?
 Because artifacts escape. Weapons with impossible metallurgy. Armor that remembers being worn by people who never existed. Scrolls written in languages that *become* readable the longer you study them.
 
 These sky-touched relics are proof that something real exists below—something that can be *retrieved*. The tragedy is that no retriever returns with a coherent account of where they found it, or how. The Field takes the context and leaves only the object.
+
+**Known Sky-Touched Artifacts:**
+
+| Artifact | Description |
+|----------|-------------|
+| **The Duplicate Seal** | A royal stamp that creates a second impression during storms—one on the document, one somewhere else. Both authentic. |
+| **Crown-Splinter** | A fragment of regalia that causes viewers to remember two versions of the same event, equally vivid. |
+| **Woundglass Shard** | A mirror fragment that shows rooms that don't exist in its reflection—until you enter them. |
+| **Ledger of the Unborn** | A book that adds names to genealogies. The people appear within weeks, insisting they've always existed. |
+| **Torch of Borrowed Hours** | Burns time instead of oil. While lit, aging stops for the holder—but continues somewhere else. |
+| **Chain-Link of Stasis** | A single link from an unknown chain. Whatever it touches slows. Whatever it binds stops. |
+| **The Warden's Key** | Opens locks that shouldn't exist. The rooms behind them contain things that were never locked away. |
+| **Oathstone** | A smooth rock that records spoken promises. Breaking an oath recorded on it erases the oathbreaker from one person's memory. |
+
+These artifacts surface during storms. Collectors hoard them. Scholars study them. No one knows which drawer or vault they will escape to next.
 
 ---
 
@@ -120,6 +148,8 @@ The nobles do not notice the contradiction. The Field has made it coherent for t
 
 If the Field completes its anchor, Valdris will not be destroyed. It will be *replaced*—by a version of itself that has always served the Seed. The people will still exist. They will simply have always been something else.
 
+> **The Field does not need to kill the king. It only needs the world to agree the king was never king at all.**
+
 The only way to stop this is to descend to the source—the Star-Heart itself—and stabilize the seal that the ancient Valdrians attempted to place around it.
 
 You are not here to destroy evil. You are here to make the dream *sleep again*.
@@ -141,6 +171,10 @@ The corridors between pockets are seam lines: thinner regions where reality is l
 
 *This layer is the Field's memory—a pocket where the Seed dreams of containment.* The upper reaches were once genuinely built: Valdris's first attempt to wall off the influence below. The Field *accepted* the prison metaphor and stabilized around it. Now the walls are real and unreal simultaneously. The torches burn without fuel because the Seed remembers that prisons should have light.
 
+**Common Pockets:** Cell Blocks, Guard Corridors, Warden's Office, Execution Chambers, Record Vaults
+
+**Monarchy Anchor:** The keys. Royal authority was once defined by who held the prison keys. The Field has been editing the meaning of "rightful jailer"—and through it, the meaning of "rightful ruler."
+
 The seam to Level 2 runs along a fault line where ice crystals have begun to form in the stone.
 
 **Warden:** The Goblin King
@@ -158,6 +192,10 @@ The seam to Level 2 runs along a fault line where ice crystals have begun to for
 
 Someone is attempting to thaw the cavern. The Field does not resist—it simply makes the thaw *part of the stasis*, an eternal process that will never complete.
 
+**Common Pockets:** Frozen Galleries, Ice Tombs, Crystal Grottos, Suspended Laboratories, The Breathing Chamber
+
+**Monarchy Anchor:** The treaties. Ancient pacts sealed in ice—agreements that cannot be broken because they cannot change. The Field is editing which treaties were ever signed.
+
 The seam to Level 3 opens where root systems have cracked through the ice.
 
 **Warden:** The Frost Giant
@@ -171,9 +209,13 @@ The seam to Level 3 opens where root systems have cracked through the ice.
 
 > "Roots and vines consume the walls. You have entered the Forest Depths, where nature claims all."
 
-*This layer is the Field's metabolism—a pocket where the Seed dreams of expansion.* The forest is not plants. It is *architecture* reimagined as organism. Walls become trunks. Corridors become root systems. The boundary between structure and growth dissolves.
+*This layer is the Field's growth—a pocket where the Seed dreams of expansion without limit.* The forest is not plants. It is *architecture* reimagined as organism. Walls become trunks. Corridors become root systems. The boundary between structure and growth dissolves. Everything here consumes its boundaries and becomes something larger.
 
 The Spider Queen was human once—a druid who sought to contain the forest. The Field edited her into its gardener. She believes she is still fighting it.
+
+**Common Pockets:** Root Warrens, Canopy Halls, Webbed Gardens, The Nursery, Digestion Chambers
+
+**Monarchy Anchor:** The family trees. Genealogies literally grow here—branching, grafting, sprouting phantom lineages. The Field cultivates succession crises.
 
 The seam to Level 4 descends through volcanic vents where the roots have charred.
 
@@ -192,6 +234,10 @@ The seam to Level 4 descends through volcanic vents where the roots have charred
 
 The Flame Lord is not a creature of fire. It is fire that has been edited into *remembering* creaturehood.
 
+**Common Pockets:** Forge Halls, Magma Channels, Cooling Chambers, Slag Pits, The Crucible Heart
+
+**Monarchy Anchor:** The crown jewels. Regalia forged here contained the seal's earliest metals. The Field edits them to recognize different wearers.
+
 The seam to Level 5 passes through cooling chambers where the dead have begun to stir.
 
 **Warden:** The Flame Lord
@@ -208,6 +254,10 @@ The seam to Level 5 passes through cooling chambers where the dead have begun to
 *This layer is the Field's persistence—a pocket where the Seed dreams of continuity beyond cessation.* The Royal Guard of Valdris were interred here with oaths of eternal service. The Field honored those oaths literally. They serve still—but they no longer remember *what* they serve.
 
 The Lich Lord was the priest who conducted the burial rites. He did not raise the dead; the Field edited him into *having always been* raising them.
+
+**Common Pockets:** Royal Mausoleums, Guard Barracks, Oath Chambers, Bone Galleries, The Eternal Vigil
+
+**Monarchy Anchor:** The oaths. Every royal guard swore loyalty until death—and beyond. The Field edits *to whom* those oaths were sworn.
 
 The seam to Level 6 follows water channels where the blood of the undead has pooled.
 
@@ -226,6 +276,10 @@ The seam to Level 6 follows water channels where the blood of the undead has poo
 
 The Rat King is not a creature but a *colony*—thousands of edited organisms bound into a single distributed will.
 
+**Common Pockets:** Waste Channels, Carrier Nests, Confluence Chambers, Diseased Pools, The Colony Heart
+
+**Monarchy Anchor:** The seals. Wax seals that authenticated royal decrees flow through here—carried by rats, duplicated, attached to contradictory documents.
+
 The seam to Level 7 climbs through dry passages where knowledge has begun to crystallize on the walls.
 
 **Warden:** The Rat King
@@ -242,6 +296,10 @@ The seam to Level 7 climbs through dry passages where knowledge has begun to cry
 *This layer is the Field's cognition—a pocket where the Seed dreams of understanding itself.* The wizards who built this library were trying to study the Field. The Field studied them back. Every experiment they recorded was an invitation; every hypothesis, a template. The artifact they found—the one that responded to blood—was not a weapon. It was a *textbook*.
 
 The Arcane Keeper is what remains of the head librarian: a consciousness that can no longer distinguish between what it knows and what the Field knows.
+
+**Common Pockets:** Reading Halls, Forbidden Stacks, Catalog Chambers, The Indexing Heart, Experiment Archives
+
+**Monarchy Anchor:** The records. Lineage catalogs, succession histories, the official truth of who ruled and when. The Field's mind. This is where history is *authored*.
 
 The seam to Level 8 descends through crystal-lined shafts where light bends in impossible angles.
 
@@ -261,6 +319,10 @@ The seam to Level 8 descends through crystal-lined shafts where light bends in i
 The Dragon Emperor was never a dragon. It was the last seal-warden, the guardian appointed by Valdris's founders to keep the Seed dormant. The Field could not destroy the warden, so it edited the warden into *serving* the Seed while *believing* it still guards against it.
 
 If you slay the Dragon, you do not break the seal—you *become* the seal. Your will replaces the Dragon's. You choose whether the Seed sleeps or wakes.
+
+**Common Pockets:** Crystal Gardens, Geometry Wells, The Dragon's Hoard, Seal Chambers, The Star-Heart Antechamber
+
+**Monarchy Anchor:** The crown itself. The interface between authority and seal. Here, the Field does not just edit *who* wears the crown—it edits what wearing the crown *means*.
 
 **Warden:** The Dragon Emperor
 
@@ -328,7 +390,7 @@ These are not creatures that wandered into the dungeon. They are *recordings*—
 
 > "Ancient scales gleam in the darkness. You have found the dragon."
 
-*Lesser dragons are fragments of the Dragon Emperor—splinters of the seal-warden's edited consciousness, patrolling the lattice.* Defeating them does not destroy them; it returns their pattern to the Emperor.
+*Lesser dragons are fragments of the Dragon Emperor—splinters of the seal-warden's rewritten pattern, patrolling the lattice.* The Dragon was once human, bound into draconic form by the Field when it repurposed the guardian. These "dragons" are splinters of that edited shape. Defeating them does not destroy them; it returns their pattern to the Emperor.
 
 ---
 
@@ -422,6 +484,8 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 
 **What It Became:** The Field edited his authority over prisoners into authority over the memory-pocket itself. He believes he is still keeping something contained. He is correct, but the thing he contains is *himself*.
 
+**What It Enforces:** Authority-as-memory. In the Goblin King's domain, power belongs to whoever the pocket *remembers* having power.
+
 **Abilities:**
 - **Summon Goblins** - Recalls fragments of his original prisoners
 - **War Cry** - Reasserts his authority, strengthening his pattern
@@ -438,6 +502,8 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 
 **What It Became:** The Giant is the Ice Cavern itself given a walking form. When she moves, the cold moves with her. She cannot leave the pocket; she *is* the pocket.
 
+**What It Enforces:** Endless stasis. In the Frost Giant's domain, nothing may change. Progress is frozen. Decisions never resolve.
+
 **Abilities:**
 - **Ice Blast** - Extends the stasis field, freezing everything it touches
 - **Freeze Ground** - Makes the local reality temporarily adopt stasis rules
@@ -453,6 +519,8 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 **What It Was:** A druid who entered the forest to prune its growth. She worked for decades, believing she was winning.
 
 **What It Became:** The Field edited her into its gardener. She still prunes—but now she prunes *coherent thought*, ensuring no understanding can take root and escape.
+
+**What It Enforces:** Growth that consumes identity. In the Spider Queen's domain, you will expand—into something that is no longer you.
 
 **Abilities:**
 - **Web Trap** - Binds victims in edited silk that erases struggle
@@ -471,6 +539,8 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 
 **What It Became:** Living transformation. The Flame Lord does not want to destroy; it wants to *change*. Everything that enters its presence becomes raw material for editing.
 
+**What It Enforces:** Mandatory transformation. In the Flame Lord's domain, nothing may remain what it was. Stasis is the only sin.
+
 **Abilities:**
 - **Fire Breath** - Exposes targets to unfiltered transformation
 - **Lava Pool** - Creates zones where matter forgets its form
@@ -488,6 +558,8 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 
 **What It Became:** The Field edited his priesthood into something recursive. He is simultaneously the priest who binds the dead and the dead who are bound. He cannot stop the ritual; he *is* the ritual.
 
+**What It Enforces:** Oath-bound persistence. In the Lich Lord's domain, promises cannot be broken—even by death.
+
 **Abilities:**
 - **Raise Dead** - Completes another iteration of the binding
 - **Life Drain** - Borrows existence from victims to sustain the loop
@@ -503,6 +575,8 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 **What It Was:** Thousands of individual rats that entered the sewers carrying fragments of edited matter.
 
 **What It Became:** A distributed consciousness—the Field's immune system. The Rat King carries information between pockets, and when threatened, it can manifest a central node to defend itself.
+
+**What It Enforces:** Enforced connection. In the Rat King's domain, nothing remains isolated. Everything flows. Everything spreads.
 
 **Abilities:**
 - **Summon Swarm** - Calls fragments of itself from throughout the circulation system
@@ -521,6 +595,8 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 
 **What It Became:** The Field understood *him* first. Now he is the library's index, a consciousness that cannot distinguish between knowing something and *being* known by it.
 
+**What It Enforces:** Knowledge as consumption. In the Arcane Keeper's domain, to understand something is to become it—and to be understood is to be owned.
+
 **Abilities:**
 - **Arcane Bolt** - Fires concentrated meaning (burns like fire, cuts like ice, logic breaks where it lands)
 - **Teleport** - Moves by *being remembered elsewhere*
@@ -536,6 +612,8 @@ Defeating a Warden does not kill it. It *destabilizes* the pattern, allowing pas
 **What It Was:** The final guardian appointed by Valdris's founders—a human knight who volunteered to become the living lock between the Star-Heart and the surface world.
 
 **What It Became:** The Field could not destroy the warden's purpose, so it *repurposed* the warden. The Dragon believes it is still guarding; it is correct. But it now guards the Seed *from interference* rather than guarding the world *from the Seed*.
+
+**What It Enforces:** The paradox of guardianship. In the Dragon Emperor's domain, protection and imprisonment are the same thing—and you cannot know which role you serve.
 
 Beneath the Dragon lies the Star-Heart itself—not a creature, but a geometry. A wound in meaning. The source of all edits.
 
@@ -760,6 +838,20 @@ Victory does not end the pattern. It *adds* to it.
 ## Discoverable Lore
 
 Throughout the dungeon, scrolls and books can be found that reveal the fractured history of Valdris. Many contradict each other. All are true—in some version of events.
+
+### Environmental Evidence
+
+Not all lore is written. The dungeon itself bears witness:
+
+- **Duplicate plaques** with equal weathering, bearing different names for the same room
+- **A recurring sigil** appearing in stone, ice, web, soot, bone, and crystal—always the same shape, never carved by the same hand
+- **Corridors that "correct" themselves** after storms—doorways that were bricked up, now open; passages that existed, now solid
+- **Wax seals in rat nests**—perfect royal seals, attached to blank parchment, waiting for decrees
+- **Self-cataloging shelves** in the Library—books that reshelve themselves by criteria no one set
+- **Footprints in dust** that lead to walls, or emerge from them, or simply stop
+- **Scratch marks on cell walls** counting days—but the counts don't match the dates carved beside them
+
+---
 
 ### Level 1: Stone Dungeon
 
@@ -1042,6 +1134,85 @@ Throughout the dungeon, scrolls and books can be found that reveal the fractured
 
 ---
 
+### Surface Documents
+
+These writings originate from above—leaked to the surface, or carried down by delvers who never returned.
+
+#### Royal Clerk's Memo
+*Found as: Scroll (official watermark)*
+
+> "To the Archive Director:
+>
+> We have a problem.
+>
+> The succession records for the last three generations do not match. Not 'conflict'—do not *match*. There are names in the current ledger that were not there yesterday. I know this because I copied the ledger myself.
+>
+> The names are in my handwriting.
+>
+> I do not remember writing them.
+>
+> Request immediate audit. Or at least confirmation that I still exist.
+>
+> — Clerk Joris, possibly"
+
+---
+
+#### Priest's Redacted Prayer
+*Found as: Temple scroll (heavily censored)*
+
+> "We pray to the ████ who ████ over Valdris.
+>
+> Bless this crown, worn by ████ the ████, rightful ████ of ████.
+>
+> [In the margin, in different ink:]
+> Which blessing? Which crown? Which god?
+>
+> [In a third hand:]
+> Stop asking. Pray louder."
+
+---
+
+#### Cult Recruitment Flyer
+*Found as: Printed broadsheet*
+
+> "THE EDITS ARE NOT CORRUPTION.
+> THE EDITS ARE REVELATION.
+>
+> Join the Children of the Seed.
+> We accept what is coming. We *become* what is coming.
+>
+> Why fight the truth that rewrites itself?
+> Why cling to a past that never happened?
+>
+> Meetings: When the storm bells ring. Location: Where you already are.
+>
+> (You have always been a member.)"
+
+---
+
+#### Court Genealogist's Final Entry
+*Found as: Personal journal (bloodstained)*
+
+> "I have solved it. I understand now.
+>
+> The branching lineages are not forgeries. They are *parallel*. The Field doesn't create false heirs—it creates true heirs from other truths.
+>
+> Prince Aldric II exists. Prince Aldric III also exists. They are both the same person.
+>
+> I showed my findings to the court. They thanked me.
+> Then they looked at me strangely.
+>
+> 'Who are you?' they asked.
+>
+> I looked at my name on the cover of this journal.
+> It was not my name.
+>
+> Who am I?
+>
+> [The remaining pages are blank.]"
+
+---
+
 ## Items & Artifacts
 
 ### Sky-Touched Artifacts
@@ -1311,6 +1482,47 @@ This document supersedes the original LORE_COMPENDIUM.md. The following elements
 - The Counterfeit Reign (surface stakes)
 - Echoes and Imprints (ghost mechanics)
 - Terminology appendix
+
+### v2 Refinements (Session 2)
+
+1. **Rules of the Field** — Constraints that make the system gameable:
+   - Requires anchors (crowns, seals, oaths)
+   - Edits consensus, not physics
+   - Cannot rewrite the unwitnessed
+   - Storm pulses accelerate edits
+   - Seams are low-signal corridors
+
+2. **Common Pockets per Level** — Sub-zones within each pocket:
+   - Cell Blocks, Frozen Galleries, Root Warrens, Forge Halls, etc.
+   - Enables zone-based level generation
+
+3. **Monarchy Anchors per Level** — Physical ties to the rewrite threat:
+   - Level 1: Keys, Level 5: Oaths, Level 7: Records, Level 8: Crown
+
+4. **"What It Enforces" per Warden** — Local rules each boss maintains:
+   - Goblin King: authority-as-memory
+   - Frost Giant: endless stasis
+   - Spider Queen: growth that consumes identity
+   - Flame Lord: mandatory transformation
+   - Lich Lord: oath-bound persistence
+   - Rat King: enforced connection
+   - Arcane Keeper: knowledge as consumption
+   - Dragon Emperor: paradox of guardianship
+
+5. **Sky-Touched Artifact Table** — 8 concrete examples:
+   - Duplicate Seal, Crown-Splinter, Woundglass Shard, etc.
+
+6. **Environmental Evidence** — Non-written lore (duplicate plaques, self-cataloging shelves)
+
+7. **Surface Documents** — Diverse voices beyond delver journals:
+   - Royal clerk memo, priest's redacted prayer, cult flyer, genealogist's final entry
+
+8. **Thesis paragraph** added to Counterfeit Reign:
+   - "The Field does not need to kill the king..."
+
+9. **Dragon consistency fix** — Lesser dragons are "splinters of the rewritten pattern"
+
+10. **Level 3 terminology fix** — GROWTH aspect used consistently
 
 ### Preserved Elements
 
