@@ -39,6 +39,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 1,
         "item_type": "scroll",
+        "category": "characters",
     },
     "warning_stone": {
         "title": "Carved Warning",
@@ -50,6 +51,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 1,
         "item_type": "scroll",
+        "category": "locations",
     },
 
     # Level 2 - Ice Cavern lore
@@ -62,6 +64,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 2,
         "item_type": "scroll",
+        "category": "characters",
     },
     "ice_warning": {
         "title": "Warning Carved in Ice",
@@ -72,6 +75,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 2,
         "item_type": "scroll",
+        "category": "locations",
     },
 
     # Level 3 - Forest Depths lore
@@ -84,6 +88,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 3,
         "item_type": "scroll",
+        "category": "creatures",
     },
     "webbed_note": {
         "title": "Note Wrapped in Silk",
@@ -94,6 +99,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 3,
         "item_type": "scroll",
+        "category": "locations",
     },
 
     # Level 4 - Volcanic Depths lore
@@ -106,6 +112,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 4,
         "item_type": "scroll",
+        "category": "artifacts",
     },
     "obsidian_tablet": {
         "title": "Obsidian Tablet",
@@ -116,6 +123,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 4,
         "item_type": "scroll",
+        "category": "artifacts",
     },
 
     # Level 5 - Ancient Crypt lore
@@ -130,6 +138,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 5,
         "item_type": "scroll",
+        "category": "creatures",
     },
     "priest_confession": {
         "title": "Priest's Confession",
@@ -141,6 +150,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 5,
         "item_type": "book",
+        "category": "characters",
     },
 
     # Level 6 - Sewer lore
@@ -153,6 +163,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 6,
         "item_type": "scroll",
+        "category": "characters",
     },
     "plague_warning": {
         "title": "Health Warden's Warning",
@@ -163,6 +174,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 6,
         "item_type": "scroll",
+        "category": "locations",
     },
 
     # Level 7 - Ancient Library lore
@@ -176,6 +188,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 7,
         "item_type": "book",
+        "category": "artifacts",
     },
     "history_valdris": {
         "title": "History of Valdris",
@@ -187,6 +200,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 7,
         "item_type": "book",
+        "category": "history",
     },
 
     # Level 8 - Crystal Cave / Dragon's Lair lore
@@ -202,6 +216,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 8,
         "item_type": "scroll",
+        "category": "history",
     },
     "final_entry": {
         "title": "The Last King's Testament",
@@ -216,6 +231,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
         ],
         "level_hint": 8,
         "item_type": "book",
+        "category": "history",
     },
 }
 

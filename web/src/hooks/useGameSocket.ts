@@ -7,6 +7,46 @@ import { getGameWsUrl } from '../services/api';
 export type GameState = 'PLAYING' | 'DEAD' | 'VICTORY' | 'TITLE' | 'INTRO';
 export type UIMode = 'GAME' | 'INVENTORY' | 'CHARACTER' | 'HELP' | 'MESSAGE_LOG' | 'DIALOG' | 'READING';
 
+// Lore system types
+export type LoreCategory = 'history' | 'characters' | 'creatures' | 'locations' | 'artifacts';
+export type LoreItemType = 'scroll' | 'book' | 'bestiary' | 'location' | 'character' | 'artifact' | 'chronicle';
+
+export interface CreatureData {
+  symbol: string;
+  name: string;
+  hp: number;
+  damage: number;
+  xp: number;
+  is_boss: boolean;
+  abilities?: string[];
+  resistances?: Record<string, number>;
+  element?: string;
+  level_range?: [number, number];
+  first_encounter_text: string;
+  description?: string;
+}
+
+export interface LocationData {
+  level: number;
+  biome_id: string;
+  biome_name: string;
+  intro_message: string;
+  boss_name?: string;
+  boss_symbol?: string;
+  creatures: string[];
+}
+
+export interface LoreEntry {
+  id: string;
+  title: string;
+  content: string[];
+  category: LoreCategory;
+  item_type: LoreItemType;
+  // Extended data for specific entry types
+  creature_data?: CreatureData;
+  location_data?: LocationData;
+}
+
 export interface FacingDirection {
   dx: number;
   dy: number;
@@ -205,11 +245,7 @@ export interface FullGameState {
     content: string[];
   };
   lore_journal?: {
-    entries: Array<{
-      id: string;
-      title: string;
-      content: string[];
-    }>;
+    entries: LoreEntry[];
     discovered_count: number;
     total_count: number;
   };

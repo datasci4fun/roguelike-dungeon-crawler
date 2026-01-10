@@ -42,7 +42,8 @@ class SaveManager:
             'player': self._serialize_player(self.game.player),
             'enemies': [self._serialize_enemy(e) for e in self.game.entity_manager.enemies],
             'items': [self._serialize_item(i) for i in self.game.entity_manager.items],
-            'dungeon': self._serialize_dungeon(self.game.dungeon)
+            'dungeon': self._serialize_dungeon(self.game.dungeon),
+            'story_manager': self.game.story_manager.to_dict() if self.game.story_manager else None
         }
 
         return save_game(game_state)
@@ -77,6 +78,11 @@ class SaveManager:
             self.game.entity_manager.enemies = [self._deserialize_enemy(e) for e in game_state['enemies']]
             self.game.entity_manager.items = [item for item in (self._deserialize_item(i) for i in game_state['items']) if item is not None]
             self.game.dungeon = self._deserialize_dungeon(game_state['dungeon'])
+
+            # Restore story_manager state if present
+            if game_state.get('story_manager') and self.game.story_manager:
+                from ..story import StoryManager
+                self.game.story_manager = StoryManager.from_dict(game_state['story_manager'])
 
             # Update FOV after loading (with vision bonus from race traits)
             vision_bonus = self.game.player.get_vision_bonus() if hasattr(self.game.player, 'get_vision_bonus') else 0

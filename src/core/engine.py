@@ -167,6 +167,8 @@ class GameEngine:
 
         # Reset story manager for new game
         self.story_manager = StoryManager()
+        # Register starting level in codex
+        self.story_manager.visit_level(1)
 
         self.state = GameState.PLAYING
         self.ui_mode = UIMode.GAME

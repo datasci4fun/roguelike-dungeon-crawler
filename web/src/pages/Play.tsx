@@ -17,7 +17,7 @@ import { DebugToast } from '../components/DebugToast';
 import { GameOver } from '../components/GameOver';
 import { GameOverCutscene, type DeathFateId } from '../components/GameOverCutscene';
 import { VictoryCutscene, type VictoryLegacyId } from '../components/VictoryCutscene';
-import { LoreJournal } from '../components/LoreJournal';
+import { LoreCodex } from '../components/LoreCodex';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
 
@@ -445,18 +445,6 @@ export function Play() {
               3D Mode
             </label>
 
-            <button
-              className="journal-btn"
-              onClick={() => setShowLoreJournal(true)}
-              title="Open Lore Journal (J)"
-            >
-              Journal
-              {gameState?.lore_journal && gameState.lore_journal.discovered_count > 0 && (
-                <span className="journal-count">
-                  {gameState.lore_journal.discovered_count}
-                </span>
-              )}
-            </button>
           </div>
 
           <div className="game-status">
@@ -593,9 +581,9 @@ export function Play() {
         />
       )}
 
-      {/* Lore Journal Modal */}
+      {/* Lore Codex Modal */}
       {showLoreJournal && gameState?.lore_journal && (
-        <LoreJournal
+        <LoreCodex
           entries={gameState.lore_journal.entries}
           discoveredCount={gameState.lore_journal.discovered_count}
           totalCount={gameState.lore_journal.total_count}

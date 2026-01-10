@@ -91,6 +91,10 @@ class CombatManager:
         if enemy.is_boss:
             self.game.show_hint("first_boss")
 
+        # Register enemy encounter for bestiary (uses base enemy name, not "Elite X")
+        if hasattr(self.game, 'story_manager') and self.game.story_manager:
+            self.game.story_manager.encounter_enemy(enemy.name)
+
         # Use new player_attack with ability bonuses
         damage, enemy_died, bonus_message = player_attack(player, enemy)
 

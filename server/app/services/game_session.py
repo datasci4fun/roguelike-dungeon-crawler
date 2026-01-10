@@ -533,10 +533,17 @@ class GameSessionManager:
         # Include lore journal data (always available)
         if engine.story_manager:
             discovered, total = engine.story_manager.get_lore_progress()
+            # Combine all entry types: lore + bestiary + locations
+            lore_entries = engine.story_manager.get_discovered_lore_entries()
+            bestiary_entries = engine.story_manager.get_bestiary_entries()
+            location_entries = engine.story_manager.get_location_entries()
+            all_entries = lore_entries + bestiary_entries + location_entries
+            # Calculate total discovered across all types
+            total_discovered = len(lore_entries) + len(bestiary_entries) + len(location_entries)
             state["lore_journal"] = {
-                "entries": engine.story_manager.get_discovered_lore_entries(),
-                "discovered_count": discovered,
-                "total_count": total,
+                "entries": all_entries,
+                "discovered_count": total_discovered,
+                "total_count": total + len(bestiary_entries) + len(location_entries),
             }
 
         return state
