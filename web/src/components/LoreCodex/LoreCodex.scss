@@ -1,0 +1,776 @@
+/**
+ * LoreCodex styles
+ *
+ * Ancient grimoire aesthetic - weathered parchment, candlelit warmth
+ */
+
+// Color palette - warm fantasy tones
+$codex-bg: #1a1410;
+$codex-bg-dark: #0f0c08;
+$codex-accent: #d4a850;
+$codex-accent-dim: rgba(212, 168, 80, 0.3);
+$codex-accent-glow: rgba(255, 180, 80, 0.4);
+$codex-text: #d4c4a8;
+$codex-text-dim: #8b7355;
+$codex-border: #3d2e1f;
+$codex-border-light: #5a4632;
+$parchment: #2a2218;
+$parchment-light: #352a1e;
+$parchment-aged: #1e1812;
+$parchment-border: #4a3828;
+
+// ==========================================
+// Overlay
+// ==========================================
+.lore-codex-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: codexFadeIn 0.4s ease;
+
+  // Dim vignette effect
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%);
+    pointer-events: none;
+  }
+}
+
+// ==========================================
+// Main Container
+// ==========================================
+.lore-codex {
+  position: relative;
+  width: 95%;
+  max-width: 1200px;
+  height: 85vh;
+  max-height: 800px;
+  background: $codex-bg;
+  background-image:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.3), transparent 10%, transparent 90%, rgba(0, 0, 0, 0.4)),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  border: 3px solid $codex-border;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 0 60px rgba(0, 0, 0, 0.8),
+    0 0 30px rgba($codex-accent, 0.15),
+    inset 0 0 80px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba($codex-accent, 0.1);
+  overflow: hidden;
+
+  // Leather binding effect on edges
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba($codex-accent, 0.15);
+    border-radius: 3px;
+    pointer-events: none;
+  }
+}
+
+// ==========================================
+// Header
+// ==========================================
+.codex-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 2px solid $codex-border;
+  background: linear-gradient(to bottom, $codex-bg-dark, $codex-bg);
+  position: relative;
+
+  // Decorative bottom border
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, $codex-accent-dim, transparent);
+  }
+}
+
+.codex-title {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: $codex-accent;
+  margin: 0;
+  text-shadow: 0 0 20px $codex-accent-glow, 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.codex-progress {
+  margin-left: auto;
+  margin-right: 1rem;
+  color: $codex-text-dim;
+  font-size: 0.85rem;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
+.codex-close-btn {
+  background: transparent;
+  border: 1px solid $codex-border-light;
+  color: $codex-text-dim;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  font-family: Georgia, serif;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: $codex-accent;
+    color: $codex-accent;
+    text-shadow: 0 0 8px $codex-accent-glow;
+  }
+}
+
+// ==========================================
+// Body - Three Column Layout
+// ==========================================
+.codex-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// ==========================================
+// Sidebar
+// ==========================================
+.codex-sidebar {
+  width: 180px;
+  border-right: 2px solid $codex-border;
+  background: linear-gradient(to right, $codex-bg-dark, $codex-bg);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.codex-category-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-bottom: 1px solid rgba($codex-border, 0.5);
+  background: transparent;
+  color: $codex-text;
+  cursor: pointer;
+  text-align: left;
+  font-family: Georgia, serif;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    background: rgba($codex-accent, 0.08);
+    color: $codex-accent;
+  }
+
+  &.active {
+    background: linear-gradient(to right, rgba($codex-accent, 0.15), transparent);
+    border-left: 3px solid $codex-accent;
+    color: $codex-accent;
+    text-shadow: 0 0 10px $codex-accent-glow;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .category-icon {
+    width: 1.5rem;
+    text-align: center;
+    color: $codex-accent;
+    font-weight: bold;
+    font-family: Georgia, serif;
+    text-shadow: 0 0 6px $codex-accent-glow;
+  }
+
+  .category-label {
+    flex: 1;
+  }
+
+  .category-count {
+    color: $codex-text-dim;
+    font-size: 0.75rem;
+    font-style: italic;
+  }
+}
+
+// ==========================================
+// Entry List
+// ==========================================
+.codex-entry-list {
+  width: 260px;
+  border-right: 2px solid $codex-border;
+  overflow-y: auto;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.15);
+
+  &--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .empty-message {
+    color: $codex-text-dim;
+    text-align: center;
+    font-style: italic;
+    font-family: Georgia, serif;
+  }
+}
+
+.codex-entry-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1rem;
+  border: none;
+  border-bottom: 1px solid rgba($codex-border, 0.4);
+  background: transparent;
+  color: $codex-text;
+  cursor: pointer;
+  text-align: left;
+  font-family: Georgia, serif;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba($codex-accent, 0.08);
+    color: $codex-accent;
+  }
+
+  &.active {
+    background: linear-gradient(to right, rgba($codex-accent, 0.12), transparent);
+    border-left: 3px solid $codex-accent;
+    color: $codex-accent;
+  }
+
+  .entry-icon {
+    color: $codex-accent;
+    font-weight: bold;
+    font-size: 1.1rem;
+    text-shadow: 0 0 6px $codex-accent-glow;
+  }
+
+  .entry-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .entry-type {
+    font-size: 0.65rem;
+    color: $codex-text-dim;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-style: italic;
+  }
+}
+
+// ==========================================
+// Reader
+// ==========================================
+.codex-reader {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, rgba($codex-accent, 0.03) 0%, transparent 70%);
+
+  &.transition-exiting {
+    animation: readerFadeOut 0.3s ease forwards;
+  }
+
+  &.transition-entering {
+    animation: readerFadeIn 0.5s ease forwards;
+  }
+}
+
+.codex-reader-empty {
+  text-align: center;
+  color: $codex-text-dim;
+  padding: 3rem;
+  font-family: Georgia, serif;
+
+  .empty-icon {
+    font-size: 4rem;
+    color: $codex-accent-dim;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 20px $codex-accent-glow;
+  }
+
+  .empty-text {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    font-style: italic;
+  }
+
+  .empty-hint {
+    font-size: 0.9rem;
+    max-width: 300px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+}
+
+// ==========================================
+// Scroll Presentation
+// ==========================================
+.scroll-presentation {
+  width: 100%;
+  max-width: 550px;
+
+  .scroll-paper {
+    background: linear-gradient(135deg, $parchment-light 0%, $parchment 50%, $parchment-aged 100%);
+    border: 2px solid $parchment-border;
+    border-radius: 3px;
+    padding: 2rem 2.5rem;
+    transform-origin: top center;
+    transform: scaleY(0);
+    opacity: 0;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      inset 0 0 40px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba($codex-accent, 0.1);
+    position: relative;
+
+    // Aged paper texture overlay
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      border-radius: 3px;
+    }
+  }
+
+  &.unrolled .scroll-paper {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.scroll-header-ornament,
+.scroll-footer-ornament {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+
+  .ornament-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, $codex-accent-dim, transparent);
+  }
+
+  .ornament-symbol {
+    color: $codex-accent;
+    opacity: 0.7;
+    font-size: 1.2rem;
+    text-shadow: 0 0 8px $codex-accent-glow;
+  }
+}
+
+.scroll-title {
+  text-align: center;
+  color: $codex-accent;
+  font-size: 1.4rem;
+  margin: 0 0 1.5rem;
+  text-shadow: 0 0 15px $codex-accent-glow, 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 1px;
+  font-weight: normal;
+}
+
+.scroll-content {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.scroll-paragraph {
+  color: $codex-text;
+  line-height: 1.8;
+  margin-bottom: 1.2rem;
+  font-size: 0.95rem;
+  font-family: Georgia, serif;
+  text-indent: 1.5rem;
+
+  &:first-child {
+    text-indent: 0;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+// ==========================================
+// Book Presentation
+// ==========================================
+.book-presentation {
+  width: 100%;
+  max-width: 650px;
+  perspective: 1500px;
+
+  .book-spine {
+    display: none;
+  }
+
+  .book-pages {
+    display: flex;
+    transform-style: preserve-3d;
+    transform: rotateY(-15deg);
+    opacity: 0;
+    transition: transform 0.5s ease, opacity 0.3s ease;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  &.opened .book-pages {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+
+  .page {
+    background: linear-gradient(135deg, $parchment-light 0%, $parchment 100%);
+    border: 2px solid $parchment-border;
+    min-height: 450px;
+    position: relative;
+
+    // Subtle paper texture
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+  }
+
+  .page-left {
+    width: 60px;
+    border-right: none;
+    background: linear-gradient(to right, $parchment-aged, $parchment);
+    box-shadow: inset -10px 0 20px rgba(0, 0, 0, 0.15);
+
+    .page-decoration {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1rem 0.5rem;
+    }
+  }
+
+  .page-right {
+    flex: 1;
+    padding: 2rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    box-shadow: inset 5px 0 15px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.book-title {
+  color: $codex-accent;
+  font-size: 1.5rem;
+  margin: 0 0 1.5rem;
+  text-align: center;
+  text-shadow: 0 0 15px $codex-accent-glow, 0 2px 4px rgba(0, 0, 0, 0.3);
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: 1px;
+  font-weight: normal;
+  border-bottom: 1px solid $codex-accent-dim;
+  padding-bottom: 1rem;
+}
+
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.book-paragraph {
+  color: $codex-text;
+  line-height: 1.8;
+  margin-bottom: 1.2rem;
+  font-size: 0.95rem;
+  font-family: Georgia, serif;
+  text-indent: 1.5rem;
+
+  &:first-child {
+    text-indent: 0;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.page-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+  border-top: 1px solid rgba($parchment-border, 0.5);
+  margin-top: auto;
+
+  .page-number {
+    color: $codex-text-dim;
+    font-size: 0.8rem;
+    font-family: Georgia, serif;
+    font-style: italic;
+  }
+}
+
+.corner-ornament {
+  width: 16px;
+  height: 16px;
+  border: 1px solid $codex-accent-dim;
+  opacity: 0.4;
+
+  &.top-left {
+    border-right: none;
+    border-bottom: none;
+  }
+
+  &.top-right {
+    border-left: none;
+    border-bottom: none;
+    align-self: flex-end;
+  }
+
+  &.bottom-left {
+    border-right: none;
+    border-top: none;
+  }
+
+  &.bottom-right {
+    border-left: none;
+    border-top: none;
+    align-self: flex-end;
+  }
+}
+
+.book-navigation {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.page-nav-btn {
+  background: transparent;
+  border: 1px solid $codex-border-light;
+  color: $codex-text-dim;
+  padding: 0.5rem 1.2rem;
+  cursor: pointer;
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+
+  &:hover:not(:disabled) {
+    border-color: $codex-accent;
+    color: $codex-accent;
+    text-shadow: 0 0 8px $codex-accent-glow;
+  }
+
+  &:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+  }
+}
+
+// ==========================================
+// Footer
+// ==========================================
+.codex-footer {
+  padding: 0.75rem 1.5rem;
+  border-top: 2px solid $codex-border;
+  background: linear-gradient(to top, $codex-bg-dark, $codex-bg);
+  text-align: center;
+  position: relative;
+
+  // Decorative top border
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, $codex-accent-dim, transparent);
+  }
+}
+
+.codex-hint {
+  color: $codex-text-dim;
+  font-size: 0.8rem;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+
+// ==========================================
+// Phosphor Text Effect (warm candlelit glow)
+// ==========================================
+.phosphor-text {
+  .phosphor-char {
+    display: inline;
+    opacity: 0;
+    animation: phosphorReveal 0.3s ease forwards;
+    animation-delay: var(--char-delay, 0ms);
+    text-shadow: 0 0 3px rgba($codex-accent, 0.3);
+  }
+}
+
+// ==========================================
+// Animations
+// ==========================================
+@keyframes codexFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes readerFadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-15px);
+  }
+}
+
+@keyframes readerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes phosphorReveal {
+  from {
+    opacity: 0;
+    text-shadow: 0 0 8px $codex-accent-glow;
+  }
+  to {
+    opacity: 1;
+    text-shadow: 0 0 3px rgba($codex-accent, 0.3);
+  }
+}
+
+// ==========================================
+// Mobile Responsive
+// ==========================================
+@media (max-width: 900px) {
+  .codex-body {
+    flex-direction: column;
+  }
+
+  .codex-sidebar {
+    width: 100%;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-right: none;
+    border-bottom: 2px solid $codex-border;
+
+    .codex-category-btn {
+      flex-shrink: 0;
+      padding: 0.5rem 1rem;
+      border-bottom: none;
+
+      .category-label {
+        display: none;
+      }
+
+      &.active {
+        border-left: none;
+        border-bottom: 3px solid $codex-accent;
+        background: rgba($codex-accent, 0.1);
+      }
+    }
+  }
+
+  .codex-entry-list {
+    width: 100%;
+    max-height: 150px;
+    border-right: none;
+    border-bottom: 2px solid $codex-border;
+  }
+
+  .codex-reader {
+    padding: 1rem;
+  }
+
+  .scroll-presentation,
+  .book-presentation {
+    max-width: 100%;
+  }
+
+  .book-presentation .page-left {
+    display: none;
+  }
+
+  .scroll-presentation .scroll-paper,
+  .book-presentation .page-right {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .lore-codex {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    border-radius: 0;
+    border-width: 0;
+  }
+
+  .codex-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .codex-title {
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+  }
+
+  .scroll-title,
+  .book-title {
+    font-size: 1.2rem;
+  }
+}

@@ -97,7 +97,7 @@ class StoryManager:
         Get full data for all discovered lore entries.
 
         Returns:
-            List of dicts with id, title, content for each discovered entry
+            List of dicts with id, title, content, category, item_type for each discovered entry
         """
         from .story_data import LORE_ENTRIES
         entries = []
@@ -108,6 +108,8 @@ class StoryManager:
                     'id': lore_id,
                     'title': entry['title'],
                     'content': entry['content'],
+                    'category': entry.get('category', 'history'),
+                    'item_type': entry.get('item_type', 'scroll'),
                 })
         return entries
 

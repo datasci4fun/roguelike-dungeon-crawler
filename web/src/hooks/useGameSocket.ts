@@ -7,6 +7,18 @@ import { getGameWsUrl } from '../services/api';
 export type GameState = 'PLAYING' | 'DEAD' | 'VICTORY' | 'TITLE' | 'INTRO';
 export type UIMode = 'GAME' | 'INVENTORY' | 'CHARACTER' | 'HELP' | 'MESSAGE_LOG' | 'DIALOG' | 'READING';
 
+// Lore system types
+export type LoreCategory = 'history' | 'characters' | 'creatures' | 'locations' | 'artifacts';
+export type LoreItemType = 'scroll' | 'book';
+
+export interface LoreEntry {
+  id: string;
+  title: string;
+  content: string[];
+  category: LoreCategory;
+  item_type: LoreItemType;
+}
+
 export interface FacingDirection {
   dx: number;
   dy: number;
@@ -205,11 +217,7 @@ export interface FullGameState {
     content: string[];
   };
   lore_journal?: {
-    entries: Array<{
-      id: string;
-      title: string;
-      content: string[];
-    }>;
+    entries: LoreEntry[];
     discovered_count: number;
     total_count: number;
   };
