@@ -1,7 +1,7 @@
 # Floor 6 — Ancient Library (COGNITION)
 
 **Aspect:** COGNITION (what can be known)
-**Monarchy Anchor:** Records
+**Monarchy Anchor:** Records (official history authored here)
 **Warden:** Arcane Keeper
 
 ---
@@ -10,23 +10,42 @@
 **Status:** `[ ]`
 
 **Purpose:**
-- Tables, quiet spaces. Where knowledge was consumed safely.
+- Quiet, readable rooms—knowledge *used to* be safe here.
+- Contrast zone: makes the later “forbidden stacks” feel sharper.
 
 **Generation**
-- **Eligibility:** min_w=6, min_h=6, max_per_level=3
-- **Layout pass:** Table props, chair props, open floor space
+- **Eligibility:**
+  - min_w=7, min_h=7
+  - allowed_room_types=[NORMAL, LARGE_HALL]
+  - max_per_level=2–3
+- **Selection rule:** prefer rooms with 2+ connections (public halls), avoid boss approach cluster.
+- **Layout pass:**
+  - Keep center open.
+  - Place table-like decoration clusters in rows (no tile changes required).
 
 **Visual / Atmosphere**
-- **Decorations:** `=` tables, `o` chairs, `~` scattered papers
-- **Lighting:** Soft, even (reading light)
+- **Decorations (current system):** Library theme props `╤` (tables) and `║` (shelves) in orderly patterns.
+- **Optional custom props:** papers, candles, reading lamps (if supported).
+- **Environmental Evidence (choose 1):**
+  - A reference table labeled with two different catalog numbers
+  - A reading list where one title appears twice under different authors
+- **Lighting notes:** softer / more even (relative to other zones).
+- **3D overrides:** has_ceiling=true, skybox_override=None
 
 **Spawns**
-- **Enemies:** Low density (0.5x)
-- **Lore:** Delver pool [`wizard_research`]
+- **Enemies:** lower density (x0.7), but not empty.
+- **Items:** normal; slight bias toward scrolls/lore.
+- **Lore drops:**
+  - **Delver pool:** [`arcane_research_notes_excerpt`]
+  - **Surface/Authority pool:** [`royal_clerk_memo_excerpt`, `priest_redacted_prayer_fragment`]
+  - Spawn rule: 15–25% chance per room; max 1 lore per room.
 
 **Acceptance Criteria**
-- [ ] Quiet atmosphere
-- [ ] Low danger zone
+- [ ] Reads as “safe-ish public hall”
+- [ ] Not a free room (still some threat)
+- [ ] Table/shelf identity is obvious
+
+**Test Seeds:** 16001, 16002
 
 ---
 
@@ -34,23 +53,43 @@
 **Status:** `[ ]`
 
 **Purpose:**
-- Tight corridors, shelf partitions. Knowledge too dangerous to access freely.
+- Tight corridors and claustrophobic navigation: curiosity becomes danger.
+- This is where cognition becomes consumption.
 
 **Generation**
-- **Eligibility:** Any size, max_per_level=4
-- **Layout pass:** Dense shelf rows creating maze-like corridors
+- **Eligibility:**
+  - min_w=6, min_h=6
+  - allowed_room_types=[NORMAL]
+  - max_per_level=3–5
+- **Selection rule:** weighted high. Prefer rooms with fewer entrances (maze-like).
+- **Layout pass:**
+  - Add interior partitions using short `WALL (#)` runs to create narrow aisles.
+  - Preserve at least one clear route between entrances.
+  - Optional: sprinkle 1–2 `TRAP_HIDDEN (.)` / `TRAP_VISIBLE (^)` tiles as “tripwire shelves” (no new mechanic required).
 
 **Visual / Atmosphere**
-- **Decorations:** `[` `]` tall shelves, `~` forbidden tomes, `!` warning signs
-- **Lighting:** Dim, shadows between stacks
+- **Decorations:** dense `║` shelf lines, fewer `╤` tables.
+- **Environmental Evidence (choose 1–2):**
+  - Shelf labels that reference books “not yet written”
+  - Two copies of the same book with different titles on the spine
+  - Dust footprints that stop at a shelf face
+- **Lighting notes:** dimmer, shadowy lanes (use fewer light props).
+- **3D overrides:** has_ceiling=true
 
 **Spawns**
-- **Enemies:** wraiths x1.5 (knowledge seekers who stayed too long)
-- **Lore:** Rare/dangerous texts
+- **Enemies:** wraiths bias x1.4 if present on this depth; otherwise tougher packs.
+- **Items:** slightly higher chance for lore (dangerous knowledge).
+- **Lore drops:**
+  - **Delver pool:** [`arcane_research_notes`]
+  - **Surface/Authority pool:** [`history_of_valdris_multiple_versions`]
+  - Spawn rule: 25–40% chance; max 1 lore per room.
 
 **Acceptance Criteria**
-- [ ] Maze-like feel
-- [ ] Danger elevated
+- [ ] Aisle maze feel is real
+- [ ] Partitions never hard-block entrances
+- [ ] Danger noticeably higher than reading_halls
+
+**Test Seeds:** 16011, 16012
 
 ---
 
@@ -58,47 +97,84 @@
 **Status:** `[ ]`
 
 **Purpose:**
-- Index tables, card drawers. The library's organizational heart.
+- Bureaucracy of knowledge: the library’s organizing interface.
+- Primary surface-doc zone for Floor 6 (records/lineage/history).
 
 **Generation**
-- **Eligibility:** min_w=5, min_h=5, max_per_level=2
-- **Layout pass:** Card catalog props, index tables
+- **Eligibility:**
+  - min_w=6, min_h=6
+  - allowed_room_types=[NORMAL]
+  - max_per_level=1–2
+- **Selection rule:** prefer rooms near reading_halls or central routes (public access).
+- **Layout pass:**
+  - Keep readable.
+  - Place “catalog stations” with `╤` clusters and shelf walls.
 
 **Visual / Atmosphere**
-- **Decorations:** `=` index tables, `#` card drawers, `~` reference cards
-- **Environmental Evidence:** Cards that reference books that don't exist (yet)
+- **Decorations:** orderly `╤` and `║` placement; “index desk” vibe.
+- **Environmental Evidence (choose 1):**
+  - Cards that reference books that don’t exist (yet)
+  - A drawer label that changes between reads (lore implication)
+- **Lighting notes:** brighter than stacks (meant to be used).
+- **3D overrides:** has_ceiling=true
 
 **Spawns**
-- **Enemies:** Skeleton librarians
-- **Lore:** Surface pool primary
+- **Enemies:** skeletons bias x1.2 (clerks/librarians) if present; otherwise normal.
+- **Items:** lore bias high.
+- **Lore drops:**
+  - **Delver pool:** [`delver_note_books_reshelve_themselves`]
+  - **Surface/Authority pool:** [`royal_clerk_memo_excerpt`, `history_of_valdris_multiple_versions`]
+  - Spawn rule: 50–75% chance; max 1 lore per room.
 
 **Acceptance Criteria**
-- [ ] Organization theme clear
-- [ ] Catalog props visible
+- [ ] Reads as “index/catalog”
+- [ ] Lore appears here reliably
+- [ ] Doesn’t become cluttered
+
+**Test Seeds:** 16021, 16022
 
 ---
 
-## Zone: `indexing_heart` — The Indexing Heart
+## Zone: `indexing_heart` — The Indexing Heart (Anchor)
 **Status:** `[ ]`
 
 **Purpose:**
-- Anchor room. Self-ordering effect. The library's will made manifest.
+- The library’s will made manifest: self-ordering, self-authorship.
+- Anchor room that sells “knowledge is owned here.”
 
 **Generation**
-- **Eligibility:** min_w=6, min_h=6, max_per_level=1
-- **Layout pass:** Central index mechanism prop, orbiting book shelves
+- **Eligibility:**
+  - min_w=8, min_h=8
+  - allowed_room_types=[LARGE_HALL, NORMAL]
+  - max_per_level=1
+- **Selection rule:** choose one large mid-floor room not boss-adjacent.
+- **Layout pass:**
+  - Keep center open.
+  - Arrange shelves (`║`) in a ring or orbit-like pattern around the center.
+  - Place one central “index hub” cluster (tables `╤`).
 
 **Visual / Atmosphere**
-- **Decorations:** Central mechanism, floating/moving book props
-- **Environmental Evidence:** Self-cataloging shelves (books that "move" run-to-run)
+- **Decorations:** ring/orbit arrangement using `║` + `╤`.
+- **Environmental Evidence (choose 1):**
+  - Self-cataloging shelves (represented by run-to-run arrangement changes)
+  - A central plaque titled “FINAL VERSION” (prop)
+- **Lighting notes:** one focused center light, dim edges.
+- **3D overrides:** has_ceiling=true
 
 **Spawns**
-- **Enemies:** None (atmosphere anchor)
-- **Lore:** Guaranteed 1
+- **Enemies:** low density, but not empty.
+- **Items:** guarantee 1 lore drop.
+- **Lore drops:**
+  - **Delver pool:** [`arcane_research_notes_excerpt`]
+  - **Surface/Authority pool:** [`history_of_valdris_multiple_versions`] (guaranteed here)
+  - Spawn rule: 100% for 1 lore here.
 
 **Acceptance Criteria**
-- [ ] Self-ordering visual
-- [ ] Anchor room presence
+- [ ] Exactly one per level
+- [ ] Feels like a set-piece “index core”
+- [ ] Guaranteed lore spawns here
+
+**Test Seeds:** 16031, 16032
 
 ---
 
@@ -106,23 +182,42 @@
 **Status:** `[ ]`
 
 **Purpose:**
-- Burn marks, diagrams. Where the wizards pushed too far.
+- Where cognition became ingestion: experiments invited the Field to learn.
+- Danger feels like residue of failed understanding.
 
 **Generation**
-- **Eligibility:** min_w=5, min_h=5, max_per_level=2
-- **Layout pass:** Scorch marks on floor, diagram props on walls
+- **Eligibility:**
+  - min_w=6, min_h=6
+  - allowed_room_types=[NORMAL]
+  - max_per_level=1–2
+- **Selection rule:** prefer rooms deeper and/or near forbidden_stacks.
+- **Layout pass:**
+  - Optional: sprinkle 1–3 `TRAP_VISIBLE (^)` tiles as “volatile experiment nodes.”
+  - Keep at least one safe route.
+  - Use decoration clustering to imply diagrams/circles.
 
 **Visual / Atmosphere**
-- **Decorations:** `*` burn marks, `~` diagrams, `%` ash piles
-- **Environmental Evidence:** Experiments that went wrong (or right, in wrong ways)
+- **Decorations:** mixed tables/shelves in messy, non-symmetric arrangements (contrast to catalog).
+- **Environmental Evidence (choose 1):**
+  - “Experiment 68 repeats” (plaque/scroll)
+  - A diagram that resembles the seal sigil in miniature
+- **Lighting notes:** uneven (some bright, some dark).
+- **3D overrides:** has_ceiling=true
 
 **Spawns**
-- **Enemies:** Fire elementals (residue), wraiths
-- **Lore:** [`wizard_research`] guaranteed
+- **Enemies:** slightly higher danger than reading halls; wraith bias x1.2 if present.
+- **Items:** lore bias medium-high.
+- **Lore drops:**
+  - **Delver pool:** [`arcane_research_notes`]
+  - **Surface/Authority pool:** [`priest_redacted_prayer_fragment`]
+  - Spawn rule: 35–60% chance; max 1 lore per room.
 
 **Acceptance Criteria**
-- [ ] Danger history visible
-- [ ] Research gone wrong theme
+- [ ] Reads as “messy lab / archives”
+- [ ] Danger elevated but fair
+- [ ] Traps never create unavoidable damage
+
+**Test Seeds:** 16041, 16042
 
 ---
 
@@ -130,23 +225,41 @@
 **Status:** `[ ]`
 
 **Purpose:**
-- Small pocket rooms for hints. Knowledge hidden in margins.
+- Small pocket rooms for hints: knowledge hidden in margins.
+- Reward curiosity with short, sharp lore.
 
 **Generation**
-- **Eligibility:** Small rooms (min_w=3, min_h=3), max_per_level=3
-- **Layout pass:** Single desk/reading nook, hidden feeling
+- **Eligibility:** small rooms.
+  - min_w=4, min_h=4
+  - allowed_room_types=[NORMAL]
+  - max_per_level=2–4
+- **Selection rule:** prefer rooms with one entrance (alcove feel). Avoid boss approach.
+- **Layout pass:**
+  - Keep open, one “nook” decoration cluster.
+  - Optional: one `BREAKABLE_WALL (░)` suggesting hidden margin passage (future).
 
 **Visual / Atmosphere**
-- **Decorations:** `=` small desk, `~` notes, `o` candle
-- **Environmental Evidence:** Margin notes that warn or guide
+- **Decorations:** small cluster of `╤` + `║` to imply a note desk and one shelf.
+- **Environmental Evidence (choose 1):**
+  - Margin notes that warn or guide (lore)
+  - A bookmark with two page numbers, both true
+- **Lighting notes:** gentle; slightly brighter than forbidden stacks.
+- **3D overrides:** has_ceiling=true
 
 **Spawns**
-- **Enemies:** None (safe havens)
-- **Lore:** High density, short texts (hints)
+- **Enemies:** low density (not none).
+- **Items:** small chance of consumable or scroll.
+- **Lore drops:**
+  - **Delver pool:** [`marginal_note_warning`, `marginal_note_hint`]
+  - **Surface/Authority pool:** [`royal_clerk_memo_excerpt`]
+  - Spawn rule: 40–70% chance; max 1 lore per alcove.
 
 **Acceptance Criteria**
-- [ ] Hidden feel achieved
-- [ ] Hint system works
+- [ ] Feels like a “hidden nook”
+- [ ] Lore spawns frequently enough to matter
+- [ ] Doesn’t become a free safe room
+
+**Test Seeds:** 16051, 16052
 
 ---
 
@@ -154,14 +267,31 @@
 **Status:** `[ ]`
 
 **Purpose:**
-- Rooms adjacent to Arcane Keeper arena. Boss trail props.
+- Pre-boss escalation: paradox doors, rearranged sentences, identity drift hints.
+- Guarantees 3 trail tells and one pre-boss reveal lore.
+
+**Generation**
+- **Eligibility:** 1–3 rooms nearest to boss room center (excluding boss room).
+- **Selection rule:** distance from room.center() to boss_room.center(); tag nearest N.
+- **Layout pass:** keep walkable; avoid heavy hazards.
 
 **Boss Trail Integration**
-- **Trail tells:**
-  - [ ] Pages pinned to walls (same sentence, varied order)
-  - [ ] Mirror-like tile cluster (identity drift hint)
-  - [ ] A door labeled "There was no Door"
+- **Trail tells (pick 3):**
+  - [ ] Pages pinned to walls (same sentence, varied order) (represented by repeated lore fragments)
+  - [ ] Mirror-like cluster (props placed symmetrically but “wrong”)
+  - [ ] A door plaque reading: “There was no Door” (contradiction marker)
+- **Pre-boss reveal text:** “To be understood is to be owned.”
+- **Aftermath hook (future):** post-boss, stacks become less contradictory (visual only).
+
+**Spawns**
+- **Enemies:** moderate; bias toward wraiths/skeletons if available.
+- **Items:** pre-boss supplies (healing).
+- **Lore drops:**
+  - **Delver pool:** [`delver_note_the_library_reads_you`]
+  - **Surface/Authority pool:** [`history_of_valdris_multiple_versions`]
+  - Spawn rule: guarantee 1 lore drop across boss_approach rooms per level.
 
 **Acceptance Criteria**
-- [ ] Knowledge-as-threat theme
-- [ ] Paradox door works
+- [ ] Boss approach tagging reliable
+- [ ] Trail props appear consistently
+- [ ] Paradox feel is clear without special mechanics

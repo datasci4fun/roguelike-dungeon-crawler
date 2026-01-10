@@ -1,385 +1,310 @@
 # Floor 1 — Stone Dungeon (MEMORY)
 
 **Aspect:** MEMORY (what was locked away)
-**Monarchy Anchor:** Keys
+**Monarchy Anchor:** Keys (authority defined by who holds access)
 **Warden:** Goblin King
 
 ---
 
 ## Zone: `cell_blocks` — Cell Blocks
+**Status:** `[ ]`
 
 **Purpose:**
-- Primary zone type for Floor 1. Conveys the prison metaphor that the Field stabilized around. Players should feel confined, surveilled, processed.
+- Primary Floor 1 identity: confinement, labels, processed people.
+- Teaches “authority-as-memory”: the prison decides who you are by where it places you.
 
 **Generation**
 - **Eligibility:**
-  - min_w=6, min_h=6, max_w=12, max_h=12
-  - allowed_room_types=[NORMAL, LARGE]
-  - max_per_level=4
-- **Selection rule:**
-  - Weighted choice (weight=3, highest on floor)
-  - Prefer rooms not adjacent to stairs
+  - min_w=10, min_h=8
+  - allowed_room_types=[NORMAL, LARGE_HALL]
+  - max_per_level=3–5
+- **Selection rule:** weighted choice (highest on floor). Prefer rooms not equal to start room. Prefer rooms with 1–2 entrances.
 - **Layout pass:**
-  - [x] Interior walls: 2x2 or 2x3 cell partitions along walls, leaving central corridor
-  - [x] Doors / bars: Cell doors (locked 30% chance), bar tiles on cell windows
-  - [ ] Special tiles: Drainage grates (cosmetic), shackle points
-  - [x] Connectivity: Central corridor must connect all entrances
+  - [ ] Interior walls: partition into 2×3 “cells” along side walls with a central corridor.
+  - [ ] Doors / bars: use `DOOR_LOCKED (+)` for ~30% of cell doors, `DOOR_UNLOCKED (/)` otherwise.
+  - [ ] Special tiles: optional `BREAKABLE_WALL (░)` for one “weakened cell wall” (future secret).
+  - [ ] Connectivity: central corridor must connect every room entrance; never lock the only path.
 
 **Visual / Atmosphere**
-- **Decorations:**
-  - `#` bars (on cell partitions)
-  - `~` chains/shackles
-  - `%` straw piles
-  - `&` bucket props
-- **Environmental Evidence props:**
-  - Duplicate plaque: same cell number, two prisoner names (1 per cell_blocks zone)
-  - Day-scratch tallies that don't match carved dates (wall decoration)
-- **Lighting notes:**
-  - Darker than corridors; single torch per cell block
-- **3D Overrides:**
-  - has_ceiling: true
-  - skybox_override: None
+- **Decorations (current system):** use Stone theme props (`Θ` pillars, `♪` braziers) sparingly so partitions remain readable.
+- **Optional custom props (if allowed by renderer):** `⛓` chains, `🪣` bucket, `✎` tally marks.
+- **Environmental Evidence (choose 1–2):**
+  - Duplicate plaque: same cell number, two prisoner names
+  - Day-scratch tallies that don’t match carved dates
+  - A key hook with two identical keys (replacement tell)
+- **Lighting notes:** dimmer than corridors; one brazier (`♪`) per cell block room.
+- **3D overrides:** has_ceiling=true, skybox_override=None
 
 **Spawns**
-- **Enemies:**
-  - goblins x1.5, skeletons x1.0, orcs x0.5
-  - Elite chance: default (20%)
-- **Items:**
-  - Keys x1.5 (thematic)
-  - Healing x1.0
+- **Enemies:** goblins x1.5, skeletons x1.0, orcs x0.5
+- **Items:** slight bias toward early survivability (consumables).
+  *(If/when key items exist: bias keys here x1.3.)*
 - **Lore drops:**
-  - **Delver pool:** [`journal_adventurer_1`]
-  - **Surface/Authority pool:** [`warning_stone`]
-  - Spawn rule: 30% chance per zone, max 1 per zone
-
-**Boss Trail Integration**
-- N/A (not boss_approach)
+  - **Delver pool:** [`stone_tattered_journal`]
+  - **Surface/Authority pool:** [`stone_carved_warning`, `prison_transfer_order`]
+  - Spawn rule: 25–35% chance per room in this zone, max 1 lore per room.
 
 **Acceptance Criteria**
-- [ ] Zone can be assigned deterministically with seed
-- [ ] Layout pass never blocks entrances/exits
-- [ ] Visual identity is obvious at a glance (cells visible)
-- [ ] Spawn bias works (goblins more common here)
-- [ ] Lore spawns occur in correct zones
-- [ ] No crashes / invalid tiles / unreachable areas
+- [ ] Deterministic with seed
+- [ ] Partitions never block entrances/exits
+- [ ] Cells are visually obvious at a glance
+- [ ] At least one safe path always exists even with locked cell doors
+- [ ] Spawn bias is noticeable (more goblins than other zones)
 
-**Test Seeds:** 12345, 67890, 11111
+**Test Seeds:** 11001, 11002, 11003
 
 ---
 
-## Zone: `guard_corridors` — Guard Corridors
+## Zone: `guard_corridors` — Guard Corridors (Corridor-Like Rooms)
+**Status:** `[ ]`
 
 **Purpose:**
-- Long, narrow patrol routes. Creates tension through sightlines. Players hear enemies before seeing them.
+- Long sightlines and patrol feel; “you are being watched.”
+- A seam-like zone that connects other pockets and creates exposure.
 
 **Generation**
-- **Eligibility:**
-  - min_w=3, min_h=8 OR min_w=8, min_h=3 (elongated)
-  - allowed_room_types=[CORRIDOR, NORMAL]
-  - max_per_level=3
-- **Selection rule:**
-  - Weight=2
-  - Prefer rooms connecting multiple zones
-- **Layout pass:**
-  - [ ] Interior walls: None (open corridor)
-  - [ ] Alcoves: 1-2 guard alcoves (2x2 recesses) per corridor
-  - [ ] Special tiles: Patrol markers (cosmetic floor tiles)
-  - [x] Connectivity: Must have 2+ exits
-
-**Visual / Atmosphere**
-- **Decorations:**
-  - `!` torch sconces (every 4 tiles)
-  - `|` weapon racks
-  - `=` benches
-- **Environmental Evidence props:**
-  - Two identical keys in different alcoves ("replacement" tell)
-- **Lighting notes:**
-  - Well-lit (patrol route)
-- **3D Overrides:**
-  - has_ceiling: true
-
-**Spawns**
-- **Enemies:**
-  - goblins x1.0, skeletons x1.5 (guard echoes)
-  - Elite chance: 25% (tougher patrols)
-- **Items:**
-  - Weapons x1.3
-- **Lore drops:**
-  - **Delver pool:** []
-  - **Surface/Authority pool:** [`prison_transfer_order`]
-  - Spawn rule: 20% chance, max 1
-
-**Acceptance Criteria**
-- [ ] Elongated room detection works
-- [ ] Alcoves don't block main path
-- [ ] Sightlines feel long and exposed
-
-**Test Seeds:** TBD
-
----
-
-## Zone: `wardens_office` — Warden's Office
-
-**Purpose:**
-- Anchor room. The seat of prison authority—now empty, keys still hanging. Guaranteed lore/item spawn.
-
-**Generation**
-- **Eligibility:**
-  - min_w=5, min_h=5, max_w=8, max_h=8
+- **Eligibility:** elongated rooms:
+  - min_w=3, min_h=10 OR min_w=10, min_h=3
   - allowed_room_types=[NORMAL]
-  - max_per_level=1 (anchor room)
-- **Selection rule:**
-  - Promote to anchor status
-  - Prefer room near center of level (not adjacent to stairs or boss)
+  - max_per_level=2–4
+- **Selection rule:** prefer rooms that connect multiple corridors/regions (proxy: rooms with 2+ corridor connections).
 - **Layout pass:**
-  - [ ] Interior walls: Desk area (2x3 blocked tiles representing desk)
-  - [ ] Shelves: Wall-adjacent shelf tiles
-  - [ ] Special tiles: Key stash (guaranteed key spawn point)
-  - [x] Connectivity: Single entrance preferred (defensible)
+  - [ ] Alcoves: carve 1–2 small 2×2 recesses along sides (pure floor shaping).
+  - [ ] No interior wall partitions by default (keep readable).
+  - [ ] Connectivity: must keep entrances clear and line-of-sight long.
 
 **Visual / Atmosphere**
-- **Decorations:**
-  - `=` desk
-  - `[` `]` shelves
-  - `o` key rack
-  - `~` papers/scrolls
-- **Environmental Evidence props:**
-  - Registry with names that shift between reads (implied, not mechanical yet)
-- **Lighting notes:**
-  - Single central light source
-- **3D Overrides:**
-  - has_ceiling: true
-  - Desk prop (3D model candidate)
+- **Decorations:** sparse. Use occasional `Θ` pillar at alcove edges and `♪` brazier every ~6–8 tiles if long enough.
+- **Environmental Evidence (choose 1):**
+  - Two identical keys placed in separate alcoves
+  - Patrol tally marks that restart mid-line
+  - A plaque that reads “GUARD POST” and “PRISONER HALL” in equal weathering
+- **Lighting notes:** brighter than cell blocks (patrol routes are lit).
+- **3D overrides:** has_ceiling=true
 
 **Spawns**
-- **Enemies:**
-  - Lower spawn rate (0.5x all)
-  - Elite chance: 0% (loot room, not combat room)
-- **Items:**
-  - Keys: guaranteed 1
-  - Lore: guaranteed 1
+- **Enemies:** skeletons x1.4 (guard echoes), goblins x1.0
+- **Items:** slight bias toward weapons/armor (guards leave gear).
 - **Lore drops:**
-  - **Delver pool:** [`journal_adventurer_1`]
-  - **Surface/Authority pool:** [`prison_transfer_order`, `duplicate_inscription`]
-  - Spawn rule: 100% chance, 1 guaranteed
+  - **Delver pool:** [`delver_warning_prison_is_for_you`]
+  - **Surface/Authority pool:** [`prison_transfer_order`]
+  - Spawn rule: 15–25% chance, max 1 lore in this zone.
 
 **Acceptance Criteria**
-- [ ] Exactly 1 per level
-- [ ] Key always spawns
-- [ ] Lore always spawns
-- [ ] Desk doesn't block entrance
+- [ ] Long exposed sightline feel is preserved
+- [ ] Alcoves do not block movement
+- [ ] Does not become cluttered
 
-**Test Seeds:** TBD
+**Test Seeds:** 11011, 11012
+
+---
+
+## Zone: `wardens_office` — Warden’s Office (Anchor)
+**Status:** `[ ]`
+
+**Purpose:**
+- Seat of prison authority—paperwork, keys, the “official truth.”
+- Anchor room that introduces the monarchy rewrite theme early.
+
+**Generation**
+- **Eligibility:**
+  - min_w=6, min_h=6, max_per_level=1
+  - allowed_room_types=[NORMAL]
+- **Selection rule:** choose a mid-map room (center-ish), not start room, not boss cluster.
+- **Layout pass:**
+  - [ ] Desk block: reserve a 2×3 “desk” footprint by leaving floor but placing dense decorations.
+  - [ ] Shelf rows: 1-tile wide shelf strips along walls (decorations or interior wall stubs if supported).
+  - [ ] Key rack corner: small prop cluster.
+  - [ ] Connectivity: single entrance preferred but not required; never block.
+
+**Visual / Atmosphere**
+- **Decorations:** higher density of `Θ`/`♪` plus “paperwork” props if supported.
+- **Environmental Evidence:**
+  - A registry page where one line is blank (surname missing)
+  - A seal stamp that looks correct until you stare at it
+- **Lighting notes:** one central light source (feels “official”).
+- **3D overrides:** has_ceiling=true
+
+**Spawns**
+- **Enemies:** low-to-normal density (not zero).
+- **Items:** guarantee 1 lore drop here; slight bias toward utility.
+- **Lore drops:**
+  - **Delver pool:** [`stone_tattered_journal`]
+  - **Surface/Authority pool:** [`prison_transfer_order`, `stone_duplicate_inscription`]
+  - Spawn rule: 100% for 1 lore here.
+
+**Acceptance Criteria**
+- [ ] Exactly one per level
+- [ ] Reads immediately as “office/records”
+- [ ] Lore always spawns
+- [ ] No accidental softlocks due to decoration density
+
+**Test Seeds:** 11021, 11022
 
 ---
 
 ## Zone: `execution_chambers` — Execution Chambers
+**Status:** `[ ]`
 
 **Purpose:**
-- Dark set piece. Drains, hooks, pit. The Field remembers punishment. High danger, high reward.
+- Punishment remembered as architecture: drains, hooks, a place where meaning was taken.
+- High tension set piece without requiring new tile types.
 
 **Generation**
 - **Eligibility:**
-  - min_w=6, min_h=6
-  - allowed_room_types=[NORMAL, LARGE]
-  - max_per_level=1
-- **Selection rule:**
-  - Weight=1
-  - Prefer rooms far from stairs (deep in level)
+  - min_w=8, min_h=8
+  - allowed_room_types=[NORMAL, LARGE_HALL]
+  - max_per_level=1–2
+- **Selection rule:** prefer rooms far from start (late exploration).
 - **Layout pass:**
-  - [ ] Interior walls: None
-  - [ ] Hazards: Central pit (1-2 damage if stepped on), drain grates
-  - [ ] Special tiles: Hook tiles (ceiling decoration markers)
-  - [x] Connectivity: 1-2 exits
+  - [ ] Central hazard: use `TRAP_VISIBLE (^)` as “pit trap” cluster (1–3 tiles).
+    *(No new pit tile required.)*
+  - [ ] Drain line: a short `DEEP_WATER (≈)` strip at one edge (optional).
+  - [ ] Keep 1–2 clear routes around hazards.
 
 **Visual / Atmosphere**
-- **Decorations:**
-  - `v` hooks (ceiling)
-  - `O` pit/drain
-  - `~` bloodstains (floor)
-  - `#` grate
-- **Environmental Evidence props:**
-  - Execution log with dates that don't match (surface doc style)
-- **Lighting notes:**
-  - Very dark, single dim light
-- **3D Overrides:**
-  - has_ceiling: true
-  - Pit model (depth effect)
+- **Decorations:** minimal; 1–2 braziers max, a couple pillars. Let hazard read.
+- **Environmental Evidence:**
+  - An “execution log” plaque where dates contradict
+- **Lighting notes:** darker than average.
+- **3D overrides:** has_ceiling=true
 
 **Spawns**
-- **Enemies:**
-  - wraiths x2.0 (execution echoes)
-  - Elite chance: 30%
-- **Items:**
-  - Rare loot x1.5
+- **Enemies:** wraiths bias x1.5 if present on this depth; otherwise skeletons x1.2
+- **Items:** slight bias toward rare loot (risk/reward room).
 - **Lore drops:**
-  - **Delver pool:** []
-  - **Surface/Authority pool:** [`execution_log`]
-  - Spawn rule: 40% chance
+  - **Delver pool:** [`delver_last_words_scratched`]
+  - **Surface/Authority pool:** [`execution_log_plaque`]
+  - Spawn rule: 30–45% chance, max 1 lore.
 
 **Acceptance Criteria**
-- [ ] Pit hazard works (damage on step)
-- [ ] Wraith bias visible in spawn distribution
-- [ ] Atmosphere feels ominous
+- [ ] Hazards are avoidable (no unavoidable damage)
+- [ ] Atmosphere reads as “punishment chamber”
+- [ ] Spawn bias feels different from cell blocks
 
-**Test Seeds:** TBD
+**Test Seeds:** 11031, 11032
 
 ---
 
 ## Zone: `record_vaults` — Record Vaults
+**Status:** `[ ]`
 
 **Purpose:**
-- Lore-dense zone. Shelves, plaques, "missing names." Primary surface document spawn location.
+- Lore-dense zone: missing names, duplicate inscriptions, “official history” rot.
+- Primary surface-document drop location for Floor 1.
 
 **Generation**
 - **Eligibility:**
-  - min_w=5, min_h=5
+  - min_w=6, min_h=6
   - allowed_room_types=[NORMAL]
-  - max_per_level=2
-- **Selection rule:**
-  - Weight=1.5
-  - Bias toward rooms with single entrance (vault feel)
+  - max_per_level=1–3
+- **Selection rule:** prefer rooms with fewer entrances (vault feel).
 - **Layout pass:**
-  - [ ] Interior walls: Shelf rows (1-tile wide, 3-4 tiles long)
-  - [ ] Special tiles: Plaque tiles (wall markers)
-  - [x] Connectivity: Narrow entrance corridor if possible
+  - [ ] Shelf rows: 2–4 short shelf strips (decorations or interior wall stubs later).
+  - [ ] Plaque walls: place 1–2 wall-adjacent evidence props.
 
 **Visual / Atmosphere**
-- **Decorations:**
-  - `[` `]` shelves
-  - `~` scrolls
-  - `=` plaque
-- **Environmental Evidence props:**
-  - Duplicate plaque: same room name, two monarchs (guaranteed)
-  - Missing name slots on registry boards
-- **Lighting notes:**
-  - Dim, dusty atmosphere
-- **3D Overrides:**
-  - has_ceiling: true
-  - Shelf props
+- **Decorations:** more “shelf-like” clustering; use `Θ`/`♪` sparingly to avoid clutter.
+- **Environmental Evidence (guarantee 1):**
+  - Duplicate plaque: same room name, two monarchs
+  - Missing-name slots on registry boards
+- **Lighting notes:** dim, dusty.
+- **3D overrides:** has_ceiling=true
 
 **Spawns**
-- **Enemies:**
-  - skeletons x1.5 (record keepers)
-  - Low overall spawn rate (0.7x)
-- **Items:**
-  - Lore x3.0 (primary lore zone)
-  - Scrolls x2.0
+- **Enemies:** skeletons x1.4 (record keepers), overall density x0.8
+- **Items:** lore x2.0 (highest on floor).
 - **Lore drops:**
-  - **Delver pool:** [`journal_adventurer_1`]
-  - **Surface/Authority pool:** [`warning_stone`, `duplicate_inscription`, `prison_transfer_order`]
-  - Spawn rule: 60% chance, max 2 per zone
+  - **Delver pool:** [`stone_tattered_journal`]
+  - **Surface/Authority pool:** [`stone_carved_warning`, `stone_duplicate_inscription`, `prison_transfer_order`]
+  - Spawn rule: 50–70% chance, allow up to 2 lore drops across this zone per level.
 
 **Acceptance Criteria**
-- [ ] Shelf layout doesn't create dead ends
-- [ ] Lore spawn rate noticeably higher here
-- [ ] Plaque props visible
+- [ ] Lore presence noticeably higher here
+- [ ] Shelving doesn’t create accidental dead ends
+- [ ] Evidence prop appears reliably
 
-**Test Seeds:** TBD
+**Test Seeds:** 11041, 11042
 
 ---
 
-## Zone: `intake_hall` — Intake Hall
+## Zone: `intake_hall` — Intake Hall (Start Room Anchor)
+**Status:** `[ ]`
 
 **Purpose:**
-- Near stairs. "Orientation" room for new prisoners (and new players). Tutorial-friendly zone.
+- “Orientation” room: the place the prison begins processing you.
+- Serves as a tutorial-friendly staging area.
 
 **Generation**
-- **Eligibility:**
-  - min_w=5, min_h=5
-  - allowed_room_types=[NORMAL]
-  - max_per_level=1
-- **Selection rule:**
-  - **Must be adjacent to entry stairs**
-  - Promote to anchor status
+- **Eligibility:** max_per_level=1
+- **Selection rule:** assign to the **start room** (the room containing player spawn on Floor 1).
 - **Layout pass:**
-  - [ ] Interior walls: Processing desk area
-  - [ ] Special tiles: Sign tiles (tutorial markers)
-  - [x] Connectivity: Must connect to stairs
+  - [ ] Keep open and readable.
+  - [ ] Optional “counter” area (decoration cluster) suggesting processing.
 
 **Visual / Atmosphere**
-- **Decorations:**
-  - `=` desk/counter
-  - `!` sign posts
-  - `o` key hook (empty)
-- **Environmental Evidence props:**
-  - Intake form with your name... and another name crossed out
-- **Lighting notes:**
-  - Well-lit (entry point)
-- **3D Overrides:**
-  - has_ceiling: true
+- **Decorations:** slightly brighter; 1 brazier and 0–1 pillar.
+- **Environmental Evidence:**
+  - Intake form with your name… and another name crossed out (lore prop)
+- **Lighting notes:** well lit.
+- **3D overrides:** has_ceiling=true
 
 **Spawns**
-- **Enemies:**
-  - Very low (0.3x all) — tutorial safety
-  - Elite chance: 0%
-- **Items:**
-  - Basic items guaranteed (tutorial loot)
+- **Enemies:** very low density; elite chance 0% here (safety start).
+- **Items:** small guaranteed basics (existing item system).
 - **Lore drops:**
-  - **Delver pool:** [`journal_adventurer_1`]
-  - **Surface/Authority pool:** []
-  - Spawn rule: 50% chance
+  - **Delver pool:** [`stone_tattered_journal`] (low chance)
+  - **Surface/Authority pool:** [`intake_form_crossed_name`]
+  - Spawn rule: 25–40% chance for 1 lore here.
 
 **Acceptance Criteria**
-- [ ] Always adjacent to entry stairs
-- [ ] Low danger (new player friendly)
-- [ ] Tutorial messaging possible here
+- [ ] Always the start room
+- [ ] Low threat
+- [ ] Readable layout (no clutter)
 
-**Test Seeds:** TBD
+**Test Seeds:** any (always present)
 
 ---
 
-## Zone: `boss_approach` — Boss Approach (Threshold Corridors)
+## Zone: `boss_approach` — Boss Approach (Threshold Seams)
+**Status:** `[ ]`
 
 **Purpose:**
-- Rooms adjacent to Goblin King arena. Boss trail props. Tension escalation before boss fight.
+- Guarantees boss foreshadowing and escalation before Goblin King.
+- Provides consistent “trail tells” even though corridors aren’t rooms.
 
 **Generation**
-- **Eligibility:**
-  - Any room directly adjacent to boss room
-  - max_per_level=2-3 (depends on boss room connectivity)
-- **Selection rule:**
-  - **Automatic assignment** for rooms adjacent to boss
-- **Layout pass:**
-  - [ ] Interior walls: None (open approach)
-  - [ ] Special tiles: Trail prop markers
-  - [x] Connectivity: Must connect to boss room
+- **Eligibility:** 1–3 rooms closest (by center distance) to the boss room center, excluding the boss room.
+- **Selection rule:** compute distance from each room.center() to boss_room.center(); tag nearest N.
+- **Layout pass:** keep walkable; avoid heavy hazards here.
 
 **Visual / Atmosphere**
-- **Decorations:**
-  - Crown made from wax seals + chain links (floor prop)
-  - Braziers arranged like seal sigil circle
-  - Key ring decoration (keys that open nothing)
-- **Environmental Evidence props:**
-  - Warden's final log: "The keys... he took all the keys"
-- **Lighting notes:**
-  - Flickering, unstable
-- **3D Overrides:**
-  - Brazier glow effects
+- **Decorations:** more braziers than average (flicker tension).
+  *(No special glyphs required; keep to `♪`, `Θ`.)*
+- **Environmental Evidence (choose 1):**
+  - “The keys… he took all the keys.” (short carved line)
+  - Crown made from seal wax (prop cluster)
+- **Lighting notes:** unstable/flickery in feel (later via renderer); for now: denser braziers.
 
 **Spawns**
-- **Enemies:**
-  - goblins x2.0 (king's guards)
-  - Elite chance: 35%
-- **Items:**
-  - Pre-boss supplies (healing)
+- **Enemies:** goblins x2.0; elite chance remains default (20%) unless you later raise globally near boss.
+- **Items:** pre-boss supplies bias (healing).
 - **Lore drops:**
-  - **Delver pool:** []
-  - **Surface/Authority pool:** [`boss_approach_warning`]
-  - Spawn rule: 30% chance
+  - **Delver pool:** [`delver_warning_king_has_keys`]
+  - **Surface/Authority pool:** [`boss_approach_warning_plaque`]
+  - Spawn rule: guarantee 1 lore drop across boss_approach rooms per level.
 
 **Boss Trail Integration**
-- **Trail tells:**
-  - [x] Crown made from official wax seals + chain links
-  - [x] Braziers arranged like a seal sigil circle
-  - [x] "Key ring" decoration near lair (keys that open nothing)
-- **Pre-boss "reveal" artifact:** Warden's final order (lore pickup)
-- **Aftermath hook:** Keys now work on previously locked cells (optional)
+- **Trail tells (pick 3):**
+  - [ ] A “crown” made from seal wax + chain links (decoration cluster)
+  - [ ] Braziers arranged in a crude sigil circle
+  - [ ] Key ring decoration near the route (keys that open nothing)
+- **Pre-boss reveal:** “The jailer forgot the prison. The prison remembered the jailer.”
+- **Aftermath hook (future):** keys begin appearing more often after boss defeat (meta feel).
 
 **Acceptance Criteria**
-- [ ] Always assigned to boss-adjacent rooms
-- [ ] Trail props reliably spawn
-- [ ] Tension feels elevated
-- [ ] Boss door/entrance visible from here
+- [ ] Assigned reliably near boss room
+- [ ] Trail tells appear consistently
+- [ ] Does not block navigation
 
-**Test Seeds:** TBD
+**Test Seeds:** 11051, 11052
