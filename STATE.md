@@ -1,8 +1,41 @@
 # Project State
 
-**Last Updated:** 2026-01-09
-**Branch:** develop
+**Last Updated:** 2026-01-10
+**Branch:** feature/lore-compendium
 **Version:** v5.4.0 (Lore Codex System)
+
+---
+
+## In Progress: Lore Compendium
+
+**Branch:** `feature/lore-compendium`
+**Commit:** `ea7a997` - feat: add comprehensive lore compendium with Skyfall Seed canon
+
+### New Lore Canon: The Skyfall Seed
+
+Complete world lore rewrite introducing the Skyfall Seed mythos (1326 lines):
+
+| Section | Description |
+|---------|-------------|
+| **Prologue: The Wound Beneath** | Reality-editing threat, no coherent survivors return |
+| **The Skyfall Seed** | What Fell, The Field, narrative substitution mechanics |
+| **The Counterfeit Reign** | Monarchy rewrite threat driving player motivation |
+| **Dungeon Depths** | All 8 levels as Field pockets/aspects |
+| **Bestiary** | Field-consistent enemy descriptions |
+| **Wardens** | 8 bosses with "What It Was / What It Became" backstories |
+| **Echoes & Imprints** | Ghost mechanics (death) and victory legacy types |
+| **Discoverable Lore** | Contradictory historical records showing Field edits |
+| **Victory & Death** | Cinematics matching new canon |
+| **Terminology** | Field, Pocket, Seam, Warden, Echo, Imprint definitions |
+
+### Key Concepts
+
+- **The Field**: Reality-editing influence that spreads via narrative substitution
+- **Pockets**: Crystallized layers of edited reality (dungeon levels)
+- **Seams**: Thin corridors between pockets where Field grip is weaker
+- **Wardens**: Former beings transformed into living locks sealing the Seed
+- **Echoes**: Ghostly patterns left by death (Echo, Hollowed, Silence)
+- **Imprints**: Victory legacies burned into reality (Beacon, Champion, Archivist)
 
 ---
 
