@@ -48,7 +48,29 @@
 > vanishing from records within days.
 >
 > No one returns with a story that holds.
->
+
+---
+
+*Last week, your mother called you by a different name.*
+
+*Not as a mistake—like she had never known any other.*
+
+*In the town registry, your birth record has a thin blank line where your surname should be. The clerk smiles and asks if you are feeling well.*
+
+*A storm rolls over the hills that night.*
+
+*In the morning, your house key fits your door… and also your neighbor's. Your neighbor insists it has always been that way.*
+
+*At noon, the palace bell rings twice—two coronations, separated by a breath. The city applauds both.*
+
+*By evening, your brother's portrait is still on the mantle. But no one can remember who the boy is.*
+
+*That is when you understand: the Field is no longer underground.*
+
+*It is choosing what the world has always been.*
+
+---
+
 > Yet sky-touched artifacts keep leaking to the surface:
 > proof without context, treasures that remember nothing.
 >
@@ -85,7 +107,7 @@ The Field is not omnipotent. It operates under constraints that make survival—
 
 - **It requires anchors.** The Field spreads through symbols of legitimate authority: crowns, seals, oaths, records, bloodlines. Without an anchor, it cannot edit.
 - **It edits consensus, not physics.** The Field changes what is *agreed upon*, not raw matter. A stone is a stone. But who *owns* the stone, who *named* the stone, what the stone *means*—these can be rewritten.
-- **It cannot rewrite the unwitnessed.** Events that leave no record, no memory, no trace are immune. This is why delvers matter—and why the Field consumes their stories on the way out.
+- **It cannot rewrite the unwitnessed.** Events that leave no record, no memory, no trace are immune. This is why delvers matter—and why the Field consumes their stories on the way out. *Artifacts are witnesses. They carry edits into the surface world and make them harder to deny.*
 - **Storm pulses accelerate edits.** When lightning strikes the fault lines above the Seed, the Field *surges*. Major rewrites happen during storms.
 - **Seams are low-signal corridors.** The passages between pockets are where the Field's grip is thinnest. Travel is possible because the seams are not yet fully written.
 - **Contradictions can coexist.** The Field does not resolve paradoxes; it makes them *both true*. Two histories, two kings, two versions—all equally real until one is witnessed more than the other.
@@ -110,18 +132,20 @@ These sky-touched relics are proof that something real exists below—something 
 
 **Known Sky-Touched Artifacts:**
 
-| Artifact | Description |
-|----------|-------------|
-| **The Duplicate Seal** | A royal stamp that creates a second impression during storms—one on the document, one somewhere else. Both authentic. |
-| **Crown-Splinter** | A fragment of regalia that causes viewers to remember two versions of the same event, equally vivid. |
-| **Woundglass Shard** | A mirror fragment that shows rooms that don't exist in its reflection—until you enter them. |
-| **Ledger of the Unborn** | A book that adds names to genealogies. The people appear within weeks, insisting they've always existed. |
-| **Torch of Borrowed Hours** | Burns time instead of oil. While lit, aging stops for the holder—but continues somewhere else. |
-| **Chain-Link of Stasis** | A single link from an unknown chain. Whatever it touches slows. Whatever it binds stops. |
-| **The Warden's Key** | Opens locks that shouldn't exist. The rooms behind them contain things that were never locked away. |
-| **Oathstone** | A smooth rock that records spoken promises. Breaking an oath recorded on it erases the oathbreaker from one person's memory. |
+| Artifact | Description | Cost |
+|----------|-------------|------|
+| **The Duplicate Seal** | A royal stamp that creates a second impression during storms—one on the document, one somewhere else. Both authentic. | Each use teaches the Field a new signature; the next decree it writes will sound more convincing than the last. |
+| **Crown-Splinter** | A fragment of regalia that causes viewers to remember two versions of the same event, equally vivid. | The longer you hold it, the harder it becomes to prove which version hurt you. |
+| **Woundglass Shard** | A mirror fragment that shows rooms that don't exist in its reflection—until you enter them. | Each time you step into what it shows, something real elsewhere is "made room" for. |
+| **Ledger of the Unborn** | A book that adds names to genealogies. The people appear within weeks, insisting they've always existed. | A new name pushes an old one out; someone living becomes harder to remember each time the ink dries. |
+| **Torch of Borrowed Hours** | Burns time instead of oil. While lit, aging stops for the holder—but continues somewhere else. | The hours are not free; the debt comes due in someone you love, at a moment you cannot choose. |
+| **Chain-Link of Stasis** | A single link from an unknown chain. Whatever it touches slows. Whatever it binds stops. | Stasis spreads by sympathy—freeze one thing long enough, and nearby lives begin to lose their future tense. |
+| **The Warden's Key** | Opens locks that shouldn't exist. The rooms behind them contain things that were never locked away. | Every door it opens convinces the dungeon there should have been a door there all along. |
+| **Oathstone** | A smooth rock that records spoken promises. Breaking an oath recorded on it erases the oathbreaker from one person's memory. | The stone is hungry for vows; each promise taken makes the next break erase you from more than one mind. |
 
 These artifacts surface during storms. Collectors hoard them. Scholars study them. No one knows which drawer or vault they will escape to next.
+
+*The artifacts are not treasures. They are interfaces. They do not merely grant power—they increase the Field's vocabulary.*
 
 ---
 
