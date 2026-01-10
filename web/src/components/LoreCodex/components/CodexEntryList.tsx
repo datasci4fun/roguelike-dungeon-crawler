@@ -1,7 +1,37 @@
 /**
  * CodexEntryList - List of lore entries within selected category
  */
-import type { LoreEntry } from '../types';
+import type { LoreEntry, LoreItemType } from '../types';
+
+function getEntryIcon(itemType: LoreItemType): string {
+  switch (itemType) {
+    case 'book':
+    case 'chronicle':
+      return '+';
+    case 'bestiary':
+      return 'M';
+    case 'location':
+      return 'L';
+    case 'character':
+      return 'C';
+    case 'artifact':
+      return '*';
+    case 'scroll':
+    default:
+      return '?';
+  }
+}
+
+function formatItemType(itemType: LoreItemType): string {
+  switch (itemType) {
+    case 'bestiary':
+      return 'creature';
+    case 'chronicle':
+      return 'history';
+    default:
+      return itemType;
+  }
+}
 
 interface CodexEntryListProps {
   entries: LoreEntry[];
@@ -31,10 +61,10 @@ export function CodexEntryList({
           onClick={() => onSelectEntry(entry.id)}
         >
           <span className="entry-icon">
-            {entry.item_type === 'book' ? '+' : '?'}
+            {getEntryIcon(entry.item_type)}
           </span>
           <span className="entry-title">{entry.title}</span>
-          <span className="entry-type">{entry.item_type}</span>
+          <span className="entry-type">{formatItemType(entry.item_type)}</span>
         </button>
       ))}
     </div>

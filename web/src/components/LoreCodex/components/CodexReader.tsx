@@ -1,9 +1,12 @@
 /**
- * CodexReader - Reading pane that delegates to scroll or book presentation
+ * CodexReader - Reading pane that delegates to category-specific presentations
  */
-import type { LoreEntry, TransitionState } from '../types';
+import type { LoreEntry, TransitionState, CreatureEntry, LocationEntry } from '../types';
+import { isCreatureEntry, isLocationEntry } from '../types';
 import { ScrollPresentation } from './ScrollPresentation';
 import { BookPresentation } from './BookPresentation';
+import { CreaturePresentation } from './CreaturePresentation';
+import { LocationPresentation } from './LocationPresentation';
 
 interface CodexReaderProps {
   entry: LoreEntry | null;
@@ -22,6 +25,34 @@ function EmptyState() {
   );
 }
 
+function getPresentation(entry: LoreEntry) {
+  // Check for extended entry types first
+  if (isCreatureEntry(entry)) {
+    return CreaturePresentation;
+  }
+  if (isLocationEntry(entry)) {
+    return LocationPresentation;
+  }
+
+  // Fall back to item_type based presentation
+  switch (entry.item_type) {
+    case 'bestiary':
+      // Shouldn't reach here due to type guard, but handle gracefully
+      return ScrollPresentation;
+    case 'location':
+      // Shouldn't reach here due to type guard, but handle gracefully
+      return ScrollPresentation;
+    case 'book':
+    case 'chronicle':
+      return BookPresentation;
+    case 'scroll':
+    case 'character':
+    case 'artifact':
+    default:
+      return ScrollPresentation;
+  }
+}
+
 export function CodexReader({ entry, transitionState }: CodexReaderProps) {
   if (!entry) {
     return (
@@ -31,9 +62,24 @@ export function CodexReader({ entry, transitionState }: CodexReaderProps) {
     );
   }
 
-  const Presentation = entry.item_type === 'book'
-    ? BookPresentation
-    : ScrollPresentation;
+  const Presentation = getPresentation(entry);
+
+  // Type narrowing for specialized presentations
+  if (isCreatureEntry(entry)) {
+    return (
+      <div className={`codex-reader transition-${transitionState}`}>
+        <CreaturePresentation entry={entry} />
+      </div>
+    );
+  }
+
+  if (isLocationEntry(entry)) {
+    return (
+      <div className={`codex-reader transition-${transitionState}`}>
+        <LocationPresentation entry={entry} />
+      </div>
+    );
+  }
 
   return (
     <div className={`codex-reader transition-${transitionState}`}>

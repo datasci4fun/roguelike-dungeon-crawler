@@ -113,6 +113,123 @@ class StoryManager:
                 })
         return entries
 
+    def get_bestiary_entries(self) -> list:
+        """
+        Get bestiary entries for all encountered enemies.
+
+        Returns:
+            List of dicts with creature data for codex display
+        """
+        from ..core.constants import ENEMY_STATS, BOSS_STATS, EnemyType, BossType
+        from .story_data import ENEMY_ENCOUNTER_MESSAGES
+
+        entries = []
+
+        # Regular enemies
+        for enemy_name in sorted(self.encountered_enemies):
+            # Find the matching enemy type
+            enemy_data = None
+            for enemy_type, stats in ENEMY_STATS.items():
+                if stats['name'] == enemy_name:
+                    enemy_data = stats
+                    break
+
+            # Check if it's a boss
+            is_boss = False
+            for boss_type, boss_stats in BOSS_STATS.items():
+                if boss_stats['name'] == enemy_name:
+                    enemy_data = boss_stats
+                    is_boss = True
+                    break
+
+            if enemy_data:
+                encounter_text = ENEMY_ENCOUNTER_MESSAGES.get(enemy_name, f"You have encountered a {enemy_name}.")
+                entry = {
+                    'id': f'creature_{enemy_name.lower().replace(" ", "_")}',
+                    'title': enemy_name,
+                    'content': [encounter_text],
+                    'category': 'creatures',
+                    'item_type': 'bestiary',
+                    'creature_data': {
+                        'symbol': enemy_data.get('symbol', '?'),
+                        'name': enemy_name,
+                        'hp': enemy_data.get('hp', 0),
+                        'damage': enemy_data.get('damage', 0),
+                        'xp': enemy_data.get('xp', 0),
+                        'is_boss': is_boss,
+                        'abilities': enemy_data.get('abilities', []),
+                        'resistances': enemy_data.get('resistances', {}),
+                        'element': enemy_data.get('element', {}).name if enemy_data.get('element') else None,
+                        'level_range': [enemy_data.get('min_level', 1), enemy_data.get('max_level', 8)],
+                        'first_encounter_text': encounter_text,
+                        'description': enemy_data.get('description', ''),
+                    }
+                }
+                entries.append(entry)
+
+        return entries
+
+    def get_location_entries(self) -> list:
+        """
+        Get location entries for all visited levels.
+
+        Returns:
+            List of dicts with location data for codex display
+        """
+        from ..core.constants import (
+            LEVEL_THEMES, LEVEL_BOSS_MAP, BOSS_STATS, THEME_TILES,
+            ENEMY_STATS, DungeonTheme
+        )
+        from .story_data import LEVEL_INTRO_MESSAGES
+
+        entries = []
+
+        for level in sorted(self.visited_levels):
+            # Get theme for this level
+            theme = LEVEL_THEMES.get(level, DungeonTheme.STONE)
+            theme_data = THEME_TILES.get(theme, {})
+            biome_name = theme_data.get('description', f'Level {level}')
+
+            # Get intro message
+            intro_message = LEVEL_INTRO_MESSAGES.get(level, f'You enter dungeon level {level}.')
+
+            # Get boss info for this level
+            boss_type = LEVEL_BOSS_MAP.get(level)
+            boss_name = None
+            boss_symbol = None
+            if boss_type and boss_type in BOSS_STATS:
+                boss_data = BOSS_STATS[boss_type]
+                boss_name = boss_data.get('name')
+                boss_symbol = boss_data.get('symbol')
+
+            # Get creatures that can spawn on this level
+            creatures = []
+            for enemy_type, stats in ENEMY_STATS.items():
+                min_level = stats.get('min_level', 1)
+                max_level = stats.get('max_level', 8)
+                if min_level <= level <= max_level:
+                    creatures.append(stats['name'])
+
+            entry = {
+                'id': f'location_level_{level}',
+                'title': biome_name,
+                'content': [intro_message],
+                'category': 'locations',
+                'item_type': 'location',
+                'location_data': {
+                    'level': level,
+                    'biome_id': theme.name.lower(),
+                    'biome_name': biome_name,
+                    'intro_message': intro_message,
+                    'boss_name': boss_name,
+                    'boss_symbol': boss_symbol,
+                    'creatures': creatures,
+                }
+            }
+            entries.append(entry)
+
+        return entries
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize story state to dictionary for saving."""
         return {

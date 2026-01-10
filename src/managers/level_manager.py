@@ -42,6 +42,10 @@ class LevelManager:
         self.game.max_level_reached = max(self.game.max_level_reached, self.game.current_level)
         self.game.add_message(f"You descend to level {self.game.current_level}...")
 
+        # Register level visit for location codex
+        if hasattr(self.game, 'story_manager') and self.game.story_manager:
+            self.game.story_manager.visit_level(self.game.current_level)
+
         # Generate new dungeon
         has_up = self.game.current_level > 1
         self.game.dungeon = Dungeon(level=self.game.current_level, has_stairs_up=has_up)
@@ -107,6 +111,10 @@ class LevelManager:
     def initialize_level(self, level: int = 1):
         """Initialize a new game level."""
         self.game.current_level = level
+
+        # Register level visit for location codex
+        if hasattr(self.game, 'story_manager') and self.game.story_manager:
+            self.game.story_manager.visit_level(level)
 
         # Generate dungeon
         has_up = level > 1

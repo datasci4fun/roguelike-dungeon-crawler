@@ -9,7 +9,32 @@ export type UIMode = 'GAME' | 'INVENTORY' | 'CHARACTER' | 'HELP' | 'MESSAGE_LOG'
 
 // Lore system types
 export type LoreCategory = 'history' | 'characters' | 'creatures' | 'locations' | 'artifacts';
-export type LoreItemType = 'scroll' | 'book';
+export type LoreItemType = 'scroll' | 'book' | 'bestiary' | 'location' | 'character' | 'artifact' | 'chronicle';
+
+export interface CreatureData {
+  symbol: string;
+  name: string;
+  hp: number;
+  damage: number;
+  xp: number;
+  is_boss: boolean;
+  abilities?: string[];
+  resistances?: Record<string, number>;
+  element?: string;
+  level_range?: [number, number];
+  first_encounter_text: string;
+  description?: string;
+}
+
+export interface LocationData {
+  level: number;
+  biome_id: string;
+  biome_name: string;
+  intro_message: string;
+  boss_name?: string;
+  boss_symbol?: string;
+  creatures: string[];
+}
 
 export interface LoreEntry {
   id: string;
@@ -17,6 +42,9 @@ export interface LoreEntry {
   content: string[];
   category: LoreCategory;
   item_type: LoreItemType;
+  // Extended data for specific entry types
+  creature_data?: CreatureData;
+  location_data?: LocationData;
 }
 
 export interface FacingDirection {
