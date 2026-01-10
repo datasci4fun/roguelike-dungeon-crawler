@@ -1,7 +1,7 @@
 """Dungeon generation using Binary Space Partitioning."""
 import random
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from ..core.constants import (
     TileType, DungeonTheme, RoomType, TrapType, HazardType,
@@ -26,6 +26,7 @@ class Room:
     width: int
     height: int
     room_type: RoomType = RoomType.NORMAL
+    zone: str = "generic"
 
     def center(self) -> Tuple[int, int]:
         """Return the center coordinates of the room."""
@@ -193,6 +194,12 @@ class Dungeon:
         # Classify room types
         self._classify_rooms()
 
+        # Assign zone identities (drives decorations, spawns, lore)
+        self._assign_zones()
+
+        # Apply zone-specific layout modifications (interior walls, special tiles)
+        self._apply_zone_layouts()
+
         # Place stairs
         self._place_stairs()
 
@@ -303,6 +310,189 @@ class Dungeon:
                 elif rand < 0.2:
                     room.room_type = RoomType.TREASURY
                 # else: remains NORMAL
+
+    def _assign_zones(self):
+        """Assign zone identities to rooms based on dungeon level.
+
+        Zones drive decorations, spawn bias, and lore drops.
+        Currently implements Floor 1 (Stone Dungeon) zones only.
+        """
+        if not self.rooms:
+            return
+
+        # Only Floor 1 has zone logic implemented for now
+        if self.level == 1:
+            self._assign_zones_floor1()
+        # Other floors keep "generic" zone (default)
+
+    def _assign_zones_floor1(self):
+        """Assign zones for Floor 1 - Stone Dungeon (MEMORY aspect)."""
+        if len(self.rooms) < 3:
+            return
+
+        # 1. Start room (player spawn) = intake_hall
+        start_room = self.rooms[0]
+        start_room.zone = "intake_hall"
+
+        # 2. Boss room = last room (where stairs down are)
+        boss_room = self.rooms[-1]
+        boss_center = boss_room.center()
+
+        # 3. Boss approach = 1-2 rooms nearest to boss room (excluding boss room itself)
+        other_rooms = [r for r in self.rooms if r is not start_room and r is not boss_room]
+
+        # Calculate distance from each room to boss room
+        def dist_to_boss(room: Room) -> float:
+            cx, cy = room.center()
+            bx, by = boss_center
+            return ((cx - bx) ** 2 + (cy - by) ** 2) ** 0.5
+
+        other_rooms.sort(key=dist_to_boss)
+
+        # Tag nearest 1-2 as boss_approach
+        num_approach = min(2, len(other_rooms))
+        for i in range(num_approach):
+            other_rooms[i].zone = "boss_approach"
+
+        # Remove approach rooms from assignment pool
+        remaining = [r for r in other_rooms if r.zone == "generic"]
+
+        # 4. Warden's office = 1 mid-map room (anchor)
+        if remaining:
+            # Find a room near the center of the map
+            map_center = (self.width // 2, self.height // 2)
+            remaining.sort(key=lambda r: abs(r.center()[0] - map_center[0]) + abs(r.center()[1] - map_center[1]))
+            remaining[0].zone = "wardens_office"
+            remaining = remaining[1:]
+
+        # 5. Assign remaining rooms by weighted random
+        # Zone weights and eligibility for Floor 1
+        zone_pool = []
+        for room in remaining:
+            eligible_zones = self._get_eligible_zones_floor1(room)
+            if eligible_zones:
+                chosen = random.choice(eligible_zones)
+                room.zone = chosen
+            else:
+                room.zone = "cell_blocks"  # Default fallback
+
+    def _get_eligible_zones_floor1(self, room: Room) -> List[str]:
+        """Return list of eligible zones for a room based on size/shape, with weights."""
+        w, h = room.width, room.height
+        zones = []
+
+        # cell_blocks: min 10x8 (or 8x10), high weight
+        if (w >= 10 and h >= 8) or (w >= 8 and h >= 10):
+            zones.extend(["cell_blocks"] * 4)  # Weight 4
+
+        # guard_corridors: elongated (10x3 or 3x10)
+        if (w >= 10 and h <= 4) or (h >= 10 and w <= 4):
+            zones.extend(["guard_corridors"] * 2)  # Weight 2
+
+        # record_vaults: min 6x6
+        if w >= 6 and h >= 6:
+            zones.extend(["record_vaults"] * 2)  # Weight 2
+
+        # execution_chambers: min 8x8
+        if w >= 8 and h >= 8:
+            zones.extend(["execution_chambers"] * 1)  # Weight 1
+
+        # Fallback if nothing fits
+        if not zones:
+            zones = ["cell_blocks"]
+
+        return zones
+
+    def _apply_zone_layouts(self):
+        """Apply zone-specific layout modifications to rooms.
+
+        This adds interior walls, special tiles, etc. based on zone type.
+        """
+        for room in self.rooms:
+            if room.zone == "cell_blocks":
+                self._layout_cell_blocks(room)
+            # Other zone layouts can be added here
+
+    def _layout_cell_blocks(self, room: Room):
+        """Apply cell block layout: interior walls creating prison cells.
+
+        Creates 2x3 cells along the sides with a central corridor.
+        ~30% of cell doors are DOOR_LOCKED, rest are DOOR_UNLOCKED.
+        """
+        # Minimum room size for cell layout
+        if room.width < 8 or room.height < 6:
+            return
+
+        # Calculate cell dimensions
+        # Central corridor is 2 tiles wide, cells are on each side
+        corridor_width = 2
+        cell_width = 2
+        cell_height = 3
+
+        # Number of cells that fit on each side
+        num_cells_vertical = (room.height - 2) // cell_height  # Leave 1 tile border
+
+        # Central corridor position (centered in room)
+        corridor_start_x = room.x + (room.width // 2) - (corridor_width // 2)
+
+        # Build cells on left side
+        left_wall_x = corridor_start_x - 1
+        for i in range(num_cells_vertical):
+            cell_y = room.y + 1 + (i * cell_height)
+
+            # Don't place walls too close to room edges
+            if cell_y + cell_height > room.y + room.height - 1:
+                break
+
+            # Cell back wall (along left edge of corridor)
+            for cy in range(cell_y, min(cell_y + cell_height, room.y + room.height - 1)):
+                if left_wall_x >= room.x + 1 and left_wall_x < room.x + room.width - 1:
+                    self.tiles[cy][left_wall_x] = TileType.WALL
+
+            # Cell door (middle of the cell front wall)
+            door_y = cell_y + cell_height // 2
+            if door_y < room.y + room.height - 1 and left_wall_x >= room.x:
+                # 30% chance of locked door
+                if random.random() < 0.3:
+                    self.tiles[door_y][left_wall_x] = TileType.DOOR_LOCKED
+                else:
+                    self.tiles[door_y][left_wall_x] = TileType.DOOR_UNLOCKED
+
+            # Horizontal cell dividers (between cells)
+            if i < num_cells_vertical - 1:
+                divider_y = cell_y + cell_height
+                if divider_y < room.y + room.height - 1:
+                    for dx in range(room.x + 1, left_wall_x):
+                        if dx < room.x + room.width - 1:
+                            self.tiles[divider_y][dx] = TileType.WALL
+
+        # Build cells on right side (mirror of left)
+        right_wall_x = corridor_start_x + corridor_width
+        for i in range(num_cells_vertical):
+            cell_y = room.y + 1 + (i * cell_height)
+
+            if cell_y + cell_height > room.y + room.height - 1:
+                break
+
+            # Cell back wall
+            for cy in range(cell_y, min(cell_y + cell_height, room.y + room.height - 1)):
+                if right_wall_x >= room.x + 1 and right_wall_x < room.x + room.width - 1:
+                    self.tiles[cy][right_wall_x] = TileType.WALL
+
+            # Cell door
+            door_y = cell_y + cell_height // 2
+            if door_y < room.y + room.height - 1 and right_wall_x < room.x + room.width:
+                if random.random() < 0.3:
+                    self.tiles[door_y][right_wall_x] = TileType.DOOR_LOCKED
+                else:
+                    self.tiles[door_y][right_wall_x] = TileType.DOOR_UNLOCKED
+
+            # Horizontal cell dividers
+            if i < num_cells_vertical - 1:
+                divider_y = cell_y + cell_height
+                if divider_y < room.y + room.height - 1:
+                    for dx in range(right_wall_x + 1, room.x + room.width - 1):
+                        self.tiles[divider_y][dx] = TileType.WALL
 
     def _place_stairs(self):
         """Place stairs up and down in the dungeon."""
@@ -481,6 +671,39 @@ class Dungeon:
             y = random.randint(0, self.height - 1)
             if self.is_walkable(x, y):
                 return (x, y)
+
+    def get_room_at(self, x: int, y: int) -> Optional[Room]:
+        """Return the Room containing position (x, y), or None if not in a room."""
+        for room in self.rooms:
+            if (room.x <= x < room.x + room.width and
+                room.y <= y < room.y + room.height):
+                return room
+        return None
+
+    def get_zone_at(self, x: int, y: int) -> str:
+        """Return the zone name for position (x, y)."""
+        room = self.get_room_at(x, y)
+        if room:
+            return room.zone
+        return "corridor"  # Positions outside rooms are corridors
+
+    def get_zone_summary(self) -> str:
+        """Return a debug summary of zone assignments for all rooms."""
+        if not self.rooms:
+            return "No rooms generated"
+
+        lines = [f"Floor {self.level} Zone Summary ({len(self.rooms)} rooms):"]
+        zone_counts = {}
+        for room in self.rooms:
+            zone = room.zone
+            zone_counts[zone] = zone_counts.get(zone, 0) + 1
+            lines.append(f"  Room at ({room.x},{room.y}) {room.width}x{room.height}: {zone}")
+
+        lines.append("Zone totals:")
+        for zone, count in sorted(zone_counts.items()):
+            lines.append(f"  {zone}: {count}")
+
+        return "\n".join(lines)
 
     def is_blocking_sight(self, x: int, y: int) -> bool:
         """Check if a tile blocks line of sight (walls and closed doors block)."""

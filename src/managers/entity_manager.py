@@ -19,42 +19,173 @@ class EntityManager:
         self.boss_defeated: bool = False
 
     def spawn_enemies(self, dungeon: 'Dungeon', player: Player):
-        """Spawn enemies in random rooms with weighted type selection."""
+        """Spawn enemies in random rooms with weighted type selection.
+
+        Enemy weights are modified by zone (Floor 1 zone system).
+        """
         from ..core.constants import ELITE_SPAWN_RATE, ENEMY_STATS, EnemyType
 
         self.enemies.clear()
         num_enemies = min(len(dungeon.rooms) * 2, 15)  # 2 enemies per room, max 15
 
-        # Get weighted list of enemy types filtered by dungeon level
+        # Get base enemy types filtered by dungeon level
         current_level = dungeon.level
-        enemy_types = []
-        weights = []
+        base_enemy_types = []
+        base_weights = []
 
         for enemy_type, stats in ENEMY_STATS.items():
             min_lvl = stats.get('min_level', 1)
             max_lvl = stats.get('max_level', 5)
             # Only include enemies appropriate for this dungeon level
             if min_lvl <= current_level <= max_lvl:
-                enemy_types.append(enemy_type)
-                weights.append(stats['weight'])
+                base_enemy_types.append(enemy_type)
+                base_weights.append(stats['weight'])
 
-        if not enemy_types:
+        if not base_enemy_types:
             # Fallback to basic enemies if none match
-            enemy_types = [EnemyType.GOBLIN, EnemyType.SKELETON]
-            weights = [40, 30]
+            base_enemy_types = [EnemyType.GOBLIN, EnemyType.SKELETON]
+            base_weights = [40, 30]
 
         for _ in range(num_enemies):
             pos = dungeon.get_random_floor_position()
             # Make sure not too close to player
             if abs(pos[0] - player.x) > 5 or abs(pos[1] - player.y) > 5:
-                # Select enemy type using weighted random selection
-                enemy_type = random.choices(enemy_types, weights=weights)[0]
+                # Get zone at spawn position and apply weight modifiers
+                zone = dungeon.get_zone_at(pos[0], pos[1])
+                zone_weights = self._apply_zone_weights(
+                    base_enemy_types, base_weights.copy(), zone, current_level
+                )
 
-                # 20% chance to spawn elite enemy
-                is_elite = random.random() < ELITE_SPAWN_RATE
+                # Select enemy type using zone-modified weights
+                enemy_type = random.choices(base_enemy_types, weights=zone_weights)[0]
+
+                # 20% chance to spawn elite enemy (0% in intake_hall for Floor 1)
+                elite_rate = ELITE_SPAWN_RATE
+                if zone == "intake_hall":
+                    elite_rate = 0.0
+                is_elite = random.random() < elite_rate
 
                 enemy = Enemy(pos[0], pos[1], enemy_type=enemy_type, is_elite=is_elite)
                 self.enemies.append(enemy)
+
+    def _apply_zone_weights(self, enemy_types: list, weights: list, zone: str, level: int) -> list:
+        """Apply zone-specific weight modifiers to enemy spawn weights.
+
+        Currently implements Floor 1 (Stone Dungeon) zone modifiers.
+        """
+        from ..core.constants import EnemyType
+
+        # Floor 1 zone modifiers
+        if level == 1:
+            zone_modifiers = {
+                "cell_blocks": {EnemyType.GOBLIN: 1.5, EnemyType.SKELETON: 1.0, EnemyType.ORC: 0.5},
+                "guard_corridors": {EnemyType.SKELETON: 1.4, EnemyType.GOBLIN: 1.0},
+                "record_vaults": {EnemyType.SKELETON: 1.4},
+                "execution_chambers": {EnemyType.SKELETON: 1.2},
+                "boss_approach": {EnemyType.GOBLIN: 2.0},
+                "intake_hall": {},  # No modifiers, but lower density handled elsewhere
+            }
+
+            modifiers = zone_modifiers.get(zone, {})
+            for i, enemy_type in enumerate(enemy_types):
+                if enemy_type in modifiers:
+                    weights[i] = int(weights[i] * modifiers[enemy_type])
+
+        return weights
+
+    def _spawn_zone_lore(self, dungeon: 'Dungeon', player: Player):
+        """Spawn lore items with zone-aware placement and spawn chances.
+
+        Floor 1 zones have specific lore pools and spawn rates.
+        Other floors use default 70% spawn chance for all lore.
+        """
+        from ..items import create_lore_item
+        from ..story.story_data import get_lore_entries_for_level
+
+        lore_entries = get_lore_entries_for_level(dungeon.level)
+        if not lore_entries:
+            return
+
+        # Floor 1: Zone-aware lore spawning
+        if dungeon.level == 1:
+            self._spawn_floor1_lore(dungeon, player, lore_entries)
+        else:
+            # Default behavior for other floors
+            for lore_id, entry in lore_entries:
+                if random.random() < 0.7:
+                    pos = dungeon.get_random_floor_position()
+                    if pos[0] != player.x or pos[1] != player.y:
+                        try:
+                            lore_item = create_lore_item(lore_id, pos[0], pos[1])
+                            self.items.append(lore_item)
+                        except ValueError:
+                            pass
+
+    def _spawn_floor1_lore(self, dungeon: 'Dungeon', player: Player, lore_entries: list):
+        """Spawn lore items for Floor 1 with zone-specific rules."""
+        from ..items import create_lore_item
+
+        # Floor 1 zone lore configuration
+        # zone -> (spawn_chance, max_lore, preferred_lore_ids)
+        zone_lore_config = {
+            "wardens_office": (1.0, 1, None),  # Guaranteed 1 lore, any level lore
+            "record_vaults": (0.6, 2, None),   # 60% chance, up to 2 lore
+            "cell_blocks": (0.3, 1, None),     # 30% chance, max 1
+            "guard_corridors": (0.2, 1, None), # 20% chance, max 1
+            "execution_chambers": (0.4, 1, None),  # 40% chance, max 1
+            "boss_approach": (1.0, 1, None),   # Guaranteed 1 lore
+            "intake_hall": (0.3, 1, None),     # 30% chance, max 1
+        }
+
+        # Track lore placed per zone to enforce max limits
+        zone_lore_counts = {zone: 0 for zone in zone_lore_config}
+        lore_pool = list(lore_entries)  # Available lore entries
+
+        # Try to place lore in zones with guaranteed spawns first
+        for room in dungeon.rooms:
+            zone = room.zone
+            if zone not in zone_lore_config:
+                continue
+
+            spawn_chance, max_lore, _ = zone_lore_config[zone]
+
+            # Skip if zone already has max lore
+            if zone_lore_counts[zone] >= max_lore:
+                continue
+
+            # Roll for spawn chance
+            if random.random() > spawn_chance:
+                continue
+
+            # No lore left to place
+            if not lore_pool:
+                break
+
+            # Pick random lore and place it in this room
+            lore_id, entry = random.choice(lore_pool)
+
+            # Find a floor position in this room
+            pos = self._get_floor_in_room(dungeon, room, player)
+            if pos:
+                try:
+                    lore_item = create_lore_item(lore_id, pos[0], pos[1])
+                    self.items.append(lore_item)
+                    zone_lore_counts[zone] += 1
+                    lore_pool.remove((lore_id, entry))  # Don't spawn same lore twice
+                except ValueError:
+                    pass
+
+    def _get_floor_in_room(self, dungeon: 'Dungeon', room, player: Player):
+        """Find a random walkable floor position within a room."""
+        from ..world.dungeon import Room
+        attempts = 20
+        for _ in range(attempts):
+            x = random.randint(room.x + 1, room.x + room.width - 2)
+            y = random.randint(room.y + 1, room.y + room.height - 2)
+            if (dungeon.is_walkable(x, y) and
+                (x != player.x or y != player.y)):
+                return (x, y)
+        return None
 
     def spawn_items(self, dungeon: 'Dungeon', player: Player):
         """Spawn items in random locations."""
@@ -90,18 +221,8 @@ class EntityManager:
                 item = create_item(item_type, pos[0], pos[1])
                 self.items.append(item)
 
-        # LORE: Spawn level-appropriate lore items (scrolls/books)
-        lore_entries = get_lore_entries_for_level(dungeon.level)
-        for lore_id, entry in lore_entries:
-            # 70% chance to spawn each lore item on its appropriate level
-            if random.random() < 0.7:
-                pos = dungeon.get_random_floor_position()
-                if pos[0] != player.x or pos[1] != player.y:
-                    try:
-                        lore_item = create_lore_item(lore_id, pos[0], pos[1])
-                        self.items.append(lore_item)
-                    except ValueError:
-                        pass  # Skip if lore entry not found
+        # LORE: Spawn level-appropriate lore items with zone awareness
+        self._spawn_zone_lore(dungeon, player)
 
     def spawn_boss(self, dungeon: 'Dungeon', player: Player):
         """Spawn the level boss in the boss room (largest room)."""
