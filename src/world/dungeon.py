@@ -16,6 +16,8 @@ from .traps import Trap, TrapManager
 from .hazards import Hazard, HazardManager
 from .secrets import SecretDoor, SecretDoorManager
 from .torches import Torch, TorchManager
+from .zone_config import get_floor_config, FloorZoneConfig
+from .zone_layouts import apply_zone_layout
 
 
 @dataclass
@@ -314,34 +316,25 @@ class Dungeon:
     def _assign_zones(self):
         """Assign zone identities to rooms based on dungeon level.
 
+        Uses data-driven config from zone_config.py.
         Zones drive decorations, spawn bias, and lore drops.
-        Currently implements Floor 1 (Stone Dungeon) zones only.
         """
-        if not self.rooms:
+        if not self.rooms or len(self.rooms) < 3:
             return
 
-        # Only Floor 1 has zone logic implemented for now
-        if self.level == 1:
-            self._assign_zones_floor1()
-        # Other floors keep "generic" zone (default)
+        config = get_floor_config(self.level)
+        if not config or not config.zones:
+            return  # No zone config for this floor
 
-    def _assign_zones_floor1(self):
-        """Assign zones for Floor 1 - Stone Dungeon (MEMORY aspect)."""
-        if len(self.rooms) < 3:
-            return
-
-        # 1. Start room (player spawn) = intake_hall
+        # 1. Assign start room zone
         start_room = self.rooms[0]
-        start_room.zone = "intake_hall"
+        start_room.zone = config.start_zone
 
-        # 2. Boss room = last room (where stairs down are)
+        # 2. Assign boss approach zones
         boss_room = self.rooms[-1]
         boss_center = boss_room.center()
-
-        # 3. Boss approach = 1-2 rooms nearest to boss room (excluding boss room itself)
         other_rooms = [r for r in self.rooms if r is not start_room and r is not boss_room]
 
-        # Calculate distance from each room to boss room
         def dist_to_boss(room: Room) -> float:
             cx, cy = room.center()
             bx, by = boss_center
@@ -349,150 +342,77 @@ class Dungeon:
 
         other_rooms.sort(key=dist_to_boss)
 
-        # Tag nearest 1-2 as boss_approach
-        num_approach = min(2, len(other_rooms))
+        num_approach = min(config.boss_approach_count, len(other_rooms))
+        approach_rooms = []
         for i in range(num_approach):
             other_rooms[i].zone = "boss_approach"
+            approach_rooms.append(other_rooms[i])
 
-        # Remove approach rooms from assignment pool
+        # Track assigned zones for debug
+        self._anchor_rooms = {}
+        self._approach_rooms = approach_rooms
+
+        # 3. Assign required/anchor zones
         remaining = [r for r in other_rooms if r.zone == "generic"]
+        map_center = (self.width // 2, self.height // 2)
 
-        # 4. Warden's office = 1 mid-map room (anchor)
-        if remaining:
-            # Find a room near the center of the map
-            map_center = (self.width // 2, self.height // 2)
-            remaining.sort(key=lambda r: abs(r.center()[0] - map_center[0]) + abs(r.center()[1] - map_center[1]))
-            remaining[0].zone = "wardens_office"
-            remaining = remaining[1:]
+        for zone_spec in config.zones:
+            if zone_spec.required_count > 0:
+                # This is an anchor zone
+                rooms_to_assign = min(zone_spec.required_count, len(remaining))
+                if rooms_to_assign == 0:
+                    continue
 
-        # 5. Assign remaining rooms by weighted random
-        # Zone weights and eligibility for Floor 1
-        zone_pool = []
+                if zone_spec.selection_rule == "center":
+                    # Sort by distance to map center
+                    remaining.sort(key=lambda r: abs(r.center()[0] - map_center[0]) +
+                                                  abs(r.center()[1] - map_center[1]))
+                elif zone_spec.selection_rule == "boss_near":
+                    # Sort by distance to boss
+                    remaining.sort(key=dist_to_boss)
+
+                for i in range(rooms_to_assign):
+                    remaining[i].zone = zone_spec.zone_id
+                    if zone_spec.zone_id not in self._anchor_rooms:
+                        self._anchor_rooms[zone_spec.zone_id] = []
+                    self._anchor_rooms[zone_spec.zone_id].append(remaining[i])
+
+                remaining = [r for r in remaining if r.zone == "generic"]
+
+        # 4. Assign remaining rooms by weighted random
         for room in remaining:
-            eligible_zones = self._get_eligible_zones_floor1(room)
+            eligible_zones = self._get_eligible_zones(room, config)
             if eligible_zones:
                 chosen = random.choice(eligible_zones)
                 room.zone = chosen
             else:
-                room.zone = "cell_blocks"  # Default fallback
+                room.zone = config.fallback_zone
 
-    def _get_eligible_zones_floor1(self, room: Room) -> List[str]:
-        """Return list of eligible zones for a room based on size/shape, with weights."""
-        w, h = room.width, room.height
+    def _get_eligible_zones(self, room: Room, config: FloorZoneConfig) -> List[str]:
+        """Return list of eligible zones for a room based on config, with weights."""
         zones = []
 
-        # cell_blocks: min 10x8 (or 8x10), high weight
-        if (w >= 10 and h >= 8) or (w >= 8 and h >= 10):
-            zones.extend(["cell_blocks"] * 4)  # Weight 4
+        for zone_spec in config.zones:
+            # Skip required zones (already assigned)
+            if zone_spec.required_count > 0:
+                continue
 
-        # guard_corridors: elongated (10x3 or 3x10)
-        if (w >= 10 and h <= 4) or (h >= 10 and w <= 4):
-            zones.extend(["guard_corridors"] * 2)  # Weight 2
+            # Check eligibility
+            if zone_spec.eligibility is None or zone_spec.eligibility(room):
+                zones.extend([zone_spec.zone_id] * zone_spec.weight)
 
-        # record_vaults: min 6x6
-        if w >= 6 and h >= 6:
-            zones.extend(["record_vaults"] * 2)  # Weight 2
-
-        # execution_chambers: min 8x8
-        if w >= 8 and h >= 8:
-            zones.extend(["execution_chambers"] * 1)  # Weight 1
-
-        # Fallback if nothing fits
         if not zones:
-            zones = ["cell_blocks"]
+            zones = [config.fallback_zone]
 
         return zones
 
     def _apply_zone_layouts(self):
         """Apply zone-specific layout modifications to rooms.
 
-        This adds interior walls, special tiles, etc. based on zone type.
+        Uses layout registry from zone_layouts.py.
         """
         for room in self.rooms:
-            if room.zone == "cell_blocks":
-                self._layout_cell_blocks(room)
-            # Other zone layouts can be added here
-
-    def _layout_cell_blocks(self, room: Room):
-        """Apply cell block layout: interior walls creating prison cells.
-
-        Creates 2x3 cells along the sides with a central corridor.
-        ~30% of cell doors are DOOR_LOCKED, rest are DOOR_UNLOCKED.
-        """
-        # Minimum room size for cell layout
-        if room.width < 8 or room.height < 6:
-            return
-
-        # Calculate cell dimensions
-        # Central corridor is 2 tiles wide, cells are on each side
-        corridor_width = 2
-        cell_width = 2
-        cell_height = 3
-
-        # Number of cells that fit on each side
-        num_cells_vertical = (room.height - 2) // cell_height  # Leave 1 tile border
-
-        # Central corridor position (centered in room)
-        corridor_start_x = room.x + (room.width // 2) - (corridor_width // 2)
-
-        # Build cells on left side
-        left_wall_x = corridor_start_x - 1
-        for i in range(num_cells_vertical):
-            cell_y = room.y + 1 + (i * cell_height)
-
-            # Don't place walls too close to room edges
-            if cell_y + cell_height > room.y + room.height - 1:
-                break
-
-            # Cell back wall (along left edge of corridor)
-            for cy in range(cell_y, min(cell_y + cell_height, room.y + room.height - 1)):
-                if left_wall_x >= room.x + 1 and left_wall_x < room.x + room.width - 1:
-                    self.tiles[cy][left_wall_x] = TileType.WALL
-
-            # Cell door (middle of the cell front wall)
-            door_y = cell_y + cell_height // 2
-            if door_y < room.y + room.height - 1 and left_wall_x >= room.x:
-                # 30% chance of locked door
-                if random.random() < 0.3:
-                    self.tiles[door_y][left_wall_x] = TileType.DOOR_LOCKED
-                else:
-                    self.tiles[door_y][left_wall_x] = TileType.DOOR_UNLOCKED
-
-            # Horizontal cell dividers (between cells)
-            if i < num_cells_vertical - 1:
-                divider_y = cell_y + cell_height
-                if divider_y < room.y + room.height - 1:
-                    for dx in range(room.x + 1, left_wall_x):
-                        if dx < room.x + room.width - 1:
-                            self.tiles[divider_y][dx] = TileType.WALL
-
-        # Build cells on right side (mirror of left)
-        right_wall_x = corridor_start_x + corridor_width
-        for i in range(num_cells_vertical):
-            cell_y = room.y + 1 + (i * cell_height)
-
-            if cell_y + cell_height > room.y + room.height - 1:
-                break
-
-            # Cell back wall
-            for cy in range(cell_y, min(cell_y + cell_height, room.y + room.height - 1)):
-                if right_wall_x >= room.x + 1 and right_wall_x < room.x + room.width - 1:
-                    self.tiles[cy][right_wall_x] = TileType.WALL
-
-            # Cell door
-            door_y = cell_y + cell_height // 2
-            if door_y < room.y + room.height - 1 and right_wall_x < room.x + room.width:
-                if random.random() < 0.3:
-                    self.tiles[door_y][right_wall_x] = TileType.DOOR_LOCKED
-                else:
-                    self.tiles[door_y][right_wall_x] = TileType.DOOR_UNLOCKED
-
-            # Horizontal cell dividers
-            if i < num_cells_vertical - 1:
-                divider_y = cell_y + cell_height
-                if divider_y < room.y + room.height - 1:
-                    for dx in range(right_wall_x + 1, room.x + room.width - 1):
-                        self.tiles[divider_y][dx] = TileType.WALL
+            apply_zone_layout(self, room)
 
     def _place_stairs(self):
         """Place stairs up and down in the dungeon."""
@@ -693,15 +613,35 @@ class Dungeon:
             return "No rooms generated"
 
         lines = [f"Floor {self.level} Zone Summary ({len(self.rooms)} rooms):"]
+
+        # Zone counts
         zone_counts = {}
         for room in self.rooms:
             zone = room.zone
             zone_counts[zone] = zone_counts.get(zone, 0) + 1
-            lines.append(f"  Room at ({room.x},{room.y}) {room.width}x{room.height}: {zone}")
 
-        lines.append("Zone totals:")
+        lines.append("\nZone totals:")
         for zone, count in sorted(zone_counts.items()):
             lines.append(f"  {zone}: {count}")
+
+        # Anchor rooms
+        if hasattr(self, '_anchor_rooms') and self._anchor_rooms:
+            lines.append("\nAnchor rooms:")
+            for zone_id, rooms in self._anchor_rooms.items():
+                for room in rooms:
+                    lines.append(f"  {zone_id}: ({room.x},{room.y}) {room.width}x{room.height}")
+
+        # Boss approach rooms
+        if hasattr(self, '_approach_rooms') and self._approach_rooms:
+            lines.append("\nBoss approach rooms:")
+            for room in self._approach_rooms:
+                cx, cy = room.center()
+                lines.append(f"  ({room.x},{room.y}) {room.width}x{room.height} center=({cx},{cy})")
+
+        # All rooms (detailed)
+        lines.append("\nAll rooms:")
+        for room in self.rooms:
+            lines.append(f"  ({room.x},{room.y}) {room.width}x{room.height}: {room.zone}")
 
         return "\n".join(lines)
 

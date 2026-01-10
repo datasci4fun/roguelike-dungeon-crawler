@@ -71,11 +71,11 @@ class EntityManager:
     def _apply_zone_weights(self, enemy_types: list, weights: list, zone: str, level: int) -> list:
         """Apply zone-specific weight modifiers to enemy spawn weights.
 
-        Currently implements Floor 1 (Stone Dungeon) zone modifiers.
+        Implements zone modifiers for Floors 1-2.
         """
         from ..core.constants import EnemyType
 
-        # Floor 1 zone modifiers
+        # Floor 1 zone modifiers (Stone Dungeon)
         if level == 1:
             zone_modifiers = {
                 "cell_blocks": {EnemyType.GOBLIN: 1.5, EnemyType.SKELETON: 1.0, EnemyType.ORC: 0.5},
@@ -83,9 +83,23 @@ class EntityManager:
                 "record_vaults": {EnemyType.SKELETON: 1.4},
                 "execution_chambers": {EnemyType.SKELETON: 1.2},
                 "boss_approach": {EnemyType.GOBLIN: 2.0},
-                "intake_hall": {},  # No modifiers, but lower density handled elsewhere
+                "intake_hall": {},
             }
+            modifiers = zone_modifiers.get(zone, {})
+            for i, enemy_type in enumerate(enemy_types):
+                if enemy_type in modifiers:
+                    weights[i] = int(weights[i] * modifiers[enemy_type])
 
+        # Floor 2 zone modifiers (Sewers)
+        elif level == 2:
+            zone_modifiers = {
+                "carrier_nests": {EnemyType.GOBLIN: 0.5, EnemyType.SKELETON: 0.7},  # Rats bias (no rat type yet, reduce others)
+                "waste_channels": {EnemyType.SKELETON: 1.2},
+                "seal_drifts": {},  # Low combat, handled by density
+                "colony_heart": {EnemyType.GOBLIN: 0.3, EnemyType.SKELETON: 0.5},  # Rats dominate
+                "boss_approach": {EnemyType.GOBLIN: 0.3},  # Rats bias x2
+                "overflow_junction": {},
+            }
             modifiers = zone_modifiers.get(zone, {})
             for i, enemy_type in enumerate(enemy_types):
                 if enemy_type in modifiers:
@@ -96,7 +110,7 @@ class EntityManager:
     def _spawn_zone_lore(self, dungeon: 'Dungeon', player: Player):
         """Spawn lore items with zone-aware placement and spawn chances.
 
-        Floor 1 zones have specific lore pools and spawn rates.
+        Floors 1-2 have zone-specific lore pools and spawn rates.
         Other floors use default 70% spawn chance for all lore.
         """
         from ..items import create_lore_item
@@ -106,9 +120,11 @@ class EntityManager:
         if not lore_entries:
             return
 
-        # Floor 1: Zone-aware lore spawning
+        # Zone-aware lore spawning for implemented floors
         if dungeon.level == 1:
-            self._spawn_floor1_lore(dungeon, player, lore_entries)
+            self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor1_lore_config())
+        elif dungeon.level == 2:
+            self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor2_lore_config())
         else:
             # Default behavior for other floors
             for lore_id, entry in lore_entries:
@@ -121,57 +137,61 @@ class EntityManager:
                         except ValueError:
                             pass
 
-    def _spawn_floor1_lore(self, dungeon: 'Dungeon', player: Player, lore_entries: list):
-        """Spawn lore items for Floor 1 with zone-specific rules."""
-        from ..items import create_lore_item
-
-        # Floor 1 zone lore configuration
-        # zone -> (spawn_chance, max_lore, preferred_lore_ids)
-        zone_lore_config = {
-            "wardens_office": (1.0, 1, None),  # Guaranteed 1 lore, any level lore
-            "record_vaults": (0.6, 2, None),   # 60% chance, up to 2 lore
-            "cell_blocks": (0.3, 1, None),     # 30% chance, max 1
-            "guard_corridors": (0.2, 1, None), # 20% chance, max 1
-            "execution_chambers": (0.4, 1, None),  # 40% chance, max 1
-            "boss_approach": (1.0, 1, None),   # Guaranteed 1 lore
-            "intake_hall": (0.3, 1, None),     # 30% chance, max 1
+    def _get_floor1_lore_config(self) -> dict:
+        """Floor 1 zone lore configuration."""
+        return {
+            "wardens_office": (1.0, 1),   # Guaranteed 1 lore
+            "record_vaults": (0.6, 2),    # 60% chance, up to 2 lore
+            "cell_blocks": (0.3, 1),      # 30% chance, max 1
+            "guard_corridors": (0.2, 1),  # 20% chance, max 1
+            "execution_chambers": (0.4, 1),  # 40% chance, max 1
+            "boss_approach": (1.0, 1),    # Guaranteed 1 lore
+            "intake_hall": (0.3, 1),      # 30% chance, max 1
         }
 
-        # Track lore placed per zone to enforce max limits
-        zone_lore_counts = {zone: 0 for zone in zone_lore_config}
-        lore_pool = list(lore_entries)  # Available lore entries
+    def _get_floor2_lore_config(self) -> dict:
+        """Floor 2 zone lore configuration."""
+        return {
+            "colony_heart": (1.0, 1),     # Guaranteed 1 lore (anchor)
+            "seal_drifts": (0.7, 2),      # 70% chance, up to 2 lore (surface-doc biased)
+            "carrier_nests": (0.2, 1),    # 20% chance, max 1
+            "waste_channels": (0.15, 1),  # 15% chance, max 1
+            "drip_galleries": (0.3, 1),   # 30% chance, max 1
+            "boss_approach": (1.0, 1),    # Guaranteed 1 lore
+            "overflow_junction": (0.25, 1),  # 25% chance, max 1
+        }
 
-        # Try to place lore in zones with guaranteed spawns first
+    def _spawn_floor_lore(self, dungeon: 'Dungeon', player: Player, lore_entries: list, zone_config: dict):
+        """Spawn lore items using zone configuration."""
+        from ..items import create_lore_item
+
+        zone_lore_counts = {zone: 0 for zone in zone_config}
+        lore_pool = list(lore_entries)
+
         for room in dungeon.rooms:
             zone = room.zone
-            if zone not in zone_lore_config:
+            if zone not in zone_config:
                 continue
 
-            spawn_chance, max_lore, _ = zone_lore_config[zone]
+            spawn_chance, max_lore = zone_config[zone]
 
-            # Skip if zone already has max lore
             if zone_lore_counts[zone] >= max_lore:
                 continue
 
-            # Roll for spawn chance
             if random.random() > spawn_chance:
                 continue
 
-            # No lore left to place
             if not lore_pool:
                 break
 
-            # Pick random lore and place it in this room
             lore_id, entry = random.choice(lore_pool)
-
-            # Find a floor position in this room
             pos = self._get_floor_in_room(dungeon, room, player)
             if pos:
                 try:
                     lore_item = create_lore_item(lore_id, pos[0], pos[1])
                     self.items.append(lore_item)
                     zone_lore_counts[zone] += 1
-                    lore_pool.remove((lore_id, entry))  # Don't spawn same lore twice
+                    lore_pool.remove((lore_id, entry))
                 except ValueError:
                     pass
 
