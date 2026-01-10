@@ -214,9 +214,65 @@ FLOOR_3_CONFIG = FloorZoneConfig(
 
 
 # =============================================================================
-# FLOORS 4-8: Placeholder configs (to be implemented)
+# FLOOR 4: Mirror Valdris (LEGITIMACY)
+# Canonical zones: courtyard_squares, throne_hall_ruins, parade_corridors,
+#                  seal_chambers, record_vaults, mausoleum_district,
+#                  oath_chambers, boss_approach
 # =============================================================================
-FLOOR_4_CONFIG = FloorZoneConfig(floor_level=4, start_zone="generic", fallback_zone="generic")
+FLOOR_4_CONFIG = FloorZoneConfig(
+    floor_level=4,
+    start_zone="courtyard_squares",  # Public plaza entry
+    boss_approach_count=2,
+    fallback_zone="parade_corridors",  # Symmetry corridors as fallback
+    zones=[
+        # Anchor zone - throne hall set-piece
+        ZoneSpec(
+            zone_id="throne_hall_ruins",
+            required_count=1,
+            selection_rule="largest",  # Largest hall
+            eligibility=min_size(10, 8),
+        ),
+        # Anchor zone - oath interface with guaranteed lore
+        ZoneSpec(
+            zone_id="oath_chambers",
+            required_count=1,
+            selection_rule="center",  # Mid-map, ritual space
+            eligibility=min_size(7, 7),
+        ),
+        # High-priority lore zones (weighted high, not strictly required)
+        ZoneSpec(
+            zone_id="seal_chambers",
+            weight=4,  # Bureaucracy lore hub
+            eligibility=min_size(5, 5),
+        ),
+        ZoneSpec(
+            zone_id="record_vaults",
+            weight=4,  # Archive lore hub
+            eligibility=min_size(5, 5),
+        ),
+        # Weighted zones
+        ZoneSpec(
+            zone_id="parade_corridors",
+            weight=2,  # Connector corridors
+            eligibility=elongated(10, 4),
+        ),
+        ZoneSpec(
+            zone_id="courtyard_squares",
+            weight=2,
+            eligibility=min_size(8, 8),
+        ),
+        ZoneSpec(
+            zone_id="mausoleum_district",
+            weight=3,  # Undead bias zone
+            eligibility=min_size(5, 5),
+        ),
+    ],
+)
+
+
+# =============================================================================
+# FLOORS 5-8: Placeholder configs (to be implemented)
+# =============================================================================
 FLOOR_5_CONFIG = FloorZoneConfig(floor_level=5, start_zone="generic", fallback_zone="generic")
 FLOOR_6_CONFIG = FloorZoneConfig(floor_level=6, start_zone="generic", fallback_zone="generic")
 FLOOR_7_CONFIG = FloorZoneConfig(floor_level=7, start_zone="generic", fallback_zone="generic")

@@ -470,3 +470,196 @@ def layout_druid_ring(dungeon: 'Dungeon', room: 'Room'):
             room.y + 1 <= ry < room.y + room.height - 1):
             if dungeon.tiles[ry][rx] == TileType.FLOOR:
                 dungeon.tiles[ry][rx] = TileType.DEEP_WATER
+
+
+# =============================================================================
+# FLOOR 4: Mirror Valdris Layouts
+# =============================================================================
+
+@register_layout(4, "throne_hall_ruins")
+def layout_throne_hall_ruins(dungeon: 'Dungeon', room: 'Room'):
+    """Create throne hall anchor room.
+
+    Symmetrical layout with focal "throne end" via denser decorations.
+    Creates aisle feel with clear central route.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 10 or room.height < 8:
+        return
+
+    # Determine throne end (far end from most likely entrance)
+    # Use simple heuristic: throne at top or right depending on orientation
+    if room.width > room.height:
+        # Horizontal room - throne at right end
+        # Place symmetric water markers along the "aisle"
+        aisle_y = room.y + room.height // 2
+        for x in range(room.x + 2, room.x + room.width - 4, 3):
+            # Top and bottom of aisle
+            if room.y + 2 < aisle_y - 1:
+                dungeon.tiles[aisle_y - 2][x] = TileType.DEEP_WATER
+            if aisle_y + 2 < room.y + room.height - 1:
+                dungeon.tiles[aisle_y + 2][x] = TileType.DEEP_WATER
+    else:
+        # Vertical room - throne at bottom
+        aisle_x = room.x + room.width // 2
+        for y in range(room.y + 2, room.y + room.height - 4, 3):
+            if room.x + 2 < aisle_x - 1:
+                dungeon.tiles[y][aisle_x - 2] = TileType.DEEP_WATER
+            if aisle_x + 2 < room.x + room.width - 1:
+                dungeon.tiles[y][aisle_x + 2] = TileType.DEEP_WATER
+
+
+@register_layout(4, "oath_chambers")
+def layout_oath_chambers(dungeon: 'Dungeon', room: 'Room'):
+    """Create oath chamber anchor room.
+
+    Ring geometry with clear center (oathstone location).
+    """
+    from ..core.constants import TileType
+    import math
+
+    if room.width < 7 or room.height < 7:
+        return
+
+    cx = room.x + room.width // 2
+    cy = room.y + room.height // 2
+
+    # Create ring pattern (similar to druid_ring)
+    radius = min(room.width, room.height) // 3
+    for angle in range(0, 360, 45):
+        rad = math.radians(angle)
+        rx = int(cx + radius * math.cos(rad))
+        ry = int(cy + radius * math.sin(rad))
+        if (room.x + 1 <= rx < room.x + room.width - 1 and
+            room.y + 1 <= ry < room.y + room.height - 1):
+            if dungeon.tiles[ry][rx] == TileType.FLOOR:
+                dungeon.tiles[ry][rx] = TileType.DEEP_WATER
+
+
+@register_layout(4, "courtyard_squares")
+def layout_courtyard_squares(dungeon: 'Dungeon', room: 'Room'):
+    """Create courtyard plaza room.
+
+    Symmetrical layout with optional central fountain.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 8 or room.height < 8:
+        return
+
+    cx = room.x + room.width // 2
+    cy = room.y + room.height // 2
+
+    # 60% chance for central fountain (3x3 water pool)
+    if random.random() < 0.6:
+        for dx in range(-1, 2):
+            for dy in range(-1, 2):
+                px = cx + dx
+                py = cy + dy
+                if (room.x + 2 <= px < room.x + room.width - 2 and
+                    room.y + 2 <= py < room.y + room.height - 2):
+                    if dungeon.tiles[py][px] == TileType.FLOOR:
+                        dungeon.tiles[py][px] = TileType.DEEP_WATER
+
+
+@register_layout(4, "seal_chambers")
+def layout_seal_chambers(dungeon: 'Dungeon', room: 'Room'):
+    """Create seal chamber bureaucracy room.
+
+    Workstation clusters implied by corner decorations.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 6 or room.height < 6:
+        return
+
+    # Place "workstation" water patches in corners (wax pools / ink)
+    corners = [
+        (room.x + 2, room.y + 2),
+        (room.x + room.width - 3, room.y + 2),
+        (room.x + 2, room.y + room.height - 3),
+        (room.x + room.width - 3, room.y + room.height - 3),
+    ]
+    # Use 2-3 corners
+    for x, y in random.sample(corners, min(3, len(corners))):
+        if dungeon.tiles[y][x] == TileType.FLOOR:
+            dungeon.tiles[y][x] = TileType.DEEP_WATER
+
+
+@register_layout(4, "record_vaults")
+def layout_record_vaults(dungeon: 'Dungeon', room: 'Room'):
+    """Create record vault archive room.
+
+    Shelf row feel via partitioned wall stubs.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 6 or room.height < 6:
+        return
+
+    # Create shelf rows (short wall segments)
+    if room.width > room.height:
+        # Horizontal room - vertical shelves
+        for x in range(room.x + 3, room.x + room.width - 3, 4):
+            for y in range(room.y + 2, room.y + room.height - 2):
+                if random.random() < 0.4:
+                    dungeon.tiles[y][x] = TileType.WALL
+    else:
+        # Vertical room - horizontal shelves
+        for y in range(room.y + 3, room.y + room.height - 3, 4):
+            for x in range(room.x + 2, room.x + room.width - 2):
+                if random.random() < 0.4:
+                    dungeon.tiles[y][x] = TileType.WALL
+
+
+@register_layout(4, "parade_corridors")
+def layout_parade_corridors(dungeon: 'Dungeon', room: 'Room'):
+    """Create parade corridor with symmetrical markers.
+
+    Regular interval decorations in mirrored pairs.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 10 and room.height < 10:
+        return
+
+    # Place symmetric water markers at regular intervals
+    if room.width > room.height:
+        # Horizontal corridor
+        center_y = room.y + room.height // 2
+        for x in range(room.x + 2, room.x + room.width - 2, 4):
+            # Mirrored pair
+            if center_y - 1 > room.y and center_y + 1 < room.y + room.height - 1:
+                if dungeon.tiles[center_y - 1][x] == TileType.FLOOR:
+                    dungeon.tiles[center_y - 1][x] = TileType.DEEP_WATER
+                if dungeon.tiles[center_y + 1][x] == TileType.FLOOR:
+                    dungeon.tiles[center_y + 1][x] = TileType.DEEP_WATER
+    else:
+        # Vertical corridor
+        center_x = room.x + room.width // 2
+        for y in range(room.y + 2, room.y + room.height - 2, 4):
+            if center_x - 1 > room.x and center_x + 1 < room.x + room.width - 1:
+                if dungeon.tiles[y][center_x - 1] == TileType.FLOOR:
+                    dungeon.tiles[y][center_x - 1] = TileType.DEEP_WATER
+                if dungeon.tiles[y][center_x + 1] == TileType.FLOOR:
+                    dungeon.tiles[y][center_x + 1] = TileType.DEEP_WATER
+
+
+@register_layout(4, "mausoleum_district")
+def layout_mausoleum_district(dungeon: 'Dungeon', room: 'Room'):
+    """Create mausoleum crypt room.
+
+    Tomb row feel via decoration lines (sparse water markers).
+    """
+    from ..core.constants import TileType
+
+    if room.width < 6 or room.height < 6:
+        return
+
+    # Create tomb rows (sparse water tiles suggesting sarcophagi)
+    for y in range(room.y + 2, room.y + room.height - 2, 3):
+        for x in range(room.x + 2, room.x + room.width - 2, 3):
+            if random.random() < 0.3:
+                if dungeon.tiles[y][x] == TileType.FLOOR:
+                    dungeon.tiles[y][x] = TileType.DEEP_WATER

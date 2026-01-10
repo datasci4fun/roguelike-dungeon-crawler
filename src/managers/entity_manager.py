@@ -128,6 +128,26 @@ class EntityManager:
                 if enemy_type in modifiers:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
+        # Floor 4 zone modifiers (Mirror Valdris)
+        # Canonical zones: courtyard_squares, throne_hall_ruins, parade_corridors,
+        # seal_chambers, record_vaults, mausoleum_district, oath_chambers, boss_approach
+        # Skeleton/undead bias overall (oath-dead servants)
+        elif level == 4:
+            zone_modifiers = {
+                "mausoleum_district": {EnemyType.SKELETON: 2.0, EnemyType.GOBLIN: 0.3},  # Undead x2
+                "throne_hall_ruins": {EnemyType.SKELETON: 1.2},  # Honor guard skeletons
+                "record_vaults": {EnemyType.SKELETON: 1.4, EnemyType.GOBLIN: 0.5},  # Clerk undead
+                "oath_chambers": {EnemyType.SKELETON: 1.3, EnemyType.GOBLIN: 0.4},  # Low density
+                "courtyard_squares": {EnemyType.SKELETON: 1.2, EnemyType.ORC: 1.2},  # Patrol bias
+                "seal_chambers": {EnemyType.GOBLIN: 0.6},  # Low-to-normal
+                "parade_corridors": {},  # Normal distribution
+                "boss_approach": {EnemyType.SKELETON: 1.6, EnemyType.GOBLIN: 0.4},  # Skeleton x1.6
+            }
+            modifiers = zone_modifiers.get(zone, {})
+            for i, enemy_type in enumerate(enemy_types):
+                if enemy_type in modifiers:
+                    weights[i] = int(weights[i] * modifiers[enemy_type])
+
         return weights
 
     def _spawn_zone_lore(self, dungeon: 'Dungeon', player: Player):
@@ -150,6 +170,8 @@ class EntityManager:
             self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor2_lore_config())
         elif dungeon.level == 3:
             self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor3_lore_config())
+        elif dungeon.level == 4:
+            self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor4_lore_config())
         else:
             # Default behavior for other floors
             for lore_id, entry in lore_entries:
@@ -204,6 +226,23 @@ class EntityManager:
             "the_nursery": (0.15, 1),              # 10-20% chance, max 1
             "digestion_chambers": (0.15, 1),   # 10-20% chance, max 1
             "root_warrens": (0.2, 1),          # 15-25% chance, max 1
+            "boss_approach": (1.0, 1),         # Guaranteed 1 lore
+        }
+
+    def _get_floor4_lore_config(self) -> dict:
+        """Floor 4 zone lore configuration.
+
+        Canonical zones: courtyard_squares, throne_hall_ruins, parade_corridors,
+        seal_chambers, record_vaults, mausoleum_district, oath_chambers, boss_approach
+        """
+        return {
+            "oath_chambers": (1.0, 1),         # Guaranteed 1 lore (anchor)
+            "throne_hall_ruins": (0.7, 1),     # 60-80% chance, max 1
+            "seal_chambers": (0.75, 2),        # 60-85% chance, up to 2 (bureaucracy lore)
+            "record_vaults": (0.75, 2),        # 60-85% chance, up to 2 (archive lore)
+            "mausoleum_district": (0.4, 1),    # 30-50% chance, max 1
+            "courtyard_squares": (0.25, 1),    # 20-35% chance, max 1
+            "parade_corridors": (0.15, 1),     # 10-20% chance, max 1
             "boss_approach": (1.0, 1),         # Guaranteed 1 lore
         }
 
