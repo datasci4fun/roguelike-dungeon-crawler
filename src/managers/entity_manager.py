@@ -109,6 +109,25 @@ class EntityManager:
                 if enemy_type in modifiers:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
+        # Floor 3 zone modifiers (Forest Depths)
+        # Canonical zones: root_warrens, canopy_halls, webbed_gardens, nursery,
+        # digestion_chambers, druid_ring, boss_approach
+        # Spider bias overall (reduce goblin/orc, keep skeleton for variety)
+        elif level == 3:
+            zone_modifiers = {
+                "nursery": {EnemyType.GOBLIN: 0.3, EnemyType.ORC: 0.2},  # Spider density x1.8
+                "webbed_gardens": {EnemyType.GOBLIN: 0.2, EnemyType.ORC: 0.2},  # Spider bias x2.0
+                "druid_ring": {EnemyType.GOBLIN: 0.5, EnemyType.SKELETON: 0.5},  # Low density
+                "digestion_chambers": {EnemyType.GOBLIN: 0.4},  # Low-to-normal
+                "canopy_halls": {EnemyType.SKELETON: 1.2},  # Mixed, slight skeleton
+                "root_warrens": {EnemyType.GOBLIN: 0.6},  # Spider bias x1.5
+                "boss_approach": {EnemyType.GOBLIN: 0.2, EnemyType.ORC: 0.2},  # Spider bias x2.0
+            }
+            modifiers = zone_modifiers.get(zone, {})
+            for i, enemy_type in enumerate(enemy_types):
+                if enemy_type in modifiers:
+                    weights[i] = int(weights[i] * modifiers[enemy_type])
+
         return weights
 
     def _spawn_zone_lore(self, dungeon: 'Dungeon', player: Player):
@@ -129,6 +148,8 @@ class EntityManager:
             self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor1_lore_config())
         elif dungeon.level == 2:
             self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor2_lore_config())
+        elif dungeon.level == 3:
+            self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor3_lore_config())
         else:
             # Default behavior for other floors
             for lore_id, entry in lore_entries:
@@ -168,6 +189,22 @@ class EntityManager:
             "diseased_pools": (0.3, 1),        # 30% chance, max 1
             "boss_approach": (1.0, 1),         # Guaranteed 1 lore
             "confluence_chambers": (0.25, 1),  # 25% chance, max 1 (start zone)
+        }
+
+    def _get_floor3_lore_config(self) -> dict:
+        """Floor 3 zone lore configuration.
+
+        Canonical zones: root_warrens, canopy_halls, webbed_gardens, nursery,
+        digestion_chambers, druid_ring, boss_approach
+        """
+        return {
+            "druid_ring": (1.0, 1),            # Guaranteed 1 lore (anchor)
+            "webbed_gardens": (0.3, 1),        # 20-35% chance, max 1
+            "canopy_halls": (0.2, 1),          # 15-25% chance, max 1
+            "nursery": (0.15, 1),              # 10-20% chance, max 1
+            "digestion_chambers": (0.15, 1),   # 10-20% chance, max 1
+            "root_warrens": (0.2, 1),          # 15-25% chance, max 1
+            "boss_approach": (1.0, 1),         # Guaranteed 1 lore
         }
 
     def _spawn_floor_lore(self, dungeon: 'Dungeon', player: Player, lore_entries: list, zone_config: dict):

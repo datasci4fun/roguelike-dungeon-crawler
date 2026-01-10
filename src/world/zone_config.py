@@ -164,9 +164,58 @@ FLOOR_2_CONFIG = FloorZoneConfig(
 
 
 # =============================================================================
-# FLOORS 3-8: Placeholder configs (to be implemented)
+# FLOOR 3: Forest Depths (GROWTH)
+# Canonical zones: root_warrens, canopy_halls, webbed_gardens, nursery,
+#                  digestion_chambers, druid_ring, boss_approach
 # =============================================================================
-FLOOR_3_CONFIG = FloorZoneConfig(floor_level=3, start_zone="generic", fallback_zone="generic")
+FLOOR_3_CONFIG = FloorZoneConfig(
+    floor_level=3,
+    start_zone="root_warrens",  # Branching entry point
+    boss_approach_count=2,
+    fallback_zone="root_warrens",  # Most common zone type
+    zones=[
+        # Anchor zone - ritual landmark with guaranteed lore
+        ZoneSpec(
+            zone_id="druid_ring",
+            required_count=1,
+            selection_rule="center",  # Mid-map, away from start/boss
+            eligibility=min_size(8, 8),
+        ),
+        # Anchor zone - high-danger spawn pocket
+        ZoneSpec(
+            zone_id="nursery",
+            required_count=1,
+            selection_rule="largest",  # Largest room far from start
+            eligibility=min_size(8, 8),
+        ),
+        # Weighted zones
+        ZoneSpec(
+            zone_id="root_warrens",
+            weight=4,  # Weighted high per docs
+            eligibility=elongated(8, 4),
+        ),
+        ZoneSpec(
+            zone_id="canopy_halls",
+            weight=2,
+            eligibility=min_size(8, 8),
+        ),
+        ZoneSpec(
+            zone_id="webbed_gardens",
+            weight=2,
+            eligibility=min_size(6, 6),
+        ),
+        ZoneSpec(
+            zone_id="digestion_chambers",
+            weight=1,
+            eligibility=min_size(6, 6),
+        ),
+    ],
+)
+
+
+# =============================================================================
+# FLOORS 4-8: Placeholder configs (to be implemented)
+# =============================================================================
 FLOOR_4_CONFIG = FloorZoneConfig(floor_level=4, start_zone="generic", fallback_zone="generic")
 FLOOR_5_CONFIG = FloorZoneConfig(floor_level=5, start_zone="generic", fallback_zone="generic")
 FLOOR_6_CONFIG = FloorZoneConfig(floor_level=6, start_zone="generic", fallback_zone="generic")

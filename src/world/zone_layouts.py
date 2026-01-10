@@ -292,3 +292,181 @@ def layout_confluence_chambers(dungeon: 'Dungeon', room: 'Room'):
                 room.y + 2 <= py < room.y + room.height - 2):
                 if dungeon.tiles[py][px] == TileType.FLOOR:
                     dungeon.tiles[py][px] = TileType.DEEP_WATER
+
+
+# =============================================================================
+# FLOOR 3: Forest Depths Layouts
+# =============================================================================
+
+@register_layout(3, "root_warrens")
+def layout_root_warrens(dungeon: 'Dungeon', room: 'Room'):
+    """Create root warren chokepoints.
+
+    Thin interior partitions that create tactical chokepoints
+    while preserving connectivity (2-tile-wide routes).
+    """
+    from ..core.constants import TileType
+
+    # Need elongated room for meaningful chokepoints
+    if room.width < 8 and room.height < 8:
+        return
+
+    # Determine orientation based on room shape
+    if room.width > room.height:
+        # Horizontal room - add vertical partition
+        partition_x = room.x + room.width // 2
+        # Leave 2-tile gap at top and bottom for passage
+        for y in range(room.y + 3, room.y + room.height - 3):
+            if random.random() < 0.6:  # 60% fill for organic feel
+                dungeon.tiles[y][partition_x] = TileType.WALL
+    else:
+        # Vertical room - add horizontal partition
+        partition_y = room.y + room.height // 2
+        for x in range(room.x + 3, room.x + room.width - 3):
+            if random.random() < 0.6:
+                dungeon.tiles[partition_y][x] = TileType.WALL
+
+
+@register_layout(3, "canopy_halls")
+def layout_canopy_halls(dungeon: 'Dungeon', room: 'Room'):
+    """Create canopy hall landmark room.
+
+    Open center, decoration "trunk" positions along edges.
+    Optional water pool in corner.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 8 or room.height < 8:
+        return
+
+    # Add small water pool in one corner (underground spring)
+    if random.random() < 0.5:
+        corner = random.choice(['nw', 'ne', 'sw', 'se'])
+        if corner == 'nw':
+            px, py = room.x + 1, room.y + 1
+        elif corner == 'ne':
+            px, py = room.x + room.width - 2, room.y + 1
+        elif corner == 'sw':
+            px, py = room.x + 1, room.y + room.height - 2
+        else:
+            px, py = room.x + room.width - 2, room.y + room.height - 2
+
+        # 2x2 water pool
+        for dx in range(2):
+            for dy in range(2):
+                tx, ty = px + dx, py + dy
+                if (room.x + 1 <= tx < room.x + room.width - 1 and
+                    room.y + 1 <= ty < room.y + room.height - 1):
+                    if dungeon.tiles[ty][tx] == TileType.FLOOR:
+                        dungeon.tiles[ty][tx] = TileType.DEEP_WATER
+
+
+@register_layout(3, "webbed_gardens")
+def layout_webbed_gardens(dungeon: 'Dungeon', room: 'Room'):
+    """Create webbed garden trap room.
+
+    1-3 trap tiles to simulate web traps, ensuring safe route exists.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 6 or room.height < 6:
+        return
+
+    # Place 1-3 visible traps (using TRAP_VISIBLE if available, else skip)
+    # For now, we'll use DEEP_WATER as hazard stand-in
+    num_traps = random.randint(1, 3)
+    for _ in range(num_traps):
+        # Place traps away from edges to ensure safe paths exist
+        tx = random.randint(room.x + 2, room.x + room.width - 3)
+        ty = random.randint(room.y + 2, room.y + room.height - 3)
+        if dungeon.tiles[ty][tx] == TileType.FLOOR:
+            dungeon.tiles[ty][tx] = TileType.DEEP_WATER
+
+
+@register_layout(3, "nursery")
+def layout_nursery(dungeon: 'Dungeon', room: 'Room'):
+    """Create nursery high-danger room.
+
+    Heavy decoration density around edges (egg clusters),
+    keep center navigable.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 8 or room.height < 8:
+        return
+
+    # Add scattered hazards around edges (hatch points)
+    num_hazards = random.randint(2, 4)
+    for _ in range(num_hazards):
+        # Place along edges but not blocking entrances
+        edge = random.choice(['n', 's', 'e', 'w'])
+        if edge == 'n':
+            tx = random.randint(room.x + 2, room.x + room.width - 3)
+            ty = room.y + 1
+        elif edge == 's':
+            tx = random.randint(room.x + 2, room.x + room.width - 3)
+            ty = room.y + room.height - 2
+        elif edge == 'e':
+            tx = room.x + room.width - 2
+            ty = random.randint(room.y + 2, room.y + room.height - 3)
+        else:
+            tx = room.x + 1
+            ty = random.randint(room.y + 2, room.y + room.height - 3)
+
+        if dungeon.tiles[ty][tx] == TileType.FLOOR:
+            dungeon.tiles[ty][tx] = TileType.DEEP_WATER
+
+
+@register_layout(3, "digestion_chambers")
+def layout_digestion_chambers(dungeon: 'Dungeon', room: 'Room'):
+    """Create digestion chamber hazard room.
+
+    Patchy hazard areas with guaranteed safe route.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 6 or room.height < 6:
+        return
+
+    # Create a central hazard pool (digestive pit)
+    cx = room.x + room.width // 2
+    cy = room.y + room.height // 2
+
+    pool_size = 2 if room.width < 8 else 3
+
+    for dx in range(pool_size):
+        for dy in range(pool_size):
+            px = cx - pool_size // 2 + dx
+            py = cy - pool_size // 2 + dy
+            if (room.x + 2 <= px < room.x + room.width - 2 and
+                room.y + 2 <= py < room.y + room.height - 2):
+                if dungeon.tiles[py][px] == TileType.FLOOR:
+                    dungeon.tiles[py][px] = TileType.DEEP_WATER
+
+
+@register_layout(3, "druid_ring")
+def layout_druid_ring(dungeon: 'Dungeon', room: 'Room'):
+    """Create druid ring anchor room.
+
+    Clear center with decorations arranged in a ring pattern.
+    Uses water tiles to mark the ritual ring.
+    """
+    from ..core.constants import TileType
+
+    if room.width < 8 or room.height < 8:
+        return
+
+    cx = room.x + room.width // 2
+    cy = room.y + room.height // 2
+
+    # Create a ring of water tiles around center (ritual marking)
+    radius = min(room.width, room.height) // 3
+    for angle in range(0, 360, 45):  # 8 points around the ring
+        import math
+        rad = math.radians(angle)
+        rx = int(cx + radius * math.cos(rad))
+        ry = int(cy + radius * math.sin(rad))
+        if (room.x + 1 <= rx < room.x + room.width - 1 and
+            room.y + 1 <= ry < room.y + room.height - 1):
+            if dungeon.tiles[ry][rx] == TileType.FLOOR:
+                dungeon.tiles[ry][rx] = TileType.DEEP_WATER
