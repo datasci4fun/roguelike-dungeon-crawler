@@ -1,33 +1,80 @@
-"""Story manager for tracking narrative progress and discovered lore."""
-from typing import Set, Dict, Any
+"""Story manager for tracking narrative progress and discovered lore.
+
+StoryManager serves as the Codex backend, maintaining display-ready caches
+that mirror the authoritative CompletionLedger. The ledger is the source of
+truth for completion tracking; StoryManager provides convenience views.
+"""
+from typing import Set, Dict, Any, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .completion import CompletionLedger
 
 
 class StoryManager:
-    """Tracks story progress, discovered lore, and shown hints."""
+    """Tracks story progress, discovered lore, and shown hints.
 
-    def __init__(self):
+    When attached to a CompletionLedger, lore discoveries are mirrored to
+    ensure consistency between Codex display and completion tracking.
+    """
+
+    def __init__(self, ledger: Optional['CompletionLedger'] = None):
         # Set of lore entry IDs that have been discovered
         self.discovered_lore: Set[str] = set()
 
         # Set of enemy types that have been encountered (for first-encounter messages)
         self.encountered_enemies: Set[str] = set()
 
-        # Set of levels that have shown their intro message
+        # Set of levels that have been visited (for location codex)
         self.visited_levels: Set[int] = set()
 
         # Set of hint IDs that have been shown (for tutorial system)
         self.shown_hints: Set[str] = set()
 
-    def discover_lore(self, entry_id: str) -> bool:
+        # Reference to authoritative completion ledger (optional)
+        self.ledger: Optional['CompletionLedger'] = ledger
+
+    def attach_ledger(self, ledger: 'CompletionLedger') -> None:
+        """Attach a completion ledger and hydrate caches from it.
+
+        This ensures Codex and ledger are guaranteed consistent. Call this
+        after loading a saved game or starting a new game with an existing ledger.
         """
-        Mark a lore entry as discovered.
+        self.ledger = ledger
+
+        # Hydrate lore cache from ledger (ledger is source of truth)
+        self.discovered_lore = set(ledger.lore_found_ids)
+
+        # Note: encountered_enemies and visited_levels are StoryManager-specific
+        # (Codex display concerns) and not tracked by ledger, so we don't hydrate them.
+        # They persist via StoryManager's own serialization.
+
+    def discover_lore(self, entry_id: str, validate: bool = True) -> bool:
+        """Mark a lore entry as discovered.
+
+        Args:
+            entry_id: The lore ID to discover
+            validate: If True, validate the ID against known lore IDs
 
         Returns:
             True if this is a new discovery, False if already known
+
+        Raises:
+            ValueError: If validate=True and entry_id is not a valid lore ID
         """
+        # Validate lore ID to catch typos
+        if validate:
+            from .lore_items import validate_lore_id
+            validate_lore_id(entry_id, context="discover_lore")
+
         if entry_id in self.discovered_lore:
             return False
+
         self.discovered_lore.add(entry_id)
+
+        # Mirror to ledger if attached
+        if self.ledger:
+            self.ledger.record_lore_found(entry_id)
+
         return True
 
     def has_discovered_lore(self, entry_id: str) -> bool:
@@ -35,8 +82,7 @@ class StoryManager:
         return entry_id in self.discovered_lore
 
     def encounter_enemy(self, enemy_name: str) -> bool:
-        """
-        Mark an enemy type as encountered.
+        """Mark an enemy type as encountered.
 
         Returns:
             True if this is the first encounter, False otherwise
@@ -51,8 +97,7 @@ class StoryManager:
         return enemy_name in self.encountered_enemies
 
     def visit_level(self, level: int) -> bool:
-        """
-        Mark a level as visited.
+        """Mark a level as visited.
 
         Returns:
             True if this is the first visit, False otherwise
@@ -67,8 +112,7 @@ class StoryManager:
         return level in self.visited_levels
 
     def show_hint(self, hint_id: str) -> bool:
-        """
-        Mark a hint as shown.
+        """Mark a hint as shown.
 
         Returns:
             True if this is a new hint, False if already shown
@@ -83,8 +127,7 @@ class StoryManager:
         return hint_id in self.shown_hints
 
     def get_lore_progress(self) -> tuple:
-        """
-        Get lore discovery progress.
+        """Get lore discovery progress.
 
         Returns:
             Tuple of (discovered_count, total_count)
@@ -93,8 +136,7 @@ class StoryManager:
         return len(self.discovered_lore), len(LORE_ENTRIES)
 
     def get_discovered_lore_entries(self) -> list:
-        """
-        Get full data for all discovered lore entries.
+        """Get full data for all discovered lore entries.
 
         Returns:
             List of dicts with id, title, content, category, item_type for each discovered entry
@@ -114,13 +156,12 @@ class StoryManager:
         return entries
 
     def get_bestiary_entries(self) -> list:
-        """
-        Get bestiary entries for all encountered enemies.
+        """Get bestiary entries for all encountered enemies.
 
         Returns:
             List of dicts with creature data for codex display
         """
-        from ..core.constants import ENEMY_STATS, BOSS_STATS, EnemyType, BossType
+        from ..core.constants import ENEMY_STATS, BOSS_STATS
         from .story_data import ENEMY_ENCOUNTER_MESSAGES
 
         entries = []
@@ -169,18 +210,71 @@ class StoryManager:
 
         return entries
 
-    def get_location_entries(self) -> list:
-        """
-        Get location entries for all visited levels.
+    def get_artifact_entries(self) -> list:
+        """Get artifact entries for all collected artifacts.
 
         Returns:
-            List of dicts with location data for codex display
+            List of dicts with artifact data for codex display
+        """
+        from ..items.artifacts import ArtifactId, ARTIFACT_DATA, VOW_DATA
+
+        # Get discovered artifact IDs from ledger or empty set
+        discovered_ids: Set[str] = set()
+        if self.ledger:
+            discovered_ids = set(self.ledger.artifacts_collected_ids)
+
+        entries = []
+        for artifact_id_name in sorted(discovered_ids):
+            # Look up artifact by name
+            try:
+                artifact_id = ArtifactId[artifact_id_name]
+            except KeyError:
+                continue
+
+            data = ARTIFACT_DATA.get(artifact_id)
+            if not data:
+                continue
+
+            # Build content with description and zone info
+            content = [data['description']]
+
+            # Add vow info for Oathstone
+            if artifact_id == ArtifactId.OATHSTONE:
+                content.append("")
+                content.append("Available Vows:")
+                for vow_type, vow_data in VOW_DATA.items():
+                    content.append(f"  {vow_data['name']}: {vow_data['description']}")
+                    content.append(f"    Reward: {vow_data['reward_description']}")
+
+            entries.append({
+                'id': f'artifact_{artifact_id_name.lower()}',
+                'title': data['name'],
+                'content': content,
+                'category': 'artifacts',
+                'item_type': 'scroll',
+                'artifact_data': {
+                    'symbol': data['symbol'],
+                    'name': data['name'],
+                    'description': data['description'],
+                    'zone_bias': data.get('zone_bias', []),
+                }
+            })
+
+        return entries
+
+    def get_location_entries(self) -> list:
+        """Get location entries for all visited levels.
+
+        Returns:
+            List of dicts with location data for codex display, including
+            completion progress from ledger if attached.
         """
         from ..core.constants import (
             LEVEL_THEMES, LEVEL_BOSS_MAP, BOSS_STATS, THEME_TILES,
             ENEMY_STATS, DungeonTheme
         )
         from .story_data import LEVEL_INTRO_MESSAGES
+        from .lore_items import FLOOR_LORE_IDS
 
         entries = []
 
@@ -197,10 +291,12 @@ class StoryManager:
             boss_type = LEVEL_BOSS_MAP.get(level)
             boss_name = None
             boss_symbol = None
+            boss_type_name = None
             if boss_type and boss_type in BOSS_STATS:
                 boss_data = BOSS_STATS[boss_type]
                 boss_name = boss_data.get('name')
                 boss_symbol = boss_data.get('symbol')
+                boss_type_name = boss_type.name
 
             # Get creatures that can spawn on this level
             creatures = []
@@ -209,6 +305,20 @@ class StoryManager:
                 max_level = stats.get('max_level', 8)
                 if min_level <= level <= max_level:
                     creatures.append(stats['name'])
+
+            # Calculate completion progress from ledger
+            floor_cleared = False
+            warden_defeated = False
+            lore_found = 0
+            lore_total = len(FLOOR_LORE_IDS.get(level, set()))
+
+            if self.ledger:
+                floor_cleared = level in self.ledger.floors_cleared
+                if boss_type_name:
+                    warden_defeated = boss_type_name in self.ledger.wardens_defeated
+                # Count lore found for this floor
+                floor_lore_ids = FLOOR_LORE_IDS.get(level, set())
+                lore_found = len(self.ledger.lore_found_ids & floor_lore_ids)
 
             entry = {
                 'id': f'location_level_{level}',
@@ -224,6 +334,10 @@ class StoryManager:
                     'boss_name': boss_name,
                     'boss_symbol': boss_symbol,
                     'creatures': creatures,
+                    # Completion progress from ledger
+                    'cleared': floor_cleared,
+                    'warden_defeated': warden_defeated,
+                    'lore_progress': [lore_found, lore_total],
                 }
             }
             entries.append(entry)
@@ -240,13 +354,27 @@ class StoryManager:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'StoryManager':
-        """Deserialize story state from dictionary."""
-        manager = cls()
+    def from_dict(cls, data: Dict[str, Any], ledger: Optional['CompletionLedger'] = None) -> 'StoryManager':
+        """Deserialize story state from dictionary.
+
+        Args:
+            data: Serialized story manager data
+            ledger: Optional CompletionLedger to attach
+
+        Returns:
+            Restored StoryManager instance
+        """
+        manager = cls(ledger=ledger)
         manager.discovered_lore = set(data.get('discovered_lore', []))
         manager.encountered_enemies = set(data.get('encountered_enemies', []))
         manager.visited_levels = set(data.get('visited_levels', []))
         manager.shown_hints = set(data.get('shown_hints', []))
+
+        # If ledger provided, sync lore from ledger (ledger is source of truth)
+        if ledger:
+            # Merge any lore from ledger that might not be in saved state
+            manager.discovered_lore |= set(ledger.lore_found_ids)
+
         return manager
 
     def reset(self):
@@ -255,3 +383,4 @@ class StoryManager:
         self.encountered_enemies.clear()
         self.visited_levels.clear()
         self.shown_hints.clear()
+        self.ledger = None

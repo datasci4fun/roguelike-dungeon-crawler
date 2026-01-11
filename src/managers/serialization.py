@@ -83,10 +83,18 @@ class SaveManager:
             self.game.entity_manager.items = [item for item in (self._deserialize_item(i) for i in game_state['items']) if item is not None]
             self.game.dungeon = self._deserialize_dungeon(game_state['dungeon'])
 
-            # Restore story_manager state if present
+            # v5.5: Restore completion_ledger FIRST (it's source of truth for story_manager)
+            if game_state.get('completion_ledger') and hasattr(self.game, 'completion_ledger'):
+                from ..story import CompletionLedger
+                self.game.completion_ledger = CompletionLedger.from_dict(game_state['completion_ledger'])
+
+            # Restore story_manager state if present, passing ledger for hydration
             if game_state.get('story_manager') and self.game.story_manager:
                 from ..story import StoryManager
-                self.game.story_manager = StoryManager.from_dict(game_state['story_manager'])
+                self.game.story_manager = StoryManager.from_dict(
+                    game_state['story_manager'],
+                    ledger=self.game.completion_ledger if hasattr(self.game, 'completion_ledger') else None
+                )
 
             # Restore field_pulse_manager state if present
             if game_state.get('field_pulse_manager') and hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager:
@@ -104,10 +112,7 @@ class SaveManager:
             if game_state.get('ghost_manager') and hasattr(self.game, 'ghost_manager') and self.game.ghost_manager:
                 self.game.ghost_manager.load_state(game_state['ghost_manager'])
 
-            # v5.5: Restore completion_ledger state if present
-            if game_state.get('completion_ledger') and hasattr(self.game, 'completion_ledger'):
-                from ..story import CompletionLedger
-                self.game.completion_ledger = CompletionLedger.from_dict(game_state['completion_ledger'])
+            # Note: completion_ledger is restored earlier (before story_manager)
 
             # Update FOV after loading (with vision bonus from race traits)
             vision_bonus = self.game.player.get_vision_bonus() if hasattr(self.game.player, 'get_vision_bonus') else 0

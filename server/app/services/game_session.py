@@ -548,17 +548,18 @@ class GameSessionManager:
         # Include lore journal data (always available)
         if engine.story_manager:
             discovered, total = engine.story_manager.get_lore_progress()
-            # Combine all entry types: lore + bestiary + locations
+            # Combine all entry types: lore + bestiary + locations + artifacts
             lore_entries = engine.story_manager.get_discovered_lore_entries()
             bestiary_entries = engine.story_manager.get_bestiary_entries()
             location_entries = engine.story_manager.get_location_entries()
-            all_entries = lore_entries + bestiary_entries + location_entries
+            artifact_entries = engine.story_manager.get_artifact_entries()
+            all_entries = lore_entries + bestiary_entries + location_entries + artifact_entries
             # Calculate total discovered across all types
-            total_discovered = len(lore_entries) + len(bestiary_entries) + len(location_entries)
+            total_discovered = len(lore_entries) + len(bestiary_entries) + len(location_entries) + len(artifact_entries)
             state["lore_journal"] = {
                 "entries": all_entries,
                 "discovered_count": total_discovered,
-                "total_count": total + len(bestiary_entries) + len(location_entries),
+                "total_count": total + len(bestiary_entries) + len(location_entries) + len(artifact_entries),
             }
 
         # Include field pulse state for environmental effects
