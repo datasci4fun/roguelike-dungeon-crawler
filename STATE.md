@@ -1,8 +1,8 @@
 # Project State
 
 **Last Updated:** 2026-01-10
-**Branch:** feature/ghost-differentiation
-**Version:** v5.6.0 (Ghost Differentiation)
+**Branch:** develop
+**Version:** v5.5.0 (Canon Alignment + Sealed Page)
 
 ---
 
@@ -131,6 +131,57 @@ Data-driven zone assignment with modular layout decorators:
 - **Validation harness** catches regressions across 20 seeds
 - **All 8 floors validated** with 20/20 seeds passing
 
+### Canon Alignment (v5.5.0)
+
+All floor-to-theme-to-boss mappings now use a single source of truth:
+
+| Floor | Theme | Boss | Biome |
+|-------|-------|------|-------|
+| 1 | STONE | Goblin King (K) | Stone Dungeon |
+| 2 | SEWER | Rat King (r) | Sewers of Valdris |
+| 3 | FOREST | Spider Queen (S) | Forest Depths |
+| 4 | CRYPT | The Regent (R) | Mirror Valdris |
+| 5 | ICE | Frost Giant (F) | Ice Cavern |
+| 6 | LIBRARY | Arcane Keeper (A) | Ancient Library |
+| 7 | VOLCANIC | Flame Lord (Φ) | Volcanic Depths |
+| 8 | CRYSTAL | Dragon Emperor (E) | Crystal Cave |
+
+**Alignment Fixes Applied:**
+- `BOSS_STATS[*]['level']` now matches `LEVEL_BOSS_MAP` exactly
+- Rat King symbol changed from 'K' to 'r' (avoid Goblin King collision)
+- Floor 4 display name overridden to "Mirror Valdris" (uses CRYPT theme)
+- `audioConfig.ts` uses biome-based track IDs mapped to canon floors
+- `SceneRenderer/types.ts` theme union includes all 8 biomes
+- `DungeonTheme` enum comments no longer contain level numbers
+
+**Validation:**
+- `validate_floor_canon()` checks LEVEL_THEMES, LEVEL_BOSS_MAP, BOSS_STATS levels, and intro keywords
+- Run: `python -c "from src.story.lore_items import validate_floor_canon; print(validate_floor_canon())"`
+
+### Sealed Page (Codex Entry)
+
+A mysterious "SEALED PAGE" entry in the Lore Codex (category: 'meta') shows completion progress:
+
+| Metric | Source |
+|--------|--------|
+| Overall % | Weighted: 25% floors + 25% wardens + 25% lore + 15% artifacts + 10% evidence |
+| Floors Cleared | X/8 |
+| Wardens Defeated | X/8 |
+| Lore Discovered | X/total |
+| Evidence Found | X/total |
+| Artifacts Collected | X/total |
+| Echoes Witnessed | count |
+
+**Display Logic:**
+- Always shows "Condition: ???"
+- At 100% completion: "The page remains sealed. Something else is required."
+- Hints at hidden unlock condition without revealing it
+
+**Implementation:**
+- `story_manager.get_sealed_page_entry()` calculates progress from CompletionLedger
+- `game_session.py` includes sealed page in Codex response
+- Frontend types: `SealedData` interface, `isSealedEntry()` type guard
+
 ### Hazard Tile Effects
 
 Zone layouts paint hazard tiles that now have gameplay effects:
@@ -140,7 +191,7 @@ Zone layouts paint hazard tiles that now have gameplay effects:
 | LAVA | 5 damage/turn + burn status |
 | POISON_GAS | Applies poison effect, spreads each turn |
 | DEEP_WATER | Costs 2 turns to cross (enemies get extra action), drown risk at <25% HP |
-| ICE | Cosmetic for now (slide mechanic deferred) |
+| ICE | Cosmetic only (causes_slide=False, slide mechanic deferred) |
 
 **Implementation:**
 - `dungeon._sync_tile_hazards()` converts TileType tiles to Hazard objects
@@ -536,14 +587,30 @@ Complete world lore rewrite introducing the Skyfall Seed mythos (1326 lines):
 
 ---
 
-## Current Version: v5.4.0
+## Current Version: v5.5.0
 
-### Completed Features (v5.4.0)
+### Completed Features (v5.5.0)
+
+| Feature | Status |
+|---------|--------|
+| **Canon Alignment** - All floor/theme/boss mappings consistent | ✅ |
+| BOSS_STATS levels match LEVEL_BOSS_MAP | ✅ |
+| Rat King symbol 'r' (no longer collides with Goblin King) | ✅ |
+| Floor 4 "Mirror Valdris" display name override | ✅ |
+| audioConfig.ts biome-based track mappings | ✅ |
+| validate_floor_canon() with BOSS_STATS check | ✅ |
+| **Sealed Page** - Completion progress in Codex | ✅ |
+| 'meta' category with '???' label | ✅ |
+| SealedData interface and type guards | ✅ |
+| Story data evidence entries rewritten for correct biomes | ✅ |
+| ICE causes_slide=False (deferred) | ✅ |
+
+### v5.4.0 Features (Lore Codex)
 
 | Feature | Status |
 |---------|--------|
 | Immersive Lore Codex system (replaces journal button) | ✅ |
-| Category-based organization (History, Characters, Creatures, Locations, Artifacts) | ✅ |
+| Category-based organization (History, Characters, Creatures, Locations, Artifacts, Meta) | ✅ |
 | ScrollPresentation with unroll animation | ✅ |
 | BookPresentation with page-turn effect | ✅ |
 | CreaturePresentation with animated Canvas 2D portraits | ✅ |
