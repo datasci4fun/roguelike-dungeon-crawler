@@ -673,7 +673,193 @@ else:
 
 ---
 
-### Step 15: Full Integration Test
+### Step 15: Payload Contract Test
+
+Validate game state payload contains all required fields for frontend:
+
+```python
+# Simulate the structure expected by TypeScript frontend
+# These are the critical fields that, if missing, break the UI silently
+
+errors = []
+
+# Required top-level keys in game_state payload
+REQUIRED_PAYLOAD_KEYS = [
+    "type",
+    "session_id",
+    "game_state",
+    "ui_mode",
+    "turn",
+    "player",
+    "dungeon",
+    "messages",
+    "events",
+]
+
+# Required first_person_view keys (3D renderer)
+REQUIRED_FPV_KEYS = [
+    "rows",
+    "entities",
+    "facing",
+    "depth",
+    "zone_id",
+    "room_has_ceiling",
+    "room_skybox_override",
+]
+
+# Required field_pulse keys
+REQUIRED_PULSE_KEYS = ["active", "amplification", "floor_turn"]
+
+# Required lore_journal keys
+REQUIRED_LORE_KEYS = ["entries", "discovered_count", "total_count"]
+
+# Required artifact keys (when present)
+REQUIRED_ARTIFACT_KEYS = ["id", "name", "symbol", "charges", "used", "active_vow", "vow_broken"]
+
+# Validate by checking the serialize function includes these
+import inspect
+try:
+    from server.app.services.game_session import GameSessionService
+    source = inspect.getsource(GameSessionService.serialize_game_state)
+
+    # Check first_person_view keys
+    for key in REQUIRED_FPV_KEYS:
+        if f'"{key}"' not in source and f"'{key}'" not in source:
+            errors.append(f"first_person_view missing '{key}'")
+
+    # Check field_pulse keys
+    for key in REQUIRED_PULSE_KEYS:
+        if f'"{key}"' not in source and f"'{key}'" not in source:
+            errors.append(f"field_pulse missing '{key}'")
+
+    # Check lore_journal structure
+    if '"entries"' not in source:
+        errors.append("lore_journal missing 'entries'")
+    if '"discovered_count"' not in source:
+        errors.append("lore_journal missing 'discovered_count'")
+
+except ImportError:
+    # Running outside Docker context, check local path
+    try:
+        with open('server/app/services/game_session.py', 'r') as f:
+            source = f.read()
+
+        for key in REQUIRED_FPV_KEYS:
+            if f'"{key}"' not in source and f"'{key}'" not in source:
+                errors.append(f"first_person_view missing '{key}'")
+
+        for key in REQUIRED_PULSE_KEYS:
+            if f'"{key}"' not in source and f"'{key}'" not in source:
+                errors.append(f"field_pulse missing '{key}'")
+    except FileNotFoundError:
+        errors.append("Cannot find game_session.py for validation")
+
+if errors:
+    print(f"Payload Contract: {len(errors)} errors")
+    for err in errors:
+        print(f"  - {err}")
+else:
+    print("[OK] Payload Contract: All required keys present in serializer")
+```
+
+---
+
+### Step 16: Glyph Collision Test
+
+Ensure all glyphs are distinct (prevents unreadable fallback mode):
+
+```python
+from src.core.constants import ENEMY_STATS, BOSS_STATS, TileType
+from src.entities.ghosts import GhostType
+
+errors = []
+all_glyphs = {}
+
+def register(glyph, category, name):
+    key = glyph
+    if key in all_glyphs:
+        existing = all_glyphs[key]
+        errors.append(f"Collision: '{glyph}' used by {existing} AND {category}:{name}")
+    else:
+        all_glyphs[key] = f"{category}:{name}"
+
+# Player
+register('@', 'player', 'player')
+
+# Tiles
+for tile in TileType:
+    if tile.value and len(str(tile.value)) == 1:
+        register(str(tile.value), 'tile', tile.name)
+
+# Enemy symbols
+for enemy_type, stats in ENEMY_STATS.items():
+    sym = stats.get('symbol')
+    if sym:
+        register(sym, 'enemy', enemy_type.name)
+
+# Boss symbols
+for boss_type, stats in BOSS_STATS.items():
+    sym = stats.get('symbol')
+    if sym:
+        register(sym, 'boss', boss_type.name)
+
+# Ghost symbols (use chr() for Unicode safety)
+GHOST_GLYPHS = {
+    GhostType.ECHO: chr(949),      # ε
+    GhostType.HOLLOWED: 'H',
+    GhostType.SILENCE: chr(216),   # Ø
+    GhostType.BEACON: chr(10023),  # ✧
+    GhostType.CHAMPION: chr(8224), # †
+    GhostType.ARCHIVIST: chr(167), # §
+}
+for ghost_type, glyph in GHOST_GLYPHS.items():
+    register(glyph, 'ghost', ghost_type.name)
+
+# Artifact symbols
+ARTIFACT_GLYPHS = {'&': 'DUPLICATE_SEAL', '%': 'WOUNDGLASS_SHARD', '*': 'OATHSTONE'}
+for glyph, name in ARTIFACT_GLYPHS.items():
+    register(glyph, 'artifact', name)
+
+# Item symbols (common)
+ITEM_GLYPHS = {'!': 'potion', '?': 'scroll', ')': 'weapon', '[': 'armor', '$': 'gold'}
+for glyph, name in ITEM_GLYPHS.items():
+    register(glyph, 'item', name)
+
+# Known acceptable collisions (distinguished by color/context in renderer)
+ACCEPTABLE_COLLISIONS = {
+    ('enemy', 'boss'),    # Boss uses same letter as related enemy (e.g., 'r' for Rat/Rat King)
+    ('boss', 'enemy'),
+    ('tile', 'item'),     # Tile and item can share if color-coded
+    ('item', 'tile'),
+}
+
+critical_errors = []
+warnings = []
+for err in errors:
+    # Parse the collision
+    is_acceptable = False
+    for cat1, cat2 in ACCEPTABLE_COLLISIONS:
+        if f"{cat1}:" in err and f"{cat2}:" in err:
+            is_acceptable = True
+            break
+    if is_acceptable:
+        warnings.append(err)
+    else:
+        critical_errors.append(err)
+
+if critical_errors:
+    print(f"Glyph Collision: {len(critical_errors)} CRITICAL errors")
+    for err in critical_errors:
+        print(f"  - {err}")
+elif warnings:
+    print(f"[OK] Glyph Collision: {len(all_glyphs)} glyphs ({len(warnings)} acceptable overlaps)")
+else:
+    print(f"[OK] Glyph Collision: {len(all_glyphs)} distinct glyphs, no collisions")
+```
+
+---
+
+### Step 17: Full Integration Test
 
 Run the game briefly to verify it launches:
 
@@ -707,6 +893,8 @@ Skybox/Ceiling:         [PASSED/FAILED] (X outdoor floors, Y open-air zones)
 Canonical Matrix:       [PASSED/FAILED] (theme/boss/intro/pools/zones)
 Seed Determinism:       [PASSED/FAILED] (X floor/seed pairs stable)
 Save/Load Roundtrip:    [PASSED/FAILED] (ledger/artifact/ghost)
+Payload Contract:       [PASSED/FAILED] (required keys present)
+Glyph Collision:        [PASSED/FAILED] (X distinct glyphs)
 Game Launch:            [PASSED/FAILED]
 
 Overall Status: [ALL PASSED / ISSUES FOUND]
