@@ -897,7 +897,8 @@ def _execute_summon_swarm(
                     rat = Enemy(nx, ny, enemy_type=EnemyType.GOBLIN, is_elite=False)
                     rat.name = "Rat"
                     rat.symbol = 'r'
-                    rat.hp = rat.hp // 2  # Weaker than goblins
+                    rat.health = rat.health // 2  # Weaker than goblins
+                    rat.max_health = rat.health
                     entity_manager.enemies.append(rat)
                     spawned += 1
                     break

@@ -17,34 +17,56 @@ const WALL_HEIGHT = 2.5;
 const CAMERA_HEIGHT = 1.4;
 
 // Entity label configuration
-const LABEL_FONT_SIZE = 48;
-const LABEL_CANVAS_WIDTH = 256;
-const LABEL_CANVAS_HEIGHT = 64;
+const LABEL_FONT_SIZE = 36;
+const LABEL_PADDING = 20;
+const LABEL_HEIGHT = 64;
 
 /**
  * Create a sprite with text label for entity names
+ * Dynamically sizes canvas to fit text, with strong outline for visibility
  */
 function createTextSprite(text: string, color: string = '#ffffff'): THREE.Sprite {
+  // Create temporary canvas to measure text
+  const measureCanvas = document.createElement('canvas');
+  const measureCtx = measureCanvas.getContext('2d')!;
+  measureCtx.font = `bold ${LABEL_FONT_SIZE}px Arial`;
+  const textMetrics = measureCtx.measureText(text);
+
+  // Calculate canvas size based on text width (with padding for outline)
+  const textWidth = Math.ceil(textMetrics.width);
+  const canvasWidth = Math.max(128, textWidth + LABEL_PADDING * 2);
+  const canvasHeight = LABEL_HEIGHT;
+
   const canvas = document.createElement('canvas');
-  canvas.width = LABEL_CANVAS_WIDTH;
-  canvas.height = LABEL_CANVAS_HEIGHT;
+  canvas.width = canvasWidth;
+  canvas.height = canvasHeight;
   const ctx = canvas.getContext('2d')!;
 
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw text with shadow for readability
+  // Draw semi-transparent background pill for better visibility
+  const pillHeight = LABEL_FONT_SIZE + 12;
+  const pillY = (canvasHeight - pillHeight) / 2;
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.beginPath();
+  ctx.roundRect(4, pillY, canvasWidth - 8, pillHeight, pillHeight / 2);
+  ctx.fill();
+
+  // Setup text rendering
   ctx.font = `bold ${LABEL_FONT_SIZE}px Arial`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  // Shadow
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-  ctx.fillText(text, canvas.width / 2 + 2, canvas.height / 2 + 2);
+  // Draw strong outline/stroke for readability against any background
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+  ctx.lineWidth = 4;
+  ctx.lineJoin = 'round';
+  ctx.strokeText(text, canvasWidth / 2, canvasHeight / 2);
 
-  // Main text
+  // Draw main text
   ctx.fillStyle = color;
-  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+  ctx.fillText(text, canvasWidth / 2, canvasHeight / 2);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
@@ -53,10 +75,13 @@ function createTextSprite(text: string, color: string = '#ffffff'): THREE.Sprite
     map: texture,
     transparent: true,
     depthTest: false,  // Always render on top
+    depthWrite: false, // Don't write to depth buffer
   });
 
   const sprite = new THREE.Sprite(material);
-  sprite.scale.set(2, 0.5, 1);  // Adjust scale for readability
+  // Scale proportionally based on canvas size, making labels larger and more readable
+  const aspectRatio = canvasWidth / canvasHeight;
+  sprite.scale.set(aspectRatio * 0.8, 0.8, 1);
   return sprite;
 }
 
@@ -883,7 +908,10 @@ export function FirstPersonRenderer3D({
       // Labels are expensive - only render for close entities
       if (entity.name && entity.distance <= LABEL_CULL_DISTANCE && labelsRendered < MAX_LABELS) {
         const nameLabel = createTextSprite(entity.name, labelColor);
-        nameLabel.position.set(x, y + 0.7, z);  // Position above entity
+        // Position label well above entity to avoid overlap with sprite
+        // Items are lower, so need less offset; enemies/NPCs need more clearance
+        const labelOffset = entity.type === 'item' ? 0.6 : 1.1;
+        nameLabel.position.set(x, y + labelOffset, z);
         geometryGroup.add(nameLabel);
         labelsRendered++;
       }
@@ -1010,7 +1038,6 @@ export function FirstPersonRenderer3D({
 
   return (
     <div
-      ref={containerRef}
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
@@ -1027,6 +1054,17 @@ export function FirstPersonRenderer3D({
         outline: 'none',
       }}
     >
+      {/* Three.js canvas container - isolated from React reconciliation */}
+      <div
+        ref={containerRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      />
       {/* Field Pulse visual overlay */}
       {fieldPulse?.active && (
         <div
