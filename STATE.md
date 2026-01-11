@@ -450,6 +450,41 @@ Victory imprint type is now derived deterministically from run statistics (no RN
 - Ending resolution (death/victory/secret)
 - VictoryLegacyResult serialization
 
+### Balance + UX Pass
+
+**Dev Telemetry:**
+- Victory/death telemetry logged to console with run stats
+- Tracks: kills, elite_kills, lore_count, damage_taken, potions_used, total_turns
+- Shows derived legacy and secondary tag at victory
+- Useful for tuning COMBAT_HIGH_THRESHOLD (20) and LORE_HIGH_THRESHOLD (5)
+
+**HUD Indicators (StatusHUD.tsx):**
+
+| Indicator | Display | States |
+|-----------|---------|--------|
+| Field Pulse | Intensity label + animation | Minor (1.25x) / Moderate (1.5x) / Major (2.0x) |
+| Duplicate Seal | Armed/Used status | Green glow when armed, dimmed when used |
+| Oathstone Vow | Active vow + description | Purple when active, red pulse when broken |
+| Woundglass Shard | Charges remaining | Shows charge count |
+
+**Evidence Density Cap:**
+- Per-room limit based on room size
+- Small rooms (<30 tiles): max 2 evidence
+- Medium rooms (30-60 tiles): max 3 evidence
+- Large rooms (>60 tiles): max 4 evidence
+- Trail tells reduced to max 2 per boss_approach room
+
+**3D Performance Optimizations:**
+
+| Optimization | Value | Description |
+|--------------|-------|-------------|
+| Label cull distance | 6 tiles | Labels not rendered beyond this |
+| Sprite cull distance | 10 tiles | Entity sprites not rendered beyond this |
+| Max labels | 8 | Closest entities get priority |
+| Distance sorting | Yes | Entities sorted for proper priority |
+
+Pulse overlay uses CSS-only radial gradient (GPU-accelerated, minimal overhead).
+
 ### Future Enhancements
 
 - Add zone-specific decoration patterns
