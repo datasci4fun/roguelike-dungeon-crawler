@@ -276,6 +276,16 @@ export interface FullGameState {
     amplification: number;
     floor_turn: number;
   };
+  zone_overlay?: {
+    enabled: boolean;
+    labels: Array<{
+      x: number;
+      y: number;
+      zone: string;
+      width: number;
+      height: number;
+    }>;
+  };
 }
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';

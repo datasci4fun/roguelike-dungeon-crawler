@@ -156,6 +156,19 @@ interface FieldPulseState {
   floor_turn: number;
 }
 
+interface ZoneLabel {
+  x: number;
+  y: number;
+  zone: string;
+  width: number;
+  height: number;
+}
+
+interface ZoneOverlay {
+  enabled: boolean;
+  labels: ZoneLabel[];
+}
+
 interface FirstPersonRenderer3DProps {
   view: FirstPersonView | undefined;
   width?: number;
@@ -167,6 +180,7 @@ interface FirstPersonRenderer3DProps {
   debugShowWallMarkers?: boolean;
   deathCamActive?: boolean;
   fieldPulse?: FieldPulseState;
+  zoneOverlay?: ZoneOverlay;
 }
 
 // Check tile types
@@ -182,6 +196,7 @@ export function FirstPersonRenderer3D({
   debugShowWallMarkers = false,
   deathCamActive = false,
   fieldPulse,
+  zoneOverlay,
 }: FirstPersonRenderer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prevViewRef = useRef<{ rowsJson: string; facing: { dx: number; dy: number } } | null>(null);
@@ -1080,6 +1095,44 @@ export function FirstPersonRenderer3D({
             zIndex: 10,
           }}
         />
+      )}
+      {/* Zone Overlay Panel (debug) */}
+      {zoneOverlay?.enabled && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            background: 'rgba(0, 0, 0, 0.85)',
+            border: '1px solid rgba(139, 233, 253, 0.5)',
+            borderRadius: 6,
+            padding: '8px 12px',
+            color: '#8be9fd',
+            fontSize: 11,
+            fontFamily: 'monospace',
+            zIndex: 20,
+            maxHeight: '60%',
+            overflowY: 'auto',
+            pointerEvents: 'none',
+          }}
+        >
+          <div style={{ fontWeight: 'bold', marginBottom: 6, color: '#50fa7b' }}>
+            ZONE DEBUG (F7)
+          </div>
+          <div style={{ color: '#f8f8f2', marginBottom: 4 }}>
+            Current: <span style={{ color: '#ffb86c' }}>{view?.zone_id || 'unknown'}</span>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6, marginTop: 4 }}>
+            {zoneOverlay.labels.map((label, i) => (
+              <div key={i} style={{
+                color: label.zone === view?.zone_id ? '#50fa7b' : '#6272a4',
+                fontSize: 10,
+              }}>
+                {label.zone === view?.zone_id ? '>' : ' '} {label.zone} ({label.width}x{label.height})
+              </div>
+            ))}
+          </div>
+        </div>
       )}
       <style>{`
         @keyframes fieldPulse {

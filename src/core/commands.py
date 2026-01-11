@@ -81,6 +81,7 @@ class CommandType(Enum):
     CHEAT_NEXT_FLOOR = auto()    # Skip to next floor
     CHEAT_REVEAL_MAP = auto()    # Reveal entire map
     CHEAT_SPAWN_LORE = auto()    # Spawn a lore item nearby
+    CHEAT_SHOW_ZONES = auto()    # Toggle zone labels overlay
 
 
 @dataclass

@@ -587,6 +587,22 @@ class GameSessionManager:
                 "floor_turn": pulse_info.get("floor_turn", 0),
             }
 
+        # Include zone overlay data when debug mode is enabled
+        if getattr(engine, 'show_zones', False) and engine.dungeon:
+            zone_labels = []
+            for room in engine.dungeon.rooms:
+                zone_labels.append({
+                    "x": room.x + room.width // 2,
+                    "y": room.y + room.height // 2,
+                    "zone": room.zone,
+                    "width": room.width,
+                    "height": room.height,
+                })
+            state["zone_overlay"] = {
+                "enabled": True,
+                "labels": zone_labels,
+            }
+
         return state
 
     def _sanitize_event_data(self, data: dict) -> dict:
@@ -659,6 +675,14 @@ class GameSessionManager:
                         engine.dungeon.explored[y][x] = True
                         engine.dungeon.visible[y][x] = True
                 engine.add_message("[CHEAT] Map revealed")
+
+        elif cmd_type == CommandType.CHEAT_SHOW_ZONES:
+            # Toggle zone labels overlay
+            if not hasattr(engine, 'show_zones'):
+                engine.show_zones = False
+            engine.show_zones = not engine.show_zones
+            status = "ON" if engine.show_zones else "OFF"
+            engine.add_message(f"[CHEAT] Zone labels {status}")
 
         elif cmd_type == CommandType.CHEAT_SPAWN_LORE:
             # Spawn a random lore item near player

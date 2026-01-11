@@ -360,6 +360,7 @@ export function Play() {
         'F4': 'CHEAT_NEXT_FLOOR',
         'F5': 'CHEAT_REVEAL_MAP',
         'F6': 'CHEAT_SPAWN_LORE',
+        'F7': 'CHEAT_SHOW_ZONES',
       };
 
       const cheatCommand = cheatMap[e.key];
@@ -425,6 +426,7 @@ export function Play() {
                     height={sceneSize.height}
                     deathCamActive={gameState?.game_state === 'DEAD'}
                     fieldPulse={gameState?.field_pulse}
+                    zoneOverlay={gameState?.zone_overlay}
                   />
                 ) : (
                   <FirstPersonRenderer
