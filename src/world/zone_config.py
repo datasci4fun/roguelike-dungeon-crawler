@@ -196,8 +196,8 @@ FLOOR_3_CONFIG = FloorZoneConfig(
         ),
         ZoneSpec(
             zone_id="canopy_halls",
-            weight=2,
-            eligibility=min_size(8, 8),
+            weight=3,  # Increased weight for open-air zone visibility
+            eligibility=min_size(6, 6),  # Reduced from 8x8 to spawn more often
         ),
         ZoneSpec(
             zone_id="webbed_gardens",
