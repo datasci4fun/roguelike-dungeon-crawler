@@ -452,6 +452,11 @@ class Dungeon:
         - key lore zones: at least 1 evidence prop per room
 
         Evidence is stored in zone_evidence as (x, y, char, color, type) tuples.
+
+        Density cap: Max evidence per room based on room size to reduce visual noise.
+        - Small rooms (<30 tiles): max 2
+        - Medium rooms (30-60 tiles): max 3
+        - Large rooms (>60 tiles): max 4
         """
         evidence_config = self._get_evidence_config()
         if not evidence_config:
@@ -459,28 +464,64 @@ class Dungeon:
 
         # Track placed positions to avoid overlap
         placed = set()
+        # Track evidence count per room for density capping
+        room_evidence_count: dict = {}
+
+        def get_room_max_evidence(room: 'Room') -> int:
+            """Get max evidence allowed for room based on size."""
+            area = room.width * room.height
+            if area < 30:
+                return 2
+            elif area < 60:
+                return 3
+            else:
+                return 4
+
+        def can_place_in_room(room: 'Room') -> bool:
+            """Check if room can accept more evidence."""
+            room_key = (room.x, room.y)
+            current = room_evidence_count.get(room_key, 0)
+            return current < get_room_max_evidence(room)
+
+        def record_placement(room: 'Room'):
+            """Record that evidence was placed in room."""
+            room_key = (room.x, room.y)
+            room_evidence_count[room_key] = room_evidence_count.get(room_key, 0) + 1
 
         # 1. Boss approach rooms: trail tells + pre-boss lore
         approach_rooms = [r for r in self.rooms if r.zone == "boss_approach"]
         for room in approach_rooms:
-            # Place 2-3 trail tells
+            room_max = get_room_max_evidence(room)
+            room_key = (room.x, room.y)
+            current_count = room_evidence_count.get(room_key, 0)
+
+            # Place trail tells (prioritize these for boss_approach)
             trail_tells = evidence_config.get("trail_tells", [])
-            if trail_tells:
-                num_tells = random.randint(2, 3)
-                self._place_evidence_in_room(room, trail_tells, num_tells, placed, "trail_tell")
+            if trail_tells and can_place_in_room(room):
+                # Cap trail tells based on room capacity
+                max_tells = min(2, room_max - current_count)  # Reduced from 2-3 to max 2
+                if max_tells > 0:
+                    num_tells = min(random.randint(1, 2), max_tells)
+                    placed_count = self._place_evidence_in_room(room, trail_tells, num_tells, placed, "trail_tell")
+                    for _ in range(placed_count):
+                        record_placement(room)
 
-            # Place 1 pre-boss lore marker
+            # Place 1 pre-boss lore marker (if room has capacity)
             lore_markers = evidence_config.get("lore_markers", [])
-            if lore_markers:
-                self._place_evidence_in_room(room, lore_markers, 1, placed, "lore_marker")
+            if lore_markers and can_place_in_room(room):
+                placed_count = self._place_evidence_in_room(room, lore_markers, 1, placed, "lore_marker")
+                for _ in range(placed_count):
+                    record_placement(room)
 
-        # 2. Key lore zones: at least 1 evidence prop per room
+        # 2. Key lore zones: at least 1 evidence prop per room (respecting density cap)
         key_lore_zones = evidence_config.get("key_lore_zones", [])
         evidence_props = evidence_config.get("evidence_props", [])
 
         for room in self.rooms:
-            if room.zone in key_lore_zones and evidence_props:
-                self._place_evidence_in_room(room, evidence_props, 1, placed, "evidence_prop")
+            if room.zone in key_lore_zones and evidence_props and can_place_in_room(room):
+                placed_count = self._place_evidence_in_room(room, evidence_props, 1, placed, "evidence_prop")
+                for _ in range(placed_count):
+                    record_placement(room)
 
     def _place_evidence_in_room(
         self,
@@ -489,7 +530,7 @@ class Dungeon:
         count: int,
         placed: set,
         evidence_type: str
-    ):
+    ) -> int:
         """Place evidence items in a room.
 
         Args:
@@ -498,6 +539,9 @@ class Dungeon:
             count: Number of evidence pieces to place
             placed: Set of already-placed positions
             evidence_type: Type label for the evidence
+
+        Returns:
+            Number of evidence items actually placed
         """
         attempts = 0
         placed_count = 0
@@ -529,6 +573,8 @@ class Dungeon:
             self.zone_evidence.append((x, y, char, color, evidence_type))
             placed.add((x, y))
             placed_count += 1
+
+        return placed_count
 
     def _get_evidence_config(self) -> dict:
         """Get zone evidence configuration for the current floor.

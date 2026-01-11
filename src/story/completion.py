@@ -54,8 +54,15 @@ class CompletionLedger:
     potions_used: int = 0
     pulses_survived: int = 0
 
+    # Turn tracking
+    total_turns: int = 0
+
     # Reserved for future secret ending criteria
     secrets_found: Set[str] = field(default_factory=set)
+
+    def record_turn(self):
+        """Record a turn taken."""
+        self.total_turns += 1
 
     def record_floor_cleared(self, floor: int):
         """Record that a floor was cleared."""
@@ -131,6 +138,7 @@ class CompletionLedger:
             'damage_taken': self.damage_taken,
             'potions_used': self.potions_used,
             'pulses_survived': self.pulses_survived,
+            'total_turns': self.total_turns,
             'secrets_found': list(self.secrets_found),
         }
 
@@ -149,6 +157,7 @@ class CompletionLedger:
             damage_taken=data.get('damage_taken', 0),
             potions_used=data.get('potions_used', 0),
             pulses_survived=data.get('pulses_survived', 0),
+            total_turns=data.get('total_turns', 0),
             secrets_found=set(data.get('secrets_found', [])),
         )
 

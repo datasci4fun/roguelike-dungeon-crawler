@@ -9,6 +9,7 @@ import { useDebugRenderer } from '../hooks/useDebugRenderer';
 import { GameTerminal } from '../components/GameTerminal';
 import { FirstPersonRenderer, FirstPersonRenderer3D, type CorridorInfoEntry } from '../components/SceneRenderer';
 import { CharacterHUD } from '../components/CharacterHUD';
+import { StatusHUD } from '../components/StatusHUD';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
@@ -412,6 +413,11 @@ export function Play() {
                     compact={false}
                   />
                 )}
+                {/* Status HUD overlay (Field Pulse, Artifacts, Vows) */}
+                <StatusHUD
+                  fieldPulse={gameState?.field_pulse}
+                  artifacts={gameState?.player?.artifacts}
+                />
               </div>
             )}
           </div>

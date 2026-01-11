@@ -497,6 +497,11 @@ class GameEngine:
     def _check_auto_save(self):
         """Check if auto-save should trigger."""
         self.turns_since_save += 1
+
+        # Track turn in completion ledger
+        if hasattr(self, 'completion_ledger') and self.completion_ledger:
+            self.completion_ledger.record_turn()
+
         if self.turns_since_save >= AUTO_SAVE_INTERVAL:
             self.save_manager.auto_save()
             self.add_message("Game saved.")
@@ -889,20 +894,94 @@ class GameEngine:
         return self.story_manager.get_lore_progress()
 
     def get_death_info(self) -> dict:
-        """Get death recap information."""
+        """Get death recap information with telemetry."""
         lore_found, lore_total = self.get_lore_progress()
+
+        # Include telemetry for balance tuning
+        telemetry = {}
+        if hasattr(self, 'completion_ledger') and self.completion_ledger:
+            telemetry = {
+                'total_kills': self.completion_ledger.total_kills,
+                'elite_kills': self.completion_ledger.elite_kills,
+                'lore_count': self.completion_ledger.lore_count,
+                'damage_taken': self.completion_ledger.damage_taken,
+                'potions_used': self.completion_ledger.potions_used,
+                'total_turns': self.completion_ledger.total_turns,
+                'floors_cleared': len(self.completion_ledger.floors_cleared),
+            }
+            # Dev telemetry output
+            self._log_death_telemetry(telemetry, self.last_attacker_name)
+
         return {
             'attacker': self.last_attacker_name,
             'damage': self.last_damage_taken,
             'max_level': self.max_level_reached,
             'lore_found': lore_found,
             'lore_total': lore_total,
+            'telemetry': telemetry,
         }
 
+    def _log_death_telemetry(self, telemetry: dict, attacker: str):
+        """Log death telemetry for balance tuning."""
+        print("\n" + "=" * 60)
+        print(f"DEATH TELEMETRY (dev) - Killed by {attacker}")
+        print("=" * 60)
+        print(f"  Kills: {telemetry.get('total_kills', 0)} (elite: {telemetry.get('elite_kills', 0)})")
+        print(f"  Lore: {telemetry.get('lore_count', 0)}")
+        print(f"  Damage Taken: {telemetry.get('damage_taken', 0)}")
+        print(f"  Potions Used: {telemetry.get('potions_used', 0)}")
+        print(f"  Total Turns: {telemetry.get('total_turns', 0)}")
+        print(f"  Floors Cleared: {telemetry.get('floors_cleared', 0)}")
+        print("=" * 60 + "\n")
+
     def get_victory_info(self) -> dict:
-        """Get victory screen information."""
+        """Get victory screen information with telemetry."""
         lore_found, lore_total = self.get_lore_progress()
+
+        # Derive victory legacy from completion ledger
+        legacy_result = None
+        telemetry = {}
+        if hasattr(self, 'completion_ledger') and self.completion_ledger:
+            legacy_result = derive_victory_legacy(self.completion_ledger)
+            telemetry = {
+                'total_kills': self.completion_ledger.total_kills,
+                'elite_kills': self.completion_ledger.elite_kills,
+                'lore_count': self.completion_ledger.lore_count,
+                'damage_taken': self.completion_ledger.damage_taken,
+                'potions_used': self.completion_ledger.potions_used,
+                'total_turns': self.completion_ledger.total_turns,
+                'floors_cleared': len(self.completion_ledger.floors_cleared),
+                'wardens_defeated': len(self.completion_ledger.wardens_defeated),
+                'artifacts_collected': len(self.completion_ledger.artifacts_collected_ids),
+                'derived_legacy': legacy_result.primary.name if legacy_result else None,
+                'secondary_tag': legacy_result.secondary_tag if legacy_result else None,
+            }
+            # Dev telemetry output
+            self._log_victory_telemetry(telemetry)
+
         return {
             'lore_found': lore_found,
             'lore_total': lore_total,
+            'legacy': legacy_result.primary.name if legacy_result else 'BEACON',
+            'secondary_tag': legacy_result.secondary_tag if legacy_result else None,
+            'telemetry': telemetry,
         }
+
+    def _log_victory_telemetry(self, telemetry: dict):
+        """Log victory telemetry for balance tuning."""
+        print("\n" + "=" * 60)
+        print("VICTORY TELEMETRY (dev)")
+        print("=" * 60)
+        print(f"  Kills: {telemetry.get('total_kills', 0)} (elite: {telemetry.get('elite_kills', 0)})")
+        print(f"  Lore: {telemetry.get('lore_count', 0)}")
+        print(f"  Damage Taken: {telemetry.get('damage_taken', 0)}")
+        print(f"  Potions Used: {telemetry.get('potions_used', 0)}")
+        print(f"  Total Turns: {telemetry.get('total_turns', 0)}")
+        print(f"  Floors Cleared: {telemetry.get('floors_cleared', 0)}")
+        print(f"  Wardens Defeated: {telemetry.get('wardens_defeated', 0)}")
+        print(f"  Artifacts: {telemetry.get('artifacts_collected', 0)}")
+        print("-" * 60)
+        print(f"  DERIVED LEGACY: {telemetry.get('derived_legacy', 'UNKNOWN')}")
+        if telemetry.get('secondary_tag'):
+            print(f"  Secondary: {telemetry.get('secondary_tag')}")
+        print("=" * 60 + "\n")

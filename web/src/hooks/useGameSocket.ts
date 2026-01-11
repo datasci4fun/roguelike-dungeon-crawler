@@ -102,6 +102,18 @@ export interface PlayerFeat {
   category: FeatCategory;
 }
 
+export type VowType = 'VOW_ABSTINENCE' | 'VOW_PROGRESS' | 'VOW_CONFRONTATION';
+
+export interface PlayerArtifact {
+  id: string;
+  name: string;
+  symbol: string;
+  charges: number;
+  used: boolean;
+  active_vow: VowType | null;
+  vow_broken: boolean;
+}
+
 export interface Player {
   x: number;
   y: number;
@@ -121,6 +133,7 @@ export interface Player {
   feats?: PlayerFeat[];
   pending_feat_selection?: boolean;
   available_feats?: PlayerFeat[];
+  artifacts?: PlayerArtifact[];
 }
 
 export interface Enemy {

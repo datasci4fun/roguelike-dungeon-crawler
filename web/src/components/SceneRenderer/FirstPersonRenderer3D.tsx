@@ -842,7 +842,20 @@ export function FirstPersonRenderer3D({
     // Add entities as symbol sprites with name labels
     // Entity positioning uses same scale for offset and distance
     // Both use TILE_SIZE so 1 offset unit = 1 distance unit in world space
-    for (const entity of view.entities) {
+
+    // Performance: Limit entity labels to manage render cost
+    const LABEL_CULL_DISTANCE = 6;  // Don't show labels beyond this distance
+    const SPRITE_CULL_DISTANCE = 10; // Don't show sprites beyond this distance
+    const MAX_LABELS = 8;  // Max labels to render (closest entities first)
+
+    // Sort entities by distance for priority culling
+    const sortedEntities = [...view.entities].sort((a, b) => a.distance - b.distance);
+    let labelsRendered = 0;
+
+    for (const entity of sortedEntities) {
+      // Skip entities beyond sprite cull distance
+      if (entity.distance > SPRITE_CULL_DISTANCE) continue;
+
       const x = entity.offset * TILE_SIZE;
       const z = -entity.distance * TILE_SIZE;
       const y = entity.type === 'item' ? 0.3 : CAMERA_HEIGHT * 0.8;
@@ -866,11 +879,13 @@ export function FirstPersonRenderer3D({
       symbolSprite.position.set(x, y, z);
       geometryGroup.add(symbolSprite);
 
-      // Create name label hovering above the entity
-      if (entity.name) {
+      // Create name label hovering above the entity (with distance/count limits)
+      // Labels are expensive - only render for close entities
+      if (entity.name && entity.distance <= LABEL_CULL_DISTANCE && labelsRendered < MAX_LABELS) {
         const nameLabel = createTextSprite(entity.name, labelColor);
         nameLabel.position.set(x, y + 0.7, z);  // Position above entity
         geometryGroup.add(nameLabel);
+        labelsRendered++;
       }
     }
 
