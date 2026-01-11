@@ -90,6 +90,9 @@ class GameEngine:
         # v5.5: Completion ledger for run tracking
         self.completion_ledger = CompletionLedger()
 
+        # Wire story manager to ledger (ledger is source of truth)
+        self.story_manager.attach_ledger(self.completion_ledger)
+
         # Death tracking for recap
         self.last_attacker_name = None
         self.last_damage_taken = 0
@@ -184,8 +187,8 @@ class GameEngine:
         self.add_message("Find the stairs (>) to descend deeper")
         self.add_message("Use arrow keys or WASD to move")
 
-        # Reset story manager for new game
-        self.story_manager = StoryManager()
+        # Reset story manager for new game and attach to ledger
+        self.story_manager = StoryManager(ledger=self.completion_ledger)
         # Register starting level in codex
         self.story_manager.visit_level(1)
 
@@ -266,6 +269,9 @@ class GameEngine:
 
                 # v4.0: Process player status effects
                 self._process_player_status_effects()
+
+                # v5.4: Check for zone evidence (lore discovery)
+                self._process_zone_evidence()
 
                 # Tick player ability cooldowns
                 if hasattr(self.player, 'tick_cooldowns'):
@@ -610,6 +616,77 @@ class GameEngine:
         # Update hazard amplification based on current pulse state
         current_amp = self.field_pulse_manager.get_current_amplification()
         self.hazard_manager.set_amplification(current_amp)
+
+    def _process_zone_evidence(self):
+        """Check if player stepped on zone evidence and trigger lore discovery.
+
+        Zone evidence tiles (boss trail tells, lore markers, evidence props) are
+        visual indicators placed in rooms. When the player walks onto one, they
+        discover lore related to that floor.
+        """
+        if not self.dungeon or not self.player:
+            return
+
+        px, py = self.player.x, self.player.y
+
+        # Check if player is on any zone evidence tile
+        evidence_at_pos = None
+        evidence_index = None
+        for i, (ex, ey, char, color, evidence_type) in enumerate(self.dungeon.zone_evidence):
+            if ex == px and ey == py:
+                evidence_at_pos = (ex, ey, char, color, evidence_type)
+                evidence_index = i
+                break
+
+        if not evidence_at_pos:
+            return
+
+        _, _, char, _, evidence_type = evidence_at_pos
+
+        # Get lore IDs for current floor
+        from ..story.lore_items import get_lore_ids_for_floor
+        floor_lore_ids = list(get_lore_ids_for_floor(self.current_level))
+
+        if not floor_lore_ids:
+            return
+
+        # Map evidence types to lore discovery
+        # trail_tell / lore_marker -> discover first undiscovered lore for floor
+        # evidence_prop -> may have specific lore mapping
+        lore_to_discover = None
+        for lore_id in floor_lore_ids:
+            if not self.story_manager.has_discovered_lore(lore_id):
+                lore_to_discover = lore_id
+                break
+
+        # Always remove evidence when stepped on (one-time interaction)
+        if evidence_index is not None:
+            self.dungeon.zone_evidence.pop(evidence_index)
+
+        # Discover lore if any undiscovered for this floor
+        if lore_to_discover:
+            if self.story_manager.discover_lore(lore_to_discover):
+                # Get the lore title for the message
+                from ..story.story_data import LORE_ENTRIES
+                lore_entry = LORE_ENTRIES.get(lore_to_discover, {})
+                lore_title = lore_entry.get('title', 'something')
+
+                # Show discovery message based on evidence type
+                if evidence_type == "trail_tell":
+                    self.add_message(
+                        f"You notice signs of passage... (discovered: {lore_title})",
+                        MessageCategory.SYSTEM, MessageImportance.IMPORTANT
+                    )
+                elif evidence_type == "lore_marker":
+                    self.add_message(
+                        f"You examine ancient markings... (discovered: {lore_title})",
+                        MessageCategory.SYSTEM, MessageImportance.IMPORTANT
+                    )
+                else:  # evidence_prop
+                    self.add_message(
+                        f"You find evidence of the past... (discovered: {lore_title})",
+                        MessageCategory.SYSTEM, MessageImportance.IMPORTANT
+                    )
 
     # =========================================================================
     # Command Processing - Inventory
