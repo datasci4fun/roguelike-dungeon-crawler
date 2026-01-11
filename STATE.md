@@ -1,8 +1,57 @@
 # Project State
 
-**Last Updated:** 2026-01-10
+**Last Updated:** 2026-01-11
 **Branch:** develop
-**Version:** v5.5.0 (Canon Alignment + Sealed Page)
+**Version:** v5.5.1 (Auto-Add Lore + UI Fixes)
+
+---
+
+## v5.5.1 Changes (2026-01-11)
+
+### Auto-Add Lore to Codex
+
+Lore items (scrolls/books) now go directly to the Lore Codex on pickup instead of taking up inventory space:
+
+| Behavior | Before | After |
+|----------|--------|-------|
+| Pickup | Added to inventory | Skipped, goes to Codex |
+| Message | "Picked up X" | "Found: X" + "New lore added to Codex! Press [J] to read." |
+| Inventory | Takes 1 slot | No slot used |
+| Discovery | Manual (open inventory, select, read) | Automatic on pickup |
+
+**Frontend Notification:**
+- Golden notification bar appears at bottom of screen
+- Shows: "New lore discovered: {title} - Press [J] to read"
+- Pressing J opens Codex directly to the new entry
+- Notification clears when Codex is closed
+
+**Implementation:**
+
+| File | Change |
+|------|--------|
+| `entity_manager.py` | Detect lore items by `lore_id`, skip inventory |
+| `combat_manager.py` | Auto-call `story_manager.discover_lore()` on pickup |
+| `engine.py` | Track `new_lore_discovered` for frontend notification |
+| `game_session.py` | Send `new_lore` in API response (one-shot) |
+| `useGameSocket.ts` | Add `new_lore` type to game state |
+| `Play.tsx` | Track pending lore, show notification, pass to Codex |
+| `Play.css` | Styled notification bar with slide-in animation |
+| `LoreCodex.tsx` | Accept `initialEntryId` prop |
+| `useCodexState.ts` | Pre-select initial entry and category |
+
+### UI Bug Fixes
+
+**Entity Label Clipping (3D Renderer):**
+- Labels were being clipped/unreadable for long names
+- Fixed with dynamic canvas sizing based on text width
+- Added semi-transparent background pill for visibility
+- Strong text outline stroke for contrast
+- Larger sprite scale (0.8 vs 0.5) and better positioning
+- Items get +0.6 offset, enemies/NPCs get +1.1 offset
+
+**Rat Spawn Attribute Error:**
+- Fixed `rat.hp` → `rat.health` in Rat King's summon_swarm ability
+- Enemy class uses `health` attribute, not `hp`
 
 ---
 
