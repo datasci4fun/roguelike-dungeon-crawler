@@ -208,8 +208,10 @@ Backend sends room ceiling state in FirstPersonView:
 | room_has_ceiling | bool | False for open-air rooms, true by default |
 | room_skybox_override | string? | Biome ID for skybox palette (null = use fog color) |
 
-**Currently enabled:**
-- Floor 4 `courtyard_squares` → open ceiling with pale blue sky
+**Open-air zones with biome-appropriate skies:**
+- Floor 3 `canopy_halls` → forest palette (green canopy)
+- Floor 4 `courtyard_squares` → crypt palette (eerie purple)
+- Floor 8 `dragons_hoard` → crystal palette (mystical)
 
 **Implementation:**
 - `game_session._serialize_first_person_view()` adds ceiling fields
@@ -223,13 +225,25 @@ Backend sends room ceiling state in FirstPersonView:
 | 1 | Goblin King | Stone Dungeon (prison warden) |
 | 2 | Rat King | Sewers (plague carrier) |
 | 3 | Spider Queen | Forest Depths (nature's curse) |
-| 4 | **The Regent** | Mirror Valdris (counterfeit monarch) |
+| 4 | **The Regent** | Mirror Valdris (counterfeit monarch) - see abilities below |
 | 5 | Frost Giant | Ice Cavern (frozen experiment) |
 | 6 | Arcane Keeper | Ancient Library (knowledge guardian) |
 | 7 | Flame Lord | Volcanic Depths (forge master) |
 | 8 | Dragon Emperor | Crystal Cave (dragon's hoard) |
 
 **Note:** LICH_LORD removed from active warden rotation (no longer matches floor themes).
+
+### The Regent Abilities
+
+Signature abilities for Floor 4 boss, themed around "legitimacy by repetition":
+
+| Ability | Cooldown | Effect |
+|---------|----------|--------|
+| Royal Decree | 5 turns | Summons 1-2 oath-bound guards from room corners |
+| Summon Guard | 4 turns | Summons 1 oath-bound skeleton near the Regent |
+| Counterfeit Crown | 8 turns | Flash attack: 4 damage + stun in 3 range |
+
+**Flavor:** The Regent's decrees "rewrite reality" - guards appear as if they were always meant to be there. Messages emphasize this ("It was always thus...").
 
 ### Future Enhancements
 
