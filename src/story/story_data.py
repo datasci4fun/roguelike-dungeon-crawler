@@ -18,12 +18,29 @@ LEVEL_INTRO_MESSAGES: Dict[int, str] = {
 
 # Enemy first encounter messages - shown first time player sees each enemy type
 ENEMY_ENCOUNTER_MESSAGES: Dict[str, str] = {
+    # Base enemies
     'Goblin': "A goblin! Small but vicious, they hunt in packs.",
     'Skeleton': "The bones rattle to life. An ancient guardian, bound by dark magic.",
     'Orc': "A brutish orc blocks your path. These warriors know no fear.",
     'Wraith': "A wraith materializes from the shadows. Your weapons may not harm it fully.",
     'Troll': "The ground shakes. A troll emerges, its regeneration legendary.",
     'Dragon': "Ancient scales gleam in the darkness. You have found the dragon.",
+    # v4.0 enemies
+    'Necromancer': "Dark robes flutter as the necromancer raises its staff. The dead stir nearby.",
+    'Demon': "Flames dance across obsidian skin. A demon from the volcanic depths.",
+    'Assassin': "A shadow detaches from the wall. The assassin was waiting for you.",
+    'Fire Elemental': "Living flame coalesces before you, heat distorting the air.",
+    'Ice Elemental': "Frost spreads across the floor as the ice elemental manifests.",
+    'Lightning Elemental': "Static crackles. The lightning elemental arcs between surfaces.",
+    # v5.5 thematic floor enemies
+    'Rat': "A rat darts from the filth. Too bold. Too deliberate.",
+    'Plague Rat': "A swollen rat shambles forward, coughing wetly. The air around it feels wrong.",
+    'Spiderling': "A spiderling skitters across the roots. The walls themselves seem to watch with it.",
+    'Webweaver': "A webweaver emerges—patient, intelligent, already measuring you in silk.",
+    'Oathbound Guard': "An oathbound guard stands at attention. It does not ask who you are. It only asks who you serve.",
+    'Court Scribe': "A court scribe glides near the shadows, quill scratching without ink. Its records feel heavier than steel.",
+    'Animated Tome': "A book snaps open like a mouth. Letters spill out, rearranging into a threat.",
+    'Crystal Sentinel': "A crystal sentinel turns with a grinding hymn. Its facets reflect you… and a version that never blinked.",
 }
 
 
