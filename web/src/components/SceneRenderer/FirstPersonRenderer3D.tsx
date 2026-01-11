@@ -41,6 +41,12 @@ const DEFAULT_SETTINGS: RenderSettings = {
   useTileGrid: true,
 };
 
+interface FieldPulseState {
+  active: boolean;
+  amplification: number;
+  floor_turn: number;
+}
+
 interface FirstPersonRenderer3DProps {
   view: FirstPersonView | undefined;
   width?: number;
@@ -51,6 +57,7 @@ interface FirstPersonRenderer3DProps {
   debugShowWireframe?: boolean;
   debugShowWallMarkers?: boolean;
   deathCamActive?: boolean;
+  fieldPulse?: FieldPulseState;
 }
 
 // Check tile types
@@ -65,6 +72,7 @@ export function FirstPersonRenderer3D({
   settings: userSettings,
   debugShowWallMarkers = false,
   deathCamActive = false,
+  fieldPulse,
 }: FirstPersonRenderer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prevViewRef = useRef<{ rowsJson: string; facing: { dx: number; dy: number } } | null>(null);
@@ -900,6 +908,11 @@ export function FirstPersonRenderer3D({
     e.preventDefault(); // Prevent context menu on right-click
   }, []);
 
+  // Calculate pulse overlay opacity based on amplification
+  const pulseOverlayOpacity = fieldPulse?.active
+    ? Math.min(0.15, (fieldPulse.amplification - 1.0) * 0.15)
+    : 0;
+
   return (
     <div
       ref={containerRef}
@@ -918,7 +931,30 @@ export function FirstPersonRenderer3D({
         cursor: 'grab',
         outline: 'none',
       }}
-    />
+    >
+      {/* Field Pulse visual overlay */}
+      {fieldPulse?.active && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: `radial-gradient(ellipse at center, transparent 30%, rgba(180, 80, 40, ${pulseOverlayOpacity}) 100%)`,
+            pointerEvents: 'none',
+            animation: 'fieldPulse 2s ease-in-out infinite',
+            zIndex: 10,
+          }}
+        />
+      )}
+      <style>{`
+        @keyframes fieldPulse {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 1.0; }
+        }
+      `}</style>
+    </div>
   );
 }
 

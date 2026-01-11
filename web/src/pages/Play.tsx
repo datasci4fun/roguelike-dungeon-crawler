@@ -385,6 +385,7 @@ export function Play() {
                     width={sceneSize.width}
                     height={sceneSize.height}
                     deathCamActive={gameState?.game_state === 'DEAD'}
+                    fieldPulse={gameState?.field_pulse}
                   />
                 ) : (
                   <FirstPersonRenderer

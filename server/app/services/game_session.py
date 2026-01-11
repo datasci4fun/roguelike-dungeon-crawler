@@ -546,6 +546,15 @@ class GameSessionManager:
                 "total_count": total + len(bestiary_entries) + len(location_entries),
             }
 
+        # Include field pulse state for environmental effects
+        if hasattr(engine, 'field_pulse_manager') and engine.field_pulse_manager:
+            pulse_info = engine.field_pulse_manager.get_pulse_info()
+            state["field_pulse"] = {
+                "active": pulse_info.get("active_pulse", False),
+                "amplification": pulse_info.get("amplification", 1.0),
+                "floor_turn": pulse_info.get("floor_turn", 0),
+            }
+
         return state
 
     def _sanitize_event_data(self, data: dict) -> dict:

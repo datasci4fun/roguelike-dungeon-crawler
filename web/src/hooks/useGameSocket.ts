@@ -254,6 +254,11 @@ export interface FullGameState {
     total_count: number;
   };
   first_person_view?: FirstPersonView;
+  field_pulse?: {
+    active: boolean;
+    amplification: number;
+    floor_turn: number;
+  };
 }
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
