@@ -289,7 +289,7 @@ All notable changes to this project.
 ### Added
 - **6 Enemy Types**: Goblin, Skeleton, Orc, Wraith, Troll, Dragon
 - **Elite Enemies**: 2x stats variants
-- **5 Dungeon Themes**: Stone, Cave, Crypt, Library, Treasury
+- **5 Dungeon Themes**: Stone, Cave, Crypt, Library, Treasury (expanded to 8 in v4.5.0)
 - **Combat Animations**: Hit flash, damage numbers
 - **Item Rarity Colors**: Common → Legendary
 

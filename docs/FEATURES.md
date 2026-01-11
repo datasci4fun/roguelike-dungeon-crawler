@@ -7,7 +7,7 @@ Complete feature list organized by category and version.
 ## Core Gameplay
 
 - **Procedural Generation**: BSP algorithm for guaranteed connected dungeons
-- **5 Themed Levels**: Stone Dungeon, Cave, Crypt, Library, Treasury
+- **8 Themed Biomes**: Stone Dungeon, Sewers, Forest, Mirror Valdris, Ice Cavern, Library, Volcanic, Crystal Cave
 - **Inventory System**: 10-slot inventory with auto-pickup
 - **Equipment System**: Weapons (+ATK), armor (+DEF), shields, rings, amulets
 - **FOV System**: Raycasting-based field of view with fog of war

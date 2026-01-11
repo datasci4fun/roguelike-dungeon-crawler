@@ -1244,11 +1244,11 @@ class Dungeon:
         """Get hazard configuration based on theme and level."""
         config = {}
 
-        # Ice hazards in crypt (levels 2-3)
+        # Ice hazards in crypt theme (Floor 4 - Mirror Valdris)
         if self.theme == DungeonTheme.CRYPT:
             config[HazardType.ICE] = (2, 4)
 
-        # Lava in deep dungeon (levels 4-5)
+        # Lava in deep levels (5+)
         if self.level >= 4:
             config[HazardType.LAVA] = (2, 4)
 
