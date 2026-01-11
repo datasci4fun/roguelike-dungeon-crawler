@@ -1,15 +1,148 @@
 # Project State
 
 **Last Updated:** 2026-01-10
-**Branch:** feature/lore-compendium
+**Branch:** feature/zone-system
 **Version:** v5.4.0 (Lore Codex System)
 
 ---
 
-## In Progress: Lore Compendium
+## Completed: Zone System (Data-Driven) - All 8 Floors
 
-**Branch:** `feature/lore-compendium`
-**Commit:** `ea7a997` - feat: add comprehensive lore compendium with Skyfall Seed canon
+**Branch:** `feature/zone-system`
+**Status:** All 8 floors implemented and validated (20/20 seeds each)
+
+### Zone System Architecture
+
+Data-driven zone assignment with modular layout decorators:
+
+| File | Purpose |
+|------|---------|
+| `zone_config.py` | FloorZoneConfig dataclass, eligibility predicates, per-floor configs |
+| `zone_layouts.py` | Layout decorator registry, ZONE_LAYOUTS[(floor, zone_id)] pattern |
+| `zone_validation.py` | Validation harness for testing zone assignment across seeds |
+| `dungeon.py` | Config-driven _assign_zones(), enhanced get_zone_summary() |
+| `entity_manager.py` | Zone-aware spawns and lore with per-floor configs |
+
+### Adding a New Floor
+
+1. Add `FLOOR_N_CONFIG` to `zone_config.py` with zone specs
+2. Add layout handlers to `zone_layouts.py` with `@register_layout(N, "zone_id")`
+3. Add spawn modifiers to `entity_manager._apply_zone_weights()`
+4. Add lore config to `entity_manager._get_floorN_lore_config()`
+5. Run validation: `python -c "from src.world.zone_validation import validate_floor; validate_floor(N)"`
+
+### Implemented Floors
+
+**Floor 1 - Stone Dungeon:**
+| Zone | Rule | Special |
+|------|------|---------|
+| intake_hall | Start room | 0% elite |
+| wardens_office | Required (center) | 100% lore |
+| record_vaults | Required (center, 5x5+) | 60% lore |
+| cell_blocks | 8x6+ | Interior walls, goblins x1.5 |
+| guard_corridors | Elongated | Skeletons x1.4 |
+| execution_chambers | 7x7+ | Skeletons x1.2 |
+| boss_approach | Near boss (adaptive) | Goblins x2.0, guaranteed lore |
+
+**Floor 2 - Sewers (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| confluence_chambers | Start room | Central water feature |
+| colony_heart | Required (largest) | Debris pools, 100% lore |
+| seal_drifts | Required (center, 5x5+) | 70% lore, surface-doc biased |
+| carrier_nests | Required (4x4+) | Debris patches, rat bias |
+| waste_channels | Elongated | DEEP_WATER lanes |
+| maintenance_tunnels | Any room | Sparse decoration |
+| diseased_pools | 5x5+ | Central water pool |
+| boss_approach | Near boss (adaptive) | Guaranteed lore |
+
+**Floor 3 - Forest Depths (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| root_warrens | Start room, weighted high | Chokepoint partitions |
+| druid_ring | Required (center, 8x8+) | Ritual ring, 100% lore |
+| nursery | Required (largest, 8x8+) | High danger, edge hazards |
+| canopy_halls | 8x8+ landmark | Optional water pool |
+| webbed_gardens | 6x6+ | Scattered hazards (traps) |
+| digestion_chambers | 6x6+ | Central hazard pool |
+| boss_approach | Near boss (adaptive) | Spider bias x2, guaranteed lore |
+
+**Floor 4 - Mirror Valdris (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| courtyard_squares | Start room, 8x8+ | Optional fountain |
+| throne_hall_ruins | Required (largest, 10x8+) | Symmetric aisle markers |
+| oath_chambers | Required (center, 7x7+) | Ring geometry, 100% lore |
+| seal_chambers | High-weight (5x5+) | Corner workstations, 75% lore |
+| record_vaults | High-weight (5x5+) | Shelf rows, 75% lore |
+| mausoleum_district | 5x5+ | Tomb row pattern, skeleton x2 |
+| parade_corridors | Elongated fallback | Symmetric markers |
+| boss_approach | Near boss (adaptive) | Skeleton x1.6, guaranteed lore |
+
+**Floor 5 - Ice Cavern (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| frozen_galleries | Start room, elongated | ICE lanes, skeleton x1.5 |
+| breathing_chamber | Required (largest, 10x8+) | Edge condensation |
+| suspended_laboratories | Required (center, 6x6+) | ICE patches, 100% lore |
+| thaw_fault | Required (5x5+) | ICE + DEEP_WATER paradox |
+| ice_tombs | 6x6+ | Corner ICE patches, skeleton x1.8 |
+| crystal_grottos | 7x7+ | Optional ICE ring |
+| boss_approach | Near boss (adaptive) | Skeleton x1.8, guaranteed lore |
+
+**Floor 6 - Ancient Library (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| reading_halls | Start room, 7x7+ | Open center, lower density |
+| indexing_heart | Required (center, 8x8+) | Ring markers, 100% lore |
+| catalog_chambers | Required (center, 6x6+) | 75% lore |
+| forbidden_stacks | 6x6+ fallback | Interior wall partitions |
+| marginalia_alcoves | 4x4+ | Small nooks, 60% lore |
+| experiment_archives | 6x6+ | Volatile markers |
+| boss_approach | Near boss (adaptive) | Skeleton x1.5, guaranteed lore |
+
+**Floor 7 - Volcanic Depths (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| forge_halls | Start room, 7x7+ | Work lane stubs |
+| crucible_heart | Required (largest, 8x8+) | Edge LAVA ring, 100% lore |
+| rune_press | Required (center, 7x7+) | Frame stubs, 60% lore |
+| magma_channels | Elongated | Central LAVA lane |
+| ash_galleries | Any room fallback | Trap-ready (future) |
+| cooling_chambers | 6x6+ | DEEP_WATER troughs |
+| slag_pits | 5x5+ | Corner LAVA puddles |
+| boss_approach | Near boss (adaptive) | LAVA offerings, guaranteed lore |
+
+**Floor 8 - Crystal Cave (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| crystal_gardens | Start room/fallback, 7x7+ | Scenic landmark |
+| dragons_hoard | Required (largest, 8x8+) | 100% lore, higher danger |
+| oath_interface | Required (center, 7x7+) | Binding circle, 85% lore |
+| vault_antechamber | High-weight (8x8+) | Threshold room, 75% lore |
+| seal_chambers | 7x7+ | Ring with gap (failing seal) |
+| geometry_wells | 6x6+ | Lattice nodes |
+| boss_approach | Near boss (adaptive) | Scorch orbit marks, guaranteed lore |
+
+### Zone Assignment Guarantees
+
+- **Required zones always appear** (eligibility relaxed if needed)
+- **Boss approach count is adaptive** (reduced if not enough rooms)
+- **Validation harness** catches regressions across 20 seeds
+- **All 8 floors validated** with 20/20 seeds passing
+
+### Future Enhancements
+
+- Add zone-specific decoration patterns
+- Wire has_ceiling/skybox_override for open-air rooms
+- Add new enemy types (fire elementals, wraiths, dragon fragments)
+
+---
+
+## Recently Completed: Lore Compendium
+
+**Branch:** `feature/lore-compendium-v2`
+**Commit:** `0a19be1` - docs: enhance zone specs with detailed implementation requirements
 
 ### New Lore Canon: The Skyfall Seed
 

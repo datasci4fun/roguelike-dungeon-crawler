@@ -1,7 +1,7 @@
 """Dungeon generation using Binary Space Partitioning."""
 import random
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from ..core.constants import (
     TileType, DungeonTheme, RoomType, TrapType, HazardType,
@@ -16,6 +16,8 @@ from .traps import Trap, TrapManager
 from .hazards import Hazard, HazardManager
 from .secrets import SecretDoor, SecretDoorManager
 from .torches import Torch, TorchManager
+from .zone_config import get_floor_config, FloorZoneConfig
+from .zone_layouts import apply_zone_layout
 
 
 @dataclass
@@ -26,6 +28,7 @@ class Room:
     width: int
     height: int
     room_type: RoomType = RoomType.NORMAL
+    zone: str = "generic"
 
     def center(self) -> Tuple[int, int]:
         """Return the center coordinates of the room."""
@@ -193,6 +196,12 @@ class Dungeon:
         # Classify room types
         self._classify_rooms()
 
+        # Assign zone identities (drives decorations, spawns, lore)
+        self._assign_zones()
+
+        # Apply zone-specific layout modifications (interior walls, special tiles)
+        self._apply_zone_layouts()
+
         # Place stairs
         self._place_stairs()
 
@@ -303,6 +312,133 @@ class Dungeon:
                 elif rand < 0.2:
                     room.room_type = RoomType.TREASURY
                 # else: remains NORMAL
+
+    def _assign_zones(self):
+        """Assign zone identities to rooms based on dungeon level.
+
+        Uses data-driven config from zone_config.py.
+        Zones drive decorations, spawn bias, and lore drops.
+
+        Assignment order:
+        1. Start room gets start_zone
+        2. Boss approach rooms (nearest to boss, prefer rooms with 2+ connections)
+        3. Required zones (anchors) assigned first by selection rule
+        4. Remaining rooms by weighted random eligibility
+        """
+        if not self.rooms or len(self.rooms) < 3:
+            return
+
+        config = get_floor_config(self.level)
+        if not config or not config.zones:
+            return  # No zone config for this floor
+
+        # Track for debug output
+        self._anchor_rooms = {}
+        self._approach_rooms = []
+        self._zone_warnings = []
+
+        # 1. Assign start room zone
+        start_room = self.rooms[0]
+        start_room.zone = config.start_zone
+
+        # 2. Assign boss approach zones
+        boss_room = self.rooms[-1]
+        boss_center = boss_room.center()
+        other_rooms = [r for r in self.rooms if r is not start_room and r is not boss_room]
+
+        def dist_to_boss(room: Room) -> float:
+            cx, cy = room.center()
+            bx, by = boss_center
+            return ((cx - bx) ** 2 + (cy - by) ** 2) ** 0.5
+
+        # Sort by distance, but prefer larger rooms for boss approach
+        other_rooms.sort(key=lambda r: (dist_to_boss(r), -r.area()))
+
+        # Count required zones to ensure we leave enough rooms for them
+        num_required_zones = sum(z.required_count for z in config.zones if z.required_count > 0)
+        max_approach = max(0, len(other_rooms) - num_required_zones)
+        num_approach = min(config.boss_approach_count, max_approach, len(other_rooms))
+        for i in range(num_approach):
+            other_rooms[i].zone = "boss_approach"
+            self._approach_rooms.append(other_rooms[i])
+
+        # 3. Assign required/anchor zones
+        remaining = [r for r in other_rooms if r.zone == "generic"]
+        map_center = (self.width // 2, self.height // 2)
+
+        for zone_spec in config.zones:
+            if zone_spec.required_count > 0:
+                # Filter by eligibility if specified
+                if zone_spec.eligibility:
+                    eligible = [r for r in remaining if zone_spec.eligibility(r)]
+                else:
+                    eligible = remaining[:]
+
+                # Fallback: if eligibility too strict, use any remaining room
+                if not eligible and remaining:
+                    self._zone_warnings.append(
+                        f"Relaxed eligibility for required zone '{zone_spec.zone_id}'"
+                    )
+                    eligible = remaining[:]
+                elif not eligible:
+                    self._zone_warnings.append(
+                        f"No rooms available for required zone '{zone_spec.zone_id}'"
+                    )
+                    continue
+
+                # Apply selection rule
+                if zone_spec.selection_rule == "center":
+                    eligible.sort(key=lambda r: abs(r.center()[0] - map_center[0]) +
+                                                 abs(r.center()[1] - map_center[1]))
+                elif zone_spec.selection_rule == "largest":
+                    eligible.sort(key=lambda r: -r.area())
+                elif zone_spec.selection_rule == "boss_near":
+                    eligible.sort(key=dist_to_boss)
+
+                # Assign required count
+                rooms_to_assign = min(zone_spec.required_count, len(eligible))
+                for i in range(rooms_to_assign):
+                    eligible[i].zone = zone_spec.zone_id
+                    if zone_spec.zone_id not in self._anchor_rooms:
+                        self._anchor_rooms[zone_spec.zone_id] = []
+                    self._anchor_rooms[zone_spec.zone_id].append(eligible[i])
+
+                remaining = [r for r in remaining if r.zone == "generic"]
+
+        # 4. Assign remaining rooms by weighted random
+        for room in remaining:
+            eligible_zones = self._get_eligible_zones(room, config)
+            if eligible_zones:
+                chosen = random.choice(eligible_zones)
+                room.zone = chosen
+            else:
+                room.zone = config.fallback_zone
+
+    def _get_eligible_zones(self, room: Room, config: FloorZoneConfig) -> List[str]:
+        """Return list of eligible zones for a room based on config, with weights."""
+        zones = []
+
+        for zone_spec in config.zones:
+            # Skip required zones (already assigned)
+            if zone_spec.required_count > 0:
+                continue
+
+            # Check eligibility
+            if zone_spec.eligibility is None or zone_spec.eligibility(room):
+                zones.extend([zone_spec.zone_id] * zone_spec.weight)
+
+        if not zones:
+            zones = [config.fallback_zone]
+
+        return zones
+
+    def _apply_zone_layouts(self):
+        """Apply zone-specific layout modifications to rooms.
+
+        Uses layout registry from zone_layouts.py.
+        """
+        for room in self.rooms:
+            apply_zone_layout(self, room)
 
     def _place_stairs(self):
         """Place stairs up and down in the dungeon."""
@@ -481,6 +617,65 @@ class Dungeon:
             y = random.randint(0, self.height - 1)
             if self.is_walkable(x, y):
                 return (x, y)
+
+    def get_room_at(self, x: int, y: int) -> Optional[Room]:
+        """Return the Room containing position (x, y), or None if not in a room."""
+        for room in self.rooms:
+            if (room.x <= x < room.x + room.width and
+                room.y <= y < room.y + room.height):
+                return room
+        return None
+
+    def get_zone_at(self, x: int, y: int) -> str:
+        """Return the zone name for position (x, y)."""
+        room = self.get_room_at(x, y)
+        if room:
+            return room.zone
+        return "corridor"  # Positions outside rooms are corridors
+
+    def get_zone_summary(self) -> str:
+        """Return a debug summary of zone assignments for all rooms."""
+        if not self.rooms:
+            return "No rooms generated"
+
+        lines = [f"Floor {self.level} Zone Summary ({len(self.rooms)} rooms):"]
+
+        # Warnings first
+        if hasattr(self, '_zone_warnings') and self._zone_warnings:
+            lines.append("\n[!] WARNINGS:")
+            for warning in self._zone_warnings:
+                lines.append(f"  {warning}")
+
+        # Zone counts
+        zone_counts = {}
+        for room in self.rooms:
+            zone = room.zone
+            zone_counts[zone] = zone_counts.get(zone, 0) + 1
+
+        lines.append("\nZone totals:")
+        for zone, count in sorted(zone_counts.items()):
+            lines.append(f"  {zone}: {count}")
+
+        # Anchor rooms
+        if hasattr(self, '_anchor_rooms') and self._anchor_rooms:
+            lines.append("\nAnchor rooms:")
+            for zone_id, rooms in self._anchor_rooms.items():
+                for room in rooms:
+                    lines.append(f"  {zone_id}: ({room.x},{room.y}) {room.width}x{room.height} area={room.area()}")
+
+        # Boss approach rooms
+        if hasattr(self, '_approach_rooms') and self._approach_rooms:
+            lines.append("\nBoss approach rooms:")
+            for room in self._approach_rooms:
+                cx, cy = room.center()
+                lines.append(f"  ({room.x},{room.y}) {room.width}x{room.height} center=({cx},{cy})")
+
+        # All rooms (detailed)
+        lines.append("\nAll rooms:")
+        for room in self.rooms:
+            lines.append(f"  ({room.x},{room.y}) {room.width}x{room.height} area={room.area()}: {room.zone}")
+
+        return "\n".join(lines)
 
     def is_blocking_sight(self, x: int, y: int) -> bool:
         """Check if a tile blocks line of sight (walls and closed doors block)."""
