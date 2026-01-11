@@ -1125,11 +1125,26 @@ class GameSessionManager:
 
         # Open-air zones with biome-appropriate skies
         open_air_zones = {
-            # Floor 3: Forest canopy halls have open sky (forest palette)
+            # Floor 3: Forest - open canopy areas
             (3, "canopy_halls"): "forest",
-            # Floor 4: Mirror Valdris courtyards - eerie crypt-like sky
+
+            # Floor 4: Mirror Valdris - ruined outdoor kingdom (mostly open-air)
             (4, "courtyard_squares"): "crypt",
-            # Floor 8: Dragon's hoard - volcanic/crystal sky
+            (4, "throne_hall_ruins"): "crypt",
+            (4, "parade_corridors"): "crypt",
+            (4, "mausoleum_district"): "crypt",
+
+            # Floor 5: Ice Cavern - open frozen areas
+            (5, "frozen_galleries"): "ice",
+            (5, "crystal_grottos"): "ice",
+            (5, "thaw_fault"): "ice",
+
+            # Floor 7: Volcanic Depths - open caldera/lava areas
+            (7, "crucible_heart"): "lava",
+            (7, "slag_pits"): "lava",
+            (7, "magma_channels"): "lava",
+
+            # Floor 8: Crystal Cave - dragon's domain
             (8, "dragons_hoard"): "crystal",
         }
 
