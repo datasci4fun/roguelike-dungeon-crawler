@@ -313,7 +313,7 @@ Colors:
 │                   A roguelike dungeon crawler with:                         │
 │                                                                             │
 │              ⚔️  6 Enemy Types + 5 Unique Bosses                            │
-│              🏰 5 Themed Dungeon Levels                                     │
+│              🏰 8 Themed Dungeon Biomes                                     │
 │              🎒 Equipment, Potions & Scrolls                                │
 │              🏆 34 Achievements to Unlock                                   │
 │              👻 Ghost Replays & Spectator Mode                              │

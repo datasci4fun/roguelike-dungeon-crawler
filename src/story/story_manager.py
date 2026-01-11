@@ -284,6 +284,10 @@ class StoryManager:
             theme_data = THEME_TILES.get(theme, {})
             biome_name = theme_data.get('description', f'Level {level}')
 
+            # Override display name for level 4 (uses CRYPT theme but is "Mirror Valdris")
+            if level == 4:
+                biome_name = "Mirror Valdris"
+
             # Get intro message
             intro_message = LEVEL_INTRO_MESSAGES.get(level, f'You enter dungeon level {level}.')
 

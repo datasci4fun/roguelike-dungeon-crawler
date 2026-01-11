@@ -146,8 +146,8 @@ export interface SceneFrame {
   // Lighting per cell (same indexing as tiles)
   lighting: LightLevel[];
 
-  // Theme for tile selection
-  theme: 'dungeon' | 'cave' | 'crypt' | 'library' | 'treasury';
+  // Theme for tile selection (matches biomes.ts keys)
+  theme: 'dungeon' | 'ice' | 'forest' | 'lava' | 'crypt' | 'sewer' | 'library' | 'crystal';
 
   // Current dungeon level
   level: number;

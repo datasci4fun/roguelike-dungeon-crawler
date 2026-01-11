@@ -44,15 +44,18 @@ class UIMode(Enum):
 
 
 class DungeonTheme(Enum):
-    """Visual themes for dungeon levels (8 biomes)."""
-    STONE = auto()     # Level 1 - Stone Dungeon
-    ICE = auto()       # Level 2 - Ice Cavern
-    FOREST = auto()    # Level 3 - Forest Depths
-    VOLCANIC = auto()  # Level 4 - Volcanic Depths
-    CRYPT = auto()     # Level 5 - Ancient Crypt
-    SEWER = auto()     # Level 6 - Sewer
-    LIBRARY = auto()   # Level 7 - Ancient Library
-    CRYSTAL = auto()   # Level 8 - Crystal Cave
+    """Visual themes for dungeon levels (8 biomes).
+
+    Floor-to-theme mapping is in LEVEL_THEMES below.
+    """
+    STONE = auto()     # Stone Dungeon
+    ICE = auto()       # Ice Cavern
+    FOREST = auto()    # Forest Depths
+    VOLCANIC = auto()  # Volcanic Depths
+    CRYPT = auto()     # Mirror Valdris (crypt palette)
+    SEWER = auto()     # Sewers of Valdris
+    LIBRARY = auto()   # Ancient Library
+    CRYSTAL = auto()   # Crystal Cave
 
 
 class RoomType(Enum):
