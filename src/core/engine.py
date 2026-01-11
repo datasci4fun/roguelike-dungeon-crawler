@@ -153,6 +153,7 @@ class GameEngine:
         # Spawn entities
         self.entity_manager.spawn_enemies(self.dungeon, self.player)
         self.entity_manager.spawn_items(self.dungeon, self.player)
+        self.entity_manager.spawn_boss(self.dungeon, self.player)
 
         # v4.0: Clear and generate traps/hazards
         self.trap_manager.clear()
