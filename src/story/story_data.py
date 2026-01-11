@@ -233,6 +233,218 @@ LORE_ENTRIES: Dict[str, Dict] = {
         "item_type": "book",
         "category": "history",
     },
+
+    # =========================================================================
+    # Environmental Evidence Entries (discovered via zone evidence props)
+    # =========================================================================
+
+    # Floor 1 - Stone Dungeon evidence
+    "evidence_duplicate_plaques": {
+        "title": "Duplicate Plaques",
+        "content": [
+            "Two identical bronze plaques hang on opposite walls.",
+            "Both read: 'Cell Block A - Warden Theron, Year 847.'",
+            "But the script differs subtly. One curves left. One curves right.",
+            "As if written by the same hand... in a mirror.",
+        ],
+        "level_hint": 1,
+        "item_type": "evidence",
+        "category": "history",
+    },
+    "evidence_scratch_tallies": {
+        "title": "Scratch Tallies",
+        "content": [
+            "Scratch marks cover the cell walls. Prisoner tallies, counting days.",
+            "But the numbers don't add up. Day 1... Day 2... Day 1... Day 2...",
+            "The same sequence, repeated hundreds of times.",
+            "Someone lived the same two days. Over and over.",
+        ],
+        "level_hint": 1,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 2 - Ice Cavern evidence
+    "evidence_wax_seals_nests": {
+        "title": "Wax Seals in Ice Nests",
+        "content": [
+            "Frozen bird nests line the upper ledges, encased in ice.",
+            "Inside each: royal wax seals, perfectly preserved.",
+            "The birds collected them. Hundreds of identical seals.",
+            "All dated the same day. The day Valdris fell.",
+        ],
+        "level_hint": 2,
+        "item_type": "evidence",
+        "category": "history",
+    },
+    "evidence_decree_fragments": {
+        "title": "Decree Fragments",
+        "content": [
+            "Torn parchment frozen in the grate. A royal decree.",
+            "'By order of King Aldric... the prisoner shall be...'",
+            "The rest is illegible. But there are more fragments.",
+            "The same decree. Torn the same way. In every grate.",
+        ],
+        "level_hint": 2,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 3 - Forest Depths evidence
+    "evidence_web_sigil_geometry": {
+        "title": "Web Sigil Geometry",
+        "content": [
+            "The spider webs form patterns. Too regular for instinct.",
+            "Each web contains the same sigil, woven in silk.",
+            "The symbol matches nothing in the archives.",
+            "Yet it feels familiar. Like a word you cannot quite remember.",
+        ],
+        "level_hint": 3,
+        "item_type": "evidence",
+        "category": "history",
+    },
+    "evidence_roots_avoiding_crown": {
+        "title": "Roots Avoiding Crown",
+        "content": [
+            "The roots twist through everything. Stone, metal, bone.",
+            "But here, a perfect circle. A clearing in the growth.",
+            "At its center: a faded mosaic. A crown with eight points.",
+            "The forest consumes all. Except the crown. Why?",
+        ],
+        "level_hint": 3,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 4 - Volcanic Depths evidence
+    "evidence_two_coronations_bell": {
+        "title": "Two Coronations Bell",
+        "content": [
+            "A cracked bronze bell, half-melted in the heat.",
+            "The inscription reads: 'For the coronation of King Aldric.'",
+            "But there are two dates. Two coronations.",
+            "The same king. Crowned twice. In the same year.",
+        ],
+        "level_hint": 4,
+        "item_type": "evidence",
+        "category": "history",
+    },
+    "evidence_contradictory_plaques": {
+        "title": "Contradictory Door Plaques",
+        "content": [
+            "Two doors, side by side. Each bears a plaque.",
+            "'Royal Treasury - SEALED by order of King Aldric.'",
+            "'Royal Treasury - OPENED by order of King Aldric.'",
+            "Same handwriting. Same seal. Same date.",
+        ],
+        "level_hint": 4,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 5 - Ancient Crypt evidence
+    "evidence_repeating_day_12": {
+        "title": "Repeating 'Day 12'",
+        "content": [
+            "The tomb inscriptions all include dates of death.",
+            "Every single one: 'Day 12 of the Seventh Moon.'",
+            "Hundreds of guards. All died the same day.",
+            "Not in battle. The dates are carved, not rushed.",
+        ],
+        "level_hint": 5,
+        "item_type": "evidence",
+        "category": "history",
+    },
+    "evidence_thaw_never_completes": {
+        "title": "Thaw That Never Completes",
+        "content": [
+            "Frost creeps along the crypt walls in intricate patterns.",
+            "It melts in your presence. Then refreezes. Then melts again.",
+            "The same drip falls. Freezes. Falls. Freezes.",
+            "Time stutters here. Catching on something.",
+        ],
+        "level_hint": 5,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 6 - Sewers evidence
+    "evidence_self_cataloging_shelves": {
+        "title": "Self-Cataloging Shelves",
+        "content": [
+            "Storage shelves line the maintenance tunnels.",
+            "Each item has a tag: 'Cataloged by Archivist Thenn.'",
+            "But the handwriting changes mid-sentence on some tags.",
+            "The same name. Different hands. Dozens of them.",
+        ],
+        "level_hint": 6,
+        "item_type": "evidence",
+        "category": "history",
+    },
+    "evidence_final_version_labels": {
+        "title": "'Final Version' Labels",
+        "content": [
+            "Crates stacked against the walls, marked 'FINAL VERSION.'",
+            "Inside: maps of the dungeon. All slightly different.",
+            "Each claims to be the definitive layout.",
+            "But the dungeon matches none of them. And all of them.",
+        ],
+        "level_hint": 6,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 7 - Ancient Library evidence
+    "evidence_melted_crest": {
+        "title": "Melted Crest",
+        "content": [
+            "A royal crest hangs above the archive door.",
+            "Half-melted, as if exposed to tremendous heat.",
+            "But the library shows no fire damage.",
+            "The crest drips frozen. Mid-melt. Forever.",
+        ],
+        "level_hint": 7,
+        "item_type": "evidence",
+        "category": "history",
+    },
+    "evidence_rune_plates_stamped": {
+        "title": "Rune Plates Stamped",
+        "content": [
+            "Metal plates embedded in the floor. Runes of warding.",
+            "Each plate is stamped: 'Verified by Magister Kael.'",
+            "But the verification dates span three centuries.",
+            "The same signature. The same man. Impossible.",
+        ],
+        "level_hint": 7,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 8 - Crystal Cave evidence
+    "evidence_missing_sigil_segment": {
+        "title": "Missing Sigil Segment",
+        "content": [
+            "A massive binding circle, carved into the crystal floor.",
+            "Seven segments, each inscribed with power words.",
+            "The eighth segment is blank. Scratched clean.",
+            "Someone erased it. Recently. The crystal dust still settles.",
+        ],
+        "level_hint": 8,
+        "item_type": "evidence",
+        "category": "history",
+    },
+    "evidence_double_shadow_refraction": {
+        "title": "Double Shadow Refraction",
+        "content": [
+            "Light bends strangely through the crystals here.",
+            "Your shadow splits. Two of you, walking in parallel.",
+            "But your other shadow moves... differently.",
+            "A half-second ahead. Or behind. You cannot tell which.",
+        ],
+        "level_hint": 8,
+        "item_type": "evidence",
+        "category": "history",
+    },
 }
 
 
