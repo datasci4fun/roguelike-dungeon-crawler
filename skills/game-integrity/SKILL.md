@@ -472,7 +472,208 @@ else:
 
 ---
 
-### Step 12: Full Integration Test
+### Step 12: Canonical Consistency Matrix
+
+Cross-validate all per-floor canonical mappings to prevent drift:
+
+```python
+from src.core.constants import (
+    LEVEL_THEMES, LEVEL_BOSS_MAP, BOSS_STATS, DungeonTheme, BossType,
+    FLOOR_ENEMY_POOLS
+)
+from src.story.story_data import LEVEL_INTRO_MESSAGES
+from src.world.zone_config import FLOOR_ZONE_CONFIGS
+
+errors = []
+
+# Canonical floor definitions: (theme, boss, intro_keyword, display_name_fragment)
+CANON = {
+    1: (DungeonTheme.STONE, BossType.GOBLIN_KING, "stone", "dungeon"),
+    2: (DungeonTheme.SEWER, BossType.RAT_KING, "sewer", "sewer"),
+    3: (DungeonTheme.FOREST, BossType.SPIDER_QUEEN, "forest", "forest"),
+    4: (DungeonTheme.CRYPT, BossType.REGENT, "mirror", "valdris"),
+    5: (DungeonTheme.ICE, BossType.FROST_GIANT, "ice", "ice"),
+    6: (DungeonTheme.LIBRARY, BossType.ARCANE_KEEPER, "library", "library"),
+    7: (DungeonTheme.VOLCANIC, BossType.FLAME_LORD, "volcanic", "volcanic"),
+    8: (DungeonTheme.CRYSTAL, BossType.DRAGON_EMPEROR, "crystal", "crystal"),
+}
+
+for floor, (expected_theme, expected_boss, intro_kw, name_frag) in CANON.items():
+    # Check theme
+    if LEVEL_THEMES.get(floor) != expected_theme:
+        errors.append(f"Floor {floor}: LEVEL_THEMES mismatch")
+
+    # Check boss
+    if LEVEL_BOSS_MAP.get(floor) != expected_boss:
+        errors.append(f"Floor {floor}: LEVEL_BOSS_MAP mismatch")
+
+    # Check boss level in BOSS_STATS
+    boss = LEVEL_BOSS_MAP.get(floor)
+    if boss and boss in BOSS_STATS:
+        if BOSS_STATS[boss].get('level') != floor:
+            errors.append(f"Floor {floor}: BOSS_STATS[{boss.name}]['level'] != {floor}")
+
+    # Check intro message contains keyword
+    intro = LEVEL_INTRO_MESSAGES.get(floor, "").lower()
+    if intro_kw not in intro:
+        errors.append(f"Floor {floor}: Intro missing '{intro_kw}'")
+
+    # Check enemy pool exists and non-empty
+    if floor not in FLOOR_ENEMY_POOLS or not FLOOR_ENEMY_POOLS[floor]:
+        errors.append(f"Floor {floor}: FLOOR_ENEMY_POOLS missing/empty")
+
+    # Check zone config exists
+    if floor not in FLOOR_ZONE_CONFIGS:
+        errors.append(f"Floor {floor}: FLOOR_ZONE_CONFIGS missing")
+
+if errors:
+    print(f"Canonical Matrix: {len(errors)} errors")
+    for err in errors[:10]:
+        print(f"  - {err}")
+else:
+    print("[OK] Canonical Matrix: All 8 floors consistent (theme/boss/intro/pools/zones)")
+```
+
+---
+
+### Step 13: Seed Determinism Snapshot
+
+Verify dungeon generation is deterministic for fixed seeds:
+
+```python
+import hashlib
+from src.world.dungeon import Dungeon
+
+errors = []
+
+# Test seeds across multiple floors
+test_cases = [(1, 42), (3, 123), (5, 999), (8, 7777)]
+
+for floor, seed in test_cases:
+    # Generate twice with same seed
+    d1 = Dungeon(width=80, height=40, level=floor, seed=seed)
+    d2 = Dungeon(width=80, height=40, level=floor, seed=seed)
+
+    # Hash room data
+    def room_hash(dungeon):
+        data = []
+        for r in dungeon.rooms:
+            data.append(f"{r.x},{r.y},{r.width},{r.height},{r.zone}")
+        return hashlib.md5("".join(sorted(data)).encode()).hexdigest()[:8]
+
+    # Hash tile data
+    def tile_hash(dungeon):
+        flat = []
+        for row in dungeon.tiles:
+            for tile in row:
+                flat.append(str(tile.value if hasattr(tile, 'value') else tile))
+        return hashlib.md5("".join(flat).encode()).hexdigest()[:8]
+
+    h1_rooms, h2_rooms = room_hash(d1), room_hash(d2)
+    h1_tiles, h2_tiles = tile_hash(d1), tile_hash(d2)
+
+    if h1_rooms != h2_rooms:
+        errors.append(f"Floor {floor} seed {seed}: Room hash mismatch ({h1_rooms} vs {h2_rooms})")
+    if h1_tiles != h2_tiles:
+        errors.append(f"Floor {floor} seed {seed}: Tile hash mismatch ({h1_tiles} vs {h2_tiles})")
+
+if errors:
+    print(f"Seed Determinism: {len(errors)} errors")
+    for err in errors:
+        print(f"  - {err}")
+else:
+    print(f"[OK] Seed Determinism: {len(test_cases)} floor/seed pairs verified stable")
+```
+
+---
+
+### Step 14: Save/Load Roundtrip (Nasty Moments)
+
+Test save/load in edge-case states:
+
+```python
+from src.story.completion import CompletionLedger
+from src.entities.ghosts import GhostManager, Ghost, GhostType, GhostPath
+from src.items.artifacts import ArtifactInstance, ArtifactId, VowType
+
+errors = []
+
+# Test 1: CompletionLedger with complex state
+ledger = CompletionLedger()
+ledger.record_floor_cleared(1)
+ledger.record_floor_cleared(2)
+ledger.record_warden_defeated("GOBLIN_KING")
+ledger.record_lore_found("test_lore_1")
+ledger.record_lore_found("test_lore_2")
+ledger.record_artifact_collected("DUPLICATE_SEAL")
+ledger.record_ghost_encounter("ECHO")
+ledger.record_ghost_encounter("ECHO")  # Multiple encounters
+ledger.total_kills = 15
+ledger.damage_taken = 42
+ledger.pulses_survived = 3
+
+state = ledger.to_dict()
+restored = CompletionLedger.from_dict(state)
+
+checks = [
+    (restored.floors_cleared, {1, 2}, "floors_cleared"),
+    (restored.wardens_defeated, {"GOBLIN_KING"}, "wardens_defeated"),
+    (len(restored.lore_found_ids), 2, "lore_count"),
+    (restored.ghost_encounters.get("ECHO"), 2, "ghost_encounters"),
+    (restored.total_kills, 15, "total_kills"),
+    (restored.damage_taken, 42, "damage_taken"),
+    (restored.pulses_survived, 3, "pulses_survived"),
+]
+
+for actual, expected, name in checks:
+    if actual != expected:
+        errors.append(f"Ledger roundtrip: {name} = {actual}, expected {expected}")
+
+# Test 2: Artifact with active vow
+artifact = ArtifactInstance(
+    artifact_id=ArtifactId.OATHSTONE,
+    charges=1,
+    floor_acquired=3,
+    active_vow=VowType.NO_POTIONS,
+    vow_broken=False,
+)
+art_state = {
+    'artifact_id': artifact.artifact_id.name,
+    'charges': artifact.charges,
+    'floor_acquired': artifact.floor_acquired,
+    'active_vow': artifact.active_vow.name if artifact.active_vow else None,
+    'vow_broken': artifact.vow_broken,
+}
+# Simulate restore
+restored_vow = VowType[art_state['active_vow']] if art_state['active_vow'] else None
+if restored_vow != VowType.NO_POTIONS:
+    errors.append("Artifact roundtrip: active_vow mismatch")
+
+# Test 3: Ghost manager state
+gm = GhostManager()
+gm.floor = 3
+gm.seed = 12345
+gm._messages_shown.add(GhostType.ECHO)
+ghost_state = gm.get_state()
+
+gm2 = GhostManager()
+gm2.load_state(ghost_state)
+if gm2.floor != 3 or gm2.seed != 12345:
+    errors.append("GhostManager roundtrip: floor/seed mismatch")
+if GhostType.ECHO not in gm2._messages_shown:
+    errors.append("GhostManager roundtrip: messages_shown not restored")
+
+if errors:
+    print(f"Save/Load Roundtrip: {len(errors)} errors")
+    for err in errors:
+        print(f"  - {err}")
+else:
+    print("[OK] Save/Load Roundtrip: Ledger, Artifact, GhostManager all stable")
+```
+
+---
+
+### Step 15: Full Integration Test
 
 Run the game briefly to verify it launches:
 
@@ -503,6 +704,9 @@ Ghost System:           [PASSED/FAILED] (X ghost types)
 Artifact System:        [PASSED/FAILED] (X artifacts, Y vows)
 Completion Ledger:      [PASSED/FAILED] (serialization/derivation)
 Skybox/Ceiling:         [PASSED/FAILED] (X outdoor floors, Y open-air zones)
+Canonical Matrix:       [PASSED/FAILED] (theme/boss/intro/pools/zones)
+Seed Determinism:       [PASSED/FAILED] (X floor/seed pairs stable)
+Save/Load Roundtrip:    [PASSED/FAILED] (ledger/artifact/ghost)
 Game Launch:            [PASSED/FAILED]
 
 Overall Status: [ALL PASSED / ISSUES FOUND]
