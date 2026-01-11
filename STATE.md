@@ -363,6 +363,35 @@ Death ghosts and victory imprints with zone-biased placement and unique behavior
 - Echo meaningfulness: 100% have valid paths
 - Zone bias working: 85.7% of Echoes in preferred zones
 
+### Ghost Legibility Pass
+
+Presentation improvements to make ghosts unambiguous and epic:
+
+**Glyph Changes (avoiding collisions):**
+
+| Type | Old | New | Reason |
+|------|-----|-----|--------|
+| Echo | `~` | `ε` | Conflicts with LAVA tile |
+| Silence | `?` | `Ø` | Ambiguous (unknown/tooltip) |
+| Beacon | `*` | `✧` | Conflicts with decoration |
+| Champion | `+` | `†` | Conflicts with DOOR_LOCKED tile |
+| Archivist | `@` | `§` | Conflicts with PLAYER symbol |
+
+**Anti-Spam Guard:**
+- Each ghost type message triggers once per floor
+- Tracked via `_messages_shown` set in GhostManager
+- Persisted in save state
+
+**Improved Encounter Messages:**
+- Echo: Hints at destination type ("leads somewhere significant..." vs "traces a safe route...")
+- Archivist: Zone-aware reveal ("Ancient records shimmer..." in lore zones, larger reveal radius)
+- Champion: Clear buff message ("A surge of strength flows through you!")
+
+**3D Renderer Entity Labels:**
+- Entities now display symbol on colored circular sprite (instead of plain sphere)
+- Full name floats above each entity
+- Canvas-drawn text for crisp rendering at any distance
+
 ### Future Enhancements
 
 - Add zone-specific decoration patterns
