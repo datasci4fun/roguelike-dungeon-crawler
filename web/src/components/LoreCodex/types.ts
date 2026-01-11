@@ -2,8 +2,8 @@
  * Types for the Lore Codex system
  */
 
-export type LoreCategory = 'history' | 'characters' | 'creatures' | 'locations' | 'artifacts';
-export type LoreItemType = 'scroll' | 'book' | 'bestiary' | 'location' | 'character' | 'artifact' | 'chronicle';
+export type LoreCategory = 'history' | 'characters' | 'creatures' | 'locations' | 'artifacts' | 'meta';
+export type LoreItemType = 'scroll' | 'book' | 'bestiary' | 'location' | 'character' | 'artifact' | 'chronicle' | 'evidence';
 
 export interface LoreEntry {
   id: string;
@@ -71,6 +71,28 @@ export const CATEGORIES: CategoryConfig[] = [
   { id: 'creatures', label: 'Creatures', icon: 'M' },
   { id: 'locations', label: 'Locations', icon: 'L' },
   { id: 'artifacts', label: 'Artifacts', icon: 'A' },
+  { id: 'meta', label: '???', icon: '?' },
 ];
+
+// Sealed page data structure
+export interface SealedData {
+  completion_pct: number;
+  floors: [number, number];
+  wardens: [number, number];
+  lore: [number, number];
+  evidence: [number, number];
+  artifacts: [number, number];
+  ghosts: number;
+  is_complete: boolean;
+}
+
+export interface SealedEntry extends LoreEntry {
+  item_type: 'chronicle';
+  sealed_data: SealedData;
+}
+
+export function isSealedEntry(entry: LoreEntry): entry is SealedEntry {
+  return entry.item_type === 'chronicle' && 'sealed_data' in entry;
+}
 
 export type TransitionState = 'idle' | 'entering' | 'exiting';

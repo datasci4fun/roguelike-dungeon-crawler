@@ -548,12 +548,18 @@ class GameSessionManager:
         # Include lore journal data (always available)
         if engine.story_manager:
             discovered, total = engine.story_manager.get_lore_progress()
-            # Combine all entry types: lore + bestiary + locations + artifacts
+            # Combine all entry types: lore + bestiary + locations + artifacts + sealed page
             lore_entries = engine.story_manager.get_discovered_lore_entries()
             bestiary_entries = engine.story_manager.get_bestiary_entries()
             location_entries = engine.story_manager.get_location_entries()
             artifact_entries = engine.story_manager.get_artifact_entries()
             all_entries = lore_entries + bestiary_entries + location_entries + artifact_entries
+
+            # Add sealed page (always visible, shows completion progress)
+            sealed_page = engine.story_manager.get_sealed_page_entry()
+            if sealed_page:
+                all_entries.append(sealed_page)
+
             # Calculate total discovered across all types
             total_discovered = len(lore_entries) + len(bestiary_entries) + len(location_entries) + len(artifact_entries)
             state["lore_journal"] = {

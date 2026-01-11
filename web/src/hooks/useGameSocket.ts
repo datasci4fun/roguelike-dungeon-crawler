@@ -8,8 +8,8 @@ export type GameState = 'PLAYING' | 'DEAD' | 'VICTORY' | 'TITLE' | 'INTRO';
 export type UIMode = 'GAME' | 'INVENTORY' | 'CHARACTER' | 'HELP' | 'MESSAGE_LOG' | 'DIALOG' | 'READING';
 
 // Lore system types
-export type LoreCategory = 'history' | 'characters' | 'creatures' | 'locations' | 'artifacts';
-export type LoreItemType = 'scroll' | 'book' | 'bestiary' | 'location' | 'character' | 'artifact' | 'chronicle';
+export type LoreCategory = 'history' | 'characters' | 'creatures' | 'locations' | 'artifacts' | 'meta';
+export type LoreItemType = 'scroll' | 'book' | 'bestiary' | 'location' | 'character' | 'artifact' | 'chronicle' | 'evidence';
 
 export interface CreatureData {
   symbol: string;
