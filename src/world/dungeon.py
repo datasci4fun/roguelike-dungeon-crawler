@@ -619,7 +619,87 @@ class Dungeon:
                 "key_lore_zones": ["oath_chambers", "seal_chambers", "record_vaults"],
             }
 
-        # Floors 5-8: placeholder (to be filled)
+        # Floor 5 - Ice Cavern (Frozen laboratory theme)
+        elif self.level == 5:
+            return {
+                "trail_tells": [
+                    ("*", 5),   # Ice crystals (cyan)
+                    (",", 7),   # Frost marks (white)
+                    ("~", 5),   # Frozen breath (cyan)
+                ],
+                "lore_markers": [
+                    ("?", 4),   # Frozen note (yellow)
+                    ("!", 5),   # Ice warning sigil (cyan)
+                ],
+                "evidence_props": [
+                    ("=", 5),   # Frozen experiment (cyan)
+                    ("?", 4),   # Research notes (yellow)
+                    ("o", 7),   # Frozen specimen (white)
+                ],
+                "key_lore_zones": ["suspended_laboratories", "thaw_fault", "breathing_chamber"],
+            }
+
+        # Floor 6 - Ancient Library (Scholar/arcane theme)
+        elif self.level == 6:
+            return {
+                "trail_tells": [
+                    (".", 4),   # Ink drops (yellow)
+                    (",", 8),   # Page scraps (gray)
+                    ("~", 6),   # Arcane residue (magenta)
+                ],
+                "lore_markers": [
+                    ("?", 4),   # Bookmark (yellow)
+                    ("!", 6),   # Arcane warning (magenta)
+                ],
+                "evidence_props": [
+                    ("?", 4),   # Scroll (yellow)
+                    ("=", 8),   # Broken shelf (gray)
+                    ("+", 6),   # Ritual focus (magenta)
+                ],
+                "key_lore_zones": ["indexing_heart", "catalog_chambers"],
+            }
+
+        # Floor 7 - Volcanic Depths (Forge/fire theme)
+        elif self.level == 7:
+            return {
+                "trail_tells": [
+                    (".", 3),   # Slag drips (red)
+                    (",", 4),   # Ember marks (yellow)
+                    ("~", 3),   # Heat shimmer (red)
+                ],
+                "lore_markers": [
+                    ("?", 4),   # Scorched tablet (yellow)
+                    ("!", 3),   # Fire warning (red)
+                ],
+                "evidence_props": [
+                    ("=", 8),   # Forged rune (gray)
+                    ("?", 4),   # Smith's notes (yellow)
+                    ("+", 3),   # Molten offering (red)
+                ],
+                "key_lore_zones": ["crucible_heart", "rune_press"],
+            }
+
+        # Floor 8 - Crystal Cave / Dragon's Lair
+        elif self.level == 8:
+            return {
+                "trail_tells": [
+                    ("*", 6),   # Crystal shards (magenta)
+                    (",", 4),   # Gold dust (yellow)
+                    ("~", 7),   # Scale residue (white)
+                ],
+                "lore_markers": [
+                    ("?", 4),   # Ancient pact (yellow)
+                    ("!", 3),   # Dragon mark (red)
+                ],
+                "evidence_props": [
+                    ("$", 4),   # Gold coin (yellow)
+                    ("*", 6),   # Binding crystal (magenta)
+                    ("+", 7),   # Dragon scale (white)
+                ],
+                "key_lore_zones": ["dragons_hoard", "oath_interface", "vault_antechamber"],
+            }
+
+        # Fallback for unknown floors
         return {}
 
     def _place_stairs(self):

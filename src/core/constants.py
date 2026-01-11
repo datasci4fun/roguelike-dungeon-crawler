@@ -82,15 +82,20 @@ class EnemyType(Enum):
 
 
 class BossType(Enum):
-    """Boss types, one per dungeon level (8 levels)."""
-    GOBLIN_KING = auto()      # Level 1 - Stone Dungeon
-    FROST_GIANT = auto()      # Level 2 - Ice Cavern
-    SPIDER_QUEEN = auto()     # Level 3 - Forest Depths
-    FLAME_LORD = auto()       # Level 4 - Volcanic Depths
-    LICH_LORD = auto()        # Level 5 - Ancient Crypt
-    RAT_KING = auto()         # Level 6 - Sewer
-    ARCANE_KEEPER = auto()    # Level 7 - Ancient Library
-    DRAGON_EMPEROR = auto()   # Level 8 - Crystal Cave
+    """Boss types, one per dungeon level (8 levels).
+
+    Aligned with zone system floor themes:
+    1: Stone Dungeon, 2: Sewers, 3: Forest Depths, 4: Mirror Valdris,
+    5: Ice Cavern, 6: Ancient Library, 7: Volcanic Depths, 8: Crystal Cave
+    """
+    GOBLIN_KING = auto()      # Level 1 - Stone Dungeon (prison warden)
+    RAT_KING = auto()         # Level 2 - Sewers (plague carrier)
+    SPIDER_QUEEN = auto()     # Level 3 - Forest Depths (nature's curse)
+    REGENT = auto()           # Level 4 - Mirror Valdris (counterfeit monarch)
+    FROST_GIANT = auto()      # Level 5 - Ice Cavern (frozen experiment)
+    ARCANE_KEEPER = auto()    # Level 6 - Ancient Library (knowledge guardian)
+    FLAME_LORD = auto()       # Level 7 - Volcanic Depths (forge master)
+    DRAGON_EMPEROR = auto()   # Level 8 - Crystal Cave (final guardian)
 
 
 class ItemRarity(Enum):
@@ -470,23 +475,23 @@ BOSS_STATS = {
         'abilities': ['fire_breath', 'lava_pool', 'inferno'],
         'description': 'A being of pure fire born from the volcanic depths',
     },
-    BossType.LICH_LORD: {
-        'symbol': 'L',
-        'name': 'Lich Lord',
-        'hp': 90,
-        'damage': 12,
-        'xp': 600,
-        'level': 5,
-        'abilities': ['raise_dead', 'life_drain'],
-        'description': 'An ancient undead sorcerer crackling with dark energy',
+    BossType.REGENT: {
+        'symbol': 'R',
+        'name': 'The Regent',
+        'hp': 95,
+        'damage': 13,
+        'xp': 550,
+        'level': 4,
+        'abilities': ['royal_decree', 'summon_guard', 'counterfeit_crown'],
+        'description': 'A monarch who never was, wearing a crown of stolen memories',
     },
     BossType.RAT_KING: {
-        'symbol': 'R',
+        'symbol': 'K',
         'name': 'Rat King',
-        'hp': 85,
-        'damage': 11,
-        'xp': 700,
-        'level': 6,
+        'hp': 65,
+        'damage': 9,
+        'xp': 200,
+        'level': 2,
         'abilities': ['summon_swarm', 'plague_bite', 'burrow'],
         'description': 'A grotesque fusion of rats bound by diseased flesh',
     },
@@ -513,26 +518,27 @@ BOSS_STATS = {
 }
 
 # Map dungeon levels to boss types (8 levels)
+# Aligned with zone system: Stone, Sewers, Forest, Valdris, Ice, Library, Volcanic, Crystal
 LEVEL_BOSS_MAP = {
-    1: BossType.GOBLIN_KING,      # Stone Dungeon
-    2: BossType.FROST_GIANT,      # Ice Cavern
-    3: BossType.SPIDER_QUEEN,     # Forest Depths
-    4: BossType.FLAME_LORD,       # Volcanic Depths
-    5: BossType.LICH_LORD,        # Ancient Crypt
-    6: BossType.RAT_KING,         # Sewer
-    7: BossType.ARCANE_KEEPER,    # Ancient Library
-    8: BossType.DRAGON_EMPEROR,   # Crystal Cave
+    1: BossType.GOBLIN_KING,      # Stone Dungeon (prison warden)
+    2: BossType.RAT_KING,         # Sewers (plague carrier)
+    3: BossType.SPIDER_QUEEN,     # Forest Depths (nature's curse)
+    4: BossType.REGENT,           # Mirror Valdris (counterfeit monarch)
+    5: BossType.FROST_GIANT,      # Ice Cavern (frozen experiment)
+    6: BossType.ARCANE_KEEPER,    # Ancient Library (knowledge guardian)
+    7: BossType.FLAME_LORD,       # Volcanic Depths (forge master)
+    8: BossType.DRAGON_EMPEROR,   # Crystal Cave (dragon's hoard)
 }
 
 # Boss loot tables (guaranteed drops)
 BOSS_LOOT = {
     BossType.GOBLIN_KING: ['iron_sword', 'chain_mail'],
-    BossType.FROST_GIANT: ['frost_axe', 'ice_shield'],
-    BossType.SPIDER_QUEEN: ['spider_silk_armor', 'venom_dagger'],
-    BossType.FLAME_LORD: ['flame_sword', 'fire_resist_ring'],
-    BossType.LICH_LORD: ['plate_armor', 'health_potion', 'health_potion'],
     BossType.RAT_KING: ['plague_blade', 'rat_king_crown'],
+    BossType.SPIDER_QUEEN: ['spider_silk_armor', 'venom_dagger'],
+    BossType.REGENT: ['royal_scepter', 'counterfeit_crown'],
+    BossType.FROST_GIANT: ['frost_axe', 'ice_shield'],
     BossType.ARCANE_KEEPER: ['teleport_scroll', 'teleport_scroll', 'strength_potion'],
+    BossType.FLAME_LORD: ['flame_sword', 'fire_resist_ring'],
     BossType.DRAGON_EMPEROR: ['dragon_slayer', 'dragon_scale'],
 }
 
