@@ -344,6 +344,104 @@ class StoryManager:
 
         return entries
 
+    def get_sealed_page_entry(self) -> Optional[Dict[str, Any]]:
+        """Get the Sealed Page entry showing overall completion progress.
+
+        The Sealed Page is a mysterious Codex entry that shows the player's
+        progress toward 100% completion without revealing what the reward is.
+
+        Returns:
+            Dict with sealed page data, or None if no ledger attached
+        """
+        if not self.ledger:
+            return None
+
+        from .lore_items import ALL_LORE_IDS, FLOOR_EVIDENCE_IDS
+        from ..items.artifacts import ARTIFACT_DATA
+
+        # Calculate totals
+        total_floors = 8
+        total_wardens = 8
+        total_lore = len(ALL_LORE_IDS)  # All lore including evidence
+        total_evidence = sum(len(ids) for ids in FLOOR_EVIDENCE_IDS.values())
+        total_artifacts = len(ARTIFACT_DATA)
+
+        # Get current counts from ledger
+        floors_cleared = len(self.ledger.floors_cleared)
+        wardens_defeated = len(self.ledger.wardens_defeated)
+        lore_found = len(self.ledger.lore_found_ids)
+
+        # Count evidence specifically (subset of lore)
+        evidence_ids = set()
+        for ids in FLOOR_EVIDENCE_IDS.values():
+            evidence_ids.update(ids)
+        evidence_found = len(self.ledger.lore_found_ids & evidence_ids)
+
+        # Artifacts and ghosts
+        artifacts_collected = len(self.ledger.artifacts_collected_ids)
+        ghost_types_seen = len(self.ledger.ghost_encounters)
+
+        # Calculate overall completion percentage
+        # Weight: 25% floors, 25% wardens, 25% lore, 15% artifacts, 10% evidence
+        floor_pct = floors_cleared / total_floors if total_floors > 0 else 0
+        warden_pct = wardens_defeated / total_wardens if total_wardens > 0 else 0
+        lore_pct = lore_found / total_lore if total_lore > 0 else 0
+        artifact_pct = artifacts_collected / total_artifacts if total_artifacts > 0 else 0
+        evidence_pct = evidence_found / total_evidence if total_evidence > 0 else 0
+
+        overall_pct = (
+            floor_pct * 0.25 +
+            warden_pct * 0.25 +
+            lore_pct * 0.25 +
+            artifact_pct * 0.15 +
+            evidence_pct * 0.10
+        ) * 100
+
+        # Build content lines
+        content = [
+            f"Completion: {overall_pct:.0f}%",
+            "",
+            f"Floors Cleared: {floors_cleared}/{total_floors}",
+            f"Wardens Defeated: {wardens_defeated}/{total_wardens}",
+            f"Lore Discovered: {lore_found}/{total_lore}",
+            f"Evidence Found: {evidence_found}/{total_evidence}",
+            f"Artifacts Collected: {artifacts_collected}/{total_artifacts}",
+            f"Echoes Witnessed: {ghost_types_seen}",
+            "",
+        ]
+
+        # Check if 100% complete
+        is_complete = (
+            floors_cleared >= total_floors and
+            wardens_defeated >= total_wardens and
+            lore_found >= total_lore and
+            artifacts_collected >= total_artifacts
+        )
+
+        if is_complete:
+            content.append("The page remains sealed.")
+            content.append("Something else is required.")
+        else:
+            content.append("Condition: ???")
+
+        return {
+            'id': 'sealed_page',
+            'title': 'SEALED PAGE',
+            'content': content,
+            'category': 'meta',
+            'item_type': 'chronicle',
+            'sealed_data': {
+                'completion_pct': overall_pct,
+                'floors': [floors_cleared, total_floors],
+                'wardens': [wardens_defeated, total_wardens],
+                'lore': [lore_found, total_lore],
+                'evidence': [evidence_found, total_evidence],
+                'artifacts': [artifacts_collected, total_artifacts],
+                'ghosts': ghost_types_seen,
+                'is_complete': is_complete,
+            }
+        }
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize story state to dictionary for saving."""
         return {

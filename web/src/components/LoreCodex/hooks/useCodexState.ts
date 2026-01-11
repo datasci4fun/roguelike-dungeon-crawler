@@ -62,6 +62,7 @@ export function useCodexState(entries: LoreEntry[]) {
       creatures: 0,
       locations: 0,
       artifacts: 0,
+      meta: 0,
     };
     entries.forEach(entry => {
       counts[entry.category]++;
