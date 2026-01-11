@@ -4,6 +4,8 @@ Tests:
 1. Per-floor limits are respected
 2. Fairness: Silence not on stairs
 3. Echo meaningfulness: paths lead somewhere useful
+4. Glyph collisions: ghost symbols don't conflict with tiles/player
+5. Anti-spam: messages trigger once per type per floor
 """
 import sys
 import os
@@ -14,6 +16,7 @@ from src.entities.ghosts import (
     GhostManager, GhostType, Ghost, GHOST_LIMITS,
     GHOST_ZONE_BIAS
 )
+from src.core.constants import TileType, PLAYER_SYMBOL
 
 
 def test_ghost_limits():
@@ -214,6 +217,100 @@ def test_spawn_rates():
         return True  # Not a failure, just informational
 
 
+def test_glyph_collisions():
+    """Test that ghost glyphs don't conflict with tiles or player."""
+    print("\n=== Testing Glyph Collisions ===")
+    collisions = []
+
+    # Get all tile glyphs
+    tile_glyphs = {t.value for t in TileType}
+    print(f"Tile glyphs: {len(tile_glyphs)} unique symbols")
+
+    # Get player glyph
+    player_glyph = PLAYER_SYMBOL
+    print(f"Player glyph: {player_glyph}")
+
+    # Check each ghost type
+    for ghost_type in GhostType:
+        # Create a dummy ghost to get its symbol
+        ghost = Ghost(ghost_type=ghost_type, x=0, y=0)
+        glyph = ghost.symbol
+
+        if glyph in tile_glyphs:
+            collisions.append(f"{ghost_type.name} glyph conflicts with TileType")
+
+        if glyph == player_glyph:
+            collisions.append(f"{ghost_type.name} glyph conflicts with player '@'")
+
+        try:
+            print(f"  {ghost_type.name}: '{glyph}'")
+        except UnicodeEncodeError:
+            print(f"  {ghost_type.name}: (unicode glyph)")
+
+    if collisions:
+        print("FAIL: Glyph collisions found:")
+        for c in collisions:
+            print(f"  {c}")
+        return False
+
+    print("PASS: No glyph collisions with tiles or player")
+    return True
+
+
+def test_anti_spam():
+    """Test that messages only trigger once per type per floor."""
+    print("\n=== Testing Anti-Spam Guard ===")
+
+    # Create a dungeon and ghost manager
+    dungeon = Dungeon(level=3, has_stairs_up=True)
+    manager = GhostManager()
+    manager.initialize_floor(3, dungeon, seed=12345)
+
+    # Simulate player class for tick
+    class MockPlayer:
+        def __init__(self):
+            self.x = 40
+            self.y = 20
+            self.health = 100
+            self.max_health = 100
+
+    player = MockPlayer()
+
+    # Run multiple ticks
+    all_messages = []
+    for _ in range(20):
+        messages = manager.tick(player, dungeon)
+        all_messages.extend(messages)
+
+    print(f"Total messages after 20 ticks: {len(all_messages)}")
+
+    # Count unique type messages
+    from src.entities.ghosts import GHOST_MESSAGES
+    type_message_counts = {gt: 0 for gt in GhostType}
+
+    for msg in all_messages:
+        for gt, expected_msg in GHOST_MESSAGES.items():
+            if msg == expected_msg:
+                type_message_counts[gt] += 1
+
+    # Each type message should appear at most once
+    violations = []
+    for gt, count in type_message_counts.items():
+        if count > 1:
+            violations.append(f"{gt.name} message appeared {count} times (should be <=1)")
+        if count > 0:
+            print(f"  {gt.name}: {count} occurrence(s)")
+
+    if violations:
+        print("FAIL: Anti-spam violations:")
+        for v in violations:
+            print(f"  {v}")
+        return False
+
+    print("PASS: Messages trigger at most once per type per floor")
+    return True
+
+
 def main():
     """Run all validation tests."""
     print("=" * 60)
@@ -226,6 +323,8 @@ def main():
     results.append(("Echo Meaning", test_echo_meaningfulness()))
     results.append(("Zone Bias", test_zone_bias()))
     results.append(("Spawn Rates", test_spawn_rates()))
+    results.append(("Glyph Collisions", test_glyph_collisions()))
+    results.append(("Anti-Spam", test_anti_spam()))
 
     print("\n" + "=" * 60)
     print("SUMMARY")

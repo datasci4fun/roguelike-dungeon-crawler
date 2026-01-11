@@ -77,14 +77,15 @@ GHOST_LIMITS = {
     GhostType.ARCHIVIST: 1,
 }
 
-# Messages for each ghost type
+# Messages for each ghost type (in-universe, evocative)
+# These trigger once per type per floor to avoid spam
 GHOST_MESSAGES = {
     GhostType.ECHO: "A faint echo repeats the same steps...",
     GhostType.HOLLOWED: "A hollowed delver turns toward you.",
     GhostType.SILENCE: "Something is missing here.",
     GhostType.BEACON: "A guiding light flickers ahead.",
     GhostType.CHAMPION: "A champion's imprint stands with you.",
-    GhostType.ARCHIVIST: "An archivist's mark rearranges the dust.",
+    GhostType.ARCHIVIST: "Dust rearranges into a warning.",
 }
 
 
@@ -130,14 +131,19 @@ class Ghost:
 
     @property
     def symbol(self) -> str:
-        """Get display symbol for this ghost."""
+        """Get display symbol for this ghost.
+
+        Glyphs chosen to avoid collisions with:
+        - TileType: ~ (lava), + (door), @ (player), ? (ambiguous)
+        - Enemy symbols: various letters
+        """
         return {
-            GhostType.ECHO: '~',
-            GhostType.HOLLOWED: 'H',
-            GhostType.SILENCE: '?',
-            GhostType.BEACON: '*',
-            GhostType.CHAMPION: '+',
-            GhostType.ARCHIVIST: '@',
+            GhostType.ECHO: 'ε',      # Greek epsilon - "echo" resonance
+            GhostType.HOLLOWED: 'H',  # Keep - no conflict
+            GhostType.SILENCE: 'Ø',   # Null/void - perfect for absence
+            GhostType.BEACON: '✧',    # Sparkle variant - guidance light
+            GhostType.CHAMPION: '†',  # Cross/defender - combat assist
+            GhostType.ARCHIVIST: '§', # Section sign - documents/records
         }.get(self.ghost_type, '?')
 
     @property
@@ -176,6 +182,8 @@ class GhostManager:
         self.floor = 0
         self.seed = 0
         self._silence_positions: Set[Tuple[int, int]] = set()
+        # Anti-spam: track which message types shown this floor
+        self._messages_shown: Set[GhostType] = set()
 
     def initialize_floor(self, floor: int, dungeon: 'Dungeon',
                          ghost_data: List[dict] = None, seed: int = None):
@@ -191,6 +199,7 @@ class GhostManager:
         self.seed = seed if seed is not None else floor * 8888
         self.ghosts.clear()
         self._silence_positions.clear()
+        self._messages_shown.clear()  # Reset per-floor message spam guard
 
         rng = random.Random(self.seed)
 
@@ -436,19 +445,35 @@ class GhostManager:
                 new_pos = ghost.path.get_current_position()
                 ghost.x, ghost.y = new_pos
 
-                # First encounter
+                # First encounter (anti-spam: once per type per floor)
                 if distance <= 3 and not ghost.encountered:
                     ghost.encountered = True
-                    messages.append(ghost.get_message())
+                    if ghost.ghost_type not in self._messages_shown:
+                        self._messages_shown.add(ghost.ghost_type)
+                        messages.append(ghost.get_message())
+                        # Hint at destination type
+                        if ghost.path.destination_type == 'lore':
+                            messages.append("It seems to lead somewhere significant...")
+                        elif ghost.path.destination_type == 'safe_path':
+                            messages.append("It traces a safe route forward...")
 
             # Hollowed: handled by enemy system (spawned as enemy)
-            # Silence: handled by debuff check below
+
+            # Silence: show message when entering zone
+            if ghost.ghost_type == GhostType.SILENCE:
+                if distance <= ghost.radius and not ghost.encountered:
+                    ghost.encountered = True
+                    if ghost.ghost_type not in self._messages_shown:
+                        self._messages_shown.add(ghost.ghost_type)
+                        messages.append(ghost.get_message())
 
             # Beacon: show guidance when near
             if ghost.ghost_type == GhostType.BEACON:
                 if distance <= 4 and not ghost.triggered:
                     ghost.triggered = True
-                    messages.append(ghost.get_message())
+                    if ghost.ghost_type not in self._messages_shown:
+                        self._messages_shown.add(ghost.ghost_type)
+                        messages.append(ghost.get_message())
                     # Point toward stairs
                     if dungeon.stairs_down_pos:
                         sx, sy = dungeon.stairs_down_pos
@@ -469,23 +494,36 @@ class GhostManager:
                 if should_assist and not ghost.assist_used and distance <= 5:
                     ghost.assist_used = True
                     ghost.triggered = True
-                    messages.append(ghost.get_message())
-                    # Grant small buff
-                    messages.append("You feel momentarily strengthened. (+3 temp HP)")
+                    if ghost.ghost_type not in self._messages_shown:
+                        self._messages_shown.add(ghost.ghost_type)
+                        messages.append(ghost.get_message())
+                    # Visual cue + buff
+                    messages.append("A surge of strength flows through you! (+3 HP)")
                     player.health = min(player.health + 3, player.max_health + 3)
 
-            # Archivist: reveal on approach
+            # Archivist: reveal lore/secrets in record zones, otherwise tiles
             if ghost.ghost_type == GhostType.ARCHIVIST:
                 if distance <= 2 and not ghost.triggered:
                     ghost.triggered = True
-                    messages.append(ghost.get_message())
-                    # Reveal nearby tiles
-                    for dx in range(-4, 5):
-                        for dy in range(-4, 5):
+                    if ghost.ghost_type not in self._messages_shown:
+                        self._messages_shown.add(ghost.ghost_type)
+                        messages.append(ghost.get_message())
+
+                    # In record/lore zones, reveal more specifically
+                    lore_zones = ['record_vaults', 'catalog_chambers', 'seal_chambers',
+                                  'seal_drifts', 'indexing_heart']
+                    if ghost.zone_id in lore_zones:
+                        messages.append("Ancient records shimmer into view...")
+                    else:
+                        messages.append("Hidden knowledge reveals itself...")
+
+                    # Reveal nearby tiles (larger radius in lore zones)
+                    reveal_radius = 6 if ghost.zone_id in lore_zones else 4
+                    for dx in range(-reveal_radius, reveal_radius + 1):
+                        for dy in range(-reveal_radius, reveal_radius + 1):
                             rx, ry = player.x + dx, player.y + dy
                             if 0 <= rx < dungeon.width and 0 <= ry < dungeon.height:
                                 dungeon.explored[ry][rx] = True
-                    messages.append("Hidden knowledge reveals itself...")
 
         return messages
 
@@ -570,6 +608,7 @@ class GhostManager:
                 for g in self.ghosts
             ],
             'silence_positions': list(self._silence_positions),
+            'messages_shown': [gt.name for gt in self._messages_shown],
         }
 
     def load_state(self, state: dict):
@@ -578,6 +617,9 @@ class GhostManager:
         self.seed = state.get('seed', 0)
         self._silence_positions = set(
             tuple(p) for p in state.get('silence_positions', [])
+        )
+        self._messages_shown = set(
+            GhostType[name] for name in state.get('messages_shown', [])
         )
 
         self.ghosts = []
@@ -609,3 +651,4 @@ class GhostManager:
         """Clear ghost state for new floor."""
         self.ghosts.clear()
         self._silence_positions.clear()
+        self._messages_shown.clear()
