@@ -194,10 +194,27 @@ Benefits:
 - Floor-indexed lookup: `FLOOR_LORE_IDS[floor]`
 - Consistency check between lore_items.py and story_data.py
 
+### Per-Room Ceiling/Skybox System
+
+Backend sends room ceiling state in FirstPersonView:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| zone_id | string | Current room's zone ID (e.g., "courtyard_squares") |
+| room_has_ceiling | bool | False for open-air rooms, true by default |
+| room_skybox_override | string? | Biome ID for skybox palette (null = use fog color) |
+
+**Currently enabled:**
+- Floor 4 `courtyard_squares` → open ceiling with pale blue sky
+
+**Implementation:**
+- `game_session._serialize_first_person_view()` adds ceiling fields
+- `FirstPersonRenderer3D.tsx` skips ceiling geometry when `room_has_ceiling=false`
+- Simple sky plane added for open-air rooms
+
 ### Future Enhancements
 
 - Add zone-specific decoration patterns
-- Wire has_ceiling/skybox_override for open-air rooms
 - Add new enemy types (fire elementals, wraiths, dragon fragments)
 - Implement ice sliding mechanic
 
