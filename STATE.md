@@ -1,8 +1,8 @@
 # Project State
 
 **Last Updated:** 2026-01-10
-**Branch:** feature/sky-touched-artifacts
-**Version:** v5.6.0 (Sky-Touched Artifacts)
+**Branch:** feature/ghost-differentiation
+**Version:** v5.6.0 (Ghost Differentiation)
 
 ---
 
@@ -317,6 +317,138 @@ Rare artifacts (0-1 per floor) with powerful effects and clear costs:
 - Overall rate: ~22% per floor
 - Deeper floors have higher rates (15% → 35%)
 - Zone bias: 2x weight in themed zones
+
+### Ghost Differentiation (Milestone F)
+
+Death ghosts and victory imprints with zone-biased placement and unique behaviors:
+
+**Death Ghosts (from players who died):**
+
+| Type | Symbol | Behavior | Zone Bias |
+|------|--------|----------|-----------|
+| **Echo** | `~` | Path loop leading to lore/stairs | confluence_chambers, guard_corridors, geometry_wells |
+| **Hollowed** | `H` | Hostile wandering remnant (elite enemy) | digestion_chambers, diseased_pools, slag_pits |
+| **Silence** | `?` | Debuff area marking absence | oath_chambers, record_vaults, seal_chambers |
+
+**Victory Imprints (from players who won):**
+
+| Type | Symbol | Behavior | Zone Bias |
+|------|--------|----------|-----------|
+| **Beacon** | `*` | Guidance cue toward stairs | intake_hall, confluence_chambers, boss_approach |
+| **Champion** | `+` | One-time combat assist (+3 temp HP) | boss_approach, the_nursery, colony_heart |
+| **Archivist** | `@` | Knowledge reveal (reveals nearby tiles) | record_vaults, catalog_chambers, seal_chambers |
+
+**Per-Floor Limits:**
+- Echo: 2, Hollowed: 2, Silence: 1
+- Beacon: 1, Champion: 1, Archivist: 1
+
+**Fairness Guarantees:**
+- Silence never spawns on stairs
+- Echo paths always lead to meaningful destinations (lore zones or stairs)
+- Hollowed converted to elite enemies (uses existing combat system)
+
+**Implementation:**
+
+| File | Purpose |
+|------|---------|
+| `ghosts.py` | GhostType, Ghost, GhostPath, GhostManager |
+| `entities/__init__.py` | Ghost exports |
+| `engine.py` | Ghost manager initialization, tick processing |
+| `level_manager.py` | Ghost initialization on level transitions |
+| `serialization.py` | Ghost state save/load |
+
+**Validation Stats (50-seed test):**
+- Spawn rate: ~49% of floors have ghosts
+- Average per floor (when present): 1.18 ghosts
+- Echo meaningfulness: 100% have valid paths
+- Zone bias working: 85.7% of Echoes in preferred zones
+
+### Ghost Legibility Pass
+
+Presentation improvements to make ghosts unambiguous and epic:
+
+**Glyph Changes (avoiding collisions):**
+
+| Type | Old | New | Reason |
+|------|-----|-----|--------|
+| Echo | `~` | `ε` | Conflicts with LAVA tile |
+| Silence | `?` | `Ø` | Ambiguous (unknown/tooltip) |
+| Beacon | `*` | `✧` | Conflicts with decoration |
+| Champion | `+` | `†` | Conflicts with DOOR_LOCKED tile |
+| Archivist | `@` | `§` | Conflicts with PLAYER symbol |
+
+**Anti-Spam Guard:**
+- Each ghost type message triggers once per floor
+- Tracked via `_messages_shown` set in GhostManager
+- Persisted in save state
+
+**Improved Encounter Messages:**
+- Echo: Hints at destination type ("leads somewhere significant..." vs "traces a safe route...")
+- Archivist: Zone-aware reveal ("Ancient records shimmer..." in lore zones, larger reveal radius)
+- Champion: Clear buff message ("A surge of strength flows through you!")
+
+**3D Renderer Entity Labels:**
+- Entities now display symbol on colored circular sprite (instead of plain sphere)
+- Full name floats above each entity
+- Canvas-drawn text for crisp rendering at any distance
+
+### Derived Victory Legacy (CompletionLedger)
+
+Victory imprint type is now derived deterministically from run statistics (no RNG):
+
+**CompletionLedger Tracking:**
+
+| Metric | Description |
+|--------|-------------|
+| floors_cleared | Set of floor numbers cleared |
+| wardens_defeated | Set of boss type names defeated |
+| lore_found_ids | Set of lore item IDs collected |
+| artifacts_collected_ids | Set of artifact IDs picked up |
+| ghost_encounters | Dict of ghost type → count |
+| total_kills | All enemy kills |
+| elite_kills | Elite enemy kills only |
+| damage_taken | Total damage received |
+| potions_used | Consumable count |
+| secrets_found | Set of discovered secrets |
+
+**Legacy Derivation Rules:**
+
+| Condition | Primary Legacy | Secondary |
+|-----------|---------------|-----------|
+| Low combat + Low lore | BEACON | None |
+| High combat (≥20 kills) + Low lore | CHAMPION | None |
+| Low combat + High lore (≥5) | ARCHIVIST | None |
+| High combat + High lore (combat ≥ lore) | CHAMPION | archivist_mark |
+| High combat + High lore (lore > combat) | ARCHIVIST | champion_edge |
+
+**Secondary Flourish Effects:**
+- `archivist_mark`: On ghost tick, reveals undiscovered tiles around player
+- `champion_edge`: On ghost tick, grants +2 max HP (one-time)
+
+**Ending Resolution:**
+- `resolve_ending(ledger, player_alive)` returns EndingId
+- Death → `DEATH_STANDARD`
+- Victory (no secret) → `VICTORY_STANDARD`
+- Victory + `SECRET_ENDING_ENABLED` flag → `VICTORY_SECRET` (unreachable until flag is set)
+
+**Implementation:**
+
+| File | Purpose |
+|------|---------|
+| `completion.py` | CompletionLedger, EndingId, VictoryLegacy, derive_victory_legacy(), resolve_ending() |
+| `engine.py` | Ledger initialization, ghost encounter tracking |
+| `combat_manager.py` | Kill tracking (regular + elite), damage tracking, warden defeats, lore/artifact pickup |
+| `level_manager.py` | Floor cleared tracking |
+| `serialization.py` | Ledger save/load |
+| `ghosts.py` | Uses derived legacy for victory imprints, secondary flourish application |
+
+**Validation Tests (test_completion_ledger.py):**
+- Serialization determinism
+- Legacy derivation determinism
+- Legacy rules (low/high combat + lore)
+- Hybrid tie-break (combat vs lore priority)
+- Ending resolution (death/victory/secret)
+- VictoryLegacyResult serialization
 
 ### Future Enhancements
 

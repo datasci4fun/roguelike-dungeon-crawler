@@ -16,6 +16,90 @@ const TILE_SIZE = 2;
 const WALL_HEIGHT = 2.5;
 const CAMERA_HEIGHT = 1.4;
 
+// Entity label configuration
+const LABEL_FONT_SIZE = 48;
+const LABEL_CANVAS_WIDTH = 256;
+const LABEL_CANVAS_HEIGHT = 64;
+
+/**
+ * Create a sprite with text label for entity names
+ */
+function createTextSprite(text: string, color: string = '#ffffff'): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  canvas.width = LABEL_CANVAS_WIDTH;
+  canvas.height = LABEL_CANVAS_HEIGHT;
+  const ctx = canvas.getContext('2d')!;
+
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw text with shadow for readability
+  ctx.font = `bold ${LABEL_FONT_SIZE}px Arial`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.fillText(text, canvas.width / 2 + 2, canvas.height / 2 + 2);
+
+  // Main text
+  ctx.fillStyle = color;
+  ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,  // Always render on top
+  });
+
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(2, 0.5, 1);  // Adjust scale for readability
+  return sprite;
+}
+
+/**
+ * Create a sprite with symbol on a colored background
+ */
+function createSymbolSprite(symbol: string, bgColor: number): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d')!;
+
+  // Draw circular background
+  ctx.beginPath();
+  ctx.arc(64, 64, 60, 0, Math.PI * 2);
+  ctx.fillStyle = `#${bgColor.toString(16).padStart(6, '0')}`;
+  ctx.fill();
+
+  // Draw border
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Draw symbol
+  ctx.font = 'bold 72px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(symbol, 64, 68);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+  });
+
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(0.8, 0.8, 1);
+  return sprite;
+}
+
 // Dim explored-but-not-visible geometry (persistent map memory)
 const MEMORY_GEOMETRY_BRIGHTNESS = 0.65;
 
@@ -755,43 +839,39 @@ export function FirstPersonRenderer3D({
       }
     }
 
-    // Add entities as simple billboards/sprites
+    // Add entities as symbol sprites with name labels
     // Entity positioning uses same scale for offset and distance
     // Both use TILE_SIZE so 1 offset unit = 1 distance unit in world space
-    // This ensures squares appear square when viewed from camera
     for (const entity of view.entities) {
       const x = entity.offset * TILE_SIZE;
       const z = -entity.distance * TILE_SIZE;
       const y = entity.type === 'item' ? 0.3 : CAMERA_HEIGHT * 0.8;
 
-      // Create a simple colored sphere for now
+      // Determine color based on entity type
       let color = 0xffffff;
-      let size = 0.3;
+      let labelColor = '#ffffff';
       if (entity.type === 'enemy') {
         color = entity.is_elite ? 0xff4444 : 0xff8844;
-        size = 0.5;
+        labelColor = entity.is_elite ? '#ff6666' : '#ffaa66';
       } else if (entity.type === 'item') {
         color = 0xffff44;
-        size = 0.25;
+        labelColor = '#ffff88';
       } else if (entity.type === 'trap') {
         color = 0x44ff44;
-        size = 0.2;
+        labelColor = '#88ff88';
       }
 
-      // Optional cache for spheres by radius (avoids churn)
-      let entityGeom = geometries.entitySpheres.get(size);
-      if (!entityGeom) {
-        entityGeom = new THREE.SphereGeometry(size, 8, 8);
-        geometries.entitySpheres.set(size, entityGeom);
+      // Create symbol sprite (replaces plain sphere)
+      const symbolSprite = createSymbolSprite(entity.symbol || '?', color);
+      symbolSprite.position.set(x, y, z);
+      geometryGroup.add(symbolSprite);
+
+      // Create name label hovering above the entity
+      if (entity.name) {
+        const nameLabel = createTextSprite(entity.name, labelColor);
+        nameLabel.position.set(x, y + 0.7, z);  // Position above entity
+        geometryGroup.add(nameLabel);
       }
-      const entityMat = new THREE.MeshStandardMaterial({
-        color,
-        emissive: color,
-        emissiveIntensity: 0.3,
-      });
-      const entityMesh = new THREE.Mesh(entityGeom, entityMat);
-      entityMesh.position.set(x, y, z);
-      geometryGroup.add(entityMesh);
     }
 
   }, [view, debugShowWallMarkers]);

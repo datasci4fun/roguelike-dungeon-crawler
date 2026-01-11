@@ -38,6 +38,10 @@ class LevelManager:
 
     def _descend_level(self):
         """Descend to the next dungeon level."""
+        # v5.5: Track floor cleared in completion ledger (cleared prev floor)
+        if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
+            self.game.completion_ledger.record_floor_cleared(self.game.current_level)
+
         self.game.current_level += 1
         self.game.max_level_reached = max(self.game.max_level_reached, self.game.current_level)
         self.game.add_message(f"You descend to level {self.game.current_level}...")
@@ -102,6 +106,18 @@ class LevelManager:
         if hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager:
             self.game.field_pulse_manager.initialize_floor(self.game.current_level)
 
+        # v5.5: Initialize ghosts for new level
+        if hasattr(self.game, 'ghost_manager') and self.game.ghost_manager:
+            self.game.ghost_manager.initialize_floor(
+                self.game.current_level,
+                self.game.dungeon
+            )
+            # Spawn Hollowed ghosts as enemies
+            self.game.ghost_manager.spawn_hollowed_enemy(
+                self.game.dungeon,
+                self.game.entity_manager
+            )
+
         self.game.add_message("The air grows colder...")
         if self.game.entity_manager.boss:
             boss = self.game.entity_manager.boss
@@ -163,3 +179,12 @@ class LevelManager:
         # v5.4: Initialize field pulses for level
         if hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager:
             self.game.field_pulse_manager.initialize_floor(level)
+
+        # v5.5: Initialize ghosts for level
+        if hasattr(self.game, 'ghost_manager') and self.game.ghost_manager:
+            self.game.ghost_manager.initialize_floor(level, self.game.dungeon)
+            # Spawn Hollowed ghosts as enemies
+            self.game.ghost_manager.spawn_hollowed_enemy(
+                self.game.dungeon,
+                self.game.entity_manager
+            )
