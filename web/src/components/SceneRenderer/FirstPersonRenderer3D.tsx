@@ -637,6 +637,9 @@ export function FirstPersonRenderer3D({
     // This removes corridor heuristics and guarantees the 3D view matches server tile data.
 
 
+    // Check if room has a ceiling (open-air rooms like courtyards don't)
+    const hasCeiling = view.room_has_ceiling !== false;
+
     // Always add floor/ceiling at player position (depth 0)
     // This ensures the player always has ground to stand on
     const playerFloor = new THREE.Mesh(geometries.tilePlane, materials.floor);
@@ -645,11 +648,26 @@ export function FirstPersonRenderer3D({
     playerFloor.position.set(0, 0, 0);
     geometryGroup.add(playerFloor);
 
-    const playerCeiling = new THREE.Mesh(geometries.tilePlane, materials.ceiling);
+    // Only add ceiling if room has one (skip for open-air zones like courtyards)
+    if (hasCeiling) {
+      const playerCeiling = new THREE.Mesh(geometries.tilePlane, materials.ceiling);
 
-    playerCeiling.rotation.x = Math.PI / 2;
-    playerCeiling.position.set(0, WALL_HEIGHT, 0);
-    geometryGroup.add(playerCeiling);
+      playerCeiling.rotation.x = Math.PI / 2;
+      playerCeiling.position.set(0, WALL_HEIGHT, 0);
+      geometryGroup.add(playerCeiling);
+    } else {
+      // Open-air room: add a sky gradient plane high above
+      // Use a simple pale blue sky color for now
+      const skyGeometry = new THREE.PlaneGeometry(100, 100);
+      const skyMaterial = new THREE.MeshBasicMaterial({
+        color: 0x87CEEB, // Sky blue
+        side: THREE.DoubleSide,
+      });
+      const skyPlane = new THREE.Mesh(skyGeometry, skyMaterial);
+      skyPlane.rotation.x = Math.PI / 2;
+      skyPlane.position.set(0, WALL_HEIGHT * 4, 0); // High above
+      geometryGroup.add(skyPlane);
+    }
 
     // Add geometry based on actual view data (visible + explored memory)
     for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
@@ -687,17 +705,20 @@ export function FirstPersonRenderer3D({
 
         // Non-wall tiles get floor + ceiling (including explored memory)
         const floorMat = isVisible ? materials.floor : memoryMaterials.floor;
-        const ceilMat = isVisible ? materials.ceiling : memoryMaterials.ceiling;
 
         const floor = new THREE.Mesh(geometries.tilePlane, floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.position.set(x, 0, z);
         geometryGroup.add(floor);
 
-        const ceiling = new THREE.Mesh(geometries.tilePlane, ceilMat);
-        ceiling.rotation.x = Math.PI / 2;
-        ceiling.position.set(x, WALL_HEIGHT, z);
-        geometryGroup.add(ceiling);
+        // Only add ceiling if room has one (skip for open-air zones)
+        if (hasCeiling) {
+          const ceilMat = isVisible ? materials.ceiling : memoryMaterials.ceiling;
+          const ceiling = new THREE.Mesh(geometries.tilePlane, ceilMat);
+          ceiling.rotation.x = Math.PI / 2;
+          ceiling.position.set(x, WALL_HEIGHT, z);
+          geometryGroup.add(ceiling);
+        }
       }
     }
 

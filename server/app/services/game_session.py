@@ -962,6 +962,18 @@ class GameSessionManager:
                     row_tiles.append(' ')  # Out of bounds
             top_down_window.append(row_tiles)
 
+        # Get current room info for ceiling/skybox override
+        current_room = dungeon.get_room_at(player.x, player.y)
+        zone_id = current_room.zone if current_room else "corridor"
+
+        # Determine ceiling state based on zone (Floor 4 courtyards are open-air)
+        room_has_ceiling = True
+        room_skybox_override = None
+
+        if dungeon.level == 4 and zone_id == "courtyard_squares":
+            room_has_ceiling = False
+            room_skybox_override = "dungeon"  # Use dungeon palette for now
+
         return {
             "rows": rows,
             "entities": entities_in_view,
@@ -970,6 +982,10 @@ class GameSessionManager:
             "facing": {"dx": facing_dx, "dy": facing_dy},
             "depth": depth,
             "top_down_window": top_down_window,
+            # Room ceiling/skybox info for 3D renderer
+            "zone_id": zone_id,
+            "room_has_ceiling": room_has_ceiling,
+            "room_skybox_override": room_skybox_override,
         }
 
     def get_active_session_count(self) -> int:

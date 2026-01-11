@@ -209,6 +209,10 @@ export interface FirstPersonView {
   facing: FacingDirection;
   depth: number;
   top_down_window?: string[][];  // 11x11 grid around player for debug
+  // Room ceiling/skybox info for 3D renderer
+  zone_id?: string;              // Current room's zone ID
+  room_has_ceiling?: boolean;    // False for open-air rooms (e.g., courtyards)
+  room_skybox_override?: string; // Biome ID to use for skybox when ceiling is off
 }
 
 export interface NewAchievement {
