@@ -23,30 +23,41 @@ class EntityManager:
     def spawn_enemies(self, dungeon: 'Dungeon', player: Player):
         """Spawn enemies in random rooms with weighted type selection.
 
-        Enemy weights are modified by zone (Floor 1 zone system).
+        Uses FLOOR_ENEMY_POOLS as primary source (theme-first), with
+        min/max level filtering as fallback. Zone weights are applied on top.
         """
-        from ..core.constants import ELITE_SPAWN_RATE, ENEMY_STATS, EnemyType
+        from ..core.constants import (
+            ELITE_SPAWN_RATE, ENEMY_STATS, EnemyType, FLOOR_ENEMY_POOLS
+        )
 
         self.enemies.clear()
         num_enemies = min(len(dungeon.rooms) * 2, 15)  # 2 enemies per room, max 15
 
-        # Get base enemy types filtered by dungeon level
         current_level = dungeon.level
-        base_enemy_types = []
-        base_weights = []
 
-        for enemy_type, stats in ENEMY_STATS.items():
-            min_lvl = stats.get('min_level', 1)
-            max_lvl = stats.get('max_level', 5)
-            # Only include enemies appropriate for this dungeon level
-            if min_lvl <= current_level <= max_lvl:
-                base_enemy_types.append(enemy_type)
-                base_weights.append(stats['weight'])
+        # Primary: use floor-specific enemy pool (theme-first)
+        floor_pool = FLOOR_ENEMY_POOLS.get(current_level)
+        if floor_pool:
+            base_enemy_types = [t for (t, w) in floor_pool]
+            base_weights = [w for (t, w) in floor_pool]
+        else:
+            # Fallback: filter by min/max level
+            base_enemy_types = []
+            base_weights = []
+            for enemy_type, stats in ENEMY_STATS.items():
+                min_lvl = stats.get('min_level', 1)
+                max_lvl = stats.get('max_level', 5)
+                if min_lvl <= current_level <= max_lvl:
+                    base_enemy_types.append(enemy_type)
+                    base_weights.append(stats['weight'])
 
         if not base_enemy_types:
-            # Fallback to basic enemies if none match
+            # Ultimate fallback to basic enemies
             base_enemy_types = [EnemyType.GOBLIN, EnemyType.SKELETON]
             base_weights = [40, 30]
+
+        # Track dragon spawns for Floor 8 max-1 constraint
+        dragon_spawned = False
 
         for _ in range(num_enemies):
             pos = dungeon.get_random_floor_position()
@@ -61,6 +72,17 @@ class EntityManager:
                 # Select enemy type using zone-modified weights
                 enemy_type = random.choices(base_enemy_types, weights=zone_weights)[0]
 
+                # Floor 8: Max 1 dragon constraint (spicy but fair)
+                if current_level == 8 and enemy_type == EnemyType.DRAGON:
+                    if dragon_spawned:
+                        # Already have a dragon - reroll once
+                        enemy_type = random.choices(base_enemy_types, weights=zone_weights)[0]
+                        if enemy_type == EnemyType.DRAGON:
+                            # Still dragon - fallback to Crystal Sentinel
+                            enemy_type = EnemyType.CRYSTAL_SENTINEL
+                    else:
+                        dragon_spawned = True
+
                 # 20% chance to spawn elite enemy (0% in intake_hall for Floor 1)
                 elite_rate = ELITE_SPAWN_RATE
                 if zone == "intake_hall":
@@ -73,7 +95,7 @@ class EntityManager:
     def _apply_zone_weights(self, enemy_types: list, weights: list, zone: str, level: int) -> list:
         """Apply zone-specific weight modifiers to enemy spawn weights.
 
-        Implements zone modifiers for Floors 1-2.
+        Implements zone modifiers for all floors with thematic enemy boosts.
         """
         from ..core.constants import EnemyType
 
@@ -93,17 +115,16 @@ class EntityManager:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
         # Floor 2 zone modifiers (Sewers)
-        # Canonical zones: waste_channels, carrier_nests, confluence_chambers,
-        # maintenance_tunnels, diseased_pools, seal_drifts, colony_heart, boss_approach
+        # Thematic: RAT and PLAGUE_RAT dominate
         elif level == 2:
             zone_modifiers = {
-                "carrier_nests": {EnemyType.GOBLIN: 0.5, EnemyType.SKELETON: 0.7},  # Rats bias (reduce others)
-                "waste_channels": {EnemyType.SKELETON: 1.2},
-                "seal_drifts": {},  # Low combat, handled by density
-                "colony_heart": {EnemyType.GOBLIN: 0.3, EnemyType.SKELETON: 0.5},  # Rats dominate
-                "diseased_pools": {EnemyType.SKELETON: 1.3},  # Undead bias
+                "carrier_nests": {EnemyType.RAT: 2.0, EnemyType.PLAGUE_RAT: 2.0},  # Rat swarms
+                "waste_channels": {EnemyType.PLAGUE_RAT: 1.4},  # Diseased waters
+                "seal_drifts": {EnemyType.ASSASSIN: 1.3},  # Witness-erasure vibe
+                "colony_heart": {EnemyType.RAT: 2.0, EnemyType.PLAGUE_RAT: 1.6},  # Rats dominate
+                "diseased_pools": {EnemyType.PLAGUE_RAT: 1.5},  # Disease bias
                 "maintenance_tunnels": {},  # Default weights
-                "boss_approach": {EnemyType.GOBLIN: 0.3},  # Rats bias x2
+                "boss_approach": {EnemyType.RAT: 1.8, EnemyType.PLAGUE_RAT: 1.5},
                 "confluence_chambers": {},  # Start zone, default weights
             }
             modifiers = zone_modifiers.get(zone, {})
@@ -112,18 +133,16 @@ class EntityManager:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
         # Floor 3 zone modifiers (Forest Depths)
-        # Canonical zones: root_warrens, canopy_halls, webbed_gardens, the_nursery,
-        # digestion_chambers, druid_ring, boss_approach
-        # Spider bias overall (reduce goblin/orc, keep skeleton for variety)
+        # Thematic: SPIDERLING and WEBWEAVER dominate
         elif level == 3:
             zone_modifiers = {
-                "the_nursery": {EnemyType.GOBLIN: 0.3, EnemyType.ORC: 0.2},  # Spider density x1.8
-                "webbed_gardens": {EnemyType.GOBLIN: 0.2, EnemyType.ORC: 0.2},  # Spider bias x2.0
-                "druid_ring": {EnemyType.GOBLIN: 0.5, EnemyType.SKELETON: 0.5},  # Low density
-                "digestion_chambers": {EnemyType.GOBLIN: 0.4},  # Low-to-normal
-                "canopy_halls": {EnemyType.SKELETON: 1.2},  # Mixed, slight skeleton
-                "root_warrens": {EnemyType.GOBLIN: 0.6},  # Spider bias x1.5
-                "boss_approach": {EnemyType.GOBLIN: 0.2, EnemyType.ORC: 0.2},  # Spider bias x2.0
+                "the_nursery": {EnemyType.SPIDERLING: 2.0, EnemyType.WEBWEAVER: 2.0},  # Spider density
+                "webbed_gardens": {EnemyType.WEBWEAVER: 1.6, EnemyType.SPIDERLING: 1.4},  # Web bias
+                "druid_ring": {EnemyType.WRAITH: 1.3},  # Low density, spectral
+                "digestion_chambers": {EnemyType.SPIDERLING: 1.3},  # Spider hunting grounds
+                "canopy_halls": {EnemyType.WEBWEAVER: 1.2},  # Mixed
+                "root_warrens": {EnemyType.SPIDERLING: 1.5, EnemyType.RAT: 1.2},  # Prey/predator
+                "boss_approach": {EnemyType.SPIDERLING: 1.8, EnemyType.WEBWEAVER: 1.6},
             }
             modifiers = zone_modifiers.get(zone, {})
             for i, enemy_type in enumerate(enemy_types):
@@ -131,19 +150,17 @@ class EntityManager:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
         # Floor 4 zone modifiers (Mirror Valdris)
-        # Canonical zones: courtyard_squares, throne_hall_ruins, parade_corridors,
-        # seal_chambers, record_vaults, mausoleum_district, oath_chambers, boss_approach
-        # Skeleton/undead bias overall (oath-dead servants)
+        # Thematic: OATHBOUND_GUARD and COURT_SCRIBE dominate
         elif level == 4:
             zone_modifiers = {
-                "mausoleum_district": {EnemyType.SKELETON: 2.0, EnemyType.GOBLIN: 0.3},  # Undead x2
-                "throne_hall_ruins": {EnemyType.SKELETON: 1.2},  # Honor guard skeletons
-                "record_vaults": {EnemyType.SKELETON: 1.4, EnemyType.GOBLIN: 0.5},  # Clerk undead
-                "oath_chambers": {EnemyType.SKELETON: 1.3, EnemyType.GOBLIN: 0.4},  # Low density
-                "courtyard_squares": {EnemyType.SKELETON: 1.2, EnemyType.ORC: 1.2},  # Patrol bias
-                "seal_chambers": {EnemyType.GOBLIN: 0.6},  # Low-to-normal
+                "mausoleum_district": {EnemyType.OATHBOUND_GUARD: 1.6, EnemyType.SKELETON: 1.6},  # Undead
+                "throne_hall_ruins": {EnemyType.OATHBOUND_GUARD: 1.4},  # Honor guard
+                "record_vaults": {EnemyType.COURT_SCRIBE: 1.4, EnemyType.SKELETON: 1.2},  # Clerks
+                "oath_chambers": {EnemyType.OATHBOUND_GUARD: 1.3, EnemyType.WRAITH: 1.2},  # Oath-bound
+                "courtyard_squares": {EnemyType.OATHBOUND_GUARD: 1.3},  # Patrol
+                "seal_chambers": {EnemyType.COURT_SCRIBE: 1.3},  # Bureaucracy
                 "parade_corridors": {},  # Normal distribution
-                "boss_approach": {EnemyType.SKELETON: 1.6, EnemyType.GOBLIN: 0.4},  # Skeleton x1.6
+                "boss_approach": {EnemyType.OATHBOUND_GUARD: 1.6, EnemyType.COURT_SCRIBE: 1.4},
             }
             modifiers = zone_modifiers.get(zone, {})
             for i, enemy_type in enumerate(enemy_types):
@@ -151,18 +168,16 @@ class EntityManager:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
         # Floor 5 zone modifiers (Ice Cavern)
-        # Canonical zones: frozen_galleries, ice_tombs, crystal_grottos,
-        # suspended_laboratories, breathing_chamber, thaw_fault, boss_approach
-        # "Frozen guard" bias: increased skeleton spawns
+        # Thematic: ICE_ELEMENTAL and frozen guards
         elif level == 5:
             zone_modifiers = {
-                "ice_tombs": {EnemyType.SKELETON: 1.8, EnemyType.GOBLIN: 0.3},  # Frozen guards x1.8
-                "frozen_galleries": {EnemyType.SKELETON: 1.5, EnemyType.GOBLIN: 0.5},  # Ice lane skeletons
-                "crystal_grottos": {EnemyType.SKELETON: 1.3},  # Crystal guardians
-                "suspended_laboratories": {EnemyType.SKELETON: 1.2, EnemyType.GOBLIN: 0.6},  # Low density
-                "breathing_chamber": {EnemyType.SKELETON: 1.4, EnemyType.ORC: 0.5},  # Set-piece
-                "thaw_fault": {EnemyType.SKELETON: 1.3, EnemyType.GOBLIN: 0.4},  # Paradox zone
-                "boss_approach": {EnemyType.SKELETON: 1.8, EnemyType.GOBLIN: 0.2},  # Frozen x1.8
+                "ice_tombs": {EnemyType.ICE_ELEMENTAL: 1.6, EnemyType.SKELETON: 1.4},  # Frozen guards
+                "frozen_galleries": {EnemyType.ICE_ELEMENTAL: 1.5},  # Ice lanes
+                "crystal_grottos": {EnemyType.ICE_ELEMENTAL: 1.4, EnemyType.OATHBOUND_GUARD: 1.2},
+                "suspended_laboratories": {EnemyType.WRAITH: 1.3},  # Experiments
+                "breathing_chamber": {EnemyType.ICE_ELEMENTAL: 1.4, EnemyType.TROLL: 1.3},  # Set-piece
+                "thaw_fault": {EnemyType.ICE_ELEMENTAL: 1.3},  # Paradox zone
+                "boss_approach": {EnemyType.ICE_ELEMENTAL: 1.6, EnemyType.TROLL: 1.4},
             }
             modifiers = zone_modifiers.get(zone, {})
             for i, enemy_type in enumerate(enemy_types):
@@ -170,18 +185,16 @@ class EntityManager:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
         # Floor 6 zone modifiers (Ancient Library)
-        # Canonical zones: reading_halls, forbidden_stacks, catalog_chambers,
-        # indexing_heart, experiment_archives, marginalia_alcoves, boss_approach
-        # Skeleton/clerk bias (librarian undead) + lower density in public zones
+        # Thematic: ANIMATED_TOME, NECROMANCER, COURT_SCRIBE
         elif level == 6:
             zone_modifiers = {
-                "reading_halls": {EnemyType.GOBLIN: 0.7, EnemyType.ORC: 0.5},  # Lower density
-                "forbidden_stacks": {EnemyType.SKELETON: 1.4},  # Wraith bias (skeleton for now)
-                "catalog_chambers": {EnemyType.SKELETON: 1.2},  # Clerk skeletons
-                "indexing_heart": {EnemyType.GOBLIN: 0.5, EnemyType.ORC: 0.5},  # Low density
-                "experiment_archives": {EnemyType.SKELETON: 1.2},  # Failed experiments
-                "marginalia_alcoves": {EnemyType.GOBLIN: 0.6},  # Low density
-                "boss_approach": {EnemyType.SKELETON: 1.5, EnemyType.GOBLIN: 0.4},  # Skeleton x1.5
+                "reading_halls": {EnemyType.WRAITH: 1.2},  # Quiet guards
+                "forbidden_stacks": {EnemyType.ANIMATED_TOME: 1.5, EnemyType.NECROMANCER: 1.5},  # Danger
+                "catalog_chambers": {EnemyType.COURT_SCRIBE: 1.4, EnemyType.ANIMATED_TOME: 1.2},  # Clerks
+                "indexing_heart": {EnemyType.ANIMATED_TOME: 1.3},  # Library core
+                "experiment_archives": {EnemyType.NECROMANCER: 1.4},  # Failed experiments
+                "marginalia_alcoves": {EnemyType.ANIMATED_TOME: 1.3},  # Hidden nooks
+                "boss_approach": {EnemyType.ANIMATED_TOME: 1.5, EnemyType.NECROMANCER: 1.4},
             }
             modifiers = zone_modifiers.get(zone, {})
             for i, enemy_type in enumerate(enemy_types):
@@ -189,19 +202,17 @@ class EntityManager:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
         # Floor 7 zone modifiers (Volcanic Depths)
-        # Canonical zones: forge_halls, magma_channels, cooling_chambers, slag_pits,
-        # rune_press, ash_galleries, crucible_heart, boss_approach
-        # Fire-adjacent bias (skeleton as "flame guard" until fire elementals exist)
+        # Thematic: FIRE_ELEMENTAL, DEMON, TROLL
         elif level == 7:
             zone_modifiers = {
-                "forge_halls": {EnemyType.SKELETON: 1.2},  # Workshop guards
-                "magma_channels": {EnemyType.SKELETON: 1.4, EnemyType.GOBLIN: 0.5},  # Fire bias
-                "cooling_chambers": {EnemyType.GOBLIN: 0.9, EnemyType.ORC: 0.9},  # Lower density
-                "slag_pits": {},  # Normal, low-to-normal
-                "rune_press": {EnemyType.GOBLIN: 0.7},  # Low-to-normal
-                "ash_galleries": {EnemyType.SKELETON: 1.2},  # Ambush-friendly
-                "crucible_heart": {EnemyType.GOBLIN: 0.6, EnemyType.ORC: 0.6},  # Low density
-                "boss_approach": {EnemyType.SKELETON: 1.4, EnemyType.GOBLIN: 0.4},  # Fire x1.4
+                "forge_halls": {EnemyType.FIRE_ELEMENTAL: 1.4, EnemyType.TROLL: 1.2},  # Workshop
+                "magma_channels": {EnemyType.FIRE_ELEMENTAL: 1.6, EnemyType.DEMON: 1.4},  # Fire lanes
+                "cooling_chambers": {EnemyType.TROLL: 1.3},  # Cooler areas
+                "slag_pits": {EnemyType.DEMON: 1.3},  # Demon territory
+                "rune_press": {EnemyType.ANIMATED_TOME: 1.3, EnemyType.NECROMANCER: 1.2},  # Imprints
+                "ash_galleries": {EnemyType.FIRE_ELEMENTAL: 1.3},  # Ambush-friendly
+                "crucible_heart": {EnemyType.FIRE_ELEMENTAL: 1.5, EnemyType.DEMON: 1.4},  # Core
+                "boss_approach": {EnemyType.FIRE_ELEMENTAL: 1.6, EnemyType.DEMON: 1.5},
             }
             modifiers = zone_modifiers.get(zone, {})
             for i, enemy_type in enumerate(enemy_types):
@@ -209,18 +220,16 @@ class EntityManager:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
         # Floor 8 zone modifiers (Crystal Cave)
-        # Canonical zones: crystal_gardens, geometry_wells, seal_chambers,
-        # dragons_hoard, vault_antechamber, oath_interface, boss_approach
-        # Dragon/guardian bias (skeleton as "dragon fragment" until dragon enemies exist)
+        # Thematic: CRYSTAL_SENTINEL, DRAGON, LIGHTNING_ELEMENTAL
         elif level == 8:
             zone_modifiers = {
-                "crystal_gardens": {EnemyType.SKELETON: 1.3},  # Guardian bias
-                "geometry_wells": {EnemyType.SKELETON: 1.2},  # Dragon fragment bias
-                "seal_chambers": {EnemyType.SKELETON: 1.3},  # Guardians
-                "dragons_hoard": {EnemyType.SKELETON: 1.4, EnemyType.ORC: 1.2},  # Higher danger
-                "vault_antechamber": {EnemyType.GOBLIN: 0.7},  # Low-to-normal
-                "oath_interface": {EnemyType.GOBLIN: 0.6, EnemyType.ORC: 0.6},  # Low density
-                "boss_approach": {EnemyType.SKELETON: 1.4, EnemyType.GOBLIN: 0.3},  # Dragon x1.4
+                "crystal_gardens": {EnemyType.CRYSTAL_SENTINEL: 1.4},  # Guardian bias
+                "geometry_wells": {EnemyType.LIGHTNING_ELEMENTAL: 1.3},  # Energy nodes
+                "seal_chambers": {EnemyType.CRYSTAL_SENTINEL: 1.6},  # Guardians
+                "dragons_hoard": {EnemyType.DRAGON: 1.5, EnemyType.CRYSTAL_SENTINEL: 1.3},  # Danger
+                "vault_antechamber": {EnemyType.CRYSTAL_SENTINEL: 1.3},  # Threshold
+                "oath_interface": {EnemyType.WRAITH: 1.3},  # Spectral pacts
+                "boss_approach": {EnemyType.CRYSTAL_SENTINEL: 1.6, EnemyType.DRAGON: 1.4},
             }
             modifiers = zone_modifiers.get(zone, {})
             for i, enemy_type in enumerate(enemy_types):
