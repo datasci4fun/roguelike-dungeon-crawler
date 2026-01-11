@@ -242,7 +242,8 @@ class GameEngine:
                 self._process_traps()
 
                 # v4.0: Process hazards at new position
-                self._process_hazards()
+                # Returns True if on slow terrain (deep water)
+                on_slow_terrain = self._process_hazards()
 
                 # v4.0: Process player status effects
                 self._process_player_status_effects()
@@ -252,6 +253,10 @@ class GameEngine:
                     self.player.tick_cooldowns()
 
                 self._process_enemy_turns()
+
+                # Deep water costs 2 turns - enemies get extra action
+                if on_slow_terrain:
+                    self._process_enemy_turns()
 
                 # v4.0: Tick spreading hazards
                 if self.dungeon:
@@ -479,10 +484,14 @@ class GameEngine:
         # Tick all trap cooldowns
         self.trap_manager.tick_all()
 
-    def _process_hazards(self):
-        """Process hazards at player's current position."""
+    def _process_hazards(self) -> bool:
+        """Process hazards at player's current position.
+
+        Returns:
+            True if player is on slow terrain (deep water), False otherwise.
+        """
         if not self.player:
-            return
+            return False
 
         result = self.hazard_manager.process_entity_at(
             self.player, self.player.x, self.player.y
@@ -499,6 +508,15 @@ class GameEngine:
             elif result.get('damage', 0) > 0:
                 self.last_attacker_name = "environmental hazard"
                 self.last_damage_taken = result['damage']
+
+        # Check if on slow terrain (deep water costs 2 turns)
+        move_cost = self.hazard_manager.get_movement_cost(
+            self.player.x, self.player.y
+        )
+        if move_cost > 1:
+            self.add_message("You wade through deep water...")
+            return True
+        return False
 
     def _process_player_status_effects(self):
         """Process player's active status effects."""

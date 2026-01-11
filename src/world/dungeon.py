@@ -568,11 +568,25 @@ class Dungeon:
                 self.terrain_features.append((x, y, TERRAIN_BLOOD, 3))
 
     def is_walkable(self, x: int, y: int) -> bool:
-        """Check if a position is walkable."""
+        """Check if a position is walkable.
+
+        Includes hazard tiles (LAVA, ICE, DEEP_WATER, POISON_GAS) which are
+        walkable but apply effects via the hazard system.
+        """
         if not (0 <= x < self.width and 0 <= y < self.height):
             return False
         tile = self.tiles[y][x]
-        return tile in (TileType.FLOOR, TileType.STAIRS_DOWN, TileType.STAIRS_UP)
+        walkable_tiles = (
+            TileType.FLOOR,
+            TileType.STAIRS_DOWN,
+            TileType.STAIRS_UP,
+            # Hazard tiles are walkable but dangerous
+            TileType.LAVA,
+            TileType.ICE,
+            TileType.DEEP_WATER,
+            TileType.POISON_GAS,
+        )
+        return tile in walkable_tiles
 
     def get_visual_char(self, x: int, y: int, use_unicode: bool = True) -> str:
         """
@@ -806,7 +820,10 @@ class Dungeon:
             hazard_manager: The HazardManager to add hazards to
             player_x, player_y: Player position to avoid placing hazards there
         """
-        # Hazards based on dungeon theme and level
+        # First, sync any hazard tiles painted by zone layouts into Hazard objects
+        self._sync_tile_hazards(hazard_manager, player_x, player_y)
+
+        # Then add additional random hazards based on dungeon theme
         hazard_config = self._get_hazard_config()
         if not hazard_config:
             return
@@ -814,6 +831,38 @@ class Dungeon:
         for hazard_type, (min_count, max_count) in hazard_config.items():
             num_hazards = random.randint(min_count, max_count)
             self._place_hazard_zone(hazard_manager, hazard_type, num_hazards, player_x, player_y)
+
+    def _sync_tile_hazards(self, hazard_manager: HazardManager, player_x: int, player_y: int):
+        """
+        Convert hazard TileType tiles into actual Hazard objects.
+
+        Zone layouts paint LAVA, ICE, DEEP_WATER, POISON_GAS tiles directly.
+        This method ensures those tiles have corresponding Hazard objects
+        so hazard effects are processed when entities walk on them.
+        """
+        # Map TileType to HazardType
+        tile_to_hazard = {
+            TileType.LAVA: HazardType.LAVA,
+            TileType.ICE: HazardType.ICE,
+            TileType.DEEP_WATER: HazardType.DEEP_WATER,
+            TileType.POISON_GAS: HazardType.POISON_GAS,
+        }
+
+        for y in range(self.height):
+            for x in range(self.width):
+                tile = self.tiles[y][x]
+                if tile in tile_to_hazard:
+                    # Skip player position
+                    if x == player_x and y == player_y:
+                        continue
+                    # Skip if already has a hazard
+                    if hazard_manager.has_hazard_at(x, y):
+                        continue
+
+                    hazard_type = tile_to_hazard[tile]
+                    intensity = 3 if hazard_type == HazardType.POISON_GAS else 1
+                    hazard = Hazard(x=x, y=y, hazard_type=hazard_type, intensity=intensity)
+                    hazard_manager.add_hazard(hazard)
 
     def _get_hazard_config(self) -> dict:
         """Get hazard configuration based on theme and level."""

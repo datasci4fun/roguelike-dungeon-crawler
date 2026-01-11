@@ -131,11 +131,28 @@ Data-driven zone assignment with modular layout decorators:
 - **Validation harness** catches regressions across 20 seeds
 - **All 8 floors validated** with 20/20 seeds passing
 
+### Hazard Tile Effects
+
+Zone layouts paint hazard tiles that now have gameplay effects:
+
+| Tile Type | Effect |
+|-----------|--------|
+| LAVA | 5 damage/turn + burn status |
+| POISON_GAS | Applies poison effect, spreads each turn |
+| DEEP_WATER | Costs 2 turns to cross (enemies get extra action), drown risk at <25% HP |
+| ICE | Cosmetic for now (slide mechanic deferred) |
+
+**Implementation:**
+- `dungeon._sync_tile_hazards()` converts TileType tiles to Hazard objects
+- `is_walkable()` now includes hazard tiles (walkable but dangerous)
+- `engine._process_hazards()` returns slow terrain flag for deep water penalty
+
 ### Future Enhancements
 
 - Add zone-specific decoration patterns
 - Wire has_ceiling/skybox_override for open-air rooms
 - Add new enemy types (fire elementals, wraiths, dragon fragments)
+- Implement ice sliding mechanic
 
 ---
 
