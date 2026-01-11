@@ -219,7 +219,196 @@ else:
 
 ---
 
-### Step 7: Full Integration Test
+### Step 7: Lore Codex Validation
+
+Validate all lore entries and floor assignments:
+
+```python
+from src.story.lore_items import (
+    ALL_LORE_IDS, FLOOR_LORE_IDS, FLOOR_EVIDENCE_IDS,
+    validate_story_data, validate_floor_canon
+)
+
+errors = []
+
+# Check lore IDs exist for all 8 floors
+for floor in range(1, 9):
+    floor_lore = FLOOR_LORE_IDS.get(floor, set())
+    if not floor_lore:
+        errors.append(f"Floor {floor}: No lore IDs defined")
+    else:
+        # Each floor should have 2 lore + 2 evidence = 4 entries
+        if len(floor_lore) < 4:
+            errors.append(f"Floor {floor}: Only {len(floor_lore)} lore entries (expected 4)")
+
+# Check evidence IDs exist for all floors
+for floor in range(1, 9):
+    evidence = FLOOR_EVIDENCE_IDS.get(floor, [])
+    if len(evidence) < 2:
+        errors.append(f"Floor {floor}: Only {len(evidence)} evidence entries (expected 2)")
+
+# Run built-in validators
+story_errors = validate_story_data()
+errors.extend(story_errors)
+
+canon_errors = validate_floor_canon()
+errors.extend(canon_errors)
+
+if errors:
+    print(f"Lore Codex Validation: {len(errors)} errors")
+    for err in errors[:10]:
+        print(f"  - {err}")
+else:
+    print(f"[OK] Lore Codex: {len(ALL_LORE_IDS)} lore entries across 8 floors")
+```
+
+---
+
+### Step 8: Ghost System Validation
+
+Validate ghost types, zone biases, and messages:
+
+```python
+from src.entities.ghosts import (
+    GhostType, GHOST_ZONE_BIAS, GHOST_MESSAGES, GHOST_LIMITS
+)
+
+errors = []
+
+# All 6 ghost types should exist
+expected_types = ['ECHO', 'HOLLOWED', 'SILENCE', 'BEACON', 'CHAMPION', 'ARCHIVIST']
+for type_name in expected_types:
+    if not hasattr(GhostType, type_name):
+        errors.append(f"Missing GhostType: {type_name}")
+
+# All ghost types should have zone bias
+for ghost_type in GhostType:
+    if ghost_type not in GHOST_ZONE_BIAS:
+        errors.append(f"GhostType.{ghost_type.name} missing from GHOST_ZONE_BIAS")
+    if ghost_type not in GHOST_MESSAGES:
+        errors.append(f"GhostType.{ghost_type.name} missing from GHOST_MESSAGES")
+    if ghost_type not in GHOST_LIMITS:
+        errors.append(f"GhostType.{ghost_type.name} missing from GHOST_LIMITS")
+
+if errors:
+    print(f"Ghost System: {len(errors)} errors")
+    for err in errors:
+        print(f"  - {err}")
+else:
+    print(f"[OK] Ghost System: {len(list(GhostType))} ghost types with zone biases and messages")
+```
+
+---
+
+### Step 9: Artifact System Validation
+
+Validate artifacts and vow definitions:
+
+```python
+from src.items.artifacts import (
+    ArtifactId, ARTIFACT_DATA, VowType, VOW_DATA
+)
+
+errors = []
+
+# All artifacts should have data
+for artifact_id in ArtifactId:
+    if artifact_id not in ARTIFACT_DATA:
+        errors.append(f"ArtifactId.{artifact_id.name} missing from ARTIFACT_DATA")
+    else:
+        data = ARTIFACT_DATA[artifact_id]
+        if 'name' not in data:
+            errors.append(f"Artifact {artifact_id.name} missing 'name'")
+        if 'symbol' not in data:
+            errors.append(f"Artifact {artifact_id.name} missing 'symbol'")
+        if 'zone_bias' not in data:
+            errors.append(f"Artifact {artifact_id.name} missing 'zone_bias'")
+
+# All vows should have data
+for vow_type in VowType:
+    if vow_type not in VOW_DATA:
+        errors.append(f"VowType.{vow_type.name} missing from VOW_DATA")
+    else:
+        data = VOW_DATA[vow_type]
+        if 'name' not in data:
+            errors.append(f"Vow {vow_type.name} missing 'name'")
+        if 'reward_description' not in data:
+            errors.append(f"Vow {vow_type.name} missing 'reward_description'")
+
+if errors:
+    print(f"Artifact System: {len(errors)} errors")
+    for err in errors:
+        print(f"  - {err}")
+else:
+    print(f"[OK] Artifact System: {len(list(ArtifactId))} artifacts, {len(list(VowType))} vows")
+```
+
+---
+
+### Step 10: Completion Ledger Validation
+
+Validate completion tracking and victory legacy derivation:
+
+```python
+from src.story.completion import (
+    CompletionLedger, VictoryLegacy, EndingId,
+    derive_victory_legacy, resolve_ending
+)
+
+errors = []
+
+# Test ledger serialization
+ledger = CompletionLedger()
+ledger.record_floor_cleared(1)
+ledger.record_lore_found("test_lore")
+ledger.record_kill()
+
+# Serialize and deserialize
+state = ledger.to_dict()
+restored = CompletionLedger.from_dict(state)
+
+if restored.floors_cleared != ledger.floors_cleared:
+    errors.append("Ledger serialization: floors_cleared mismatch")
+if restored.lore_count != ledger.lore_count:
+    errors.append("Ledger serialization: lore_count mismatch")
+if restored.total_kills != ledger.total_kills:
+    errors.append("Ledger serialization: total_kills mismatch")
+
+# Test victory legacy derivation
+test_cases = [
+    (0, 0, VictoryLegacy.BEACON),      # Low combat, low lore
+    (25, 0, VictoryLegacy.CHAMPION),   # High combat, low lore
+    (0, 10, VictoryLegacy.ARCHIVIST),  # Low combat, high lore
+]
+
+for kills, lore, expected in test_cases:
+    test_ledger = CompletionLedger()
+    test_ledger.total_kills = kills
+    for i in range(lore):
+        test_ledger.record_lore_found(f"lore_{i}")
+
+    result = derive_victory_legacy(test_ledger)
+    if result.primary != expected:
+        errors.append(f"Legacy derivation: kills={kills}, lore={lore} gave {result.primary.name}, expected {expected.name}")
+
+# Test ending resolution
+alive_ledger = CompletionLedger()
+if resolve_ending(alive_ledger, player_alive=True) != EndingId.VICTORY_STANDARD:
+    errors.append("Ending resolution: alive player should get VICTORY_STANDARD")
+if resolve_ending(alive_ledger, player_alive=False) != EndingId.DEATH_STANDARD:
+    errors.append("Ending resolution: dead player should get DEATH_STANDARD")
+
+if errors:
+    print(f"Completion Ledger: {len(errors)} errors")
+    for err in errors:
+        print(f"  - {err}")
+else:
+    print("[OK] Completion Ledger: serialization, legacy derivation, ending resolution")
+```
+
+---
+
+### Step 11: Full Integration Test
 
 Run the game briefly to verify it launches:
 
@@ -239,11 +428,16 @@ End with a summary report:
 ============================================================
 GAME INTEGRITY VALIDATION SUMMARY
 ============================================================
+Environment Check:      [PASSED/FAILED]
 Zone Validation:        [PASSED/FAILED] (X floors validated)
 Enemy Pools:            [PASSED/FAILED] (X/8 floors valid)
 Encounter Messages:     [PASSED/FAILED] (X/Y enemies covered)
 Dragon Constraint:      [PASSED/FAILED] (max X per run)
 Dungeon Structure:      [PASSED/FAILED] (boss/start/zones)
+Lore Codex:             [PASSED/FAILED] (X lore entries)
+Ghost System:           [PASSED/FAILED] (X ghost types)
+Artifact System:        [PASSED/FAILED] (X artifacts, Y vows)
+Completion Ledger:      [PASSED/FAILED] (serialization/derivation)
 Game Launch:            [PASSED/FAILED]
 
 Overall Status: [ALL PASSED / ISSUES FOUND]
