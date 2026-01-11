@@ -41,6 +41,9 @@ class EventType(Enum):
     STATE_CHANGE = auto()    # Game state changed
     UI_MODE_CHANGE = auto()  # UI mode changed
 
+    # Environmental events
+    FIELD_PULSE = auto()     # Field surge event triggered
+
 
 @dataclass
 class GameEvent:

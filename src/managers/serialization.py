@@ -43,7 +43,8 @@ class SaveManager:
             'enemies': [self._serialize_enemy(e) for e in self.game.entity_manager.enemies],
             'items': [self._serialize_item(i) for i in self.game.entity_manager.items],
             'dungeon': self._serialize_dungeon(self.game.dungeon),
-            'story_manager': self.game.story_manager.to_dict() if self.game.story_manager else None
+            'story_manager': self.game.story_manager.to_dict() if self.game.story_manager else None,
+            'field_pulse_manager': self.game.field_pulse_manager.get_state() if hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager else None
         }
 
         return save_game(game_state)
@@ -83,6 +84,14 @@ class SaveManager:
             if game_state.get('story_manager') and self.game.story_manager:
                 from ..story import StoryManager
                 self.game.story_manager = StoryManager.from_dict(game_state['story_manager'])
+
+            # Restore field_pulse_manager state if present
+            if game_state.get('field_pulse_manager') and hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager:
+                self.game.field_pulse_manager.load_state(game_state['field_pulse_manager'])
+                # Sync amplification with hazard manager
+                current_amp = self.game.field_pulse_manager.get_current_amplification()
+                if hasattr(self.game, 'hazard_manager') and self.game.hazard_manager:
+                    self.game.hazard_manager.set_amplification(current_amp)
 
             # Update FOV after loading (with vision bonus from race traits)
             vision_bonus = self.game.player.get_vision_bonus() if hasattr(self.game.player, 'get_vision_bonus') else 0

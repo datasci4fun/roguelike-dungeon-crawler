@@ -37,9 +37,13 @@ class Hazard:
     def color(self) -> int:
         return self.stats['color']
 
-    def affect_entity(self, entity: 'Entity') -> dict:
+    def affect_entity(self, entity: 'Entity', amplification: float = 1.0) -> dict:
         """
         Apply hazard effects to an entity standing on it.
+
+        Args:
+            entity: The entity affected by the hazard
+            amplification: Damage multiplier from field pulses (1.0 = normal)
 
         Returns:
             dict with 'damage', 'effect', 'message', 'slide_direction', 'drown'
@@ -54,12 +58,17 @@ class Hazard:
 
         stats = self.stats
 
-        # Apply damage
-        damage = stats.get('damage_per_turn', 0)
+        # Apply damage (with amplification)
+        base_damage = stats.get('damage_per_turn', 0)
+        damage = int(base_damage * amplification)
         if damage > 0:
             actual_damage = entity.take_damage(damage)
             result['damage'] = actual_damage
-            result['message'] = f"The {self.name.lower()} burns you for {actual_damage} damage!"
+            # Show amplification in message if active
+            if amplification > 1.0:
+                result['message'] = f"The {self.name.lower()} SURGES and burns you for {actual_damage} damage!"
+            else:
+                result['message'] = f"The {self.name.lower()} burns you for {actual_damage} damage!"
 
         # Apply status effect
         effect = stats.get('effect')
@@ -104,6 +113,7 @@ class HazardManager:
     def __init__(self):
         self.hazards: List[Hazard] = []
         self._positions: Set[Tuple[int, int]] = set()
+        self.amplification: float = 1.0  # Field pulse amplification
 
     def add_hazard(self, hazard: Hazard):
         """Add a hazard to the level."""
@@ -127,13 +137,19 @@ class HazardManager:
         """
         Process hazard effects for entity at position.
 
+        Uses current amplification from field pulses.
+
         Returns:
             Effect result if hazard present, None otherwise
         """
         hazard = self.get_hazard_at(x, y)
         if hazard:
-            return hazard.affect_entity(entity)
+            return hazard.affect_entity(entity, self.amplification)
         return None
+
+    def set_amplification(self, value: float):
+        """Set the hazard damage amplification from field pulses."""
+        self.amplification = value
 
     def tick_spreading(self, is_walkable_func) -> List[Hazard]:
         """
@@ -190,9 +206,10 @@ class HazardManager:
         return 1
 
     def clear(self):
-        """Remove all hazards."""
+        """Remove all hazards and reset amplification."""
         self.hazards.clear()
         self._positions.clear()
+        self.amplification = 1.0
 
     def __len__(self) -> int:
         return len(self.hazards)

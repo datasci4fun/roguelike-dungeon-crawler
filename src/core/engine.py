@@ -17,7 +17,7 @@ from .commands import (
 
 # Turn commands set
 TURN_COMMANDS = {CommandType.TURN_LEFT, CommandType.TURN_RIGHT}
-from ..world import Dungeon, TrapManager, HazardManager, SecretDoorManager, TorchManager
+from ..world import Dungeon, TrapManager, HazardManager, SecretDoorManager, TorchManager, FieldPulseManager
 from ..entities import Player
 from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
 from ..story import StoryManager
@@ -80,6 +80,9 @@ class GameEngine:
 
         # v4.5: Torch manager
         self.torch_manager = TorchManager()
+
+        # v5.4: Field pulse manager
+        self.field_pulse_manager = FieldPulseManager()
 
         # Death tracking for recap
         self.last_attacker_name = None
@@ -152,6 +155,9 @@ class GameEngine:
         # v4.5: Generate torches
         self.torch_manager.clear()
         self.dungeon.generate_torches(self.torch_manager, self.player.x, self.player.y)
+
+        # v5.4: Initialize field pulses for this floor
+        self.field_pulse_manager.initialize_floor(self.current_level)
 
         # Welcome messages with character info
         if race and player_class:
@@ -252,6 +258,9 @@ class GameEngine:
                 if hasattr(self.player, 'tick_cooldowns'):
                     self.player.tick_cooldowns()
 
+                # v5.4: Process field pulses
+                self._process_field_pulse()
+
                 self._process_enemy_turns()
 
                 # Deep water costs 2 turns - enemies get extra action
@@ -274,6 +283,7 @@ class GameEngine:
         if cmd_type in TURN_COMMANDS:
             if self._handle_turn(cmd_type):
                 # Turning costs a turn - enemies get to act
+                self._process_field_pulse()
                 self._process_enemy_turns()
                 self._check_auto_save()
                 self._check_player_death()
@@ -284,6 +294,7 @@ class GameEngine:
         if cmd_type == CommandType.SEARCH:
             if self._handle_search():
                 # Searching costs a turn
+                self._process_field_pulse()
                 self._process_enemy_turns()
                 self._check_auto_save()
                 self._check_player_death()
@@ -531,6 +542,32 @@ class GameEngine:
             if result.get('damage', 0) > 0:
                 self.last_attacker_name = result.get('source', 'status effect')
                 self.last_damage_taken = result['damage']
+
+    def _process_field_pulse(self):
+        """Process field pulse events on this turn.
+
+        Field pulses are seeded environmental events that temporarily
+        amplify zone behaviors. When a pulse triggers, it shows a
+        narrative message and applies amplification effects.
+        """
+        pulse = self.field_pulse_manager.tick()
+
+        if pulse:
+            # Show pulse message
+            message = self.field_pulse_manager.get_pulse_message(pulse)
+            self.add_message(message, MessageCategory.SYSTEM, MessageImportance.IMPORTANT)
+
+            # Emit visual event for frontend
+            self.event_queue.emit(
+                EventType.FIELD_PULSE,
+                intensity=pulse.intensity.name.lower(),
+                amplification=pulse.amplification,
+                duration=pulse.duration,
+            )
+
+        # Update hazard amplification based on current pulse state
+        current_amp = self.field_pulse_manager.get_current_amplification()
+        self.hazard_manager.set_amplification(current_amp)
 
     # =========================================================================
     # Command Processing - Inventory

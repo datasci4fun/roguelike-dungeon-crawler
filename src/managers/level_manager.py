@@ -98,6 +98,10 @@ class LevelManager:
                 self.game.player.y
             )
 
+        # v5.4: Initialize field pulses for new level
+        if hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager:
+            self.game.field_pulse_manager.initialize_floor(self.game.current_level)
+
         self.game.add_message("The air grows colder...")
         if self.game.entity_manager.boss:
             boss = self.game.entity_manager.boss
@@ -155,3 +159,7 @@ class LevelManager:
                 self.game.player.x,
                 self.game.player.y
             )
+
+        # v5.4: Initialize field pulses for level
+        if hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager:
+            self.game.field_pulse_manager.initialize_floor(level)
