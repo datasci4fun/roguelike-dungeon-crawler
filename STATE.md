@@ -6,10 +6,10 @@
 
 ---
 
-## In Progress: Zone System (Data-Driven)
+## Completed: Zone System (Data-Driven) - All 8 Floors
 
 **Branch:** `feature/zone-system`
-**Commit:** `165eda7` - feat: implement Floor 4 (Mirror Valdris) zone system
+**Status:** All 8 floors implemented and validated (20/20 seeds each)
 
 ### Zone System Architecture
 
@@ -79,17 +79,63 @@ Data-driven zone assignment with modular layout decorators:
 | parade_corridors | Elongated fallback | Symmetric markers |
 | boss_approach | Near boss (adaptive) | Skeleton x1.6, guaranteed lore |
 
+**Floor 5 - Ice Cavern (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| frozen_galleries | Start room, elongated | ICE lanes, skeleton x1.5 |
+| breathing_chamber | Required (largest, 10x8+) | Edge condensation |
+| suspended_laboratories | Required (center, 6x6+) | ICE patches, 100% lore |
+| thaw_fault | Required (5x5+) | ICE + DEEP_WATER paradox |
+| ice_tombs | 6x6+ | Corner ICE patches, skeleton x1.8 |
+| crystal_grottos | 7x7+ | Optional ICE ring |
+| boss_approach | Near boss (adaptive) | Skeleton x1.8, guaranteed lore |
+
+**Floor 6 - Ancient Library (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| reading_halls | Start room, 7x7+ | Open center, lower density |
+| indexing_heart | Required (center, 8x8+) | Ring markers, 100% lore |
+| catalog_chambers | Required (center, 6x6+) | 75% lore |
+| forbidden_stacks | 6x6+ fallback | Interior wall partitions |
+| marginalia_alcoves | 4x4+ | Small nooks, 60% lore |
+| experiment_archives | 6x6+ | Volatile markers |
+| boss_approach | Near boss (adaptive) | Skeleton x1.5, guaranteed lore |
+
+**Floor 7 - Volcanic Depths (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| forge_halls | Start room, 7x7+ | Work lane stubs |
+| crucible_heart | Required (largest, 8x8+) | Edge LAVA ring, 100% lore |
+| rune_press | Required (center, 7x7+) | Frame stubs, 60% lore |
+| magma_channels | Elongated | Central LAVA lane |
+| ash_galleries | Any room fallback | Trap-ready (future) |
+| cooling_chambers | 6x6+ | DEEP_WATER troughs |
+| slag_pits | 5x5+ | Corner LAVA puddles |
+| boss_approach | Near boss (adaptive) | LAVA offerings, guaranteed lore |
+
+**Floor 8 - Crystal Cave (Canonical zones):**
+| Zone | Rule | Special |
+|------|------|---------|
+| crystal_gardens | Start room/fallback, 7x7+ | Scenic landmark |
+| dragons_hoard | Required (largest, 8x8+) | 100% lore, higher danger |
+| oath_interface | Required (center, 7x7+) | Binding circle, 85% lore |
+| vault_antechamber | High-weight (8x8+) | Threshold room, 75% lore |
+| seal_chambers | 7x7+ | Ring with gap (failing seal) |
+| geometry_wells | 6x6+ | Lattice nodes |
+| boss_approach | Near boss (adaptive) | Scorch orbit marks, guaranteed lore |
+
 ### Zone Assignment Guarantees
 
 - **Required zones always appear** (eligibility relaxed if needed)
 - **Boss approach count is adaptive** (reduced if not enough rooms)
 - **Validation harness** catches regressions across 20 seeds
+- **All 8 floors validated** with 20/20 seeds passing
 
-### Next Steps
+### Future Enhancements
 
-- Implement Floors 5-8 configs (in order, with validation gate)
 - Add zone-specific decoration patterns
-- Wire has_ceiling/skybox_override for open-air rooms (Mirror Valdris)
+- Wire has_ceiling/skybox_override for open-air rooms
+- Add new enemy types (fire elementals, wraiths, dragon fragments)
 
 ---
 

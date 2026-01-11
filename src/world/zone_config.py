@@ -271,12 +271,210 @@ FLOOR_4_CONFIG = FloorZoneConfig(
 
 
 # =============================================================================
-# FLOORS 5-8: Placeholder configs (to be implemented)
+# FLOOR 5: Ice Cavern (STASIS)
+# Canonical zones: frozen_galleries, ice_tombs, crystal_grottos,
+#                  suspended_laboratories, breathing_chamber, thaw_fault, boss_approach
 # =============================================================================
-FLOOR_5_CONFIG = FloorZoneConfig(floor_level=5, start_zone="generic", fallback_zone="generic")
-FLOOR_6_CONFIG = FloorZoneConfig(floor_level=6, start_zone="generic", fallback_zone="generic")
-FLOOR_7_CONFIG = FloorZoneConfig(floor_level=7, start_zone="generic", fallback_zone="generic")
-FLOOR_8_CONFIG = FloorZoneConfig(floor_level=8, start_zone="generic", fallback_zone="generic")
+FLOOR_5_CONFIG = FloorZoneConfig(
+    floor_level=5,
+    start_zone="frozen_galleries",  # Ice lane entry
+    boss_approach_count=2,
+    fallback_zone="frozen_galleries",  # Common ice corridors
+    zones=[
+        # Anchor zone - set-piece breath landmark
+        ZoneSpec(
+            zone_id="breathing_chamber",
+            required_count=1,
+            selection_rule="largest",  # Large hall near boss route
+            eligibility=min_size(10, 8),
+        ),
+        # Anchor zone - high-lore frozen research
+        ZoneSpec(
+            zone_id="suspended_laboratories",
+            required_count=1,
+            selection_rule="center",  # Mid-floor
+            eligibility=min_size(6, 6),
+        ),
+        # Required zone - thaw paradox
+        ZoneSpec(
+            zone_id="thaw_fault",
+            required_count=1,
+            eligibility=min_size(5, 5),
+        ),
+        # Weighted zones
+        ZoneSpec(
+            zone_id="frozen_galleries",
+            weight=4,  # High - primary ice lanes
+            eligibility=elongated(10, 4),
+        ),
+        ZoneSpec(
+            zone_id="ice_tombs",
+            weight=3,  # Medium
+            eligibility=min_size(6, 6),
+        ),
+        ZoneSpec(
+            zone_id="crystal_grottos",
+            weight=2,  # Low-medium
+            eligibility=min_size(7, 7),
+        ),
+    ],
+)
+
+
+# =============================================================================
+# FLOOR 6: Ancient Library (COGNITION)
+# Canonical zones: reading_halls, forbidden_stacks, catalog_chambers,
+#                  indexing_heart, experiment_archives, marginalia_alcoves, boss_approach
+# =============================================================================
+FLOOR_6_CONFIG = FloorZoneConfig(
+    floor_level=6,
+    start_zone="reading_halls",  # Public entry point
+    boss_approach_count=2,
+    fallback_zone="forbidden_stacks",  # Common claustrophobic stacks
+    zones=[
+        # Anchor zone - library's organizing core
+        ZoneSpec(
+            zone_id="indexing_heart",
+            required_count=1,
+            selection_rule="center",
+            eligibility=min_size(8, 8),
+        ),
+        # Required zone for bureaucracy lore
+        ZoneSpec(
+            zone_id="catalog_chambers",
+            required_count=1,
+            selection_rule="center",
+            eligibility=min_size(6, 6),
+        ),
+        # Weighted zones
+        ZoneSpec(
+            zone_id="forbidden_stacks",
+            weight=4,  # Weighted high - maze-like corridors
+            eligibility=min_size(6, 6),
+        ),
+        ZoneSpec(
+            zone_id="reading_halls",
+            weight=2,
+            eligibility=min_size(7, 7),
+        ),
+        ZoneSpec(
+            zone_id="experiment_archives",
+            weight=2,
+            eligibility=min_size(6, 6),
+        ),
+        ZoneSpec(
+            zone_id="marginalia_alcoves",
+            weight=3,  # Small nooks common
+            eligibility=min_size(4, 4),
+        ),
+    ],
+)
+
+
+# =============================================================================
+# FLOOR 7: Volcanic Depths (TRANSFORMATION)
+# Canonical zones: forge_halls, magma_channels, cooling_chambers, slag_pits,
+#                  rune_press, ash_galleries, crucible_heart, boss_approach
+# =============================================================================
+FLOOR_7_CONFIG = FloorZoneConfig(
+    floor_level=7,
+    start_zone="forge_halls",  # Workshop entry
+    boss_approach_count=2,
+    fallback_zone="ash_galleries",  # Any size works
+    zones=[
+        # Anchor zone - forge that became aware
+        ZoneSpec(
+            zone_id="crucible_heart",
+            required_count=1,
+            selection_rule="largest",
+            eligibility=min_size(8, 8),
+        ),
+        # Anchor zone - imprint made literal
+        ZoneSpec(
+            zone_id="rune_press",
+            required_count=1,
+            selection_rule="center",
+            eligibility=min_size(7, 7),
+        ),
+        # Weighted zones
+        ZoneSpec(
+            zone_id="magma_channels",
+            weight=4,  # Primary hazard lanes
+            eligibility=elongated(10, 4),
+        ),
+        ZoneSpec(
+            zone_id="forge_halls",
+            weight=3,  # Weighted high
+            eligibility=min_size(7, 7),
+        ),
+        ZoneSpec(
+            zone_id="ash_galleries",
+            weight=3,  # Any size works
+            eligibility=any_room,
+        ),
+        ZoneSpec(
+            zone_id="cooling_chambers",
+            weight=2,
+            eligibility=min_size(6, 6),
+        ),
+        ZoneSpec(
+            zone_id="slag_pits",
+            weight=2,
+            eligibility=min_size(5, 5),
+        ),
+    ],
+)
+
+
+# =============================================================================
+# FLOOR 8: Crystal Cave (INTEGRATION)
+# Canonical zones: crystal_gardens, geometry_wells, seal_chambers,
+#                  dragons_hoard, vault_antechamber, oath_interface, boss_approach
+# =============================================================================
+FLOOR_8_CONFIG = FloorZoneConfig(
+    floor_level=8,
+    start_zone="crystal_gardens",  # Scenic entry
+    boss_approach_count=2,
+    fallback_zone="crystal_gardens",  # Common landmark zone
+    zones=[
+        # Anchor zone - risk/reward treasure room
+        ZoneSpec(
+            zone_id="dragons_hoard",
+            required_count=1,
+            selection_rule="largest",
+            eligibility=min_size(8, 8),
+        ),
+        # Anchor zone - pact logic made physical
+        ZoneSpec(
+            zone_id="oath_interface",
+            required_count=1,
+            selection_rule="center",
+            eligibility=min_size(7, 7),
+        ),
+        # High-weight threshold room (not strictly required)
+        ZoneSpec(
+            zone_id="vault_antechamber",
+            weight=4,  # High priority but not strictly required
+            eligibility=min_size(8, 8),
+        ),
+        # Weighted zones
+        ZoneSpec(
+            zone_id="crystal_gardens",
+            weight=3,  # Scenic landmarks
+            eligibility=min_size(7, 7),
+        ),
+        ZoneSpec(
+            zone_id="seal_chambers",
+            weight=3,  # Binding rooms
+            eligibility=min_size(7, 7),
+        ),
+        ZoneSpec(
+            zone_id="geometry_wells",
+            weight=2,  # Lattice nodes
+            eligibility=min_size(6, 6),
+        ),
+    ],
+)
 
 
 # Floor config lookup

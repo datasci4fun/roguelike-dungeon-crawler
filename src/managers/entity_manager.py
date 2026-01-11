@@ -148,6 +148,83 @@ class EntityManager:
                 if enemy_type in modifiers:
                     weights[i] = int(weights[i] * modifiers[enemy_type])
 
+        # Floor 5 zone modifiers (Ice Cavern)
+        # Canonical zones: frozen_galleries, ice_tombs, crystal_grottos,
+        # suspended_laboratories, breathing_chamber, thaw_fault, boss_approach
+        # "Frozen guard" bias: increased skeleton spawns
+        elif level == 5:
+            zone_modifiers = {
+                "ice_tombs": {EnemyType.SKELETON: 1.8, EnemyType.GOBLIN: 0.3},  # Frozen guards x1.8
+                "frozen_galleries": {EnemyType.SKELETON: 1.5, EnemyType.GOBLIN: 0.5},  # Ice lane skeletons
+                "crystal_grottos": {EnemyType.SKELETON: 1.3},  # Crystal guardians
+                "suspended_laboratories": {EnemyType.SKELETON: 1.2, EnemyType.GOBLIN: 0.6},  # Low density
+                "breathing_chamber": {EnemyType.SKELETON: 1.4, EnemyType.ORC: 0.5},  # Set-piece
+                "thaw_fault": {EnemyType.SKELETON: 1.3, EnemyType.GOBLIN: 0.4},  # Paradox zone
+                "boss_approach": {EnemyType.SKELETON: 1.8, EnemyType.GOBLIN: 0.2},  # Frozen x1.8
+            }
+            modifiers = zone_modifiers.get(zone, {})
+            for i, enemy_type in enumerate(enemy_types):
+                if enemy_type in modifiers:
+                    weights[i] = int(weights[i] * modifiers[enemy_type])
+
+        # Floor 6 zone modifiers (Ancient Library)
+        # Canonical zones: reading_halls, forbidden_stacks, catalog_chambers,
+        # indexing_heart, experiment_archives, marginalia_alcoves, boss_approach
+        # Skeleton/clerk bias (librarian undead) + lower density in public zones
+        elif level == 6:
+            zone_modifiers = {
+                "reading_halls": {EnemyType.GOBLIN: 0.7, EnemyType.ORC: 0.5},  # Lower density
+                "forbidden_stacks": {EnemyType.SKELETON: 1.4},  # Wraith bias (skeleton for now)
+                "catalog_chambers": {EnemyType.SKELETON: 1.2},  # Clerk skeletons
+                "indexing_heart": {EnemyType.GOBLIN: 0.5, EnemyType.ORC: 0.5},  # Low density
+                "experiment_archives": {EnemyType.SKELETON: 1.2},  # Failed experiments
+                "marginalia_alcoves": {EnemyType.GOBLIN: 0.6},  # Low density
+                "boss_approach": {EnemyType.SKELETON: 1.5, EnemyType.GOBLIN: 0.4},  # Skeleton x1.5
+            }
+            modifiers = zone_modifiers.get(zone, {})
+            for i, enemy_type in enumerate(enemy_types):
+                if enemy_type in modifiers:
+                    weights[i] = int(weights[i] * modifiers[enemy_type])
+
+        # Floor 7 zone modifiers (Volcanic Depths)
+        # Canonical zones: forge_halls, magma_channels, cooling_chambers, slag_pits,
+        # rune_press, ash_galleries, crucible_heart, boss_approach
+        # Fire-adjacent bias (skeleton as "flame guard" until fire elementals exist)
+        elif level == 7:
+            zone_modifiers = {
+                "forge_halls": {EnemyType.SKELETON: 1.2},  # Workshop guards
+                "magma_channels": {EnemyType.SKELETON: 1.4, EnemyType.GOBLIN: 0.5},  # Fire bias
+                "cooling_chambers": {EnemyType.GOBLIN: 0.9, EnemyType.ORC: 0.9},  # Lower density
+                "slag_pits": {},  # Normal, low-to-normal
+                "rune_press": {EnemyType.GOBLIN: 0.7},  # Low-to-normal
+                "ash_galleries": {EnemyType.SKELETON: 1.2},  # Ambush-friendly
+                "crucible_heart": {EnemyType.GOBLIN: 0.6, EnemyType.ORC: 0.6},  # Low density
+                "boss_approach": {EnemyType.SKELETON: 1.4, EnemyType.GOBLIN: 0.4},  # Fire x1.4
+            }
+            modifiers = zone_modifiers.get(zone, {})
+            for i, enemy_type in enumerate(enemy_types):
+                if enemy_type in modifiers:
+                    weights[i] = int(weights[i] * modifiers[enemy_type])
+
+        # Floor 8 zone modifiers (Crystal Cave)
+        # Canonical zones: crystal_gardens, geometry_wells, seal_chambers,
+        # dragons_hoard, vault_antechamber, oath_interface, boss_approach
+        # Dragon/guardian bias (skeleton as "dragon fragment" until dragon enemies exist)
+        elif level == 8:
+            zone_modifiers = {
+                "crystal_gardens": {EnemyType.SKELETON: 1.3},  # Guardian bias
+                "geometry_wells": {EnemyType.SKELETON: 1.2},  # Dragon fragment bias
+                "seal_chambers": {EnemyType.SKELETON: 1.3},  # Guardians
+                "dragons_hoard": {EnemyType.SKELETON: 1.4, EnemyType.ORC: 1.2},  # Higher danger
+                "vault_antechamber": {EnemyType.GOBLIN: 0.7},  # Low-to-normal
+                "oath_interface": {EnemyType.GOBLIN: 0.6, EnemyType.ORC: 0.6},  # Low density
+                "boss_approach": {EnemyType.SKELETON: 1.4, EnemyType.GOBLIN: 0.3},  # Dragon x1.4
+            }
+            modifiers = zone_modifiers.get(zone, {})
+            for i, enemy_type in enumerate(enemy_types):
+                if enemy_type in modifiers:
+                    weights[i] = int(weights[i] * modifiers[enemy_type])
+
         return weights
 
     def _spawn_zone_lore(self, dungeon: 'Dungeon', player: Player):
@@ -172,6 +249,14 @@ class EntityManager:
             self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor3_lore_config())
         elif dungeon.level == 4:
             self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor4_lore_config())
+        elif dungeon.level == 5:
+            self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor5_lore_config())
+        elif dungeon.level == 6:
+            self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor6_lore_config())
+        elif dungeon.level == 7:
+            self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor7_lore_config())
+        elif dungeon.level == 8:
+            self._spawn_floor_lore(dungeon, player, lore_entries, self._get_floor8_lore_config())
         else:
             # Default behavior for other floors
             for lore_id, entry in lore_entries:
@@ -244,6 +329,75 @@ class EntityManager:
             "courtyard_squares": (0.25, 1),    # 20-35% chance, max 1
             "parade_corridors": (0.15, 1),     # 10-20% chance, max 1
             "boss_approach": (1.0, 1),         # Guaranteed 1 lore
+        }
+
+    def _get_floor5_lore_config(self) -> dict:
+        """Floor 5 zone lore configuration.
+
+        Canonical zones: frozen_galleries, ice_tombs, crystal_grottos,
+        suspended_laboratories, breathing_chamber, thaw_fault, boss_approach
+        Lore bias: delver journals + treaty contradictions in labs/tombs.
+        """
+        return {
+            "suspended_laboratories": (1.0, 2),    # Guaranteed 1-2 lore (research docs)
+            "ice_tombs": (0.8, 2),                 # 80% chance, up to 2 (preserved journals)
+            "breathing_chamber": (0.7, 1),         # 70% chance, max 1 (anchor)
+            "thaw_fault": (0.5, 1),                # 50% chance, max 1 (paradox lore)
+            "crystal_grottos": (0.4, 1),           # 40% chance, max 1
+            "frozen_galleries": (0.2, 1),          # 20% chance, max 1 (corridor)
+            "boss_approach": (1.0, 1),             # Guaranteed 1 lore
+        }
+
+    def _get_floor6_lore_config(self) -> dict:
+        """Floor 6 zone lore configuration.
+
+        Canonical zones: reading_halls, forbidden_stacks, catalog_chambers,
+        indexing_heart, experiment_archives, marginalia_alcoves, boss_approach
+        Lore bias: arcane research + surface authority docs (library records).
+        """
+        return {
+            "indexing_heart": (1.0, 1),            # Guaranteed 1 lore (anchor)
+            "catalog_chambers": (0.75, 1),         # 50-75% chance (bureaucracy hub)
+            "forbidden_stacks": (0.4, 1),          # 25-40% chance (dangerous knowledge)
+            "experiment_archives": (0.6, 1),       # 35-60% chance (research residue)
+            "marginalia_alcoves": (0.6, 1),        # 40-70% chance (hints in margins)
+            "reading_halls": (0.25, 1),            # 15-25% chance (public zone)
+            "boss_approach": (1.0, 1),             # Guaranteed 1 lore
+        }
+
+    def _get_floor7_lore_config(self) -> dict:
+        """Floor 7 zone lore configuration.
+
+        Canonical zones: forge_halls, magma_channels, cooling_chambers, slag_pits,
+        rune_press, ash_galleries, crucible_heart, boss_approach
+        Lore bias: smith records + obsidian tablets (transformation lore).
+        """
+        return {
+            "crucible_heart": (1.0, 1),            # Guaranteed 1 lore (anchor)
+            "rune_press": (0.6, 1),                # 35-60% chance (imprint lore)
+            "forge_halls": (0.35, 1),              # 20-35% chance
+            "magma_channels": (0.2, 1),            # 10-20% chance (hazard zone)
+            "cooling_chambers": (0.2, 1),          # 10-20% chance
+            "slag_pits": (0.2, 1),                 # 10-20% chance
+            "ash_galleries": (0.2, 1),             # 10-20% chance
+            "boss_approach": (1.0, 1),             # Guaranteed 1 lore
+        }
+
+    def _get_floor8_lore_config(self) -> dict:
+        """Floor 8 zone lore configuration.
+
+        Canonical zones: crystal_gardens, geometry_wells, seal_chambers,
+        dragons_hoard, vault_antechamber, oath_interface, boss_approach
+        Lore bias: dragon pact + seal history + last king's testament.
+        """
+        return {
+            "dragons_hoard": (1.0, 1),             # Guaranteed 1 lore (anchor)
+            "oath_interface": (0.85, 1),           # 70-100% chance (pact lore)
+            "vault_antechamber": (0.75, 1),        # 60-90% chance (threshold lore)
+            "seal_chambers": (0.5, 1),             # 30-55% chance
+            "geometry_wells": (0.3, 1),            # 15-30% chance
+            "crystal_gardens": (0.2, 1),           # 10-20% chance
+            "boss_approach": (1.0, 1),             # Guaranteed 1 lore
         }
 
     def _spawn_floor_lore(self, dungeon: 'Dungeon', player: Player, lore_entries: list, zone_config: dict):
