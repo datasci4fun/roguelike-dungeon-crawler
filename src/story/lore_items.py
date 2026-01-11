@@ -26,17 +26,17 @@ FLOOR_1_LORE_IDS: Set[str] = {
 }
 
 # =============================================================================
-# Floor 2 - Ice Cavern (level_hint=2 in story_data)
+# Floor 2 - Sewers of Valdris (Circulation theme)
 # =============================================================================
-LORE_FROZEN_EXPLORER = "frozen_explorer"
-LORE_ICE_WARNING = "ice_warning"
+LORE_SEWER_WORKER = "sewer_worker"
+LORE_PLAGUE_WARNING = "plague_warning"
 # Evidence entries
 EVIDENCE_WAX_SEALS_NESTS = "evidence_wax_seals_nests"
 EVIDENCE_DECREE_FRAGMENTS = "evidence_decree_fragments"
 
 FLOOR_2_LORE_IDS: Set[str] = {
-    LORE_FROZEN_EXPLORER,
-    LORE_ICE_WARNING,
+    LORE_SEWER_WORKER,
+    LORE_PLAGUE_WARNING,
     EVIDENCE_WAX_SEALS_NESTS,
     EVIDENCE_DECREE_FRAGMENTS,
 }
@@ -58,71 +58,71 @@ FLOOR_3_LORE_IDS: Set[str] = {
 }
 
 # =============================================================================
-# Floor 4 - Volcanic Depths (level_hint=4 in story_data)
+# Floor 4 - Mirror Valdris (Counterfeit palace theme)
 # =============================================================================
-LORE_SMITH_JOURNAL = "smith_journal"
-LORE_OBSIDIAN_TABLET = "obsidian_tablet"
+LORE_CRYPT_INSCRIPTION = "crypt_inscription"  # Repurposed as Succession Decree
+LORE_PRIEST_CONFESSION = "priest_confession"  # Repurposed as Regent's Ledger
 # Evidence entries
 EVIDENCE_TWO_CORONATIONS_BELL = "evidence_two_coronations_bell"
 EVIDENCE_CONTRADICTORY_PLAQUES = "evidence_contradictory_plaques"
 
 FLOOR_4_LORE_IDS: Set[str] = {
-    LORE_SMITH_JOURNAL,
-    LORE_OBSIDIAN_TABLET,
+    LORE_CRYPT_INSCRIPTION,
+    LORE_PRIEST_CONFESSION,
     EVIDENCE_TWO_CORONATIONS_BELL,
     EVIDENCE_CONTRADICTORY_PLAQUES,
 }
 
 # =============================================================================
-# Floor 5 - Ancient Crypt (level_hint=5 in story_data)
+# Floor 5 - Ice Cavern (Stasis theme)
 # =============================================================================
-LORE_CRYPT_INSCRIPTION = "crypt_inscription"
-LORE_PRIEST_CONFESSION = "priest_confession"
+LORE_FROZEN_EXPLORER = "frozen_explorer"
+LORE_ICE_WARNING = "ice_warning"
 # Evidence entries
 EVIDENCE_REPEATING_DAY_12 = "evidence_repeating_day_12"
 EVIDENCE_THAW_NEVER_COMPLETES = "evidence_thaw_never_completes"
 
 FLOOR_5_LORE_IDS: Set[str] = {
-    LORE_CRYPT_INSCRIPTION,
-    LORE_PRIEST_CONFESSION,
+    LORE_FROZEN_EXPLORER,
+    LORE_ICE_WARNING,
     EVIDENCE_REPEATING_DAY_12,
     EVIDENCE_THAW_NEVER_COMPLETES,
 }
 
 # =============================================================================
-# Floor 6 - Sewers (level_hint=6 in story_data)
+# Floor 6 - Ancient Library (Cognition theme)
 # =============================================================================
-LORE_SEWER_WORKER = "sewer_worker"
-LORE_PLAGUE_WARNING = "plague_warning"
+LORE_WIZARD_RESEARCH = "wizard_research"
+LORE_HISTORY_VALDRIS = "history_valdris"
 # Evidence entries
 EVIDENCE_SELF_CATALOGING_SHELVES = "evidence_self_cataloging_shelves"
 EVIDENCE_FINAL_VERSION_LABELS = "evidence_final_version_labels"
 
 FLOOR_6_LORE_IDS: Set[str] = {
-    LORE_SEWER_WORKER,
-    LORE_PLAGUE_WARNING,
+    LORE_WIZARD_RESEARCH,
+    LORE_HISTORY_VALDRIS,
     EVIDENCE_SELF_CATALOGING_SHELVES,
     EVIDENCE_FINAL_VERSION_LABELS,
 }
 
 # =============================================================================
-# Floor 7 - Ancient Library (level_hint=7 in story_data)
+# Floor 7 - Volcanic Depths (Transformation theme)
 # =============================================================================
-LORE_WIZARD_RESEARCH = "wizard_research"
-LORE_HISTORY_VALDRIS = "history_valdris"
+LORE_SMITH_JOURNAL = "smith_journal"
+LORE_OBSIDIAN_TABLET = "obsidian_tablet"
 # Evidence entries
 EVIDENCE_MELTED_CREST = "evidence_melted_crest"
 EVIDENCE_RUNE_PLATES_STAMPED = "evidence_rune_plates_stamped"
 
 FLOOR_7_LORE_IDS: Set[str] = {
-    LORE_WIZARD_RESEARCH,
-    LORE_HISTORY_VALDRIS,
+    LORE_SMITH_JOURNAL,
+    LORE_OBSIDIAN_TABLET,
     EVIDENCE_MELTED_CREST,
     EVIDENCE_RUNE_PLATES_STAMPED,
 }
 
 # =============================================================================
-# Floor 8 - Crystal Cave / Dragon's Lair
+# Floor 8 - Crystal Cave / Dragon's Lair (Integration theme)
 # =============================================================================
 LORE_DRAGON_PACT = "dragon_pact"
 LORE_FINAL_ENTRY = "final_entry"
@@ -261,12 +261,66 @@ def validate_story_data() -> list:
     return errors
 
 
+def validate_floor_canon() -> list:
+    """Validate that floor themes, bosses, and intros are consistent.
+
+    Checks:
+    - LEVEL_THEMES matches LEVEL_BOSS_MAP (boss belongs to correct biome)
+    - LEVEL_INTRO_MESSAGES mention the correct biome keywords
+
+    Returns:
+        List of validation error messages (empty if valid)
+    """
+    from ..core.constants import LEVEL_THEMES, LEVEL_BOSS_MAP, DungeonTheme, BossType
+    from .story_data import LEVEL_INTRO_MESSAGES
+
+    errors = []
+
+    # Canonical floor-to-theme-to-boss mapping
+    # Format: floor -> (expected theme, expected boss, intro keyword)
+    CANON = {
+        1: (DungeonTheme.STONE, BossType.GOBLIN_KING, "stone"),
+        2: (DungeonTheme.SEWER, BossType.RAT_KING, "sewer"),
+        3: (DungeonTheme.FOREST, BossType.SPIDER_QUEEN, "forest"),
+        4: (DungeonTheme.CRYPT, BossType.REGENT, "mirror"),  # Mirror Valdris uses CRYPT theme
+        5: (DungeonTheme.ICE, BossType.FROST_GIANT, "ice"),
+        6: (DungeonTheme.LIBRARY, BossType.ARCANE_KEEPER, "library"),
+        7: (DungeonTheme.VOLCANIC, BossType.FLAME_LORD, "volcanic"),
+        8: (DungeonTheme.CRYSTAL, BossType.DRAGON_EMPEROR, "crystal"),
+    }
+
+    for floor, (expected_theme, expected_boss, intro_keyword) in CANON.items():
+        # Check theme
+        actual_theme = LEVEL_THEMES.get(floor)
+        if actual_theme != expected_theme:
+            errors.append(
+                f"Floor {floor}: LEVEL_THEMES has {actual_theme}, expected {expected_theme}"
+            )
+
+        # Check boss
+        actual_boss = LEVEL_BOSS_MAP.get(floor)
+        if actual_boss != expected_boss:
+            errors.append(
+                f"Floor {floor}: LEVEL_BOSS_MAP has {actual_boss}, expected {expected_boss}"
+            )
+
+        # Check intro message contains expected keyword
+        intro = LEVEL_INTRO_MESSAGES.get(floor, "").lower()
+        if intro_keyword not in intro:
+            errors.append(
+                f"Floor {floor}: LEVEL_INTRO_MESSAGES missing keyword '{intro_keyword}'"
+            )
+
+    return errors
+
+
 # Run validation on module import in debug mode
 def _debug_validate():
     """Run validation if DEBUG_LORE environment variable is set."""
     import os
     if os.environ.get("DEBUG_LORE"):
         errors = validate_story_data()
+        errors.extend(validate_floor_canon())
         if errors:
             for error in errors:
                 print(f"[LORE VALIDATION ERROR] {error}")

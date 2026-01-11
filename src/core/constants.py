@@ -645,15 +645,16 @@ THEME_TILES_ASCII = {
 }
 
 # Map dungeon levels to themes (8 levels)
+# Canonical order matches LEVEL_BOSS_MAP and STATE.md
 LEVEL_THEMES = {
-    1: DungeonTheme.STONE,      # Stone Dungeon
-    2: DungeonTheme.ICE,        # Ice Cavern
-    3: DungeonTheme.FOREST,     # Forest Depths
-    4: DungeonTheme.VOLCANIC,   # Volcanic Depths
-    5: DungeonTheme.CRYPT,      # Ancient Crypt
-    6: DungeonTheme.SEWER,      # Sewer
-    7: DungeonTheme.LIBRARY,    # Ancient Library
-    8: DungeonTheme.CRYSTAL,    # Crystal Cave
+    1: DungeonTheme.STONE,      # Stone Dungeon (Goblin King)
+    2: DungeonTheme.SEWER,      # Sewers of Valdris (Rat King)
+    3: DungeonTheme.FOREST,     # Forest Depths (Spider Queen)
+    4: DungeonTheme.CRYPT,      # Mirror Valdris - ruined palace (Regent)
+    5: DungeonTheme.ICE,        # Ice Cavern (Frost Giant)
+    6: DungeonTheme.LIBRARY,    # Ancient Library (Arcane Keeper)
+    7: DungeonTheme.VOLCANIC,   # Volcanic Depths (Flame Lord)
+    8: DungeonTheme.CRYSTAL,    # Crystal Cave (Dragon Emperor)
 }
 
 # Decoration characters for each theme
