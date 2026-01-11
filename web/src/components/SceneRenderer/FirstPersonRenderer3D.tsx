@@ -1122,6 +1122,9 @@ export function FirstPersonRenderer3D({
           <div style={{ color: '#f8f8f2', marginBottom: 4 }}>
             Current: <span style={{ color: '#ffb86c' }}>{view?.zone_id || 'unknown'}</span>
           </div>
+          <div style={{ color: view?.room_has_ceiling === false ? '#50fa7b' : '#ff5555', marginBottom: 4 }}>
+            Ceiling: <span style={{ fontWeight: 'bold' }}>{view?.room_has_ceiling === false ? 'NO (open sky)' : 'YES'}</span>
+          </div>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 6, marginTop: 4 }}>
             {zoneOverlay.labels.map((label, i) => (
               <div key={i} style={{
