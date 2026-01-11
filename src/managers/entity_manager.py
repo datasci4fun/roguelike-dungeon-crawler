@@ -56,6 +56,9 @@ class EntityManager:
             base_enemy_types = [EnemyType.GOBLIN, EnemyType.SKELETON]
             base_weights = [40, 30]
 
+        # Track dragon spawns for Floor 8 max-1 constraint
+        dragon_spawned = False
+
         for _ in range(num_enemies):
             pos = dungeon.get_random_floor_position()
             # Make sure not too close to player
@@ -68,6 +71,17 @@ class EntityManager:
 
                 # Select enemy type using zone-modified weights
                 enemy_type = random.choices(base_enemy_types, weights=zone_weights)[0]
+
+                # Floor 8: Max 1 dragon constraint (spicy but fair)
+                if current_level == 8 and enemy_type == EnemyType.DRAGON:
+                    if dragon_spawned:
+                        # Already have a dragon - reroll once
+                        enemy_type = random.choices(base_enemy_types, weights=zone_weights)[0]
+                        if enemy_type == EnemyType.DRAGON:
+                            # Still dragon - fallback to Crystal Sentinel
+                            enemy_type = EnemyType.CRYSTAL_SENTINEL
+                    else:
+                        dragon_spawned = True
 
                 # 20% chance to spawn elite enemy (0% in intake_hall for Floor 1)
                 elite_rate = ELITE_SPAWN_RATE

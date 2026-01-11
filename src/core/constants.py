@@ -620,10 +620,11 @@ FLOOR_ENEMY_POOLS = {
     ],
 
     # 8 — Crystal Cave (INTEGRATION)
+    # Dragon weight reduced to 8 for "fair-spicy" - still dangerous but not run-ending
     8: [
-        (EnemyType.CRYSTAL_SENTINEL, 30),
+        (EnemyType.CRYSTAL_SENTINEL, 37),  # Primary threat
         (EnemyType.LIGHTNING_ELEMENTAL, 20),
-        (EnemyType.DRAGON, 15),           # lesser dragon only here
+        (EnemyType.DRAGON, 8),             # Rare but terrifying
         (EnemyType.DEMON, 15),
         (EnemyType.WRAITH, 20),
     ],
