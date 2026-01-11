@@ -667,7 +667,7 @@ class GameSessionManager:
             if engine.level_manager and engine.dungeon:
                 current = engine.dungeon.level
                 if current < 8:
-                    engine.level_manager.descend_to_level(current + 1)
+                    engine.level_manager.initialize_level(current + 1)
                     engine.add_message(f"[CHEAT] Skipped to floor {current + 1}")
                 else:
                     engine.add_message("[CHEAT] Already at max floor")
