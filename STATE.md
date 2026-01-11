@@ -2,7 +2,85 @@
 
 **Last Updated:** 2026-01-11
 **Branch:** develop
-**Version:** v5.5.1 (Auto-Add Lore + UI Fixes)
+**Version:** v5.6.0 (Core Loop Complete - Floor-Themed Enemies)
+
+---
+
+## v5.6.0 Changes (2026-01-11) - Core Loop Complete
+
+### Floor-Themed Enemy System
+
+Complete overhaul of enemy spawning to match biome themes. Each floor now has a canonical enemy roster.
+
+**8 New Thematic Enemies:**
+
+| Enemy | Symbol | HP | DMG | Floors | Theme |
+|-------|--------|-----|-----|--------|-------|
+| Rat | r | 5 | 1 | 2-3 | Sewers |
+| Plague Rat | p | 7 | 2 | 2-4 | Sewers (diseased) |
+| Spiderling | x | 6 | 2 | 3-4 | Forest (scout) |
+| Webweaver | w | 9 | 3 | 3-5 | Forest (intelligent) |
+| Oathbound Guard | G | 16 | 5 | 4-6 | Mirror Valdris (undead soldier) |
+| Court Scribe | q | 10 | 4 | 4-6 | Mirror Valdris (spectral clerk) |
+| Animated Tome | t | 14 | 5 | 6-7 | Library (hostile knowledge) |
+| Crystal Sentinel | C | 22 | 8 | 8 | Crystal Cave (guardian) |
+
+**Base Enemy Level Restrictions Fixed:**
+
+| Enemy | Old Range | New Range | Notes |
+|-------|-----------|-----------|-------|
+| Goblin | 1-5 (default) | 1-3 | Early floors only |
+| Skeleton | 1-5 (default) | 1-6 | Common undead throughout |
+| Orc | 1-5 (default) | 2-5 | Mid floors |
+| Wraith | 1-5 (default) | 3-8 | Mid to late |
+| Troll | 1-5 (default) | 5-8 | Late floors only |
+| Dragon | 1-5 (default) | **8 only** | Final floor only (was spawning on Floor 1!) |
+
+**FLOOR_ENEMY_POOLS (Theme-First Spawning):**
+
+| Floor | Theme | Primary Enemies (% weight) |
+|-------|-------|---------------------------|
+| 1 | Stone Dungeon | Goblin (55%), Skeleton (30%) |
+| 2 | Sewers | Rat (45%), Plague Rat (25%) |
+| 3 | Forest | Spiderling (45%), Webweaver (25%) |
+| 4 | Mirror Valdris | Oathbound Guard (35%), Court Scribe (15%) |
+| 5 | Ice Cavern | Ice Elemental (30%), Skeleton (20%) |
+| 6 | Library | Animated Tome (30%), Necromancer (25%) |
+| 7 | Volcanic | Fire Elemental (30%), Demon (20%) |
+| 8 | Crystal Cave | Crystal Sentinel (37%), Dragon (8%) |
+
+**Floor 8 Dragon Balance (Fair-Spicy):**
+- Dragon weight reduced from 15% to 8%
+- Max 1 dragon per floor (reroll + fallback to Crystal Sentinel)
+- ~69% of runs encounter exactly 1 dragon, never more
+
+**Zone Weight Multipliers Updated:**
+- Floor 2: carrier_nests boosts Rat/Plague Rat 2x
+- Floor 3: the_nursery/webbed_gardens boost Spiderling/Webweaver 2x
+- Floor 4: mausoleum_district boosts Oathbound Guard 1.6x
+- Floor 6: forbidden_stacks boosts Animated Tome/Necromancer 1.5x
+- Floor 8: dragons_hoard boosts Dragon 1.5x
+
+**All 8 new enemies have ENEMY_ENCOUNTER_MESSAGES:**
+- Thematic first-encounter text for each enemy
+- Example: "A webweaver emerges—patient, intelligent, already measuring you in silk."
+
+**Implementation Files:**
+
+| File | Changes |
+|------|---------|
+| `src/core/constants.py` | Added EnemyType entries, ENEMY_STATS, FLOOR_ENEMY_POOLS |
+| `src/managers/entity_manager.py` | spawn_enemies() uses floor pools first, dragon constraint |
+| `src/story/story_data.py` | ENEMY_ENCOUNTER_MESSAGES for all new enemies |
+
+### Outdoor Floor Ceiling System
+
+**Floor 4 (Mirror Valdris) now has inverted ceiling logic:**
+- Corridors are open-air (sky visible) - outdoor pathways through ruined kingdom
+- Rooms are buildings with ceilings
+- Specific outdoor plazas (courtyard_squares, throne_hall_ruins) also open-air
+
+This creates the feeling of traveling through an outdoor ruined kingdom with occasional indoor structures.
 
 ---
 
