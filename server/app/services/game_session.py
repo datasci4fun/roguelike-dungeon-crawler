@@ -632,8 +632,13 @@ class GameSessionManager:
 
     def _process_cheat(self, engine, cmd_type: CommandType) -> None:
         """Process cheat commands for dev/testing."""
-        from src.items.items import LoreScroll
-        from src.story.story_data import LORE_ENTRIES
+        # Import with fallback for Docker (game_src) vs local (src)
+        try:
+            from game_src.items.items import LoreScroll
+            from game_src.story.story_data import LORE_ENTRIES
+        except ImportError:
+            from src.items.items import LoreScroll
+            from src.story.story_data import LORE_ENTRIES
 
         if cmd_type == CommandType.CHEAT_GOD_MODE:
             # Toggle god mode on player
