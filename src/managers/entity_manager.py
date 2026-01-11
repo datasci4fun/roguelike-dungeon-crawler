@@ -3,20 +3,22 @@ import random
 from typing import TYPE_CHECKING, List, Optional
 
 from ..entities import Player, Enemy
-from ..items import Item, ItemType, create_item
+from ..items import Item, ItemType, create_item, ArtifactManager, ArtifactInstance
 
 if TYPE_CHECKING:
     from ..world import Dungeon
 
 
 class EntityManager:
-    """Manages spawning and querying of entities (enemies, items)."""
+    """Manages spawning and querying of entities (enemies, items, artifacts)."""
 
     def __init__(self):
         self.enemies: List[Enemy] = []
         self.items: List[Item] = []
         self.boss: Optional[Enemy] = None
         self.boss_defeated: bool = False
+        # v5.5: Artifact system
+        self.artifact_manager = ArtifactManager()
 
     def spawn_enemies(self, dungeon: 'Dungeon', player: Player):
         """Spawn enemies in random rooms with weighted type selection.
@@ -483,6 +485,60 @@ class EntityManager:
         # LORE: Spawn level-appropriate lore items with zone awareness
         self._spawn_zone_lore(dungeon, player)
 
+        # v5.5: ARTIFACTS - 0-1 per floor, zone-biased
+        self._spawn_artifact(dungeon, player)
+
+    def _spawn_artifact(self, dungeon: 'Dungeon', player: Player):
+        """Spawn 0-1 artifact per floor with zone bias.
+
+        Artifacts spawn in biased zones based on their type.
+        Uses deterministic seeding based on floor number.
+        """
+        # Initialize artifact manager for this floor
+        # Seed based on floor for determinism
+        floor_seed = dungeon.level * 7777
+        self.artifact_manager.initialize_floor(dungeon.level, floor_seed)
+
+        # If no artifact spawns this floor, return
+        if not self.artifact_manager.floor_artifact:
+            return
+
+        # Use seeded RNG for placement
+        rng = random.Random(floor_seed + 1)
+
+        # Try to place in biased zones first
+        bias_zones = self.artifact_manager.get_spawn_zone_bias()
+
+        for room in dungeon.rooms:
+            if not room.zone:
+                continue
+
+            if room.zone in bias_zones:
+                # Get floor positions in this room
+                positions = []
+                for x in range(room.x + 1, room.x + room.width - 1):
+                    for y in range(room.y + 1, room.y + room.height - 1):
+                        if dungeon.is_walkable(x, y):
+                            # Not on player, not on stairs
+                            if (x, y) != (player.x, player.y):
+                                if dungeon.stairs_down_pos != (x, y):
+                                    if dungeon.stairs_up_pos != (x, y):
+                                        positions.append((x, y))
+
+                if self.artifact_manager.place_in_zone(room.zone, positions, rng):
+                    return  # Placed successfully
+
+        # Fallback: place anywhere if not placed in biased zone
+        all_positions = []
+        for room in dungeon.rooms:
+            for x in range(room.x + 1, room.x + room.width - 1):
+                for y in range(room.y + 1, room.y + room.height - 1):
+                    if dungeon.is_walkable(x, y):
+                        if (x, y) != (player.x, player.y):
+                            all_positions.append((x, y))
+
+        self.artifact_manager.force_place(all_positions, rng)
+
     def spawn_boss(self, dungeon: 'Dungeon', player: Player):
         """Spawn the level boss in the boss room (largest room)."""
         from ..core.constants import LEVEL_BOSS_MAP
@@ -565,4 +621,48 @@ class EntityManager:
                 else:
                     add_message_func("Inventory full!")
                     return None
+        return None
+
+    def check_artifact_pickup(self, player: Player, add_message_func) -> Optional[ArtifactInstance]:
+        """
+        Check if player is standing on an artifact and pick it up.
+
+        Returns:
+            The artifact instance if picked up, None otherwise
+        """
+        artifact = self.artifact_manager.collect_artifact(player.x, player.y)
+
+        if artifact:
+            # Check if player can hold more artifacts (max 2)
+            if len(player.artifacts) >= 2:
+                add_message_func("You cannot carry more artifacts!")
+                # Put artifact back
+                self.artifact_manager.floor_artifact = artifact
+                self.artifact_manager.spawn_position = (player.x, player.y)
+                return None
+
+            # Add to player
+            player.artifacts.append(artifact)
+            add_message_func(f"You found {artifact.name}!")
+            add_message_func(f"  {artifact.description}")
+            return artifact
+
+        return None
+
+    def has_artifact_at(self, x: int, y: int) -> bool:
+        """Check if there's an uncollected artifact at position."""
+        return self.artifact_manager.has_artifact_at(x, y)
+
+    def get_artifact_info_at(self, x: int, y: int) -> Optional[dict]:
+        """Get artifact info at position for rendering."""
+        if not self.artifact_manager.has_artifact_at(x, y):
+            return None
+        artifact = self.artifact_manager.floor_artifact
+        if artifact:
+            from ..items.artifacts import ARTIFACT_DATA
+            data = ARTIFACT_DATA[artifact.artifact_id]
+            return {
+                'symbol': data['symbol'],
+                'name': data['name'],
+            }
         return None

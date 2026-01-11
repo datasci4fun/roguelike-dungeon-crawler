@@ -169,6 +169,11 @@ class Player(Entity):
         if race and RACE_STATS[race].get('starts_with_feat', False):
             self.pending_feat_selection = True
 
+        # v5.5: Artifact system (Sky-Touched Artifacts)
+        self.artifacts: List = []  # Max 2 artifacts
+        self.duplicate_next_consumable = False  # Set by Duplicate Seal
+        self.guaranteed_rare_from_boss = False  # Set by Oathstone vow
+
     def _calculate_xp_for_next_level(self) -> int:
         """Calculate XP required to reach next level."""
         from ..core.constants import XP_BASE_REQUIREMENT

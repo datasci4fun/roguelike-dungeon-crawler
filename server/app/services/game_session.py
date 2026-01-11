@@ -426,6 +426,21 @@ class GameSessionManager:
                 if player.pending_feat_selection:
                     state["player"]["available_feats"] = player.get_available_feats_info()
 
+            # v5.5: Add artifacts info
+            if hasattr(player, 'artifacts'):
+                state["player"]["artifacts"] = [
+                    {
+                        "id": a.artifact_id.name,
+                        "name": a.name,
+                        "symbol": a.symbol,
+                        "charges": a.charges,
+                        "used": a.used,
+                        "active_vow": a.active_vow.name if a.active_vow else None,
+                        "vow_broken": a.vow_broken,
+                    }
+                    for a in player.artifacts
+                ]
+
             # Add first-person view data (tiles in front of player)
             try:
                 state["first_person_view"] = self._serialize_first_person_view(engine, facing)
