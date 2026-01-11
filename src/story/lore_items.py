@@ -267,11 +267,14 @@ def validate_floor_canon() -> list:
     Checks:
     - LEVEL_THEMES matches LEVEL_BOSS_MAP (boss belongs to correct biome)
     - LEVEL_INTRO_MESSAGES mention the correct biome keywords
+    - BOSS_STATS[boss]['level'] matches the floor in LEVEL_BOSS_MAP
 
     Returns:
         List of validation error messages (empty if valid)
     """
-    from ..core.constants import LEVEL_THEMES, LEVEL_BOSS_MAP, DungeonTheme, BossType
+    from ..core.constants import (
+        LEVEL_THEMES, LEVEL_BOSS_MAP, BOSS_STATS, DungeonTheme, BossType
+    )
     from .story_data import LEVEL_INTRO_MESSAGES
 
     errors = []
@@ -297,12 +300,21 @@ def validate_floor_canon() -> list:
                 f"Floor {floor}: LEVEL_THEMES has {actual_theme}, expected {expected_theme}"
             )
 
-        # Check boss
+        # Check boss in LEVEL_BOSS_MAP
         actual_boss = LEVEL_BOSS_MAP.get(floor)
         if actual_boss != expected_boss:
             errors.append(
                 f"Floor {floor}: LEVEL_BOSS_MAP has {actual_boss}, expected {expected_boss}"
             )
+
+        # Check BOSS_STATS level matches floor (prevents drift)
+        if actual_boss and actual_boss in BOSS_STATS:
+            boss_level = BOSS_STATS[actual_boss].get('level')
+            if boss_level != floor:
+                errors.append(
+                    f"Floor {floor}: BOSS_STATS[{actual_boss.name}]['level'] is {boss_level}, "
+                    f"expected {floor}"
+                )
 
         # Check intro message contains expected keyword
         intro = LEVEL_INTRO_MESSAGES.get(floor, "").lower()
