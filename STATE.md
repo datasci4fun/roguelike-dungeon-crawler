@@ -1,8 +1,8 @@
 # Project State
 
 **Last Updated:** 2026-01-10
-**Branch:** feature/zone-system
-**Version:** v5.4.0 (Lore Codex System)
+**Branch:** feature/field-pulses
+**Version:** v5.5.0 (Field Pulse System)
 
 ---
 
@@ -244,6 +244,44 @@ Signature abilities for Floor 4 boss, themed around "legitimacy by repetition":
 | Counterfeit Crown | 8 turns | Flash attack: 4 damage + stun in 3 range |
 
 **Flavor:** The Regent's decrees "rewrite reality" - guards appear as if they were always meant to be there. Messages emphasize this ("It was always thus...").
+
+### Field Pulse System
+
+Deterministic environmental surges that temporarily amplify zone behaviors:
+
+**Branch:** `feature/field-pulses`
+
+| Property | Value |
+|----------|-------|
+| Pulses per floor | 1-3 (deeper floors have more) |
+| Trigger turns | Seeded, well-spaced (10-150) |
+| Effect duration | 3-8 turns based on intensity |
+
+**Intensity Levels:**
+
+| Level | Multiplier | Duration | Message |
+|-------|------------|----------|---------|
+| Minor | 1.25x | 3 turns | "The Field stirs..." |
+| Moderate | 1.5x | 5 turns | "The Field surges!" |
+| Major | 2.0x | 8 turns | "THE FIELD ERUPTS!" |
+
+**Amplification Effects:**
+- Hazard damage multiplied (lava, poison gas)
+- Enhanced narrative messages ("The lava SURGES and burns you...")
+- Visual overlay on frontend (pulsing orange glow when active)
+
+**Implementation:**
+
+| File | Purpose |
+|------|---------|
+| `field_pulses.py` | FieldPulseManager, seeded pulse generation |
+| `engine.py` | `_process_field_pulse()` tick on player actions |
+| `hazards.py` | Amplification parameter in `affect_entity()` |
+| `serialization.py` | Pulse state save/load |
+| `game_session.py` | `field_pulse` in API response |
+| `FirstPersonRenderer3D.tsx` | Visual overlay for active pulses |
+
+**Fairness:** Pulses amplify existing hazard damage but don't spawn new hazards or break zone validation (all 8 floors pass 20/20 seeds).
 
 ### Future Enhancements
 
