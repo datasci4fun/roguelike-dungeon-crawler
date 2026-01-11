@@ -18,7 +18,7 @@ from .commands import (
 # Turn commands set
 TURN_COMMANDS = {CommandType.TURN_LEFT, CommandType.TURN_RIGHT}
 from ..world import Dungeon, TrapManager, HazardManager, SecretDoorManager, TorchManager, FieldPulseManager
-from ..entities import Player
+from ..entities import Player, GhostManager
 from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
 from ..story import StoryManager
 from ..story.story_data import get_tutorial_hint
@@ -83,6 +83,9 @@ class GameEngine:
 
         # v5.4: Field pulse manager
         self.field_pulse_manager = FieldPulseManager()
+
+        # v5.5: Ghost manager
+        self.ghost_manager = GhostManager()
 
         # Death tracking for recap
         self.last_attacker_name = None
@@ -158,6 +161,10 @@ class GameEngine:
 
         # v5.4: Initialize field pulses for this floor
         self.field_pulse_manager.initialize_floor(self.current_level)
+
+        # v5.5: Initialize ghosts for this floor
+        self.ghost_manager.initialize_floor(self.current_level, self.dungeon)
+        self.ghost_manager.spawn_hollowed_enemy(self.dungeon, self.entity_manager)
 
         # Welcome messages with character info
         if race and player_class:
@@ -263,6 +270,9 @@ class GameEngine:
 
                 self._process_enemy_turns()
 
+                # v5.5: Process ghost behaviors
+                self._process_ghost_tick()
+
                 # Deep water costs 2 turns - enemies get extra action
                 if on_slow_terrain:
                     self._process_enemy_turns()
@@ -285,6 +295,7 @@ class GameEngine:
                 # Turning costs a turn - enemies get to act
                 self._process_field_pulse()
                 self._process_enemy_turns()
+                self._process_ghost_tick()
                 self._check_auto_save()
                 self._check_player_death()
                 return True
@@ -296,6 +307,7 @@ class GameEngine:
                 # Searching costs a turn
                 self._process_field_pulse()
                 self._process_enemy_turns()
+                self._process_ghost_tick()
                 self._check_auto_save()
                 self._check_player_death()
                 return True
@@ -340,6 +352,15 @@ class GameEngine:
     def _process_enemy_turns(self):
         """Process all enemy turns after player action."""
         self.combat_manager.process_enemy_turns()
+
+    def _process_ghost_tick(self):
+        """Process ghost behaviors for this turn."""
+        if not self.ghost_manager or not self.player or not self.dungeon:
+            return
+
+        messages = self.ghost_manager.tick(self.player, self.dungeon)
+        for msg in messages:
+            self.add_message(msg, MessageCategory.SYSTEM, MessageImportance.IMPORTANT)
 
     def _get_relative_movement(self, cmd_type: CommandType) -> tuple:
         """

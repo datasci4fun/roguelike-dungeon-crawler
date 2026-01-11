@@ -1,8 +1,8 @@
 # Project State
 
 **Last Updated:** 2026-01-10
-**Branch:** feature/sky-touched-artifacts
-**Version:** v5.6.0 (Sky-Touched Artifacts)
+**Branch:** feature/ghost-differentiation
+**Version:** v5.6.0 (Ghost Differentiation)
 
 ---
 
@@ -317,6 +317,51 @@ Rare artifacts (0-1 per floor) with powerful effects and clear costs:
 - Overall rate: ~22% per floor
 - Deeper floors have higher rates (15% → 35%)
 - Zone bias: 2x weight in themed zones
+
+### Ghost Differentiation (Milestone F)
+
+Death ghosts and victory imprints with zone-biased placement and unique behaviors:
+
+**Death Ghosts (from players who died):**
+
+| Type | Symbol | Behavior | Zone Bias |
+|------|--------|----------|-----------|
+| **Echo** | `~` | Path loop leading to lore/stairs | confluence_chambers, guard_corridors, geometry_wells |
+| **Hollowed** | `H` | Hostile wandering remnant (elite enemy) | digestion_chambers, diseased_pools, slag_pits |
+| **Silence** | `?` | Debuff area marking absence | oath_chambers, record_vaults, seal_chambers |
+
+**Victory Imprints (from players who won):**
+
+| Type | Symbol | Behavior | Zone Bias |
+|------|--------|----------|-----------|
+| **Beacon** | `*` | Guidance cue toward stairs | intake_hall, confluence_chambers, boss_approach |
+| **Champion** | `+` | One-time combat assist (+3 temp HP) | boss_approach, the_nursery, colony_heart |
+| **Archivist** | `@` | Knowledge reveal (reveals nearby tiles) | record_vaults, catalog_chambers, seal_chambers |
+
+**Per-Floor Limits:**
+- Echo: 2, Hollowed: 2, Silence: 1
+- Beacon: 1, Champion: 1, Archivist: 1
+
+**Fairness Guarantees:**
+- Silence never spawns on stairs
+- Echo paths always lead to meaningful destinations (lore zones or stairs)
+- Hollowed converted to elite enemies (uses existing combat system)
+
+**Implementation:**
+
+| File | Purpose |
+|------|---------|
+| `ghosts.py` | GhostType, Ghost, GhostPath, GhostManager |
+| `entities/__init__.py` | Ghost exports |
+| `engine.py` | Ghost manager initialization, tick processing |
+| `level_manager.py` | Ghost initialization on level transitions |
+| `serialization.py` | Ghost state save/load |
+
+**Validation Stats (50-seed test):**
+- Spawn rate: ~49% of floors have ghosts
+- Average per floor (when present): 1.18 ghosts
+- Echo meaningfulness: 100% have valid paths
+- Zone bias working: 85.7% of Echoes in preferred zones
 
 ### Future Enhancements
 
