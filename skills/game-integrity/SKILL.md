@@ -408,7 +408,71 @@ else:
 
 ---
 
-### Step 11: Full Integration Test
+### Step 11: Skybox & Ceiling Validation
+
+Validate open-air zones and skybox configurations match zone_config:
+
+```python
+from src.world.zone_config import FLOOR_ZONE_CONFIGS
+
+errors = []
+
+# Skybox configuration from game_session.py
+outdoor_floors = {4: "crypt"}  # Mirror Valdris - outdoor kingdom
+
+outdoor_plazas = {
+    (4, "courtyard_squares"),
+    (4, "throne_hall_ruins"),
+}
+
+open_air_zones = {
+    (3, "canopy_halls"): "forest",
+    (5, "crystal_grottos"): "ice",
+    (5, "thaw_fault"): "ice",
+    (7, "crucible_heart"): "lava",
+    (7, "slag_pits"): "lava",
+    (8, "crystal_gardens"): "crystal",
+    (8, "dragons_hoard"): "crystal",
+}
+
+# Validate outdoor plazas exist in zone_config
+for floor, zone_id in outdoor_plazas:
+    config = FLOOR_ZONE_CONFIGS.get(floor)
+    if not config:
+        errors.append(f"Outdoor plaza ({floor}, {zone_id}): Floor {floor} has no config")
+        continue
+    zone_ids = [z.zone_id for z in config.zones]
+    if zone_id not in zone_ids and zone_id != config.start_zone:
+        errors.append(f"Outdoor plaza ({floor}, {zone_id}): Zone not in floor config")
+
+# Validate open-air zones exist in zone_config
+for (floor, zone_id), skybox in open_air_zones.items():
+    config = FLOOR_ZONE_CONFIGS.get(floor)
+    if not config:
+        errors.append(f"Open-air zone ({floor}, {zone_id}): Floor {floor} has no config")
+        continue
+    zone_ids = [z.zone_id for z in config.zones]
+    if zone_id not in zone_ids and zone_id != config.start_zone and zone_id != config.fallback_zone:
+        errors.append(f"Open-air zone ({floor}, {zone_id}): Zone not in floor config")
+
+# Validate outdoor floors have proper theme
+for floor, theme in outdoor_floors.items():
+    config = FLOOR_ZONE_CONFIGS.get(floor)
+    if not config:
+        errors.append(f"Outdoor floor {floor}: No zone config")
+
+if errors:
+    print(f"Skybox/Ceiling: {len(errors)} errors")
+    for err in errors:
+        print(f"  - {err}")
+else:
+    total_open = len(outdoor_plazas) + len(open_air_zones)
+    print(f"[OK] Skybox/Ceiling: {len(outdoor_floors)} outdoor floor(s), {total_open} open-air zones")
+```
+
+---
+
+### Step 12: Full Integration Test
 
 Run the game briefly to verify it launches:
 
@@ -438,6 +502,7 @@ Lore Codex:             [PASSED/FAILED] (X lore entries)
 Ghost System:           [PASSED/FAILED] (X ghost types)
 Artifact System:        [PASSED/FAILED] (X artifacts, Y vows)
 Completion Ledger:      [PASSED/FAILED] (serialization/derivation)
+Skybox/Ceiling:         [PASSED/FAILED] (X outdoor floors, Y open-air zones)
 Game Launch:            [PASSED/FAILED]
 
 Overall Status: [ALL PASSED / ISSUES FOUND]
