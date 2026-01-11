@@ -147,6 +147,53 @@ Zone layouts paint hazard tiles that now have gameplay effects:
 - `is_walkable()` now includes hazard tiles (walkable but dangerous)
 - `engine._process_hazards()` returns slow terrain flag for deep water penalty
 
+### Hazard Fairness Guarantees
+
+- `dungeon._ensure_hazard_fairness()` runs after hazard sync
+- Clears hazards from critical positions (player, stairs)
+- `_ensure_room_safe_path()` prevents >60% hazard density in rooms
+- Safe lane carved through center if needed
+
+### Zone Evidence System
+
+Visual "tells" placed in zones to guide player toward boss and lore:
+
+| Evidence Type | Location | Purpose |
+|---------------|----------|---------|
+| trail_tells | boss_approach (2-3 per room) | Blood, drag marks, residue - hints at boss |
+| lore_markers | boss_approach (1 per room) | Document scraps, warning signs |
+| evidence_props | key lore zones | Zone-themed objects (shackles, documents) |
+
+**Floors 1-4 Evidence Configs:**
+- Floor 1 (Stone): Blood drips, shackles, key fragments
+- Floor 2 (Sewers): Rat droppings, slime trails, debris
+- Floor 3 (Forest): Bone fragments, webbing, egg sacs
+- Floor 4 (Valdris): Blood, ash, ghostly residue, seal fragments
+
+**Implementation:**
+- `dungeon._place_zone_evidence()` places evidence post-layout
+- `dungeon._get_evidence_config()` returns floor-specific evidence lists
+- Evidence rendered via `renderer._render_zone_evidence()`
+
+### Centralized Lore IDs
+
+All lore IDs now defined in `src/story/lore_items.py`:
+
+```python
+from src.story import validate_lore_id, validate_story_data
+
+# Validate single ID
+validate_lore_id("journal_adventurer_1")
+
+# Validate all story_data.py entries
+errors = validate_story_data()
+```
+
+Benefits:
+- Catches typos at import time
+- Floor-indexed lookup: `FLOOR_LORE_IDS[floor]`
+- Consistency check between lore_items.py and story_data.py
+
 ### Future Enhancements
 
 - Add zone-specific decoration patterns

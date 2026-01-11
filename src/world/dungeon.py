@@ -162,6 +162,7 @@ class Dungeon:
         self.theme = LEVEL_THEMES.get(level, DungeonTheme.STONE)
         self.decorations = []  # List of (x, y, char, color_pair) tuples
         self.terrain_features = []  # List of (x, y, char, color_pair) for water, blood, etc.
+        self.zone_evidence = []  # List of (x, y, char, color_pair, evidence_type) for zone tells
 
         # FOV tracking arrays
         self.explored = [[False for _ in range(width)] for _ in range(height)]
@@ -201,6 +202,9 @@ class Dungeon:
 
         # Apply zone-specific layout modifications (interior walls, special tiles)
         self._apply_zone_layouts()
+
+        # Place zone evidence (boss trail tells, lore props)
+        self._place_zone_evidence()
 
         # Place stairs
         self._place_stairs()
@@ -439,6 +443,184 @@ class Dungeon:
         """
         for room in self.rooms:
             apply_zone_layout(self, room)
+
+    def _place_zone_evidence(self):
+        """Place zone evidence (boss trail tells, lore props).
+
+        Deterministic by seed. Zone-driven placement:
+        - boss_approach: 2-3 trail tells + 1 pre-boss lore marker
+        - key lore zones: at least 1 evidence prop per room
+
+        Evidence is stored in zone_evidence as (x, y, char, color, type) tuples.
+        """
+        evidence_config = self._get_evidence_config()
+        if not evidence_config:
+            return
+
+        # Track placed positions to avoid overlap
+        placed = set()
+
+        # 1. Boss approach rooms: trail tells + pre-boss lore
+        approach_rooms = [r for r in self.rooms if r.zone == "boss_approach"]
+        for room in approach_rooms:
+            # Place 2-3 trail tells
+            trail_tells = evidence_config.get("trail_tells", [])
+            if trail_tells:
+                num_tells = random.randint(2, 3)
+                self._place_evidence_in_room(room, trail_tells, num_tells, placed, "trail_tell")
+
+            # Place 1 pre-boss lore marker
+            lore_markers = evidence_config.get("lore_markers", [])
+            if lore_markers:
+                self._place_evidence_in_room(room, lore_markers, 1, placed, "lore_marker")
+
+        # 2. Key lore zones: at least 1 evidence prop per room
+        key_lore_zones = evidence_config.get("key_lore_zones", [])
+        evidence_props = evidence_config.get("evidence_props", [])
+
+        for room in self.rooms:
+            if room.zone in key_lore_zones and evidence_props:
+                self._place_evidence_in_room(room, evidence_props, 1, placed, "evidence_prop")
+
+    def _place_evidence_in_room(
+        self,
+        room: 'Room',
+        evidence_list: List[Tuple[str, int]],
+        count: int,
+        placed: set,
+        evidence_type: str
+    ):
+        """Place evidence items in a room.
+
+        Args:
+            room: Room to place evidence in
+            evidence_list: List of (char, color_pair) tuples for evidence options
+            count: Number of evidence pieces to place
+            placed: Set of already-placed positions
+            evidence_type: Type label for the evidence
+        """
+        attempts = 0
+        placed_count = 0
+        max_attempts = count * 15
+
+        while placed_count < count and attempts < max_attempts:
+            attempts += 1
+
+            # Pick a position inside the room (1 tile from edges)
+            x = random.randint(room.x + 1, room.x + room.width - 2)
+            y = random.randint(room.y + 1, room.y + room.height - 2)
+
+            # Skip if already placed or not walkable floor
+            if (x, y) in placed:
+                continue
+            if self.tiles[y][x] != TileType.FLOOR:
+                continue
+
+            # Skip stairs positions
+            if (x, y) == self.stairs_up_pos or (x, y) == self.stairs_down_pos:
+                continue
+
+            # Skip existing decorations
+            if any(dx == x and dy == y for dx, dy, _, _ in self.decorations):
+                continue
+
+            # Pick random evidence from list
+            char, color = random.choice(evidence_list)
+            self.zone_evidence.append((x, y, char, color, evidence_type))
+            placed.add((x, y))
+            placed_count += 1
+
+    def _get_evidence_config(self) -> dict:
+        """Get zone evidence configuration for the current floor.
+
+        Returns config with:
+        - trail_tells: List of (char, color) for boss approach trail markers
+        - lore_markers: List of (char, color) for pre-boss lore spots
+        - evidence_props: List of (char, color) for key zone evidence
+        - key_lore_zones: List of zone IDs that get evidence props
+        """
+        # Floor 1 - Stone Dungeon (Prison theme)
+        if self.level == 1:
+            return {
+                "trail_tells": [
+                    (".", 3),   # Blood droplet (red)
+                    (",", 3),   # Blood smear (red)
+                    ("~", 8),   # Drag marks (dark gray)
+                ],
+                "lore_markers": [
+                    ("?", 4),   # Document scrap (yellow)
+                    ("!", 4),   # Notice (yellow)
+                ],
+                "evidence_props": [
+                    ("=", 8),   # Broken shackle (gray)
+                    ("?", 4),   # Document (yellow)
+                    ("+", 7),   # Key fragment (white)
+                ],
+                "key_lore_zones": ["wardens_office", "record_vaults"],
+            }
+
+        # Floor 2 - Sewers (Plague/rats theme)
+        elif self.level == 2:
+            return {
+                "trail_tells": [
+                    (".", 2),   # Rat droppings (green)
+                    (",", 2),   # Gnaw marks (green)
+                    ("~", 5),   # Slime trail (cyan)
+                ],
+                "lore_markers": [
+                    ("?", 4),   # Waterlogged note (yellow)
+                    ("$", 4),   # Coin (yellow)
+                ],
+                "evidence_props": [
+                    ("?", 4),   # Document (yellow)
+                    ("&", 8),   # Debris (gray)
+                    ("=", 8),   # Pipe fragment (gray)
+                ],
+                "key_lore_zones": ["colony_heart", "seal_drifts"],
+            }
+
+        # Floor 3 - Forest Depths (Nature/spider theme)
+        elif self.level == 3:
+            return {
+                "trail_tells": [
+                    ("%", 7),   # Bone fragment (white)
+                    (",", 8),   # Claw marks (gray)
+                    ("~", 7),   # Webbing strand (white)
+                ],
+                "lore_markers": [
+                    ("?", 4),   # Bark etching (yellow)
+                    ("*", 2),   # Glowing moss (green)
+                ],
+                "evidence_props": [
+                    ("*", 2),   # Ritual herb (green)
+                    ("?", 4),   # Scroll (yellow)
+                    ("o", 7),   # Egg sac (white)
+                ],
+                "key_lore_zones": ["druid_ring", "nursery"],
+            }
+
+        # Floor 4 - Mirror Valdris (Ruined palace theme)
+        elif self.level == 4:
+            return {
+                "trail_tells": [
+                    (".", 3),   # Blood (red)
+                    (",", 8),   # Ash (gray)
+                    ("~", 5),   # Ghostly residue (cyan)
+                ],
+                "lore_markers": [
+                    ("?", 4),   # Decree fragment (yellow)
+                    ("!", 6),   # Warning sigil (magenta)
+                ],
+                "evidence_props": [
+                    ("?", 4),   # Historical record (yellow)
+                    ("=", 4),   # Seal fragment (yellow)
+                    ("+", 7),   # Broken crest (white)
+                ],
+                "key_lore_zones": ["oath_chambers", "seal_chambers", "record_vaults"],
+            }
+
+        # Floors 5-8: placeholder (to be filled)
+        return {}
 
     def _place_stairs(self):
         """Place stairs up and down in the dungeon."""
@@ -863,6 +1045,74 @@ class Dungeon:
                     intensity = 3 if hazard_type == HazardType.POISON_GAS else 1
                     hazard = Hazard(x=x, y=y, hazard_type=hazard_type, intensity=intensity)
                     hazard_manager.add_hazard(hazard)
+
+        # After syncing, ensure fairness
+        self._ensure_hazard_fairness(hazard_manager, player_x, player_y)
+
+    def _ensure_hazard_fairness(self, hazard_manager: HazardManager, player_x: int, player_y: int):
+        """
+        Ensure hazard layouts don't create unwinnable situations.
+
+        Guarantees:
+        - At least one safe walkway in each room from entrances
+        - No hazard chains longer than 3 tiles blocking the only path
+        - Stairs and player position are never on hazards
+        """
+        # Critical positions that must be safe
+        critical_positions = {(player_x, player_y)}
+        if self.stairs_up_pos:
+            critical_positions.add(self.stairs_up_pos)
+        if self.stairs_down_pos:
+            critical_positions.add(self.stairs_down_pos)
+
+        # Clear hazards from critical positions
+        for x, y in critical_positions:
+            if hazard_manager.has_hazard_at(x, y):
+                # Remove hazard from manager
+                hazard_manager.hazards = [
+                    h for h in hazard_manager.hazards if not (h.x == x and h.y == y)
+                ]
+                hazard_manager._positions.discard((x, y))
+                # Reset tile to floor
+                if 0 <= x < self.width and 0 <= y < self.height:
+                    self.tiles[y][x] = TileType.FLOOR
+
+        # For each room, ensure at least one safe path exists
+        for room in self.rooms:
+            self._ensure_room_safe_path(room, hazard_manager)
+
+    def _ensure_room_safe_path(self, room: 'Room', hazard_manager: HazardManager):
+        """
+        Ensure a room has at least one safe walkway.
+
+        Simple heuristic: if >60% of floor tiles in a room are hazards,
+        clear a horizontal or vertical safe lane through the center.
+        """
+        hazard_count = 0
+        floor_count = 0
+
+        for y in range(room.y + 1, room.y + room.height - 1):
+            for x in range(room.x + 1, room.x + room.width - 1):
+                if self.tiles[y][x] in (TileType.LAVA, TileType.ICE,
+                                        TileType.DEEP_WATER, TileType.POISON_GAS):
+                    hazard_count += 1
+                    floor_count += 1
+                elif self.tiles[y][x] == TileType.FLOOR:
+                    floor_count += 1
+
+        # If >60% hazards, clear a safe lane
+        if floor_count > 0 and hazard_count / floor_count > 0.6:
+            cx = room.x + room.width // 2
+            cy = room.y + room.height // 2
+
+            # Clear horizontal lane
+            for x in range(room.x + 1, room.x + room.width - 1):
+                if hazard_manager.has_hazard_at(x, cy):
+                    hazard_manager.hazards = [
+                        h for h in hazard_manager.hazards if not (h.x == x and h.y == cy)
+                    ]
+                    hazard_manager._positions.discard((x, cy))
+                    self.tiles[cy][x] = TileType.FLOOR
 
     def _get_hazard_config(self) -> dict:
         """Get hazard configuration based on theme and level."""

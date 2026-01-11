@@ -163,6 +163,9 @@ class Renderer:
         # Render terrain features (water, blood, grass)
         self._render_terrain(dungeon, vp_x, vp_y, vp_w, vp_h)
 
+        # Render zone evidence (trail tells, lore markers)
+        self._render_zone_evidence(dungeon, vp_x, vp_y, vp_w, vp_h)
+
         # v4.0: Render hazards (lava, ice, poison gas, deep water)
         if hazards:
             self._render_hazards(hazards, dungeon, vp_x, vp_y, vp_w, vp_h)
@@ -372,6 +375,38 @@ class Renderer:
 
             try:
                 # Render dim if not visible (use addstr for Unicode compatibility)
+                if dungeon.visible[world_y][world_x]:
+                    if curses.has_colors():
+                        self.stdscr.addstr(screen_y, screen_x, char, curses.color_pair(color_pair))
+                    else:
+                        self.stdscr.addstr(screen_y, screen_x, char)
+                else:
+                    # Dim rendering for explored but not visible
+                    if curses.has_colors():
+                        self.stdscr.addstr(screen_y, screen_x, char, curses.color_pair(7))
+                    else:
+                        self.stdscr.addstr(screen_y, screen_x, char)
+            except curses.error:
+                pass
+
+    def _render_zone_evidence(self, dungeon: Dungeon, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
+        """Render zone evidence (trail tells, lore markers) in explored/visible tiles."""
+        for world_x, world_y, char, color_pair, evidence_type in dungeon.zone_evidence:
+            # Only render evidence in explored tiles
+            if not (0 <= world_y < dungeon.height and 0 <= world_x < dungeon.width):
+                continue
+
+            if not dungeon.explored[world_y][world_x]:
+                continue
+
+            # Check if in viewport
+            if not self._is_in_viewport(world_x, world_y, vp_x, vp_y, vp_w, vp_h):
+                continue
+
+            screen_x, screen_y = self._world_to_screen(world_x, world_y, vp_x, vp_y)
+
+            try:
+                # Render dim if not visible
                 if dungeon.visible[world_y][world_x]:
                     if curses.has_colors():
                         self.stdscr.addstr(screen_y, screen_x, char, curses.color_pair(color_pair))
