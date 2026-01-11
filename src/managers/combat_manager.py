@@ -72,6 +72,9 @@ class CombatManager:
                 if hasattr(picked_item, 'lore_id'):
                     self.game.show_hint("first_lore")
 
+            # v5.5: Check for artifact pickup
+            self.game.entity_manager.check_artifact_pickup(player, self.game.add_message)
+
             return True
 
         return False

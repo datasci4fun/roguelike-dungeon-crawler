@@ -44,7 +44,8 @@ class SaveManager:
             'items': [self._serialize_item(i) for i in self.game.entity_manager.items],
             'dungeon': self._serialize_dungeon(self.game.dungeon),
             'story_manager': self.game.story_manager.to_dict() if self.game.story_manager else None,
-            'field_pulse_manager': self.game.field_pulse_manager.get_state() if hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager else None
+            'field_pulse_manager': self.game.field_pulse_manager.get_state() if hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager else None,
+            'artifact_manager': self.game.entity_manager.artifact_manager.get_state() if hasattr(self.game.entity_manager, 'artifact_manager') else None,
         }
 
         return save_game(game_state)
@@ -89,6 +90,10 @@ class SaveManager:
             if game_state.get('field_pulse_manager') and hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager:
                 self.game.field_pulse_manager.load_state(game_state['field_pulse_manager'])
                 # Sync amplification with hazard manager
+
+            # v5.5: Restore artifact_manager state if present
+            if game_state.get('artifact_manager') and hasattr(self.game.entity_manager, 'artifact_manager'):
+                self.game.entity_manager.artifact_manager.load_state(game_state['artifact_manager'])
                 current_amp = self.game.field_pulse_manager.get_current_amplification()
                 if hasattr(self.game, 'hazard_manager') and self.game.hazard_manager:
                     self.game.hazard_manager.set_amplification(current_amp)
@@ -124,8 +129,36 @@ class SaveManager:
             'kills': player.kills,
             'inventory': [self._serialize_item(item) for item in player.inventory.items],
             'equipped_weapon': self._serialize_item(player.equipped_weapon) if player.equipped_weapon else None,
-            'equipped_armor': self._serialize_item(player.equipped_armor) if player.equipped_armor else None
+            'equipped_armor': self._serialize_item(player.equipped_armor) if player.equipped_armor else None,
+            # v5.5: Artifacts
+            'artifacts': [self._serialize_artifact(a) for a in getattr(player, 'artifacts', [])],
+            'duplicate_next_consumable': getattr(player, 'duplicate_next_consumable', False),
+            'guaranteed_rare_from_boss': getattr(player, 'guaranteed_rare_from_boss', False),
         }
+
+    def _serialize_artifact(self, artifact) -> dict:
+        """Serialize artifact instance to dictionary."""
+        from ..items.artifacts import ArtifactId, VowType
+        return {
+            'artifact_id': artifact.artifact_id.name,
+            'charges': artifact.charges,
+            'used': artifact.used,
+            'floor_acquired': artifact.floor_acquired,
+            'active_vow': artifact.active_vow.name if artifact.active_vow else None,
+            'vow_broken': artifact.vow_broken,
+        }
+
+    def _deserialize_artifact(self, data: dict):
+        """Deserialize artifact instance from dictionary."""
+        from ..items.artifacts import ArtifactId, ArtifactInstance, VowType
+        return ArtifactInstance(
+            artifact_id=ArtifactId[data['artifact_id']],
+            charges=data.get('charges', 1),
+            used=data.get('used', False),
+            floor_acquired=data.get('floor_acquired', 0),
+            active_vow=VowType[data['active_vow']] if data.get('active_vow') else None,
+            vow_broken=data.get('vow_broken', False),
+        )
 
     def _deserialize_player(self, data: dict) -> Player:
         """Deserialize player from dictionary."""
@@ -148,6 +181,11 @@ class SaveManager:
             player.equipped_weapon = self._deserialize_item(data['equipped_weapon'])
         if data.get('equipped_armor'):
             player.equipped_armor = self._deserialize_item(data['equipped_armor'])
+
+        # v5.5: Restore artifacts
+        player.artifacts = [self._deserialize_artifact(a) for a in data.get('artifacts', [])]
+        player.duplicate_next_consumable = data.get('duplicate_next_consumable', False)
+        player.guaranteed_rare_from_boss = data.get('guaranteed_rare_from_boss', False)
 
         return player
 
