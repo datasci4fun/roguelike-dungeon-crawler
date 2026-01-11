@@ -15,6 +15,7 @@ interface LoreJournalProps {
   discoveredCount: number;
   totalCount: number;
   onClose: () => void;
+  initialEntryId?: string;  // Pre-select this entry when opening (e.g., newly discovered lore)
 }
 
 export function LoreJournal({
@@ -22,10 +23,18 @@ export function LoreJournal({
   discoveredCount,
   totalCount,
   onClose,
+  initialEntryId,
 }: LoreJournalProps) {
-  const [selectedEntry, setSelectedEntry] = useState<LoreEntry | null>(
-    entries.length > 0 ? entries[0] : null
-  );
+  // Find initial entry or default to first
+  const getInitialEntry = (): LoreEntry | null => {
+    if (initialEntryId) {
+      const found = entries.find(e => e.id === initialEntryId);
+      if (found) return found;
+    }
+    return entries.length > 0 ? entries[0] : null;
+  };
+
+  const [selectedEntry, setSelectedEntry] = useState<LoreEntry | null>(getInitialEntry);
 
   return (
     <div className="lore-journal-overlay" onClick={onClose}>

@@ -568,6 +568,11 @@ class GameSessionManager:
                 "total_count": total + len(bestiary_entries) + len(location_entries) + len(artifact_entries),
             }
 
+        # Include newly discovered lore notification (one-shot, cleared after sending)
+        if hasattr(engine, 'new_lore_discovered') and engine.new_lore_discovered:
+            state["new_lore"] = engine.new_lore_discovered
+            engine.new_lore_discovered = None  # Clear after sending
+
         # Include field pulse state for environmental effects
         if hasattr(engine, 'field_pulse_manager') and engine.field_pulse_manager:
             pulse_info = engine.field_pulse_manager.get_pulse_info()

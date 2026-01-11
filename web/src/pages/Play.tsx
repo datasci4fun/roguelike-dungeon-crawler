@@ -41,6 +41,7 @@ export function Play() {
   const [victoryCutsceneComplete, setVictoryCutsceneComplete] = useState(false);
   const [victoryLegacy, setVictoryLegacy] = useState<VictoryLegacyId>('unknown');
   const [showLoreJournal, setShowLoreJournal] = useState(false);
+  const [pendingNewLore, setPendingNewLore] = useState<{ lore_id: string; title: string } | null>(null);
 
   // Debug renderer controls (F8/F9/F10 hotkeys)
   const {
@@ -310,6 +311,13 @@ export function Play() {
     gameState?.player,
   ]);
 
+  // Track new lore discoveries for notification
+  useEffect(() => {
+    if (gameState?.new_lore) {
+      setPendingNewLore(gameState.new_lore);
+    }
+  }, [gameState?.new_lore]);
+
   // Lore Journal hotkey (J key)
   useEffect(() => {
     const handleJournalKey = (e: KeyboardEvent) => {
@@ -334,6 +342,12 @@ export function Play() {
     window.addEventListener('keydown', handleJournalKey);
     return () => window.removeEventListener('keydown', handleJournalKey);
   }, [gameState?.ui_mode, showLoreJournal]);
+
+  // Handler for closing lore journal (clears pending notification)
+  const handleCloseLoreJournal = useCallback(() => {
+    setShowLoreJournal(false);
+    setPendingNewLore(null);
+  }, []);
 
   // Callback to capture corridor info from renderer
   const handleCorridorInfo = useCallback((info: CorridorInfoEntry[]) => {
@@ -594,8 +608,20 @@ export function Play() {
           entries={gameState.lore_journal.entries}
           discoveredCount={gameState.lore_journal.discovered_count}
           totalCount={gameState.lore_journal.total_count}
-          onClose={() => setShowLoreJournal(false)}
+          onClose={handleCloseLoreJournal}
+          initialEntryId={pendingNewLore?.lore_id}
         />
+      )}
+
+      {/* New Lore Notification Bar */}
+      {pendingNewLore && !showLoreJournal && (
+        <div className="lore-notification">
+          <span className="lore-notification-icon">?</span>
+          <span className="lore-notification-text">
+            New lore discovered: <strong>{pendingNewLore.title}</strong>
+          </span>
+          <span className="lore-notification-hint">Press [J] to read</span>
+        </div>
       )}
     </div>
   );

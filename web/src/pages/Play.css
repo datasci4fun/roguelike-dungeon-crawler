@@ -458,3 +458,84 @@
     }
   }
 }
+
+/* Lore Discovery Notification Bar */
+.lore-notification {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: linear-gradient(135deg, rgba(139, 69, 19, 0.95) 0%, rgba(101, 67, 33, 0.95) 100%);
+  border: 2px solid rgba(218, 165, 32, 0.6);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 20px rgba(218, 165, 32, 0.2);
+  z-index: 1000;
+  animation: loreNotificationSlideIn 0.4s ease-out, loreNotificationGlow 2s ease-in-out infinite;
+}
+
+.lore-notification-icon {
+  font-size: 1.5rem;
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+}
+
+.lore-notification-text {
+  color: #f5deb3;
+  font-size: 0.95rem;
+}
+
+.lore-notification-text strong {
+  color: #ffd700;
+}
+
+.lore-notification-hint {
+  color: rgba(245, 222, 179, 0.7);
+  font-size: 0.85rem;
+  padding-left: 12px;
+  border-left: 1px solid rgba(218, 165, 32, 0.4);
+}
+
+@keyframes loreNotificationSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes loreNotificationGlow {
+  0%, 100% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 20px rgba(218, 165, 32, 0.2);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(218, 165, 32, 0.4);
+  }
+}
+
+/* Mobile adjustment for notification */
+@media (max-width: 768px) {
+  .lore-notification {
+    bottom: 160px; /* Above touch controls */
+    left: 16px;
+    right: 16px;
+    transform: none;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .lore-notification-text {
+    font-size: 0.85rem;
+    flex: 1;
+  }
+
+  .lore-notification-hint {
+    font-size: 0.75rem;
+  }
+}

@@ -192,6 +192,9 @@ class GameEngine:
         # Register starting level in codex
         self.story_manager.visit_level(1)
 
+        # Track newly discovered lore for frontend notification (one-shot)
+        self.new_lore_discovered = None
+
         self.state = GameState.PLAYING
         self.ui_mode = UIMode.GAME
 

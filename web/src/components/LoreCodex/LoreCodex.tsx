@@ -20,6 +20,7 @@ interface LoreCodexProps {
   discoveredCount: number;
   totalCount: number;
   onClose: () => void;
+  initialEntryId?: string;  // Pre-select this entry when opening (e.g., newly discovered lore)
 }
 
 export function LoreCodex({
@@ -27,6 +28,7 @@ export function LoreCodex({
   discoveredCount,
   totalCount,
   onClose,
+  initialEntryId,
 }: LoreCodexProps) {
   const {
     selectedCategory,
@@ -36,7 +38,7 @@ export function LoreCodex({
     categoryCounts,
     setCategory,
     setEntry,
-  } = useCodexState(entries);
+  } = useCodexState(entries, initialEntryId);
 
   // Handle keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {

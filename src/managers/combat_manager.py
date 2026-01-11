@@ -67,13 +67,24 @@ class CombatManager:
             # Show tutorial hints for item pickup
             if picked_item:
                 self.game.show_hint("first_item")
-                self.game.show_hint("inventory_hint")
-                # Check if it's a lore item
-                if hasattr(picked_item, 'lore_id'):
+                # Check if it's a lore item (auto-discovered, not in inventory)
+                if hasattr(picked_item, 'lore_id') and picked_item.lore_id:
                     self.game.show_hint("first_lore")
+                    # Auto-discover lore in story manager (adds to codex)
+                    if hasattr(self.game, 'story_manager') and self.game.story_manager:
+                        is_new = self.game.story_manager.discover_lore(picked_item.lore_id)
+                        if is_new:
+                            # Track newly discovered lore for frontend notification
+                            self.game.new_lore_discovered = {
+                                'lore_id': picked_item.lore_id,
+                                'title': picked_item.title if hasattr(picked_item, 'title') else picked_item.name
+                            }
                     # v5.5: Track lore in completion ledger
                     if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
                         self.game.completion_ledger.record_lore_found(picked_item.lore_id)
+                else:
+                    # Regular item - show inventory hint
+                    self.game.show_hint("inventory_hint")
 
             # v5.5: Check for artifact pickup
             picked_artifact = self.game.entity_manager.check_artifact_pickup(player, self.game.add_message)

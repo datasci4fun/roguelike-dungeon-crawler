@@ -608,19 +608,35 @@ class EntityManager:
 
         Returns:
             The picked up item, or None if no item was picked up
+
+        Note: Lore items (scrolls/books) are handled specially - they go directly
+        to the lore codex and don't take up inventory space. The item is still
+        returned so the caller can process the lore discovery.
         """
         for item in self.items[:]:  # Use slice to iterate over copy
             if item is None:
                 continue
             if item.x == player.x and item.y == player.y:
-                if player.inventory.add_item(item):
+                # Check if this is a lore item (has lore_id attribute)
+                is_lore_item = hasattr(item, 'lore_id') and item.lore_id
+
+                if is_lore_item:
+                    # Lore items go directly to codex - don't add to inventory
                     self.items.remove(item)
                     item_name = item.name if hasattr(item, 'name') and item.name else "item"
-                    add_message_func(f"Picked up {item_name}")
+                    add_message_func(f"Found: {item_name}")
+                    add_message_func("New lore added to Codex! Press [J] to read.")
                     return item
                 else:
-                    add_message_func("Inventory full!")
-                    return None
+                    # Regular items go to inventory
+                    if player.inventory.add_item(item):
+                        self.items.remove(item)
+                        item_name = item.name if hasattr(item, 'name') and item.name else "item"
+                        add_message_func(f"Picked up {item_name}")
+                        return item
+                    else:
+                        add_message_func("Inventory full!")
+                        return None
         return None
 
     def check_artifact_pickup(self, player: Player, add_message_func) -> Optional[ArtifactInstance]:

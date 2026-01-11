@@ -10,10 +10,28 @@ interface CodexState {
   transitionState: TransitionState;
 }
 
-export function useCodexState(entries: LoreEntry[]) {
+export function useCodexState(entries: LoreEntry[], initialEntryId?: string) {
+  // Determine initial entry: use provided ID if valid, else default to first entry
+  const getInitialEntry = (): string | null => {
+    if (initialEntryId) {
+      const found = entries.find(e => e.id === initialEntryId);
+      if (found) return found.id;
+    }
+    return entries.length > 0 ? entries[0].id : null;
+  };
+
+  // Determine initial category based on initial entry
+  const getInitialCategory = (): LoreCategory | 'all' => {
+    if (initialEntryId) {
+      const found = entries.find(e => e.id === initialEntryId);
+      if (found) return found.category;
+    }
+    return 'all';
+  };
+
   const [state, setState] = useState<CodexState>({
-    selectedCategory: 'all',
-    selectedEntryId: entries.length > 0 ? entries[0].id : null,
+    selectedCategory: getInitialCategory(),
+    selectedEntryId: getInitialEntry(),
     transitionState: 'idle',
   });
 

@@ -266,6 +266,10 @@ export interface FullGameState {
     discovered_count: number;
     total_count: number;
   };
+  new_lore?: {
+    lore_id: string;
+    title: string;
+  };
   first_person_view?: FirstPersonView;
   field_pulse?: {
     active: boolean;
