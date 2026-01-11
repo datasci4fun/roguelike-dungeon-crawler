@@ -164,11 +164,15 @@ Visual "tells" placed in zones to guide player toward boss and lore:
 | lore_markers | boss_approach (1 per room) | Document scraps, warning signs |
 | evidence_props | key lore zones | Zone-themed objects (shackles, documents) |
 
-**Floors 1-4 Evidence Configs:**
+**All 8 Floor Evidence Configs:**
 - Floor 1 (Stone): Blood drips, shackles, key fragments
 - Floor 2 (Sewers): Rat droppings, slime trails, debris
 - Floor 3 (Forest): Bone fragments, webbing, egg sacs
 - Floor 4 (Valdris): Blood, ash, ghostly residue, seal fragments
+- Floor 5 (Ice): Ice crystals, frost marks, frozen specimens
+- Floor 6 (Library): Ink drops, page scraps, arcane residue
+- Floor 7 (Volcanic): Slag drips, ember marks, forged runes
+- Floor 8 (Crystal): Crystal shards, gold dust, dragon scales
 
 **Implementation:**
 - `dungeon._place_zone_evidence()` places evidence post-layout
@@ -211,6 +215,21 @@ Backend sends room ceiling state in FirstPersonView:
 - `game_session._serialize_first_person_view()` adds ceiling fields
 - `FirstPersonRenderer3D.tsx` skips ceiling geometry when `room_has_ceiling=false`
 - Simple sky plane added for open-air rooms
+
+### Boss Roster (Aligned with Lore)
+
+| Floor | Boss | Theme |
+|-------|------|-------|
+| 1 | Goblin King | Stone Dungeon (prison warden) |
+| 2 | Rat King | Sewers (plague carrier) |
+| 3 | Spider Queen | Forest Depths (nature's curse) |
+| 4 | **The Regent** | Mirror Valdris (counterfeit monarch) |
+| 5 | Frost Giant | Ice Cavern (frozen experiment) |
+| 6 | Arcane Keeper | Ancient Library (knowledge guardian) |
+| 7 | Flame Lord | Volcanic Depths (forge master) |
+| 8 | Dragon Emperor | Crystal Cave (dragon's hoard) |
+
+**Note:** LICH_LORD removed from active warden rotation (no longer matches floor themes).
 
 ### Future Enhancements
 
