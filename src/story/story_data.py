@@ -3,14 +3,15 @@ from typing import Dict, List, Optional, Tuple
 
 
 # Level intro messages - shown when entering each dungeon level
+# Canonical order: Stone, Sewers, Forest, Mirror Valdris, Ice, Library, Volcanic, Crystal
 LEVEL_INTRO_MESSAGES: Dict[int, str] = {
     1: "You descend into the Stone Dungeon. Ancient torches flicker with unnatural light.",
-    2: "A biting cold grips you as you enter the Ice Cavern. Frost clings to every surface.",
+    2: "The stench hits you first. The Sewers of Valdris stretch endlessly into darkness.",
     3: "Roots and vines consume the walls. You have entered the Forest Depths, where nature claims all.",
-    4: "Heat radiates from below. The Volcanic Depths glow with rivers of molten rock.",
-    5: "A chill runs down your spine as you step into the Ancient Crypt. The dead do not rest here.",
-    6: "The stench hits you first. The Sewers of Valdris stretch endlessly into darkness.",
-    7: "Dust motes dance in pale light. You have found the Ancient Library. Knowledge... and danger.",
+    4: "Familiar architecture, yet wrong. Mirror Valdris—a palace rebuilt from memory, imperfectly.",
+    5: "A biting cold grips you as you enter the Ice Cavern. Frost clings to every surface.",
+    6: "Dust motes dance in pale light. You have found the Ancient Library. Knowledge... and danger.",
+    7: "Heat radiates from below. The Volcanic Depths glow with rivers of molten rock.",
     8: "Brilliant light refracts through countless crystals. The Crystal Cave holds the dragon's lair.",
 }
 
@@ -54,24 +55,24 @@ LORE_ENTRIES: Dict[str, Dict] = {
         "category": "locations",
     },
 
-    # Level 2 - Ice Cavern lore
-    "frozen_explorer": {
-        "title": "Frozen Explorer's Journal",
+    # Level 2 - Sewers of Valdris lore
+    "sewer_worker": {
+        "title": "Sewer Worker's Note",
         "content": [
-            "Day 12: The cold is unnatural. My torch barely helps.",
-            "I found a giant frozen solid in the ice. Still breathing.",
-            "The Frost Giant was sealed here. Someone is waking it.",
+            "The rats have been acting strange. Organized.",
+            "I saw them carrying food to the deep tunnels. Thousands of them.",
+            "There's something down there commanding them. Something big.",
         ],
         "level_hint": 2,
         "item_type": "scroll",
         "category": "characters",
     },
-    "ice_warning": {
-        "title": "Warning Carved in Ice",
+    "plague_warning": {
+        "title": "Health Warden's Warning",
         "content": [
-            "BEWARE THE THAW",
-            "THE GIANT SLEEPS IN FROZEN SLUMBER",
-            "DO NOT MELT THE ICE",
+            "SEWERS CONDEMNED BY ORDER OF THE CROWN",
+            "The Rat King has been sighted. All workers evacuated.",
+            "Disease spreads from below. Burn anything that emerges.",
         ],
         "level_hint": 2,
         "item_type": "scroll",
@@ -102,82 +103,58 @@ LORE_ENTRIES: Dict[str, Dict] = {
         "category": "locations",
     },
 
-    # Level 4 - Volcanic Depths lore
-    "smith_journal": {
-        "title": "Master Smith's Journal",
-        "content": [
-            "We built our forge above the magma flows. The heat was perfect.",
-            "Then the Flame Lord emerged from the depths. Fire given form.",
-            "Our greatest weapons could not harm him. He melted them all.",
-        ],
-        "level_hint": 4,
-        "item_type": "scroll",
-        "category": "artifacts",
-    },
-    "obsidian_tablet": {
-        "title": "Obsidian Tablet",
-        "content": [
-            "THE FLAME LORD WAS BORN OF VALDRIS' GREED",
-            "THEY DUG TOO DEEP FOR GOLD AND GEMS",
-            "AND WOKE THE FIRE THAT NEVER DIES",
-        ],
-        "level_hint": 4,
-        "item_type": "scroll",
-        "category": "artifacts",
-    },
-
-    # Level 5 - Ancient Crypt lore
+    # Level 4 - Mirror Valdris (counterfeit palace) lore
     "crypt_inscription": {
-        "title": "Tomb Inscription",
+        "title": "Succession Decree",
         "content": [
-            "Here lies the Royal Guard of Valdris.",
-            "In death as in life, they serve the crown.",
-            "May they rise again when the kingdom calls.",
+            "By right of blood and the blessing of the Eight Seals,",
+            "I, Regent Malachar, do claim the throne of Valdris.",
+            "Let none question my legitimacy.",
             "",
-            "The kingdom called. They rose. They did not stop.",
+            "The decree is signed. But the seal... the seal is wrong.",
         ],
-        "level_hint": 5,
+        "level_hint": 4,
         "item_type": "scroll",
-        "category": "creatures",
+        "category": "history",
     },
     "priest_confession": {
-        "title": "Priest's Confession",
+        "title": "Regent's Ledger",
         "content": [
-            "Forgive me. The ritual was meant to protect us.",
-            "When the Darkness came, we raised the dead to fight it.",
-            "But the dead cannot tell friend from foe.",
-            "We sealed the crypt, but the magic... it spreads.",
+            "Day 1: The king is dead. Long live... me.",
+            "Day 4: The court accepted the coronation. They had no choice.",
+            "Day 12: They're starting to notice the inconsistencies.",
+            "Day 12: I will make them forget. Again.",
         ],
-        "level_hint": 5,
+        "level_hint": 4,
         "item_type": "book",
         "category": "characters",
     },
 
-    # Level 6 - Sewer lore
-    "sewer_worker": {
-        "title": "Sewer Worker's Note",
+    # Level 5 - Ice Cavern lore
+    "frozen_explorer": {
+        "title": "Frozen Explorer's Journal",
         "content": [
-            "The rats have been acting strange. Organized.",
-            "I saw them carrying food to the deep tunnels. Thousands of them.",
-            "There's something down there commanding them. Something big.",
+            "Day 12: The cold is unnatural. My torch barely helps.",
+            "I found a giant frozen solid in the ice. Still breathing.",
+            "The Frost Giant was sealed here. Someone is waking it.",
         ],
-        "level_hint": 6,
+        "level_hint": 5,
         "item_type": "scroll",
         "category": "characters",
     },
-    "plague_warning": {
-        "title": "Health Warden's Warning",
+    "ice_warning": {
+        "title": "Warning Carved in Ice",
         "content": [
-            "SEWERS CONDEMNED BY ORDER OF THE CROWN",
-            "The Rat King has been sighted. All workers evacuated.",
-            "Disease spreads from below. Burn anything that emerges.",
+            "BEWARE THE THAW",
+            "THE GIANT SLEEPS IN FROZEN SLUMBER",
+            "DO NOT MELT THE ICE",
         ],
-        "level_hint": 6,
+        "level_hint": 5,
         "item_type": "scroll",
         "category": "locations",
     },
 
-    # Level 7 - Ancient Library lore
+    # Level 6 - Ancient Library lore
     "wizard_research": {
         "title": "Arcane Research Notes",
         "content": [
@@ -186,7 +163,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
             "Experiment 61: I understand now. It was never a weapon.",
             "It was a prison. And we have been feeding the prisoner.",
         ],
-        "level_hint": 7,
+        "level_hint": 6,
         "item_type": "book",
         "category": "artifacts",
     },
@@ -198,9 +175,33 @@ LORE_ENTRIES: Dict[str, Dict] = {
             "But the miners dug too deep, and found something sleeping.",
             "The Darkness woke, and Valdris fell in a single night.",
         ],
-        "level_hint": 7,
+        "level_hint": 6,
         "item_type": "book",
         "category": "history",
+    },
+
+    # Level 7 - Volcanic Depths lore
+    "smith_journal": {
+        "title": "Master Smith's Journal",
+        "content": [
+            "We built our forge above the magma flows. The heat was perfect.",
+            "Then the Flame Lord emerged from the depths. Fire given form.",
+            "Our greatest weapons could not harm him. He melted them all.",
+        ],
+        "level_hint": 7,
+        "item_type": "scroll",
+        "category": "artifacts",
+    },
+    "obsidian_tablet": {
+        "title": "Obsidian Tablet",
+        "content": [
+            "THE FLAME LORD WAS BORN OF VALDRIS' GREED",
+            "THEY DUG TOO DEEP FOR GOLD AND GEMS",
+            "AND WOKE THE FIRE THAT NEVER DIES",
+        ],
+        "level_hint": 7,
+        "item_type": "scroll",
+        "category": "artifacts",
     },
 
     # Level 8 - Crystal Cave / Dragon's Lair lore
@@ -236,6 +237,7 @@ LORE_ENTRIES: Dict[str, Dict] = {
 
     # =========================================================================
     # Environmental Evidence Entries (discovered via zone evidence props)
+    # Canonical floor order: Stone, Sewers, Forest, Mirror Valdris, Ice, Library, Volcanic, Crystal
     # =========================================================================
 
     # Floor 1 - Stone Dungeon evidence
@@ -264,13 +266,13 @@ LORE_ENTRIES: Dict[str, Dict] = {
         "category": "history",
     },
 
-    # Floor 2 - Ice Cavern evidence
+    # Floor 2 - Sewers evidence
     "evidence_wax_seals_nests": {
-        "title": "Wax Seals in Ice Nests",
+        "title": "Wax Seals in Rat Nests",
         "content": [
-            "Frozen bird nests line the upper ledges, encased in ice.",
-            "Inside each: royal wax seals, perfectly preserved.",
-            "The birds collected them. Hundreds of identical seals.",
+            "Rat nests line the sewer alcoves, built from debris.",
+            "Inside each: royal wax seals, gnawed but intact.",
+            "The rats collected them. Hundreds of identical seals.",
             "All dated the same day. The day Valdris fell.",
         ],
         "level_hint": 2,
@@ -280,9 +282,9 @@ LORE_ENTRIES: Dict[str, Dict] = {
     "evidence_decree_fragments": {
         "title": "Decree Fragments",
         "content": [
-            "Torn parchment frozen in the grate. A royal decree.",
+            "Torn parchment caught in the grate. A royal decree.",
             "'By order of King Aldric... the prisoner shall be...'",
-            "The rest is illegible. But there are more fragments.",
+            "The rest dissolved in the muck. But there are more fragments.",
             "The same decree. Torn the same way. In every grate.",
         ],
         "level_hint": 2,
@@ -316,11 +318,11 @@ LORE_ENTRIES: Dict[str, Dict] = {
         "category": "history",
     },
 
-    # Floor 4 - Volcanic Depths evidence
+    # Floor 4 - Mirror Valdris (counterfeit palace) evidence
     "evidence_two_coronations_bell": {
         "title": "Two Coronations Bell",
         "content": [
-            "A cracked bronze bell, half-melted in the heat.",
+            "A cracked bronze bell hangs in the throne room alcove.",
             "The inscription reads: 'For the coronation of King Aldric.'",
             "But there are two dates. Two coronations.",
             "The same king. Crowned twice. In the same year.",
@@ -342,14 +344,14 @@ LORE_ENTRIES: Dict[str, Dict] = {
         "category": "history",
     },
 
-    # Floor 5 - Ancient Crypt evidence
+    # Floor 5 - Ice Cavern evidence
     "evidence_repeating_day_12": {
         "title": "Repeating 'Day 12'",
         "content": [
-            "The tomb inscriptions all include dates of death.",
-            "Every single one: 'Day 12 of the Seventh Moon.'",
-            "Hundreds of guards. All died the same day.",
-            "Not in battle. The dates are carved, not rushed.",
+            "Ice-encased expedition logs, preserved perfectly.",
+            "Every single one ends: 'Day 12 of the Seventh Moon.'",
+            "Dozens of explorers. All stopped writing the same day.",
+            "The ink froze mid-sentence. Every time.",
         ],
         "level_hint": 5,
         "item_type": "evidence",
@@ -358,23 +360,23 @@ LORE_ENTRIES: Dict[str, Dict] = {
     "evidence_thaw_never_completes": {
         "title": "Thaw That Never Completes",
         "content": [
-            "Frost creeps along the crypt walls in intricate patterns.",
-            "It melts in your presence. Then refreezes. Then melts again.",
-            "The same drip falls. Freezes. Falls. Freezes.",
-            "Time stutters here. Catching on something.",
+            "Icicles hang from the cavern ceiling, perpetually dripping.",
+            "The same drop falls. Freezes. Falls. Freezes.",
+            "You watch it cycle three times before moving on.",
+            "Time stutters here. Catching on something cold.",
         ],
         "level_hint": 5,
         "item_type": "evidence",
         "category": "history",
     },
 
-    # Floor 6 - Sewers evidence
+    # Floor 6 - Ancient Library evidence
     "evidence_self_cataloging_shelves": {
-        "title": "Self-Cataloging Shelves",
+        "title": "Self-Cataloging Index",
         "content": [
-            "Storage shelves line the maintenance tunnels.",
-            "Each item has a tag: 'Cataloged by Archivist Thenn.'",
-            "But the handwriting changes mid-sentence on some tags.",
+            "The card catalog drawers are meticulously organized.",
+            "Each card reads: 'Cataloged by Archivist Thenn.'",
+            "But the handwriting changes mid-entry on some cards.",
             "The same name. Different hands. Dozens of them.",
         ],
         "level_hint": 6,
@@ -384,24 +386,24 @@ LORE_ENTRIES: Dict[str, Dict] = {
     "evidence_final_version_labels": {
         "title": "'Final Version' Labels",
         "content": [
-            "Crates stacked against the walls, marked 'FINAL VERSION.'",
-            "Inside: maps of the dungeon. All slightly different.",
-            "Each claims to be the definitive layout.",
-            "But the dungeon matches none of them. And all of them.",
+            "Book spines stamped 'FINAL VERSION - DO NOT COPY.'",
+            "Inside: histories of Valdris. All slightly different.",
+            "Each claims to be the definitive record.",
+            "But the histories contradict each other. And confirm each other.",
         ],
         "level_hint": 6,
         "item_type": "evidence",
         "category": "history",
     },
 
-    # Floor 7 - Ancient Library evidence
+    # Floor 7 - Volcanic Depths evidence
     "evidence_melted_crest": {
         "title": "Melted Crest",
         "content": [
-            "A royal crest hangs above the archive door.",
-            "Half-melted, as if exposed to tremendous heat.",
-            "But the library shows no fire damage.",
-            "The crest drips frozen. Mid-melt. Forever.",
+            "A royal crest, cast in iron, hangs above the forge.",
+            "Half-melted, dripping frozen metal tears.",
+            "The heat here should have destroyed it entirely.",
+            "Yet it hangs. Mid-melt. Refusing to finish.",
         ],
         "level_hint": 7,
         "item_type": "evidence",
@@ -410,10 +412,10 @@ LORE_ENTRIES: Dict[str, Dict] = {
     "evidence_rune_plates_stamped": {
         "title": "Rune Plates Stamped",
         "content": [
-            "Metal plates embedded in the floor. Runes of warding.",
-            "Each plate is stamped: 'Verified by Magister Kael.'",
+            "Forge-pressed rune plates line the passage walls.",
+            "Each stamped: 'Verified by Forgemaster Kael.'",
             "But the verification dates span three centuries.",
-            "The same signature. The same man. Impossible.",
+            "The same stamp. The same man. Impossible.",
         ],
         "level_hint": 7,
         "item_type": "evidence",
