@@ -281,6 +281,11 @@ class GameSessionManager:
                     return {"error": f"Cannot select feat: {feat_id}"}
             return self.serialize_game_state(session, [])
 
+        # Handle cheat commands (dev/testing)
+        if command_type.upper().startswith("CHEAT_"):
+            self._process_cheat(engine, cmd_type)
+            return self.serialize_game_state(session, [])
+
         command = Command(cmd_type)
 
         # Process based on current game state
@@ -608,6 +613,94 @@ class GameSessionManager:
                 # Fallback - convert to string
                 result[key] = str(value)
         return result
+
+    def _process_cheat(self, engine, cmd_type: CommandType) -> None:
+        """Process cheat commands for dev/testing."""
+        from src.items.items import LoreScroll
+        from src.story.story_data import LORE_ENTRIES
+
+        if cmd_type == CommandType.CHEAT_GOD_MODE:
+            # Toggle god mode on player
+            if engine.player:
+                if not hasattr(engine.player, 'god_mode'):
+                    engine.player.god_mode = False
+                engine.player.god_mode = not engine.player.god_mode
+                status = "ON" if engine.player.god_mode else "OFF"
+                engine.add_message(f"[CHEAT] God mode {status}")
+
+        elif cmd_type == CommandType.CHEAT_KILL_ALL:
+            # Kill all enemies on current floor
+            if engine.entity_manager:
+                count = len(engine.entity_manager.enemies)
+                engine.entity_manager.enemies.clear()
+                engine.add_message(f"[CHEAT] Killed {count} enemies")
+
+        elif cmd_type == CommandType.CHEAT_HEAL:
+            # Heal player to full
+            if engine.player:
+                engine.player.health = engine.player.max_health
+                engine.add_message(f"[CHEAT] Healed to full ({engine.player.health} HP)")
+
+        elif cmd_type == CommandType.CHEAT_NEXT_FLOOR:
+            # Skip to next floor
+            if engine.level_manager and engine.dungeon:
+                current = engine.dungeon.level
+                if current < 8:
+                    engine.level_manager.descend_to_level(current + 1)
+                    engine.add_message(f"[CHEAT] Skipped to floor {current + 1}")
+                else:
+                    engine.add_message("[CHEAT] Already at max floor")
+
+        elif cmd_type == CommandType.CHEAT_REVEAL_MAP:
+            # Reveal entire map
+            if engine.dungeon:
+                for y in range(engine.dungeon.height):
+                    for x in range(engine.dungeon.width):
+                        engine.dungeon.explored[y][x] = True
+                        engine.dungeon.visible[y][x] = True
+                engine.add_message("[CHEAT] Map revealed")
+
+        elif cmd_type == CommandType.CHEAT_SPAWN_LORE:
+            # Spawn a random lore item near player
+            if engine.player and engine.entity_manager:
+                # Find an available lore entry for current floor
+                floor = engine.dungeon.level if engine.dungeon else 1
+                floor_lore_ids = {
+                    1: ['journal_adventurer_1', 'warning_stone'],
+                    2: ['sewer_worker', 'plague_warning'],
+                    3: ['druid_log', 'webbed_note'],
+                    4: ['crypt_inscription', 'priest_confession'],
+                    5: ['frozen_explorer', 'ice_warning'],
+                    6: ['wizard_research', 'history_valdris'],
+                    7: ['smith_journal', 'obsidian_tablet'],
+                    8: ['dragon_pact', 'final_entry'],
+                }
+                lore_ids = floor_lore_ids.get(floor, ['journal_adventurer_1'])
+                lore_id = lore_ids[0]
+                lore_data = LORE_ENTRIES.get(lore_id, {})
+
+                if lore_data:
+                    # Find adjacent walkable tile
+                    px, py = engine.player.x, engine.player.y
+                    spawn_pos = None
+                    for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+                        nx, ny = px + dx, py + dy
+                        if engine.dungeon.is_walkable(nx, ny):
+                            spawn_pos = (nx, ny)
+                            break
+
+                    if spawn_pos:
+                        scroll = LoreScroll(
+                            x=spawn_pos[0],
+                            y=spawn_pos[1],
+                            lore_id=lore_id,
+                            title=lore_data.get('title', 'Unknown'),
+                            content=lore_data.get('content', [])
+                        )
+                        engine.entity_manager.items.append(scroll)
+                        engine.add_message(f"[CHEAT] Spawned: {scroll.title}")
+                    else:
+                        engine.add_message("[CHEAT] No space to spawn lore")
 
     def _serialize_visible_tiles(self, engine) -> List[List[str]]:
         """Serialize visible dungeon tiles around the player."""

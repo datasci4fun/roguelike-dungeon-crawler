@@ -74,6 +74,14 @@ class CommandType(Enum):
     # Feat selection
     SELECT_FEAT = auto()  # Select a feat (data contains feat_id)
 
+    # Cheats (dev/testing)
+    CHEAT_GOD_MODE = auto()      # Toggle invincibility
+    CHEAT_KILL_ALL = auto()      # Kill all enemies on floor
+    CHEAT_HEAL = auto()          # Heal to full HP
+    CHEAT_NEXT_FLOOR = auto()    # Skip to next floor
+    CHEAT_REVEAL_MAP = auto()    # Reveal entire map
+    CHEAT_SPAWN_LORE = auto()    # Spawn a lore item nearby
+
 
 @dataclass
 class Command:

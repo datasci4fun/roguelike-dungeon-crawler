@@ -349,6 +349,30 @@ export function Play() {
     setPendingNewLore(null);
   }, []);
 
+  // Cheat hotkeys (dev/testing) - F1-F6 keys
+  useEffect(() => {
+    const handleCheatKey = (e: KeyboardEvent) => {
+      // Only handle F1-F6 keys
+      const cheatMap: Record<string, string> = {
+        'F1': 'CHEAT_GOD_MODE',
+        'F2': 'CHEAT_KILL_ALL',
+        'F3': 'CHEAT_HEAL',
+        'F4': 'CHEAT_NEXT_FLOOR',
+        'F5': 'CHEAT_REVEAL_MAP',
+        'F6': 'CHEAT_SPAWN_LORE',
+      };
+
+      const cheatCommand = cheatMap[e.key];
+      if (cheatCommand) {
+        e.preventDefault();
+        sendCommand(cheatCommand);
+      }
+    };
+
+    window.addEventListener('keydown', handleCheatKey);
+    return () => window.removeEventListener('keydown', handleCheatKey);
+  }, [sendCommand]);
+
   // Callback to capture corridor info from renderer
   const handleCorridorInfo = useCallback((info: CorridorInfoEntry[]) => {
     corridorInfoRef.current = info;

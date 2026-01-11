@@ -370,6 +370,9 @@ class Player(Entity):
 
     def take_damage(self, damage: int) -> int:
         """Take damage reduced by defense and return actual damage taken."""
+        # God mode check (dev/testing cheat)
+        if getattr(self, 'god_mode', False):
+            return 0
         reduced_damage = max(1, damage - self.defense)  # Always take at least 1 damage
         actual_damage = min(reduced_damage, self.health)
         self.health -= actual_damage
