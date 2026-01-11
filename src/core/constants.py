@@ -554,6 +554,81 @@ ENEMY_STATS = {
     },
 }
 
+# Floor-by-floor enemy rosters (canonical, theme-first)
+# Spawn system uses these pools first, then applies zone weighting.
+FLOOR_ENEMY_POOLS = {
+    # 1 — Stone Dungeon (MEMORY)
+    1: [
+        (EnemyType.GOBLIN, 55),
+        (EnemyType.SKELETON, 30),
+        (EnemyType.ORC, 10),
+        (EnemyType.WRAITH, 5),
+    ],
+
+    # 2 — Sewers (CIRCULATION)
+    2: [
+        (EnemyType.RAT, 45),
+        (EnemyType.PLAGUE_RAT, 25),
+        (EnemyType.ORC, 15),
+        (EnemyType.ASSASSIN, 10),
+        (EnemyType.SKELETON, 5),
+    ],
+
+    # 3 — Forest Depths (GROWTH)
+    3: [
+        (EnemyType.SPIDERLING, 45),
+        (EnemyType.WEBWEAVER, 25),
+        (EnemyType.RAT, 10),            # strays / carriers
+        (EnemyType.ASSASSIN, 10),       # erasure specialist intrusion
+        (EnemyType.WRAITH, 10),
+    ],
+
+    # 4 — Mirror Valdris (LEGITIMACY)
+    4: [
+        (EnemyType.OATHBOUND_GUARD, 35),
+        (EnemyType.SKELETON, 25),
+        (EnemyType.COURT_SCRIBE, 15),
+        (EnemyType.ASSASSIN, 15),
+        (EnemyType.WRAITH, 10),
+    ],
+
+    # 5 — Ice Cavern (STASIS)
+    5: [
+        (EnemyType.ICE_ELEMENTAL, 30),
+        (EnemyType.SKELETON, 20),
+        (EnemyType.WRAITH, 20),
+        (EnemyType.OATHBOUND_GUARD, 15),  # oath-dead bleed through
+        (EnemyType.TROLL, 15),
+    ],
+
+    # 6 — Ancient Library (COGNITION)
+    6: [
+        (EnemyType.ANIMATED_TOME, 30),
+        (EnemyType.NECROMANCER, 25),
+        (EnemyType.COURT_SCRIBE, 15),     # records made hostile
+        (EnemyType.ASSASSIN, 15),
+        (EnemyType.WRAITH, 15),
+    ],
+
+    # 7 — Volcanic Depths (TRANSFORMATION)
+    7: [
+        (EnemyType.FIRE_ELEMENTAL, 30),
+        (EnemyType.DEMON, 20),
+        (EnemyType.TROLL, 20),
+        (EnemyType.NECROMANCER, 15),
+        (EnemyType.ANIMATED_TOME, 15),    # burned knowledge walking
+    ],
+
+    # 8 — Crystal Cave (INTEGRATION)
+    8: [
+        (EnemyType.CRYSTAL_SENTINEL, 30),
+        (EnemyType.LIGHTNING_ELEMENTAL, 20),
+        (EnemyType.DRAGON, 15),           # lesser dragon only here
+        (EnemyType.DEMON, 15),
+        (EnemyType.WRAITH, 20),
+    ],
+}
+
 # Boss configuration (8 bosses for 8 levels)
 BOSS_STATS = {
     BossType.GOBLIN_KING: {
