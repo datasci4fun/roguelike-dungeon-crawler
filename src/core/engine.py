@@ -622,7 +622,7 @@ class GameEngine:
 
         Zone evidence tiles (boss trail tells, lore markers, evidence props) are
         visual indicators placed in rooms. When the player walks onto one, they
-        discover lore related to that floor.
+        discover evidence lore specific to that floor.
         """
         if not self.dungeon or not self.player:
             return
@@ -643,25 +643,23 @@ class GameEngine:
 
         _, _, char, _, evidence_type = evidence_at_pos
 
-        # Get lore IDs for current floor
-        from ..story.lore_items import get_lore_ids_for_floor
-        floor_lore_ids = list(get_lore_ids_for_floor(self.current_level))
-
-        if not floor_lore_ids:
-            return
-
-        # Map evidence types to lore discovery
-        # trail_tell / lore_marker -> discover first undiscovered lore for floor
-        # evidence_prop -> may have specific lore mapping
-        lore_to_discover = None
-        for lore_id in floor_lore_ids:
-            if not self.story_manager.has_discovered_lore(lore_id):
-                lore_to_discover = lore_id
-                break
-
         # Always remove evidence when stepped on (one-time interaction)
         if evidence_index is not None:
             self.dungeon.zone_evidence.pop(evidence_index)
+
+        # Get evidence-specific lore IDs for current floor
+        from ..story.lore_items import get_evidence_ids_for_floor
+        evidence_lore_ids = get_evidence_ids_for_floor(self.current_level)
+
+        if not evidence_lore_ids:
+            return
+
+        # Find first undiscovered evidence lore for this floor
+        lore_to_discover = None
+        for lore_id in evidence_lore_ids:
+            if not self.story_manager.has_discovered_lore(lore_id):
+                lore_to_discover = lore_id
+                break
 
         # Discover lore if any undiscovered for this floor
         if lore_to_discover:
