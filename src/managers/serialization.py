@@ -47,6 +47,7 @@ class SaveManager:
             'field_pulse_manager': self.game.field_pulse_manager.get_state() if hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager else None,
             'artifact_manager': self.game.entity_manager.artifact_manager.get_state() if hasattr(self.game.entity_manager, 'artifact_manager') else None,
             'ghost_manager': self.game.ghost_manager.get_state() if hasattr(self.game, 'ghost_manager') and self.game.ghost_manager else None,
+            'completion_ledger': self.game.completion_ledger.to_dict() if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger else None,
         }
 
         return save_game(game_state)
@@ -102,6 +103,11 @@ class SaveManager:
             # v5.5: Restore ghost_manager state if present
             if game_state.get('ghost_manager') and hasattr(self.game, 'ghost_manager') and self.game.ghost_manager:
                 self.game.ghost_manager.load_state(game_state['ghost_manager'])
+
+            # v5.5: Restore completion_ledger state if present
+            if game_state.get('completion_ledger') and hasattr(self.game, 'completion_ledger'):
+                from ..story import CompletionLedger
+                self.game.completion_ledger = CompletionLedger.from_dict(game_state['completion_ledger'])
 
             # Update FOV after loading (with vision bonus from race traits)
             vision_bonus = self.game.player.get_vision_bonus() if hasattr(self.game.player, 'get_vision_bonus') else 0

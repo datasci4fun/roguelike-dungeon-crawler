@@ -71,9 +71,16 @@ class CombatManager:
                 # Check if it's a lore item
                 if hasattr(picked_item, 'lore_id'):
                     self.game.show_hint("first_lore")
+                    # v5.5: Track lore in completion ledger
+                    if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
+                        self.game.completion_ledger.record_lore_found(picked_item.lore_id)
 
             # v5.5: Check for artifact pickup
-            self.game.entity_manager.check_artifact_pickup(player, self.game.add_message)
+            picked_artifact = self.game.entity_manager.check_artifact_pickup(player, self.game.add_message)
+            if picked_artifact:
+                # Track artifact in completion ledger
+                if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
+                    self.game.completion_ledger.record_artifact_collected(picked_artifact.artifact_id.name)
 
             return True
 
@@ -121,6 +128,10 @@ class CombatManager:
         if enemy_died:
             player.kills += 1
 
+            # v5.5: Track kill in completion ledger
+            if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
+                self.game.completion_ledger.record_kill(is_elite=enemy.is_elite)
+
             # Add blood stain to dungeon (world state change)
             self.game.dungeon.add_blood_stain(enemy.x, enemy.y)
 
@@ -145,6 +156,11 @@ class CombatManager:
     def _handle_boss_death(self, boss):
         """Handle boss death: XP, loot drops, and messages."""
         player = self.game.player
+
+        # v5.5: Track warden defeat in completion ledger
+        if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
+            boss_type_name = boss.boss_type.name if boss.boss_type else "UNKNOWN"
+            self.game.completion_ledger.record_warden_defeated(boss_type_name)
 
         # Victory message
         self.game.add_message(f"*** The {boss.name} has been defeated! ***")
@@ -355,6 +371,10 @@ class CombatManager:
         # Track damage for death recap
         self.game.last_attacker_name = enemy_name
         self.game.last_damage_taken = damage
+
+        # v5.5: Track damage in completion ledger
+        if damage > 0 and hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
+            self.game.completion_ledger.record_damage(damage)
 
         # Emit combat events (renderer will consume these)
         if self.events is not None:

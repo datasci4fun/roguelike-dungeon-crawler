@@ -20,7 +20,7 @@ TURN_COMMANDS = {CommandType.TURN_LEFT, CommandType.TURN_RIGHT}
 from ..world import Dungeon, TrapManager, HazardManager, SecretDoorManager, TorchManager, FieldPulseManager
 from ..entities import Player, GhostManager
 from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
-from ..story import StoryManager
+from ..story import StoryManager, CompletionLedger, derive_victory_legacy, resolve_ending
 from ..story.story_data import get_tutorial_hint
 
 # Import managers
@@ -87,6 +87,9 @@ class GameEngine:
         # v5.5: Ghost manager
         self.ghost_manager = GhostManager()
 
+        # v5.5: Completion ledger for run tracking
+        self.completion_ledger = CompletionLedger()
+
         # Death tracking for recap
         self.last_attacker_name = None
         self.last_damage_taken = 0
@@ -129,6 +132,9 @@ class GameEngine:
         self.max_level_reached = 1
         self.kills_count = 0
         self.turns_since_save = 0
+
+        # v5.5: Reset completion ledger for new run
+        self.completion_ledger = CompletionLedger()
 
         # Generate first dungeon
         self.dungeon = Dungeon(level=self.current_level, has_stairs_up=False)
@@ -358,9 +364,19 @@ class GameEngine:
         if not self.ghost_manager or not self.player or not self.dungeon:
             return
 
+        # Get ghosts that were triggered this tick (for ledger tracking)
+        pre_triggered = {g.ghost_type.name for g in self.ghost_manager.ghosts if g.triggered}
+
         messages = self.ghost_manager.tick(self.player, self.dungeon)
         for msg in messages:
             self.add_message(msg, MessageCategory.SYSTEM, MessageImportance.IMPORTANT)
+
+        # Track newly triggered ghosts in completion ledger
+        if self.completion_ledger:
+            post_triggered = {g.ghost_type.name for g in self.ghost_manager.ghosts if g.triggered}
+            new_triggers = post_triggered - pre_triggered
+            for ghost_type_name in new_triggers:
+                self.completion_ledger.record_ghost_encounter(ghost_type_name)
 
     def _get_relative_movement(self, cmd_type: CommandType) -> tuple:
         """

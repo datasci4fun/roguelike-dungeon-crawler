@@ -17,6 +17,19 @@ from .lore_items import (
     validate_lore_id,
     validate_story_data,
 )
+from .completion import (
+    EndingId,
+    VictoryLegacy,
+    CompletionLedger,
+    VictoryLegacyResult,
+    derive_victory_legacy,
+    resolve_ending,
+    debug_print_completion_ledger,
+    COMBAT_HIGH_THRESHOLD,
+    LORE_HIGH_THRESHOLD,
+    SECONDARY_MESSAGES,
+    SECONDARY_EFFECTS,
+)
 
 __all__ = [
     'LEVEL_INTRO_MESSAGES',
@@ -34,4 +47,16 @@ __all__ = [
     'get_lore_ids_for_floor',
     'validate_lore_id',
     'validate_story_data',
+    # Completion tracking and endings
+    'EndingId',
+    'VictoryLegacy',
+    'CompletionLedger',
+    'VictoryLegacyResult',
+    'derive_victory_legacy',
+    'resolve_ending',
+    'debug_print_completion_ledger',
+    'COMBAT_HIGH_THRESHOLD',
+    'LORE_HIGH_THRESHOLD',
+    'SECONDARY_MESSAGES',
+    'SECONDARY_EFFECTS',
 ]

@@ -6,9 +6,15 @@ Death Ghosts (from players who died):
 - Silence: Debuff area marking absence
 
 Victory Imprints (from players who won):
-- Beacon: Guidance cue toward progression
-- Champion: One-time combat assist
-- Archivist: Knowledge/secret reveal
+- Beacon: Guidance cue toward progression (low combat + low lore)
+- Champion: One-time combat assist (high kills)
+- Archivist: Knowledge/secret reveal (high lore found)
+
+Victory imprint type is DERIVED from run stats (not random):
+- Low combat + low lore → Beacon
+- High combat → Champion
+- High lore → Archivist
+- Both high → hybrid (primary by higher, secondary flourish)
 """
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -18,6 +24,7 @@ import random
 if TYPE_CHECKING:
     from ..world import Dungeon
     from .entities import Player
+    from ..story.completion import VictoryLegacyResult, VictoryLegacy
 
 
 class GhostType(Enum):
@@ -77,6 +84,17 @@ GHOST_LIMITS = {
     GhostType.ARCHIVIST: 1,
 }
 
+# Map VictoryLegacy to GhostType
+def victory_legacy_to_ghost_type(legacy_name: str) -> GhostType:
+    """Convert VictoryLegacy name to GhostType."""
+    mapping = {
+        'BEACON': GhostType.BEACON,
+        'CHAMPION': GhostType.CHAMPION,
+        'ARCHIVIST': GhostType.ARCHIVIST,
+    }
+    return mapping.get(legacy_name, GhostType.BEACON)
+
+
 # Messages for each ghost type (in-universe, evocative)
 # These trigger once per type per floor to avoid spam
 GHOST_MESSAGES = {
@@ -128,6 +146,10 @@ class Ghost:
 
     # Champion-specific
     assist_used: bool = False
+
+    # Secondary flourish (for hybrid legacy)
+    secondary_tag: Optional[str] = None  # "archivist_mark" or "champion_edge"
+    secondary_used: bool = False
 
     @property
     def symbol(self) -> str:
@@ -186,7 +208,8 @@ class GhostManager:
         self._messages_shown: Set[GhostType] = set()
 
     def initialize_floor(self, floor: int, dungeon: 'Dungeon',
-                         ghost_data: List[dict] = None, seed: int = None):
+                         ghost_data: List[dict] = None, seed: int = None,
+                         victory_legacy: 'VictoryLegacyResult' = None):
         """Initialize ghosts for a new floor.
 
         Args:
@@ -194,6 +217,7 @@ class GhostManager:
             dungeon: The dungeon instance
             ghost_data: Optional list of ghost recordings to use
             seed: Optional seed for determinism
+            victory_legacy: Optional VictoryLegacyResult for derived victory imprints
         """
         self.floor = floor
         self.seed = seed if seed is not None else floor * 8888
@@ -205,7 +229,6 @@ class GhostManager:
 
         # Determine which ghost types to spawn
         death_types = [GhostType.ECHO, GhostType.HOLLOWED, GhostType.SILENCE]
-        victory_types = [GhostType.BEACON, GhostType.CHAMPION, GhostType.ARCHIVIST]
 
         # Track spawned counts
         spawned = {gt: 0 for gt in GhostType}
@@ -214,11 +237,18 @@ class GhostManager:
         if ghost_data:
             for gd in ghost_data:
                 if gd.get('victory'):
-                    # Victory ghost -> imprint
-                    ghost_type = rng.choice(victory_types)
+                    # Victory ghost -> imprint (use derived legacy if available)
+                    if victory_legacy:
+                        ghost_type = victory_legacy_to_ghost_type(victory_legacy.primary.name)
+                        secondary_tag = victory_legacy.secondary_tag
+                    else:
+                        # Fallback: random (legacy behavior)
+                        ghost_type = rng.choice([GhostType.BEACON, GhostType.CHAMPION, GhostType.ARCHIVIST])
+                        secondary_tag = None
                 else:
                     # Death ghost -> residue
                     ghost_type = self._select_death_type(rng, gd)
+                    secondary_tag = None
 
                 # Check limits
                 if spawned[ghost_type] >= GHOST_LIMITS[ghost_type]:
@@ -227,6 +257,9 @@ class GhostManager:
                 # Try to place
                 ghost = self._place_ghost(ghost_type, dungeon, rng, gd)
                 if ghost:
+                    # Apply secondary tag if this is a victory imprint with hybrid flourish
+                    if secondary_tag and gd.get('victory'):
+                        ghost.secondary_tag = secondary_tag
                     self.ghosts.append(ghost)
                     spawned[ghost_type] += 1
 
@@ -243,11 +276,18 @@ class GhostManager:
                             self.ghosts.append(ghost)
                             spawned[ghost_type] += 1
 
-            # Small chance for victory imprint (simulate legacy)
+            # Small chance for victory imprint (derived from legacy if available)
             if rng.random() < 0.15:  # 15% chance
-                ghost_type = rng.choice(victory_types)
+                if victory_legacy:
+                    ghost_type = victory_legacy_to_ghost_type(victory_legacy.primary.name)
+                    secondary_tag = victory_legacy.secondary_tag
+                else:
+                    ghost_type = rng.choice([GhostType.BEACON, GhostType.CHAMPION, GhostType.ARCHIVIST])
+                    secondary_tag = None
+
                 ghost = self._place_ghost(ghost_type, dungeon, rng)
                 if ghost:
+                    ghost.secondary_tag = secondary_tag
                     self.ghosts.append(ghost)
 
     def _select_death_type(self, rng: random.Random, ghost_data: dict) -> GhostType:
@@ -501,6 +541,16 @@ class GhostManager:
                     messages.append("A surge of strength flows through you! (+3 HP)")
                     player.health = min(player.health + 3, player.max_health + 3)
 
+                    # Secondary flourish: archivist_mark reveals nearby tiles
+                    if ghost.secondary_tag == "archivist_mark" and not ghost.secondary_used:
+                        ghost.secondary_used = True
+                        messages.append("An archivist's mark lingers in your wake.")
+                        for dx in range(-3, 4):
+                            for dy in range(-3, 4):
+                                rx, ry = player.x + dx, player.y + dy
+                                if 0 <= rx < dungeon.width and 0 <= ry < dungeon.height:
+                                    dungeon.explored[ry][rx] = True
+
             # Archivist: reveal lore/secrets in record zones, otherwise tiles
             if ghost.ghost_type == GhostType.ARCHIVIST:
                 if distance <= 2 and not ghost.triggered:
@@ -524,6 +574,12 @@ class GhostManager:
                             rx, ry = player.x + dx, player.y + dy
                             if 0 <= rx < dungeon.width and 0 <= ry < dungeon.height:
                                 dungeon.explored[ry][rx] = True
+
+                    # Secondary flourish: champion_edge grants +2 temp HP
+                    if ghost.secondary_tag == "champion_edge" and not ghost.secondary_used:
+                        ghost.secondary_used = True
+                        messages.append("A champion's edge remains.")
+                        player.health = min(player.health + 2, player.max_health + 2)
 
         return messages
 
@@ -601,6 +657,8 @@ class GhostManager:
                     'triggered': g.triggered,
                     'active': g.active,
                     'assist_used': g.assist_used,
+                    'secondary_tag': g.secondary_tag,
+                    'secondary_used': g.secondary_used,
                     'path_positions': g.path.positions if g.path else None,
                     'path_index': g.path.current_index if g.path else 0,
                     'path_dest': g.path.destination_type if g.path else None,
@@ -635,6 +693,8 @@ class GhostManager:
                 triggered=g_data.get('triggered', False),
                 active=g_data.get('active', True),
                 assist_used=g_data.get('assist_used', False),
+                secondary_tag=g_data.get('secondary_tag'),
+                secondary_used=g_data.get('secondary_used', False),
             )
 
             # Restore path for Echo
