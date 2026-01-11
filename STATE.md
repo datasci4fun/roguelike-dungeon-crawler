@@ -1,8 +1,8 @@
 # Project State
 
 **Last Updated:** 2026-01-10
-**Branch:** feature/field-pulses
-**Version:** v5.5.0 (Field Pulse System)
+**Branch:** feature/sky-touched-artifacts
+**Version:** v5.6.0 (Sky-Touched Artifacts)
 
 ---
 
@@ -282,6 +282,41 @@ Deterministic environmental surges that temporarily amplify zone behaviors:
 | `FirstPersonRenderer3D.tsx` | Visual overlay for active pulses |
 
 **Fairness:** Pulses amplify existing hazard damage but don't spawn new hazards or break zone validation (all 8 floors pass 20/20 seeds).
+
+### Sky-Touched Artifacts (MVP)
+
+Rare artifacts (0-1 per floor) with powerful effects and clear costs:
+
+**Branch:** `feature/sky-touched-artifacts`
+
+| Artifact | Effect | Cost | Zones |
+|----------|--------|------|-------|
+| **Duplicate Seal** | Duplicates next consumable use | Spawns Oath-Bound Witness enemy | seal_drifts, record_vaults, seal_chambers |
+| **Woundglass Shard** | Reveals path to stairs | Boosts next Field Pulse intensity | catalog_chambers, record_vaults, geometry_wells |
+| **Oathstone** | Choose floor vow for rewards | Stun + penalty if broken | oath_chambers, oath_interface, throne_hall_ruins |
+
+**Oathstone Vows:**
+
+| Vow | Restriction | Reward |
+|-----|-------------|--------|
+| Vow of Abstinence | No potions this floor | +2 max HP |
+| Vow of Progress | No revisiting rooms | +1 attack |
+| Vow of Confrontation | Defeat boss without fleeing | Guaranteed rare loot |
+
+**Implementation:**
+
+| File | Purpose |
+|------|---------|
+| `artifacts.py` | ArtifactId, ArtifactInstance, ArtifactManager |
+| `entity_manager.py` | Zone-biased spawning, pickup |
+| `entities.py` | Player artifact inventory (max 2) |
+| `serialization.py` | Save/load support |
+| `game_session.py` | API artifact state |
+
+**Spawn Stats (20-seed test):**
+- Overall rate: ~22% per floor
+- Deeper floors have higher rates (15% → 35%)
+- Zone bias: 2x weight in themed zones
 
 ### Future Enhancements
 
