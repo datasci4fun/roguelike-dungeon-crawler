@@ -392,6 +392,64 @@ Presentation improvements to make ghosts unambiguous and epic:
 - Full name floats above each entity
 - Canvas-drawn text for crisp rendering at any distance
 
+### Derived Victory Legacy (CompletionLedger)
+
+Victory imprint type is now derived deterministically from run statistics (no RNG):
+
+**CompletionLedger Tracking:**
+
+| Metric | Description |
+|--------|-------------|
+| floors_cleared | Set of floor numbers cleared |
+| wardens_defeated | Set of boss type names defeated |
+| lore_found_ids | Set of lore item IDs collected |
+| artifacts_collected_ids | Set of artifact IDs picked up |
+| ghost_encounters | Dict of ghost type → count |
+| total_kills | All enemy kills |
+| elite_kills | Elite enemy kills only |
+| damage_taken | Total damage received |
+| potions_used | Consumable count |
+| secrets_found | Set of discovered secrets |
+
+**Legacy Derivation Rules:**
+
+| Condition | Primary Legacy | Secondary |
+|-----------|---------------|-----------|
+| Low combat + Low lore | BEACON | None |
+| High combat (≥20 kills) + Low lore | CHAMPION | None |
+| Low combat + High lore (≥5) | ARCHIVIST | None |
+| High combat + High lore (combat ≥ lore) | CHAMPION | archivist_mark |
+| High combat + High lore (lore > combat) | ARCHIVIST | champion_edge |
+
+**Secondary Flourish Effects:**
+- `archivist_mark`: On ghost tick, reveals undiscovered tiles around player
+- `champion_edge`: On ghost tick, grants +2 max HP (one-time)
+
+**Ending Resolution:**
+- `resolve_ending(ledger, player_alive)` returns EndingId
+- Death → `DEATH_STANDARD`
+- Victory (no secret) → `VICTORY_STANDARD`
+- Victory + `SECRET_ENDING_ENABLED` flag → `VICTORY_SECRET` (unreachable until flag is set)
+
+**Implementation:**
+
+| File | Purpose |
+|------|---------|
+| `completion.py` | CompletionLedger, EndingId, VictoryLegacy, derive_victory_legacy(), resolve_ending() |
+| `engine.py` | Ledger initialization, ghost encounter tracking |
+| `combat_manager.py` | Kill tracking (regular + elite), damage tracking, warden defeats, lore/artifact pickup |
+| `level_manager.py` | Floor cleared tracking |
+| `serialization.py` | Ledger save/load |
+| `ghosts.py` | Uses derived legacy for victory imprints, secondary flourish application |
+
+**Validation Tests (test_completion_ledger.py):**
+- Serialization determinism
+- Legacy derivation determinism
+- Legacy rules (low/high combat + lore)
+- Hybrid tie-break (combat vs lore priority)
+- Ending resolution (death/victory/secret)
+- VictoryLegacyResult serialization
+
 ### Future Enhancements
 
 - Add zone-specific decoration patterns
