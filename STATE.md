@@ -2,7 +2,59 @@
 
 **Last Updated:** 2026-01-11
 **Branch:** develop
-**Version:** v5.6.0 (Core Loop Complete - Floor-Themed Enemies)
+**Version:** v5.7.0 (Game Integrity Validation Skill)
+
+---
+
+## v5.7.0 Changes (2026-01-11) - Game Integrity Skill
+
+### Game Integrity Validation Skill (`/game-integrity`)
+
+Added comprehensive validation skill to ensure all game systems remain consistent. Invoked via `/game-integrity` or trigger phrases like "validate all game systems".
+
+**17 Validation Steps:**
+
+| Step | Test | What It Validates |
+|------|------|-------------------|
+| 1 | Environment Check | Core modules compile cleanly |
+| 2 | Zone Validation | 8 floors have required zones, start zones exist |
+| 3 | Enemy Pool Validation | FLOOR_ENEMY_POOLS weights sum to 100, enemies exist |
+| 4 | Encounter Messages | All enemies have first-encounter text |
+| 5 | Dragon Constraint | Max 1 dragon per Floor 8 run |
+| 6 | Dungeon Structure | All rooms have zones assigned |
+| 7 | Lore Codex | 32 lore entries across 8 floors (4 per floor) |
+| 8 | Ghost System | 6 ghost types with zone biases and messages |
+| 9 | Artifact System | 3 artifacts, 3 vows with required data |
+| 10 | Completion Ledger | Serialization roundtrip, legacy derivation |
+| 11 | Skybox/Ceiling | Outdoor floors and open-air zones configured |
+| 12 | Canonical Matrix | Theme/boss/intro/pools/zones consistency |
+| 13 | Seed Determinism | Same seed produces identical dungeons |
+| 14 | Save/Load Roundtrip | Ledger, artifact, ghost state survives serialization |
+| 15 | Payload Contract | Frontend-required keys present in serializer |
+| 16 | Glyph Collision | 53 glyphs distinct (3 acceptable overlaps) |
+| 17 | Integration Test | Game launches without errors |
+
+**Skill Location:**
+- Primary: `skills/game-integrity/SKILL.md`
+- Mirror: `.claude/skills/game-integrity/SKILL.md`
+
+**Usage:**
+```
+/game-integrity
+# or
+"run game integrity checks"
+"validate all game systems"
+```
+
+### Future Roadmap Added
+
+Created `FUTURE_TODO.md` with Content Pass v1 roadmap:
+
+1. **Field Pulse Micro-Events** — 1 authored moment per floor
+2. **Micro-Event Codex Evidence** — collectible progress hooks
+3. **Extra Thematic Enemy Variety** — 1 spice enemy per floor
+4. **ICE Slide Mechanic** — Floor 5 polish
+5. **Secret Ending Hooks** — invisible flags for future content
 
 ---
 

@@ -2,7 +2,7 @@
 
 A terminal-based roguelike with procedural dungeons, first-person 3D view, multiplayer backend, and React web frontend.
 
-**Current Version:** v5.4.0 (Lore Codex System)
+**Current Version:** v5.7.0 (Game Integrity Validation Skill)
 
 ## Quick Start
 
