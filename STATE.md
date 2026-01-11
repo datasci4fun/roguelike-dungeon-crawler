@@ -48,6 +48,37 @@ Fixed missing boss spawn on floor 1:
 - Added `self.entity_manager.spawn_boss(self.dungeon, self.player)` to ensure boss always spawns
 - Verified: All 8 floors now spawn exactly 1 boss (40/40 test seeds pass)
 
+### 100% Completion Verification
+
+Verified that all collectibles spawn correctly and 100% completion is achievable:
+
+**Completion Requirements (Sealed Page):**
+
+| Category | Total | Weight | Verified |
+|----------|-------|--------|----------|
+| Floors Cleared | 8 | 25% | All spawn |
+| Wardens Defeated | 8 | 25% | All spawn (1 per floor) |
+| Lore Discovered | 32 | 25% | All spawn (4 per floor, 62-96% rate) |
+| Artifacts Collected | 3 | 15% | All spawn (15-38% rate per floor) |
+| Evidence Found | 16 | 10% | All spawn (2 per floor) |
+
+**Spawn Verification Tests:**
+
+| Test | Seeds | Result |
+|------|-------|--------|
+| Lore items | 50/floor | All 32 lore items spawn |
+| Artifacts | 200/floor | All 3 artifacts spawn |
+| Ghosts | 300×8 floors | All 6 ghost types spawn |
+| Evidence | 100×8 floors | All 16 evidence items spawn |
+| Zone evidence markers | 100×8 floors | 100% of floors have markers |
+| Bosses | 40 seeds | All 8 bosses spawn (1 per floor) |
+
+**Sealed Page Tracking:**
+- 0% → 100% percentage calculation verified
+- Weight formula: 25% floors + 25% wardens + 25% lore + 15% artifacts + 10% evidence
+- At 100%: Shows "The page remains sealed. Something else is required."
+- Incomplete: Shows "Condition: ???"
+
 ### Auto-Add Lore to Codex
 
 Lore items (scrolls/books) now go directly to the Lore Codex on pickup instead of taking up inventory space:
