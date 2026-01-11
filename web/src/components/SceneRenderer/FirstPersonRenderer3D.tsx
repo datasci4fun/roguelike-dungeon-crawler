@@ -656,17 +656,42 @@ export function FirstPersonRenderer3D({
       playerCeiling.position.set(0, WALL_HEIGHT, 0);
       geometryGroup.add(playerCeiling);
     } else {
-      // Open-air room: add a sky gradient plane high above
-      // Use a simple pale blue sky color for now
+      // Open-air room: add sky plane using skybox override or biome palette
+      const skyBiomeId = view.room_skybox_override || settings.biome;
+      const skyBiome = getBiome(skyBiomeId);
+
+      // Create gradient sky using biome ambient tint + fog color
       const skyGeometry = new THREE.PlaneGeometry(100, 100);
+
+      // Mix ambient tint (bright) with fog color (dark) for sky gradient feel
+      const skyR = Math.min(255, skyBiome.ambientTint[0] * 0.6 + 40);
+      const skyG = Math.min(255, skyBiome.ambientTint[1] * 0.6 + 40);
+      const skyB = Math.min(255, skyBiome.ambientTint[2] * 0.6 + 60);
+
       const skyMaterial = new THREE.MeshBasicMaterial({
-        color: 0x87CEEB, // Sky blue
+        color: new THREE.Color(skyR / 255, skyG / 255, skyB / 255),
         side: THREE.DoubleSide,
       });
       const skyPlane = new THREE.Mesh(skyGeometry, skyMaterial);
       skyPlane.rotation.x = Math.PI / 2;
       skyPlane.position.set(0, WALL_HEIGHT * 4, 0); // High above
       geometryGroup.add(skyPlane);
+
+      // Add horizon glow plane (lower, uses light color)
+      const horizonGeometry = new THREE.PlaneGeometry(120, 40);
+      const horizonR = skyBiome.lightColor[0] * 0.3;
+      const horizonG = skyBiome.lightColor[1] * 0.3;
+      const horizonB = skyBiome.lightColor[2] * 0.3;
+      const horizonMaterial = new THREE.MeshBasicMaterial({
+        color: new THREE.Color(horizonR / 255, horizonG / 255, horizonB / 255),
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.4,
+      });
+      const horizonPlane = new THREE.Mesh(horizonGeometry, horizonMaterial);
+      horizonPlane.rotation.x = Math.PI / 2 - 0.1; // Slight tilt
+      horizonPlane.position.set(0, WALL_HEIGHT * 2.5, -30); // At horizon
+      geometryGroup.add(horizonPlane);
     }
 
     // Add geometry based on actual view data (visible + explored memory)

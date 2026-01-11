@@ -277,6 +277,32 @@ BOSS_ABILITIES = {
         range=0,
         description='Burrows underground to reposition',
     ),
+
+    # The Regent abilities (Floor 4 - Mirror Valdris)
+    'royal_decree': BossAbility(
+        name='Royal Decree',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=5,
+        damage=0,
+        range=0,
+        description='Issues a decree that alters reality - summons oath-bound guards',
+    ),
+    'summon_guard': BossAbility(
+        name='Summon Guard',
+        ability_type=AbilityType.SUMMON,
+        cooldown=4,
+        damage=0,
+        range=0,
+        description='Summons an oath-bound skeleton guard',
+    ),
+    'counterfeit_crown': BossAbility(
+        name='Counterfeit Crown',
+        ability_type=AbilityType.SPECIAL,
+        cooldown=8,
+        damage=4,
+        range=3,
+        description='The false crown flashes, stunning nearby enemies',
+    ),
 }
 
 
@@ -329,6 +355,10 @@ def execute_ability(
         'summon_swarm': _execute_summon_swarm,
         'plague_bite': _execute_plague_bite,
         'burrow': _execute_burrow,
+        # Regent abilities
+        'royal_decree': _execute_royal_decree,
+        'summon_guard': _execute_summon_guard,
+        'counterfeit_crown': _execute_counterfeit_crown,
     }
 
     handler = handlers.get(ability_name)
@@ -919,3 +949,116 @@ def _execute_burrow(
             return True, f"The {caster.name} burrows underground and emerges nearby!", 0
 
     return False, "", 0
+
+
+# =============================================================================
+# The Regent abilities (Floor 4 - Mirror Valdris)
+# =============================================================================
+
+def _execute_royal_decree(
+    ability: BossAbility,
+    boss: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Issues a decree that summons oath-bound guards from the corners.
+
+    The Regent's signature ability - "Legitimacy by repetition."
+    Each decree summons 1-2 skeleton guards from room corners,
+    as if they were always meant to be there.
+    """
+    from .entities import Enemy
+    from ..core.constants import EnemyType
+
+    # Find the boss room's corners
+    current_room = dungeon.get_room_at(boss.x, boss.y)
+    if not current_room:
+        return False, "", 0
+
+    # Define corner positions within the room
+    corners = [
+        (current_room.x + 1, current_room.y + 1),  # Top-left
+        (current_room.x + current_room.width - 2, current_room.y + 1),  # Top-right
+        (current_room.x + 1, current_room.y + current_room.height - 2),  # Bottom-left
+        (current_room.x + current_room.width - 2, current_room.y + current_room.height - 2),  # Bottom-right
+    ]
+
+    num_guards = random.randint(1, 2)
+    spawned = 0
+    random.shuffle(corners)
+
+    for cx, cy in corners:
+        if spawned >= num_guards:
+            break
+        if (dungeon.is_walkable(cx, cy) and
+            not entity_manager.get_enemy_at(cx, cy) and
+            (cx != player.x or cy != player.y)):
+            # Summon oath-bound skeleton guard
+            guard = Enemy(cx, cy, enemy_type=EnemyType.SKELETON, is_elite=False)
+            guard.name = "Oath-Bound Guard"
+            guard.symbol = 'G'
+            entity_manager.enemies.append(guard)
+            spawned += 1
+
+    if spawned > 0:
+        decree_messages = [
+            "By royal decree, guards have always stood here!",
+            "The Regent rewrites reality - guards materialize!",
+            "It was always thus - guards appear from the corners!",
+        ]
+        return True, f"The Regent issues a decree: '{random.choice(decree_messages)}' ({spawned} guards summoned)", 0
+
+    return False, "", 0
+
+
+def _execute_summon_guard(
+    ability: BossAbility,
+    boss: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """Summons a single oath-bound skeleton guard near the Regent."""
+    from .entities import Enemy
+    from ..core.constants import EnemyType
+
+    # Find spawn position near the boss
+    for dx in range(-2, 3):
+        for dy in range(-2, 3):
+            if dx == 0 and dy == 0:
+                continue
+            nx, ny = boss.x + dx, boss.y + dy
+            if (dungeon.is_walkable(nx, ny) and
+                not entity_manager.get_enemy_at(nx, ny) and
+                (nx != player.x or ny != player.y)):
+                guard = Enemy(nx, ny, enemy_type=EnemyType.SKELETON, is_elite=False)
+                guard.name = "Oath-Bound Guard"
+                guard.symbol = 'G'
+                entity_manager.enemies.append(guard)
+                return True, f"The {boss.name} summons an oath-bound guard!", 0
+
+    return False, "", 0
+
+
+def _execute_counterfeit_crown(
+    ability: BossAbility,
+    boss: 'Enemy',
+    player: 'Player',
+    dungeon: 'Dungeon',
+    entity_manager: 'EntityManager',
+) -> Tuple[bool, str, int]:
+    """The Regent's crown flashes with false authority, stunning and damaging nearby.
+
+    This represents the "counterfeit reign" - the crown's power is borrowed/stolen,
+    but it still has real effects.
+    """
+    from ..core.constants import StatusEffectType
+
+    distance = max(abs(player.x - boss.x), abs(player.y - boss.y))
+    if distance <= ability.range:
+        damage = player.take_damage(ability.damage)
+        stun_msg = player.apply_status_effect(StatusEffectType.STUN, boss.name)
+        return True, f"The Regent's counterfeit crown blazes with stolen authority! {damage} damage! {stun_msg}", damage
+
+    return True, f"The Regent's crown flashes, but you're too far to be affected.", 0

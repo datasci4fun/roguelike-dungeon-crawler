@@ -966,13 +966,24 @@ class GameSessionManager:
         current_room = dungeon.get_room_at(player.x, player.y)
         zone_id = current_room.zone if current_room else "corridor"
 
-        # Determine ceiling state based on zone (Floor 4 courtyards are open-air)
+        # Determine ceiling state and skybox override based on floor/zone
         room_has_ceiling = True
         room_skybox_override = None
 
-        if dungeon.level == 4 and zone_id == "courtyard_squares":
+        # Open-air zones with biome-appropriate skies
+        open_air_zones = {
+            # Floor 3: Forest canopy halls have open sky (forest palette)
+            (3, "canopy_halls"): "forest",
+            # Floor 4: Mirror Valdris courtyards - eerie crypt-like sky
+            (4, "courtyard_squares"): "crypt",
+            # Floor 8: Dragon's hoard - volcanic/crystal sky
+            (8, "dragons_hoard"): "crystal",
+        }
+
+        zone_key = (dungeon.level, zone_id)
+        if zone_key in open_air_zones:
             room_has_ceiling = False
-            room_skybox_override = "dungeon"  # Use dungeon palette for now
+            room_skybox_override = open_air_zones[zone_key]
 
         return {
             "rows": rows,
