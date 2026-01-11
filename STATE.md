@@ -8,6 +8,46 @@
 
 ## v5.5.1 Changes (2026-01-11)
 
+### Dev/Testing Cheat Commands
+
+Hotkeys F1-F7 for easier testing:
+
+| Key | Command | Effect |
+|-----|---------|--------|
+| F1 | God Mode | Toggle invincibility (damage ignored) |
+| F2 | Kill All | Kill all enemies on current floor |
+| F3 | Heal | Restore HP to maximum |
+| F4 | Next Floor | Skip to next floor immediately |
+| F5 | Reveal Map | Reveal entire floor (all tiles visible) |
+| F6 | Spawn Lore | Spawn a random lore item near player |
+| F7 | Show Zones | Toggle zone debug overlay (shows all room zones) |
+
+**Implementation:**
+- `src/core/commands.py` - CHEAT_* CommandType enum values
+- `server/app/services/game_session.py` - `_process_cheat()` method
+- `src/entities/entities.py` - God mode check in `Player.take_damage()`
+- `web/src/pages/Play.tsx` - F1-F7 key handlers
+
+### Zone Debug Overlay (F7)
+
+Press F7 to toggle a debug panel showing all zones on the current floor:
+- Lists all zones with room counts
+- Highlights current player zone in green
+- Useful for verifying zone assignment
+
+**Zone Validation Results (5 seeds × 8 floors = ALL PASSED):**
+- All required zones spawn on every floor
+- Start zones spawn correctly
+- Boss approach zones spawn (2 per floor)
+- Optional zones vary with generation
+
+### Boss Spawn Fix
+
+Fixed missing boss spawn on floor 1:
+- `start_new_game()` in `engine.py` was calling `spawn_enemies()` and `spawn_items()` but forgot `spawn_boss()`
+- Added `self.entity_manager.spawn_boss(self.dungeon, self.player)` to ensure boss always spawns
+- Verified: All 8 floors now spawn exactly 1 boss (40/40 test seeds pass)
+
 ### Auto-Add Lore to Codex
 
 Lore items (scrolls/books) now go directly to the Lore Codex on pickup instead of taking up inventory space:
