@@ -829,9 +829,9 @@ body.export-mode .header {
 }
 
 .presentation.export-mode .export-slide-wrapper {
-  page-break-after: always;
   page-break-inside: avoid;
-  min-height: 100vh;
+  break-inside: avoid;
+  min-height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -952,10 +952,21 @@ body.export-mode .header {
     display: none !important;
   }
 
+  .presentation.export-mode .export-slides {
+    margin-top: 0 !important;
+  }
+
   .presentation.export-mode .export-slide-wrapper {
     background: white !important;
+    border-bottom: 1px solid #ccc !important;
+    min-height: auto !important;
+    padding: 2rem !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .presentation.export-mode .export-slide-wrapper:last-child {
     border-bottom: none !important;
-    min-height: 100vh;
   }
 
   .presentation.export-mode .slide {
