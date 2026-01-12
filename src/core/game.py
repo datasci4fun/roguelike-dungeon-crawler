@@ -445,8 +445,7 @@ class Game:
             self.engine.ui_mode = UIMode.GAME
             return
 
-        # v6.0.1 stub: Simple text-based battle display
-        # Full battle renderer in v6.0.2+
+        # v6.0.3: Text-based battle display with reinforcement countdown
         self.stdscr.clear()
         max_y, max_x = self.stdscr.getmaxyx()
 
@@ -463,12 +462,26 @@ class Game:
             self.stdscr.addstr(6, 2, f"Player HP: {battle.player.hp}/{battle.player.max_hp}")
 
         # Enemy info
-        self.stdscr.addstr(8, 2, f"Enemies: {len(battle.get_living_enemies())}")
-        for i, enemy in enumerate(battle.get_living_enemies()[:5]):
-            self.stdscr.addstr(9 + i, 4, f"- Enemy {enemy.entity_id[:8]}... HP: {enemy.hp}/{enemy.max_hp}")
+        living_enemies = battle.get_living_enemies()
+        self.stdscr.addstr(8, 2, f"Enemies: {len(living_enemies)}")
+        for i, enemy in enumerate(living_enemies[:4]):
+            self.stdscr.addstr(9 + i, 4, f"- HP: {enemy.hp}/{enemy.max_hp}")
+
+        # v6.0.3: Reinforcement countdown UI
+        reinf_summary = self.engine.battle_manager.get_reinforcement_summary()
+        if reinf_summary:
+            reinf_y = 14
+            cap_str = f"Pressure: {battle.reinforcements_spawned}/{battle.max_reinforcements}"
+            self.stdscr.addstr(reinf_y, 2, f"--- INCOMING {cap_str} ---")
+            for i, group in enumerate(reinf_summary[:4]):
+                elite_mark = " *" if group['has_elite'] else ""
+                count_str = f"x{group['count']}" if group['count'] > 1 else ""
+                line = f"  {group['type']}{count_str}{elite_mark} - {group['turns']} turns"
+                if reinf_y + 1 + i < max_y - 6:
+                    self.stdscr.addstr(reinf_y + 1 + i, 2, line[:max_x - 4])
 
         # Instructions
-        self.stdscr.addstr(max_y - 4, 2, "[v6.0.1 STUB] Press any key to auto-win battle")
+        self.stdscr.addstr(max_y - 4, 2, "[v6.0.3 STUB] Press any key to auto-win battle")
         self.stdscr.addstr(max_y - 3, 2, "Press Q or ESC to flee")
 
         # Recent messages

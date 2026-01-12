@@ -78,34 +78,61 @@ class BattleEntity:
 
 
 @dataclass
-class Reinforcement:
+class PendingReinforcement:
     """
-    A reinforcement that will join the battle after N turns.
+    A reinforcement queued to join the battle after N turns.
 
     Used for "Quest 64 pressure" - nearby enemies join battle
-    on a countdown, telegraphed to player.
+    on a countdown, telegraphed to player. Snapshot taken at battle start.
     """
     entity_id: str                    # ID of enemy that will join
-    turns_until_arrival: int          # Countdown (never 0 at spawn)
+    enemy_name: str                   # Display name (e.g., "Goblin", "Rat")
+    enemy_type: str                   # EnemyType name for grouping
+    is_elite: bool                    # Elite status for UI display
+    turns_until_arrival: int          # Countdown (min 2, never 0 at spawn)
     world_x: int                      # Original world position
     world_y: int                      # Original world position
+
+    # Stats snapshot for when they join
+    hp: int
+    max_hp: int
+    attack: int
+    defense: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             'entity_id': self.entity_id,
+            'enemy_name': self.enemy_name,
+            'enemy_type': self.enemy_type,
+            'is_elite': self.is_elite,
             'turns_until_arrival': self.turns_until_arrival,
             'world_x': self.world_x,
             'world_y': self.world_y,
+            'hp': self.hp,
+            'max_hp': self.max_hp,
+            'attack': self.attack,
+            'defense': self.defense,
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Reinforcement':
+    def from_dict(cls, data: Dict[str, Any]) -> 'PendingReinforcement':
         return cls(
             entity_id=data['entity_id'],
+            enemy_name=data['enemy_name'],
+            enemy_type=data['enemy_type'],
+            is_elite=data.get('is_elite', False),
             turns_until_arrival=data['turns_until_arrival'],
             world_x=data['world_x'],
             world_y=data['world_y'],
+            hp=data['hp'],
+            max_hp=data['max_hp'],
+            attack=data['attack'],
+            defense=data.get('defense', 0),
         )
+
+
+# Backwards compatibility alias
+Reinforcement = PendingReinforcement
 
 
 @dataclass
@@ -131,9 +158,18 @@ class BattleState:
     enemies: List[BattleEntity] = field(default_factory=list)
 
     # Reinforcement queue (v6.0.3)
-    reinforcements: List[Reinforcement] = field(default_factory=list)
+    reinforcements: List[PendingReinforcement] = field(default_factory=list)
     reinforcement_edges: List[Tuple[int, int]] = field(default_factory=list)  # Entry points
     max_reinforcements: int = 3       # Cap on total reinforcements
+    reinforcements_spawned: int = 0   # Track how many have joined
+
+    # Encounter origin (for reinforcement edge selection)
+    encounter_origin: Tuple[int, int] = (0, 0)  # World coords where battle started
+
+    # Outside time / noise tracking (v6.0.3)
+    # Accumulates based on player actions; affects reinforcement countdown
+    outside_time: float = 0.0         # Time accumulated from actions
+    noise_level: float = 0.0          # Current noise (decays, affects arrival)
 
     # Turn tracking
     turn_number: int = 0
@@ -156,6 +192,10 @@ class BattleState:
             'reinforcements': [r.to_dict() for r in self.reinforcements],
             'reinforcement_edges': list(self.reinforcement_edges),
             'max_reinforcements': self.max_reinforcements,
+            'reinforcements_spawned': self.reinforcements_spawned,
+            'encounter_origin': list(self.encounter_origin),
+            'outside_time': self.outside_time,
+            'noise_level': self.noise_level,
             'turn_number': self.turn_number,
             'outcome': self.outcome.name,
             'seed': self.seed,
@@ -172,6 +212,10 @@ class BattleState:
             zone_id=data.get('zone_id'),
             floor_level=data.get('floor_level', 1),
             max_reinforcements=data.get('max_reinforcements', 3),
+            reinforcements_spawned=data.get('reinforcements_spawned', 0),
+            encounter_origin=tuple(data.get('encounter_origin', [0, 0])),
+            outside_time=data.get('outside_time', 0.0),
+            noise_level=data.get('noise_level', 0.0),
             turn_number=data.get('turn_number', 0),
             outcome=BattleOutcome[data.get('outcome', 'PENDING')],
             seed=data.get('seed', 0),
@@ -181,7 +225,7 @@ class BattleState:
             state.player = BattleEntity.from_dict(data['player'])
 
         state.enemies = [BattleEntity.from_dict(e) for e in data.get('enemies', [])]
-        state.reinforcements = [Reinforcement.from_dict(r) for r in data.get('reinforcements', [])]
+        state.reinforcements = [PendingReinforcement.from_dict(r) for r in data.get('reinforcements', [])]
         state.reinforcement_edges = [tuple(e) for e in data.get('reinforcement_edges', [])]
 
         return state
