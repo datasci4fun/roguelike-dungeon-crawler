@@ -154,12 +154,25 @@ export interface GameEvent {
   data: Record<string, unknown>;
 }
 
+// v6.1: Transition state for cinematic mode changes
+export type TransitionKind = 'ENGAGE' | 'WIN' | 'FLEE' | 'DEFEAT' | 'BOSS_VICTORY';
+
+export interface TransitionState {
+  active: boolean;
+  kind: TransitionKind | null;
+  elapsed_ms: number;
+  duration_ms: number;
+  can_skip: boolean;
+}
+
 export interface GameState {
   type: string;
   session_id: string;
   game_state: 'TITLE' | 'INTRO' | 'PLAYING' | 'DEAD' | 'VICTORY' | 'QUIT';
   ui_mode: string;
   turn: number;
+  // v6.1: Transition state
+  transition?: TransitionState;
   player?: Player;
   dungeon?: Dungeon;
   enemies?: Enemy[];

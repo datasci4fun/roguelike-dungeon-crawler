@@ -6,6 +6,96 @@ subscriber like a web client, logger, etc.)
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import List, Any, Optional
+import time
+
+
+class TransitionKind(Enum):
+    """Types of transitions between game modes (v6.1)."""
+    ENGAGE = auto()       # Exploration -> Battle start
+    WIN = auto()          # Battle victory -> Exploration
+    FLEE = auto()         # Battle flee -> Exploration
+    DEFEAT = auto()       # Battle defeat -> Death cutscene
+    BOSS_VICTORY = auto() # Floor 8 boss -> Victory cutscene
+
+
+# Default transition durations (milliseconds)
+TRANSITION_DURATIONS = {
+    TransitionKind.ENGAGE: 600,
+    TransitionKind.WIN: 400,
+    TransitionKind.FLEE: 300,
+    TransitionKind.DEFEAT: 0,      # Death camera handles it
+    TransitionKind.BOSS_VICTORY: 800,
+}
+
+
+@dataclass
+class TransitionState:
+    """Current transition state (v6.1).
+
+    When active=True, input is locked except for skip (if can_skip).
+    """
+    active: bool = False
+    kind: Optional[TransitionKind] = None
+    started_at: float = 0.0       # time.time() when started
+    duration_ms: int = 0          # Total duration in ms
+    can_skip: bool = True         # Whether user can skip with any key
+
+    def start(self, kind: TransitionKind, duration_ms: int = None, can_skip: bool = True):
+        """Start a transition."""
+        self.active = True
+        self.kind = kind
+        self.started_at = time.time()
+        self.duration_ms = duration_ms if duration_ms is not None else TRANSITION_DURATIONS.get(kind, 500)
+        self.can_skip = can_skip
+
+    def elapsed_ms(self) -> int:
+        """Get milliseconds elapsed since transition started."""
+        if not self.active:
+            return 0
+        return int((time.time() - self.started_at) * 1000)
+
+    def is_complete(self) -> bool:
+        """Check if transition duration has elapsed."""
+        return self.elapsed_ms() >= self.duration_ms
+
+    def skip(self):
+        """Skip the current transition (if allowed)."""
+        if self.can_skip:
+            self.end()
+
+    def end(self):
+        """End the current transition."""
+        self.active = False
+        self.kind = None
+        self.started_at = 0.0
+        self.duration_ms = 0
+        self.can_skip = True
+
+    def to_dict(self) -> dict:
+        """Serialize for API/frontend."""
+        return {
+            "active": self.active,
+            "kind": self.kind.name if self.kind else None,
+            "elapsed_ms": self.elapsed_ms(),
+            "duration_ms": self.duration_ms,
+            "can_skip": self.can_skip,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'TransitionState':
+        """Deserialize from saved state."""
+        state = cls()
+        if data.get("active"):
+            kind_name = data.get("kind")
+            if kind_name:
+                state.kind = TransitionKind[kind_name]
+            state.active = True
+            state.duration_ms = data.get("duration_ms", 500)
+            state.can_skip = data.get("can_skip", True)
+            # Restore timing - assume we're resuming mid-transition
+            elapsed = data.get("elapsed_ms", 0)
+            state.started_at = time.time() - (elapsed / 1000.0)
+        return state
 
 
 class EventType(Enum):
@@ -48,6 +138,10 @@ class EventType(Enum):
     # Battle mode events (v6.0)
     BATTLE_START = auto()    # Entered tactical battle mode
     BATTLE_END = auto()      # Exited battle mode (victory/defeat/flee)
+
+    # Transition events (v6.1)
+    TRANSITION_START = auto()  # Transition began (kind in data)
+    TRANSITION_END = auto()    # Transition completed or skipped
 
 
 @dataclass

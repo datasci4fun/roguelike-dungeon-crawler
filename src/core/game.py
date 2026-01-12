@@ -300,6 +300,11 @@ class Game:
 
     def _game_loop(self):
         """Main playing state loop."""
+        # v6.1: Handle active transitions
+        if self.engine.transition.active:
+            self._transition_loop()
+            return
+
         # Handle different UI modes
         if self.engine.ui_mode == UIMode.INVENTORY:
             self._inventory_loop()
@@ -436,6 +441,45 @@ class Game:
         max_y, _ = self.stdscr.getmaxyx()
         visible_lines = max_y - 7
         self.engine.process_message_log_command(command, visible_lines)
+
+    def _transition_loop(self):
+        """Handle transition state (v6.1).
+
+        During a transition, input is locked except for skip (if allowed).
+        For terminal, we just show a brief message and wait for completion.
+        """
+        import time
+
+        transition = self.engine.transition
+
+        # Display transition message
+        self.stdscr.clear()
+        max_y, max_x = self.stdscr.getmaxyx()
+
+        # Simple text display for terminal
+        kind_name = transition.kind.name if transition.kind else "UNKNOWN"
+        msg = f"[ {kind_name} ]"
+        hint = "(Press any key to skip)" if transition.can_skip else ""
+
+        y = max_y // 2
+        self.stdscr.addstr(y, max(0, (max_x - len(msg)) // 2), msg)
+        if hint:
+            self.stdscr.addstr(y + 2, max(0, (max_x - len(hint)) // 2), hint)
+        self.stdscr.refresh()
+
+        # Non-blocking input check
+        self.stdscr.timeout(50)  # 50ms timeout
+        key = self.stdscr.getch()
+
+        # Check for skip
+        if key != -1 and transition.can_skip:
+            self.engine.skip_transition()
+        else:
+            # Tick transition to check if duration elapsed
+            self.engine.tick_transition()
+
+        # Restore normal timeout
+        self.stdscr.timeout(100)
 
     def _battle_loop(self):
         """Handle tactical battle mode UI (v6.0.4)."""

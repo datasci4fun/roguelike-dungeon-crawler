@@ -1,0 +1,142 @@
+/* TransitionCurtain.css - v6.1 Cinematic transition overlay */
+
+.transition-curtain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 175; /* Above BattleOverlay (100), below cutscenes (200+) */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+}
+
+.curtain-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+}
+
+/* Letterbox bars for cinematic feel */
+.letterbox-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  background: #000;
+  z-index: 1;
+  transition: height 0.3s ease-out;
+}
+
+.letterbox-top {
+  top: 0;
+}
+
+.letterbox-bottom {
+  bottom: 0;
+}
+
+/* Letterbox active - show bars */
+.transition-curtain.letterbox .letterbox-bar {
+  height: 8vh; /* Adjust for desired letterbox effect */
+}
+
+/* Transition indicator text */
+.transition-indicator {
+  position: relative;
+  z-index: 2;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 1.5rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  animation: pulse-text 1s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Skip hint */
+.skip-hint {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  animation: fade-in-hint 0.5s ease-out;
+}
+
+@keyframes fade-in-hint {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Phase-specific styles */
+.transition-curtain.idle {
+  pointer-events: none;
+}
+
+.transition-curtain.fade_in {
+  pointer-events: auto;
+}
+
+.transition-curtain.hold {
+  pointer-events: auto;
+}
+
+.transition-curtain.fade_out {
+  pointer-events: none;
+}
+
+/* Ensure curtain blocks interaction during active transitions */
+.transition-curtain[style*="pointer-events: auto"] {
+  cursor: default;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .transition-indicator {
+    font-size: 1.2rem;
+    letter-spacing: 0.2em;
+  }
+
+  .skip-hint {
+    font-size: 0.8rem;
+    bottom: 1.5rem;
+  }
+
+  .transition-curtain.letterbox .letterbox-bar {
+    height: 5vh;
+  }
+}
+
+/* High contrast mode - ensure curtain is truly black */
+@media (prefers-contrast: high) {
+  .curtain-backdrop {
+    background: #000000;
+  }
+}

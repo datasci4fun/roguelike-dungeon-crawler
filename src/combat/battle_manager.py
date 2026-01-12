@@ -16,7 +16,7 @@ from .battle_actions import (
 )
 from .arena_templates import pick_template, compile_template, generate_deterministic_seed
 from ..core.constants import UIMode, DungeonTheme, LEVEL_THEMES
-from ..core.events import EventType, EventQueue
+from ..core.events import EventType, EventQueue, TransitionKind
 
 if TYPE_CHECKING:
     from ..core.engine import GameEngine
@@ -226,6 +226,10 @@ class BattleManager:
 
         # Store battle state in engine
         self.engine.battle = battle
+
+        # v6.1: Start engage transition before switching UI mode
+        self.engine.start_transition(TransitionKind.ENGAGE)
+
         self.engine.ui_mode = UIMode.BATTLE
 
         # Emit battle start event
@@ -263,16 +267,28 @@ class BattleManager:
 
         battle.outcome = outcome
 
+        # v6.1: Determine transition kind based on outcome
+        is_floor_8_boss = battle.floor_level == 8 and getattr(battle, 'is_boss_battle', False)
+
         # Sync battle results back to world state
         if outcome == BattleOutcome.VICTORY:
             self._apply_victory_results(battle)
             self.engine.add_message("Victory! All enemies defeated.")
+            # v6.1: Start appropriate victory transition
+            if is_floor_8_boss:
+                self.engine.start_transition(TransitionKind.BOSS_VICTORY)
+            else:
+                self.engine.start_transition(TransitionKind.WIN)
         elif outcome == BattleOutcome.DEFEAT:
             self._apply_defeat_results(battle)
             self.engine.add_message("Defeated in battle...")
+            # v6.1: Defeat transition (0ms, death camera handles visuals)
+            self.engine.start_transition(TransitionKind.DEFEAT, can_skip=False)
         elif outcome == BattleOutcome.FLEE:
             self._apply_flee_results(battle)
             self.engine.add_message("Escaped from battle!")
+            # v6.1: Flee transition
+            self.engine.start_transition(TransitionKind.FLEE)
 
         # Emit battle end event
         if self.events:
