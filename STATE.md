@@ -1,8 +1,96 @@
 # Project State
 
-**Last Updated:** 2026-01-12
-**Branch:** develop
-**Version:** v6.1.0 (Cinematic Glue) - SHIPPED
+**Last Updated:** 2026-01-11
+**Branch:** feature/v6.2-boss-heuristics
+**Version:** v6.2.0 (Tactical Depth) - IN PROGRESS
+
+---
+
+## v6.2.0 IN PROGRESS (2026-01-11) - Tactical Depth
+
+**Branch:** `feature/v6.2-boss-heuristics` (Slice 3 complete, ready to merge)
+
+### Core Concept
+**Deterministic AI scoring and boss-specific heuristics for learnable, fair combat.**
+
+All enemies use numeric scoring to select actions. Bosses layer signature abilities on top. Same seed + same state = same action, always.
+
+### Completed Slices
+
+#### Slice 1: AI Scoring Foundation
+- `enumerate_candidate_actions()` - lists legal MOVE/ATTACK/WAIT
+- `score_action()` - deterministic numeric scoring
+- `choose_action()` - picks best with stable tie-break
+
+**Scoring Weights:**
+| Weight | Value | Description |
+|--------|-------|-------------|
+| W_KILL | 80 | Kill shot priority |
+| W_DMG | 2.5 | Per HP damage |
+| W_ADJACENCY_MELEE | 18 | Melee wants adjacency |
+| W_RANGED_DIST | 12 | Ranged prefers distance 4 |
+| W_TOO_CLOSE_PENALTY | 25 | Ranged penalty for dist 1 |
+
+#### Slice 2: Hazard Intelligence
+- `min_cost_path_hazard()` - BFS/Dijkstra with hazard costs
+- `is_tile_hazard()` - check if tile is dangerous
+- `player_safe_escape_count()` - count player's safe options
+
+**Hazard Costs:**
+| Tile | Cost | Description |
+|------|------|-------------|
+| LAVA (~) | 120 | Nearly impassable |
+| POISON (!) | 55 | High penalty |
+| DEEP_WATER (≈) | 30 | Moderate penalty |
+| ICE (=) | 18 | Minor penalty |
+
+**Pressure Scoring:**
+- W_EXIT_HAZARD = 15 (bonus for leaving hazard)
+- W_STAY_HAZARD = 40 (penalty for staying)
+- PRESSURE_WEIGHT = 4 (melee cornering bonus)
+
+#### Slice 3: Boss Heuristics
+Priority-based rule system for signature boss behaviors:
+
+| Boss | Signature Abilities |
+|------|---------------------|
+| Regent | Royal Decree (summon guards), Counterfeit Crown (debuff) |
+| Rat King | Summon Swarm, Plague Bite, Burrow (escape) |
+| Spider Queen | Web Trap, Poison Bite, Summon Spiders |
+| Frost Giant | Freeze Ground, Ice Blast |
+| Arcane Keeper | Teleport (when adjacent), Arcane Bolt |
+| Flame Lord | Lava Pool, Inferno, Fire Breath |
+| Dragon Emperor | Dragon Fear (round 1), Tail Sweep, Fire Breath |
+
+**Key Features:**
+- Rule priority system with predicate-based activation
+- Cooldown tracking per boss ability
+- Falls back to ai_scoring when no rule matches
+- Deterministic: same state → same action
+- Bosses avoid stepping into lava unless killshot
+
+### Implementation Files
+
+| File | Purpose |
+|------|---------|
+| `src/combat/ai_scoring.py` | Core AI scoring (Slices 1 & 2) |
+| `src/combat/boss_heuristics.py` | Boss decision rules (Slice 3) |
+| `src/combat/battle_actions.py` | Boss ability definitions |
+| `src/combat/battle_manager.py` | Integration layer |
+| `tests/test_ai_scoring.py` | AI scoring tests (28 tests) |
+| `tests/test_boss_heuristics.py` | Boss behavior tests |
+
+### Test Results
+All 28 tests pass:
+- Determinism tests (same state → same action)
+- Hazard avoidance tests
+- Kill shot priority tests
+- Position scoring tests
+- Boss-specific behavior tests
+
+### Next Steps
+- Merge to develop
+- Decide on Slice 4: Ranged policy vs Line of Sight
 
 ---
 

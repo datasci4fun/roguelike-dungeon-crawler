@@ -15,7 +15,11 @@ from .battle_actions import (
     manhattan_distance, create_status_effect, BATTLE_MOVE_RANGE
 )
 from .arena_templates import pick_template, compile_template, generate_deterministic_seed
-from ..core.constants import UIMode, DungeonTheme, LEVEL_THEMES
+from .ai_scoring import (
+    choose_action, get_enemy_ai_type, execute_ai_action, CandidateType
+)
+from .boss_heuristics import get_boss_action_with_fallback, compute_boss_action_hash
+from ..core.constants import UIMode, DungeonTheme, LEVEL_THEMES, AIBehavior, BossType
 from ..core.events import EventType, EventQueue, TransitionKind
 
 if TYPE_CHECKING:
@@ -803,49 +807,249 @@ class BattleManager:
             self._enemy_take_turn(enemy)
 
     def _enemy_take_turn(self, enemy: BattleEntity) -> None:
-        """Execute a single enemy's turn."""
+        """Execute a single enemy's turn using v6.2 AI scoring system."""
         battle = self.engine.battle
         player = battle.player
 
         if player is None or player.hp <= 0:
             return
 
-        # Check if adjacent to player (can attack)
-        dist = manhattan_distance(
-            enemy.arena_x, enemy.arena_y,
-            player.arena_x, player.arena_y
+        # v6.2: Get AI type for this enemy
+        ai_type = get_enemy_ai_type(enemy.entity_id, self.engine)
+
+        # v6.2 Slice 3: Check if this is a boss and use boss heuristics
+        boss_type = self._get_boss_type(enemy)
+        if boss_type is not None:
+            action = get_boss_action_with_fallback(battle, enemy, boss_type, ai_type)
+        else:
+            # Regular enemy: use standard AI scoring
+            action = choose_action(battle, enemy, ai_type)
+
+        # Execute the chosen action
+        self._execute_enemy_action(enemy, player, action)
+
+    def _get_boss_type(self, enemy: BattleEntity) -> Optional[BossType]:
+        """Get boss type for an enemy entity, or None if not a boss."""
+        # Look up the world entity to check if it's a boss
+        if not hasattr(self.engine, 'entity_manager'):
+            return None
+
+        for world_enemy in self.engine.entity_manager.enemies:
+            if str(id(world_enemy)) == enemy.entity_id:
+                if getattr(world_enemy, 'is_boss', False):
+                    # Get boss type from world enemy
+                    return getattr(world_enemy, 'boss_type', None)
+        return None
+
+    def _execute_enemy_action(
+        self,
+        enemy: BattleEntity,
+        player: BattleEntity,
+        action: 'CandidateAction'
+    ) -> None:
+        """Execute a chosen enemy action (v6.2 unified action handler)."""
+        battle = self.engine.battle
+
+        if action.action_type == CandidateType.ATTACK:
+            # Execute attack on player
+            self._execute_enemy_attack(enemy, player)
+
+        elif action.action_type == CandidateType.MOVE:
+            # Move to chosen tile
+            new_x, new_y = execute_ai_action(battle, enemy, action)
+            if (new_x, new_y) != (enemy.arena_x, enemy.arena_y):
+                enemy.arena_x = new_x
+                enemy.arena_y = new_y
+                # Check hazards on the new tile
+                self._check_tile_hazards(enemy, new_x, new_y)
+
+        elif action.action_type == CandidateType.ABILITY:
+            # Execute boss ability
+            self._execute_boss_ability(enemy, player, action)
+
+        # WAIT does nothing (enemy skips turn)
+
+    def _execute_boss_ability(
+        self,
+        boss: BattleEntity,
+        player: BattleEntity,
+        action: 'CandidateAction'
+    ) -> None:
+        """Execute a boss's special ability (v6.2 Slice 3)."""
+        battle = self.engine.battle
+        ability_action = action.battle_action
+
+        if ability_action is None:
+            return
+
+        # Set cooldown for the ability
+        from .battle_actions import (
+            REGENT_ABILITIES, RAT_KING_ABILITIES, SPIDER_QUEEN_ABILITIES,
+            FROST_GIANT_ABILITIES, ARCANE_KEEPER_ABILITIES, FLAME_LORD_ABILITIES,
+            DRAGON_EMPEROR_ABILITIES, BattleAction
         )
 
-        if dist == 1:
-            # Attack player (v6.0.5: pulse amplifies enemy damage)
-            defense = player.get_effective_defense()
-            base_damage = max(1, enemy.attack - defense)
-            pulse_amp = self._get_pulse_amplification()
-            damage = int(base_damage * pulse_amp)
-            player.hp -= damage
+        # Find ability definition to get cooldown
+        all_boss_abilities = {
+            **REGENT_ABILITIES, **RAT_KING_ABILITIES, **SPIDER_QUEEN_ABILITIES,
+            **FROST_GIANT_ABILITIES, **ARCANE_KEEPER_ABILITIES, **FLAME_LORD_ABILITIES,
+            **DRAGON_EMPEROR_ABILITIES
+        }
 
-            if self.events:
-                self.events.emit(
-                    EventType.DAMAGE_NUMBER,
-                    x=player.arena_x,
-                    y=player.arena_y,
-                    amount=damage
-                )
-                self.events.emit(EventType.HIT_FLASH, entity=player)
+        ability_def = all_boss_abilities.get(ability_action)
+        if ability_def:
+            boss.cooldowns[ability_action.name] = ability_def.cooldown
 
-            self.engine.add_message(f"Enemy hits you for {damage}!")
+        # Execute ability effects based on type
+        ability_name = ability_action.name
 
-            # v6.0.5.5: Check for Champion ghost assist
-            self._check_champion_assist(player)
+        # Movement abilities (BURROW, TELEPORT)
+        if ability_action in {BattleAction.BURROW, BattleAction.TELEPORT}:
+            if action.target_pos:
+                boss.arena_x, boss.arena_y = action.target_pos
+                self.engine.add_message(f"Boss uses {ability_name}!")
 
-            if player.hp <= 0:
-                self._handle_entity_death(player)
+        # Summon abilities
+        elif ability_action in {
+            BattleAction.ROYAL_DECREE, BattleAction.SUMMON_GUARD,
+            BattleAction.SUMMON_SWARM, BattleAction.SUMMON_SPIDERS
+        }:
+            self._boss_summon_minions(boss, ability_action)
+
+        # Damage/debuff abilities
+        elif ability_action in {
+            BattleAction.PLAGUE_BITE, BattleAction.POISON_BITE,
+            BattleAction.FIRE_BREATH, BattleAction.ICE_BLAST,
+            BattleAction.ARCANE_BOLT, BattleAction.TAIL_SWEEP
+        }:
+            self._boss_attack_ability(boss, player, ability_action, ability_def)
+
+        # AoE/control abilities
+        elif ability_action in {
+            BattleAction.COUNTERFEIT_CROWN, BattleAction.WEB_TRAP,
+            BattleAction.DRAGON_FEAR, BattleAction.FREEZE_GROUND,
+            BattleAction.INFERNO
+        }:
+            self._boss_control_ability(boss, player, ability_action, ability_def)
+
+        # Hazard creation
+        elif ability_action == BattleAction.LAVA_POOL:
+            self._boss_create_hazard(boss, ability_action)
+
         else:
-            # Move toward player
-            self._enemy_move_toward_player(enemy)
+            self.engine.add_message(f"Boss uses {ability_name}!")
+
+    def _boss_summon_minions(self, boss: BattleEntity, ability: 'BattleAction') -> None:
+        """Handle boss summon abilities."""
+        from .battle_actions import BattleAction
+
+        summon_count = 1
+        if ability == BattleAction.ROYAL_DECREE:
+            summon_count = 2
+        elif ability == BattleAction.SUMMON_SWARM:
+            summon_count = 2
+
+        self.engine.add_message(f"Boss summons reinforcements!")
+        # Note: Actual minion spawning would require integration with reinforcement system
+        # For now, just log the message
+
+    def _boss_attack_ability(
+        self,
+        boss: BattleEntity,
+        player: BattleEntity,
+        ability: 'BattleAction',
+        ability_def
+    ) -> None:
+        """Handle boss attack abilities."""
+        if ability_def is None:
+            return
+
+        # Calculate damage
+        base_damage = boss.attack
+        damage_mult = ability_def.damage_mult if ability_def else 1.0
+        defense = player.get_effective_defense()
+        damage = max(1, int(base_damage * damage_mult) - defense)
+        player.hp -= damage
+
+        if self.events:
+            self.events.emit(
+                EventType.DAMAGE_NUMBER,
+                x=player.arena_x,
+                y=player.arena_y,
+                amount=damage
+            )
+            self.events.emit(EventType.HIT_FLASH, entity=player)
+
+        self.engine.add_message(f"Boss uses {ability.name} for {damage} damage!")
+
+        # Apply status effect if any
+        if ability_def and ability_def.effect:
+            effect = create_status_effect(ability_def.effect, ability_def.effect_duration)
+            if effect:
+                player.add_status(effect.to_dict())
+                self.engine.add_message(f"Player is affected by {ability_def.effect}!")
+
+        if player.hp <= 0:
+            self._handle_entity_death(player)
+
+    def _boss_control_ability(
+        self,
+        boss: BattleEntity,
+        player: BattleEntity,
+        ability: 'BattleAction',
+        ability_def
+    ) -> None:
+        """Handle boss control/debuff abilities."""
+        if ability_def is None:
+            return
+
+        self.engine.add_message(f"Boss uses {ability.name}!")
+
+        # Apply status effect
+        if ability_def.effect:
+            effect = create_status_effect(ability_def.effect, ability_def.effect_duration)
+            if effect:
+                player.add_status(effect.to_dict())
+                self.engine.add_message(f"Player is affected by {ability_def.effect}!")
+
+    def _boss_create_hazard(self, boss: BattleEntity, ability: 'BattleAction') -> None:
+        """Handle boss hazard creation abilities."""
+        battle = self.engine.battle
+        self.engine.add_message(f"Boss creates hazardous terrain!")
+
+        # Note: Actual lava tile creation would modify battle.arena_tiles
+        # For now, just log the message. Full implementation would:
+        # 1. Find tiles near player that don't block all escapes
+        # 2. Convert them to lava ('~')
+
+    def _execute_enemy_attack(self, enemy: BattleEntity, player: BattleEntity) -> None:
+        """Execute an enemy's attack on the player (v6.2 extracted for clarity)."""
+        # v6.0.5: Pulse amplifies enemy damage
+        defense = player.get_effective_defense()
+        base_damage = max(1, enemy.attack - defense)
+        pulse_amp = self._get_pulse_amplification()
+        damage = int(base_damage * pulse_amp)
+        player.hp -= damage
+
+        if self.events:
+            self.events.emit(
+                EventType.DAMAGE_NUMBER,
+                x=player.arena_x,
+                y=player.arena_y,
+                amount=damage
+            )
+            self.events.emit(EventType.HIT_FLASH, entity=player)
+
+        self.engine.add_message(f"Enemy hits you for {damage}!")
+
+        # v6.0.5.5: Check for Champion ghost assist
+        self._check_champion_assist(player)
+
+        if player.hp <= 0:
+            self._handle_entity_death(player)
 
     def _enemy_move_toward_player(self, enemy: BattleEntity) -> None:
-        """Move enemy one step toward player."""
+        """Move enemy one step toward player (legacy fallback, replaced by v6.2 AI)."""
         battle = self.engine.battle
         player = battle.player
 
