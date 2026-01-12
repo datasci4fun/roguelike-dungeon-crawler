@@ -132,6 +132,7 @@ class BattleState:
 
     # Reinforcement queue (v6.0.3)
     reinforcements: List[Reinforcement] = field(default_factory=list)
+    reinforcement_edges: List[Tuple[int, int]] = field(default_factory=list)  # Entry points
     max_reinforcements: int = 3       # Cap on total reinforcements
 
     # Turn tracking
@@ -153,6 +154,7 @@ class BattleState:
             'player': self.player.to_dict() if self.player else None,
             'enemies': [e.to_dict() for e in self.enemies],
             'reinforcements': [r.to_dict() for r in self.reinforcements],
+            'reinforcement_edges': list(self.reinforcement_edges),
             'max_reinforcements': self.max_reinforcements,
             'turn_number': self.turn_number,
             'outcome': self.outcome.name,
@@ -180,6 +182,7 @@ class BattleState:
 
         state.enemies = [BattleEntity.from_dict(e) for e in data.get('enemies', [])]
         state.reinforcements = [Reinforcement.from_dict(r) for r in data.get('reinforcements', [])]
+        state.reinforcement_edges = [tuple(e) for e in data.get('reinforcement_edges', [])]
 
         return state
 

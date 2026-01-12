@@ -7,16 +7,12 @@ import random
 from typing import TYPE_CHECKING, Optional, Tuple, List
 
 from .battle_types import BattleState, BattleEntity, BattleOutcome, Reinforcement
+from .arena_templates import pick_template, compile_template, generate_deterministic_seed
 from ..core.constants import UIMode, DungeonTheme, LEVEL_THEMES
 from ..core.events import EventType, EventQueue
 
 if TYPE_CHECKING:
     from ..core.engine import GameEngine
-
-
-# Default arena size for v6.0.1 skeleton
-DEFAULT_ARENA_WIDTH = 9
-DEFAULT_ARENA_HEIGHT = 7
 
 
 class BattleManager:
@@ -39,7 +35,8 @@ class BattleManager:
         enemy_ids: List[str],
         trigger_x: int,
         trigger_y: int,
-        seed: Optional[int] = None
+        seed: Optional[int] = None,
+        is_boss: bool = False
     ) -> BattleState:
         """
         Start a new tactical battle.
@@ -48,6 +45,7 @@ class BattleManager:
             enemy_ids: List of enemy entity IDs to include in battle
             trigger_x, trigger_y: World position where battle was triggered
             seed: Optional seed for deterministic arena generation
+            is_boss: Whether this is a boss encounter
 
         Returns:
             The created BattleState
@@ -57,34 +55,60 @@ class BattleManager:
         theme = LEVEL_THEMES.get(floor_level, DungeonTheme.STONE)
         biome = theme.name
 
-        # Generate seed if not provided (for determinism)
-        if seed is None:
-            seed = random.randint(0, 2**31 - 1)
+        # Check if any enemy is a boss
+        for enemy_id in enemy_ids:
+            enemy = self._get_enemy_by_id(enemy_id)
+            if enemy and getattr(enemy, 'is_boss', False):
+                is_boss = True
+                break
 
-        # Create arena (v6.0.1: simple rectangular arena, templates in v6.0.2)
-        arena_tiles = self._generate_stub_arena(DEFAULT_ARENA_WIDTH, DEFAULT_ARENA_HEIGHT, seed)
+        # Generate deterministic seed
+        dungeon_seed = getattr(self.engine.dungeon, 'seed', 0) if self.engine.dungeon else 0
+        encounter_index = len([e for e in self.engine.entity_manager.enemies if not e.is_alive()])
+        enemy_signature = ",".join(sorted(enemy_ids))
+
+        if seed is None:
+            seed = generate_deterministic_seed(
+                dungeon_seed=dungeon_seed,
+                floor=floor_level,
+                zone_id=None,  # Zone detection in future
+                encounter_index=encounter_index,
+                enemy_signature=enemy_signature
+            )
+
+        rng = random.Random(seed)
+
+        # v6.0.2: Use template system
+        template = pick_template(theme, zone_id=None, is_boss=is_boss, rng=rng)
+        compiled = compile_template(template, rng=rng, seed=seed)
 
         # Create battle state
         battle = BattleState(
-            arena_width=DEFAULT_ARENA_WIDTH,
-            arena_height=DEFAULT_ARENA_HEIGHT,
-            arena_tiles=arena_tiles,
+            arena_width=compiled['width'],
+            arena_height=compiled['height'],
+            arena_tiles=compiled['tiles'],
             biome=biome,
-            zone_id=None,  # Zone detection in v6.0.2
+            zone_id=None,  # Zone detection in future
             floor_level=floor_level,
             seed=seed,
         )
 
-        # Place player in arena (center-bottom)
+        # Place player in arena using spawn region
         player = self.engine.player
-        player_arena_x = DEFAULT_ARENA_WIDTH // 2
-        player_arena_y = DEFAULT_ARENA_HEIGHT - 2
+        player_spawns = compiled['player_spawn']
+        if player_spawns:
+            # Pick center of player spawn region
+            px, py = player_spawns[len(player_spawns) // 2]
+        else:
+            # Fallback: center-bottom
+            px = compiled['width'] // 2
+            py = compiled['height'] - 2
 
         battle.player = BattleEntity(
             entity_id='player',
             is_player=True,
-            arena_x=player_arena_x,
-            arena_y=player_arena_y,
+            arena_x=px,
+            arena_y=py,
             world_x=player.x,
             world_y=player.y,
             hp=player.health,
@@ -93,21 +117,26 @@ class BattleManager:
             defense=player.defense,
         )
 
-        # Place enemies in arena (top half)
+        # Place enemies in arena using spawn region
+        enemy_spawns = compiled['enemy_spawn']
         for i, enemy_id in enumerate(enemy_ids):
             enemy = self._get_enemy_by_id(enemy_id)
             if enemy is None:
                 continue
 
-            # Simple placement: spread across top of arena
-            enemy_arena_x = (i + 1) * DEFAULT_ARENA_WIDTH // (len(enemy_ids) + 1)
-            enemy_arena_y = 1
+            # Use spawn region or distribute across top
+            if enemy_spawns and i < len(enemy_spawns):
+                ex, ey = enemy_spawns[i]
+            else:
+                # Fallback: spread across top
+                ex = (i + 1) * compiled['width'] // (len(enemy_ids) + 1)
+                ey = 1
 
             battle_enemy = BattleEntity(
                 entity_id=enemy_id,
                 is_player=False,
-                arena_x=enemy_arena_x,
-                arena_y=enemy_arena_y,
+                arena_x=ex,
+                arena_y=ey,
                 world_x=enemy.x,
                 world_y=enemy.y,
                 hp=enemy.health,
@@ -116,6 +145,9 @@ class BattleManager:
                 defense=getattr(enemy, 'defense', 0),
             )
             battle.enemies.append(battle_enemy)
+
+        # Store reinforcement edges for v6.0.3
+        battle.reinforcement_edges = compiled.get('reinforcement_edges', [])
 
         # Store battle state in engine
         self.engine.battle = battle
@@ -128,9 +160,12 @@ class BattleManager:
                 biome=biome,
                 floor=floor_level,
                 enemy_count=len(battle.enemies),
+                is_boss=is_boss,
+                template_description=compiled.get('description', ''),
             )
 
-        self.engine.add_message(f"Battle started! ({len(battle.enemies)} enemies)")
+        boss_str = " (BOSS)" if is_boss else ""
+        self.engine.add_message(f"Battle started{boss_str}! ({len(battle.enemies)} enemies)")
 
         return battle
 
@@ -199,24 +234,6 @@ class BattleManager:
             return True
 
         return False
-
-    def _generate_stub_arena(self, width: int, height: int, seed: int) -> List[List[str]]:
-        """
-        Generate a simple rectangular arena (v6.0.1 stub).
-
-        Full template-based generation in v6.0.2.
-        """
-        # Simple arena: walls around edges, floor inside
-        arena = []
-        for y in range(height):
-            row = []
-            for x in range(width):
-                if x == 0 or x == width - 1 or y == 0 or y == height - 1:
-                    row.append('#')  # Wall
-                else:
-                    row.append('.')  # Floor
-            arena.append(row)
-        return arena
 
     def _get_enemy_by_id(self, enemy_id: str):
         """Get enemy entity by ID from entity manager."""
