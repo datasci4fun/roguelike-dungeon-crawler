@@ -217,7 +217,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     title: 'Micro-Event Codex Evidence',
     description: 'Each Field Pulse micro-event unlocks 1 codex entry for completionists',
     priority: 'medium',
-    status: 'planned',
+    status: 'completed',
     category: ['lore', 'gameplay'],
     effort: 'small',
     dependencies: ['high-05'],
@@ -225,6 +225,8 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
       'Each micro-event has an evidence_* entry',
       'Discovered on first trigger',
       'Adds to sealed-page completion %',
+      '8 unique narrative entries added',
+      'Completed 2026-01-12',
     ],
   },
   {
