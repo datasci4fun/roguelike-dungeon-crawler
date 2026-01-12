@@ -363,6 +363,18 @@ const SLIDES: Slide[] = [
     },
   },
   {
+    id: 'displacement',
+    type: 'story',
+    content: {
+      section: '6. Key Insight',
+      type: 'success',
+      title: 'Contextual Displacement',
+      story: 'Deliberately saturating the AI\'s context window weakens its reliance on training data defaults. When attention must spread across rich, novel context, training priors get diluted. The AI\'s drive to be helpful causes it to prioritize your contextual signals over its defaults — creating a "local override" of conventional patterns.',
+      why: 'During long development sessions, Claude Code accumulates thousands of lines of project context. By the time we\'re deep into a session, the AI\'s responses are shaped more by our codebase patterns than by generic training examples. The context becomes the curriculum.',
+      lesson: 'Don\'t start fresh conversations unnecessarily. Long, context-rich sessions produce more tailored, original output than short, default-biased exchanges. Context saturation is a feature, not a limitation.',
+    },
+  },
+  {
     id: 'recommendation',
     type: 'recommendation',
     content: {
@@ -371,11 +383,11 @@ const SLIDES: Slide[] = [
       items: [
         {
           tip: 'Apply Iterative Divergence',
-          detail: 'Don\'t accept the first answer. Push the AI: "Make it more unusual," "What if we inverted this assumption," "Connect these unrelated concepts." Each iteration moves further from training data toward originality.',
+          detail: 'Push past first answers: "Make it more unusual," "Invert this assumption," "Connect these unrelated concepts." Each iteration moves further from training defaults toward originality.',
         },
         {
-          tip: 'Be specific about intent',
-          detail: '"Add a button" vs "Add a primary CTA button in the hero section that links to registration and has hover effects consistent with the design system"',
+          tip: 'Use Contextual Displacement',
+          detail: 'Saturate the context with your project\'s patterns, terminology, and examples. Rich context dilutes training priors and creates AI responses shaped by your domain, not generic defaults.',
         },
         {
           tip: 'Let AI see your codebase',
