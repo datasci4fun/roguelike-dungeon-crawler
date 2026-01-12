@@ -15,6 +15,7 @@ import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { GameIntro } from '../components/GameIntroNew';
 import { AtmosphericPage } from '../components/AtmosphericPage';
 import { PhosphorHeader } from '../components/PhosphorHeader';
+import { CharacterPreview3D } from '../components/CharacterPreview3D';
 import { RACE_LORE, CLASS_LORE, CHARACTER_CREATION } from '../data/loreSkyfall';
 import type { RaceId, ClassId } from '../hooks/useGameSocket';
 import { RACES, CLASSES, ABILITY_DESCRIPTIONS, calculateStats } from '../data/characterData';
@@ -217,6 +218,17 @@ export function CharacterCreation() {
           {/* Stats Preview */}
           <div className="preview-section">
             <h2>{race.name} {playerClass.name}</h2>
+
+            {/* 3D Character Preview */}
+            <div className="character-preview-container">
+              <CharacterPreview3D
+                race={selectedRace}
+                classId={selectedClass}
+                height={250}
+              />
+              <p className="preview-hint">Drag to rotate</p>
+            </div>
+
             <div className="stats-preview">
               <div className="stat-row">
                 <span className="stat-label">Health</span>
