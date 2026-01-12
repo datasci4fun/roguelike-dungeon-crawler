@@ -240,6 +240,22 @@ const SLIDES: Slide[] = [
     },
   },
   {
+    id: 'usecase3',
+    type: 'usecase',
+    content: {
+      section: '3. Top Use Cases',
+      number: 3,
+      title: 'Original Lore & World-Building',
+      task: 'Create a cohesive fantasy world with deep lore, unique mythology, and interconnected story elements across 8 dungeon floors',
+      tool: 'ChatGPT 5.2 via browser chat',
+      asked: 'Develop the Skyfall Seed mythology — an eldritch entity that rewrites reality, 8 Wardens guarding aspects of existence, and a world where memories are being erased',
+      shipped: '32 lore entries, 8 floor themes with unique aspects (Memory, Circulation, Growth, Legitimacy, Stasis, Cognition, Transformation, Integration), 6 ending variants, boss backstories, and environmental storytelling',
+      fixed: 'Initial lore was too generic fantasy — iterated to create the "Field" concept and reality-editing horror theme',
+      verified: 'Consistency checks across all lore entries, integration with gameplay mechanics',
+      impact: 'Months of creative writing condensed into days — coherent world-building that elevates the entire game',
+    },
+  },
+  {
     id: 'workflow-before',
     type: 'comparison',
     content: {
