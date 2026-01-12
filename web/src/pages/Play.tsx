@@ -21,7 +21,7 @@ import { VictoryCutscene, type VictoryLegacyId } from '../components/VictoryCuts
 import { LoreCodex } from '../components/LoreCodex';
 import { BattleOverlay } from '../components/BattleOverlay';
 import { BattleRenderer3D } from '../components/BattleRenderer3D';
-import { BattleHUD } from '../components/BattleHUD';
+import { BattleHUD, type SelectedAction, type TileCoord } from '../components/BattleHUD';
 import { TransitionCurtain } from '../components/TransitionCurtain';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
@@ -47,6 +47,8 @@ export function Play() {
   const [showLoreJournal, setShowLoreJournal] = useState(false);
   const [pendingNewLore, setPendingNewLore] = useState<{ lore_id: string; title: string } | null>(null);
   const [battleOverviewComplete, setBattleOverviewComplete] = useState(false);
+  const [battleSelectedAction, setBattleSelectedAction] = useState<SelectedAction>(null);
+  const [battleClickedTile, setBattleClickedTile] = useState<{ tile: TileCoord; hasEnemy: boolean } | null>(null);
 
   // Debug renderer controls (F8/F9/F10 hotkeys)
   const {
@@ -323,11 +325,13 @@ export function Play() {
     }
   }, [gameState?.new_lore]);
 
-  // Reset battle overview state when entering a new battle
+  // Reset battle state when entering a new battle
   useEffect(() => {
     if (gameState?.battle) {
-      // New battle started - reset overview complete flag
+      // New battle started - reset state
       setBattleOverviewComplete(false);
+      setBattleSelectedAction(null);
+      setBattleClickedTile(null);
     }
   }, [gameState?.battle?.floor_level, gameState?.battle?.biome]);
 
@@ -431,7 +435,25 @@ export function Play() {
 
             {showSceneView && (
               <div className="scene-wrapper" ref={sceneContainerRef}>
-                {use3DMode ? (
+                {/* v6.3: Battle mode always uses Three.js renderer */}
+                {gameState?.battle ? (
+                  <>
+                    <BattleRenderer3D
+                      battle={gameState.battle}
+                      onOverviewComplete={() => setBattleOverviewComplete(true)}
+                      selectedAction={battleSelectedAction}
+                      onTileClick={(tile, hasEnemy) => setBattleClickedTile({ tile, hasEnemy })}
+                    />
+                    <BattleHUD
+                      battle={gameState.battle}
+                      onCommand={(cmd) => sendCommand(cmd)}
+                      overviewComplete={battleOverviewComplete}
+                      onActionSelect={setBattleSelectedAction}
+                      clickedTile={battleClickedTile}
+                      onTileClickHandled={() => setBattleClickedTile(null)}
+                    />
+                  </>
+                ) : use3DMode ? (
                   <FirstPersonRenderer3D
                     view={gameState?.first_person_view}
                     settings={{ biome: 'dungeon', useTileGrid }}
@@ -453,8 +475,8 @@ export function Play() {
                     onCorridorInfo={handleCorridorInfo}
                   />
                 )}
-                {/* Character HUD overlay */}
-                {gameState?.player?.race && (
+                {/* Character HUD overlay - hide during battle */}
+                {gameState?.player?.race && !gameState?.battle && (
                   <CharacterHUD
                     race={gameState.player.race}
                     playerClass={gameState.player.class}
@@ -466,11 +488,57 @@ export function Play() {
                     compact={false}
                   />
                 )}
-                {/* Status HUD overlay (Field Pulse, Artifacts, Vows) */}
-                <StatusHUD
-                  fieldPulse={gameState?.field_pulse}
-                  artifacts={gameState?.player?.artifacts}
+                {/* Status HUD overlay (Field Pulse, Artifacts, Vows) - hide during battle */}
+                {!gameState?.battle && (
+                  <StatusHUD
+                    fieldPulse={gameState?.field_pulse}
+                    artifacts={gameState?.player?.artifacts}
+                  />
+                )}
+                {/* v6.1: Transition Curtain - contained within scene view */}
+                <TransitionCurtain
+                  transition={gameState?.transition}
+                  onSkip={() => sendCommand('SKIP')}
                 />
+
+                {/* Death Cutscene - contained within scene view */}
+                {showGameOver === 'death' && !deathCutsceneComplete && (
+                  <GameOverCutscene
+                    onComplete={() => setDeathCutsceneComplete(true)}
+                    onSkip={() => setDeathCutsceneComplete(true)}
+                    onMusicChange={handleGameOverMusic}
+                    onFateSelected={setDeathFate}
+                  />
+                )}
+
+                {/* Victory Cutscene - contained within scene view */}
+                {showGameOver === 'victory' && !victoryCutsceneComplete && (
+                  <VictoryCutscene
+                    onComplete={() => setVictoryCutsceneComplete(true)}
+                    onSkip={() => setVictoryCutsceneComplete(true)}
+                    onMusicChange={handleGameOverMusic}
+                    onLegacySelected={setVictoryLegacy}
+                  />
+                )}
+
+                {/* Game Over Stats - contained within scene view */}
+                {showGameOver && gameState?.player && (
+                  (showGameOver === 'death' && deathCutsceneComplete) ||
+                  (showGameOver === 'victory' && victoryCutsceneComplete)
+                ) && (
+                  <GameOver
+                    type={showGameOver}
+                    stats={{
+                      level: gameState.player.level,
+                      kills: gameState.player.kills,
+                      dungeonLevel: gameState.dungeon?.level,
+                    }}
+                    onPlayAgain={handleNewGame}
+                    onMusicChange={handleGameOverMusic}
+                    deathFate={deathFate}
+                    victoryLegacy={victoryLegacy}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -545,34 +613,6 @@ export function Play() {
         gameActive={!!gameState && gameState.game_state === 'PLAYING'}
       />
 
-      {/* v6.1: Transition Curtain - prevents UI flicker between modes */}
-      <TransitionCurtain
-        transition={gameState?.transition}
-        onSkip={() => sendCommand('SKIP')}
-      />
-
-      {/* Battle Mode (v6.3: Three.js first-person OR v6.0.5 DOM fallback) */}
-      {gameState?.battle && (
-        use3DMode ? (
-          <>
-            <BattleRenderer3D
-              battle={gameState.battle}
-              onOverviewComplete={() => setBattleOverviewComplete(true)}
-            />
-            <BattleHUD
-              battle={gameState.battle}
-              onCommand={(cmd) => sendCommand(cmd)}
-              overviewComplete={battleOverviewComplete}
-            />
-          </>
-        ) : (
-          <BattleOverlay
-            battle={gameState.battle}
-            onCommand={(cmd) => sendCommand(cmd)}
-          />
-        )
-      )}
-
       {/* Mobile Chat Toggle Button */}
       <button
         className="mobile-chat-toggle"
@@ -629,45 +669,6 @@ export function Play() {
 
       {/* Debug Toast */}
       <DebugToast message={toastMessage} onDismiss={clearToast} />
-
-      {/* Death Cutscene - plays before stats summary */}
-      {showGameOver === 'death' && !deathCutsceneComplete && (
-        <GameOverCutscene
-          onComplete={() => setDeathCutsceneComplete(true)}
-          onSkip={() => setDeathCutsceneComplete(true)}
-          onMusicChange={handleGameOverMusic}
-          onFateSelected={setDeathFate}
-        />
-      )}
-
-      {/* Victory Cutscene - plays before stats summary */}
-      {showGameOver === 'victory' && !victoryCutsceneComplete && (
-        <VictoryCutscene
-          onComplete={() => setVictoryCutsceneComplete(true)}
-          onSkip={() => setVictoryCutsceneComplete(true)}
-          onMusicChange={handleGameOverMusic}
-          onLegacySelected={setVictoryLegacy}
-        />
-      )}
-
-      {/* Game Over Stats Summary - shows after cutscene completes */}
-      {showGameOver && gameState?.player && (
-        (showGameOver === 'death' && deathCutsceneComplete) ||
-        (showGameOver === 'victory' && victoryCutsceneComplete)
-      ) && (
-        <GameOver
-          type={showGameOver}
-          stats={{
-            level: gameState.player.level,
-            kills: gameState.player.kills,
-            dungeonLevel: gameState.dungeon?.level,
-          }}
-          onPlayAgain={handleNewGame}
-          onMusicChange={handleGameOverMusic}
-          deathFate={deathFate}
-          victoryLegacy={victoryLegacy}
-        />
-      )}
 
       {/* Lore Codex Modal */}
       {showLoreJournal && gameState?.lore_journal && (

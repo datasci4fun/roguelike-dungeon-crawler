@@ -12,6 +12,7 @@
   font-family: monospace;
   min-width: 100px;
   z-index: 10;
+  pointer-events: none; /* Allow clicks through to 3D canvas */
 }
 
 .character-hud.compact {

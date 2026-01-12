@@ -370,8 +370,8 @@ $death-red-glow: rgba(139, 0, 0, 0.6);
 .caption-line.death-title {
   color: $death-red;
   font-weight: 900;
-  font-size: clamp(2.5rem, 8vw, 4.5rem);
-  letter-spacing: 0.3em;
+  font-size: clamp(1.8rem, 6vw, 3.5rem);
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   text-shadow:
     0 0 20px $death-red-glow,
@@ -380,17 +380,17 @@ $death-red-glow: rgba(139, 0, 0, 0.6);
     0 2px 0 rgba(0, 0, 0, 0.8);
 
   // Slower, heavier reveal
-  --rc-rise: 24px;
-  --rc-char-stagger: 40ms;
-  --rc-char-dur: 1200ms;
+  --rc-rise: 20px;
+  --rc-char-stagger: 35ms;
+  --rc-char-dur: 1000ms;
 }
 
 // Fate/claim text - slightly dimmer, smaller
 .caption-line.death-claim {
   color: $death-red-bright;
   font-weight: 700;
-  font-size: clamp(1.2rem, 3vw, 1.8rem);
-  letter-spacing: 0.15em;
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  letter-spacing: 0.12em;
   text-shadow:
     0 0 15px $death-red-glow,
     0 0 30px rgba(139, 0, 0, 0.3);
@@ -447,6 +447,27 @@ $death-red-glow: rgba(139, 0, 0, 0.6);
   --rc-char-dur: 1000ms;
 }
 
+// ============================================
+// DEATH SCENE LAYOUT - Tighten vertical spacing
+// ============================================
+
+// Abyss Claims - tighter layout to fit within contained view
+.cutscene-player.cs-scene-abyss-claims .retro-caption.caption-center {
+  top: 48%;
+  transform: translateY(-50%);
+}
+
+.cutscene-player.cs-scene-abyss-claims .caption-line {
+  padding: 0.15em 0;
+  line-height: 1.5;
+  min-height: 1.5em;
+  font-size: clamp(0.9rem, 2.2vw, 1.2rem);
+}
+
+.cutscene-player.cs-scene-abyss-claims .caption-line.empty-line {
+  min-height: 0.5em;
+}
+
 // Fate scenes - ethereal, almost fading
 .cutscene-player.cs-scene-fate-echo .caption-line,
 .cutscene-player.cs-scene-fate-hollowed .caption-line,
@@ -456,11 +477,51 @@ $death-red-glow: rgba(139, 0, 0, 0.6);
   --rc-char-dur: 900ms;
 }
 
+// Fate scenes - tighter layout
+.cutscene-player.cs-scene-fate-echo .retro-caption.caption-center,
+.cutscene-player.cs-scene-fate-hollowed .retro-caption.caption-center,
+.cutscene-player.cs-scene-fate-silence .retro-caption.caption-center {
+  top: 48%;
+  transform: translateY(-50%);
+}
+
+.cutscene-player.cs-scene-fate-echo .caption-line,
+.cutscene-player.cs-scene-fate-hollowed .caption-line,
+.cutscene-player.cs-scene-fate-silence .caption-line {
+  padding: 0.15em 0;
+  line-height: 1.5;
+  min-height: 1.5em;
+  font-size: clamp(0.85rem, 2vw, 1.15rem);
+}
+
+.cutscene-player.cs-scene-fate-echo .caption-line.empty-line,
+.cutscene-player.cs-scene-fate-hollowed .caption-line.empty-line,
+.cutscene-player.cs-scene-fate-silence .caption-line.empty-line {
+  min-height: 0.4em;
+}
+
 // Prompt scene - final question, clear and direct
 .cutscene-player.cs-scene-prompt .caption-line {
   --rc-rise: 10px;
   --rc-char-stagger: 12ms;
   --rc-char-dur: 600ms;
+}
+
+// Prompt scene - tighter layout
+.cutscene-player.cs-scene-prompt .retro-caption.caption-center {
+  top: 48%;
+  transform: translateY(-50%);
+}
+
+.cutscene-player.cs-scene-prompt .caption-line {
+  padding: 0.15em 0;
+  line-height: 1.5;
+  min-height: 1.5em;
+  font-size: clamp(0.9rem, 2.2vw, 1.2rem);
+}
+
+.cutscene-player.cs-scene-prompt .caption-line.empty-line {
+  min-height: 0.5em;
 }
 
 .cutscene-player.cs-scene-prompt .caption-line.emphasis {

@@ -1,41 +1,57 @@
 /**
- * BattleHUD - Tactical battle HUD overlay for v6.3
+ * BattleHUD - Classic RPG-style battle menu for v6.3
  *
- * Displays battle UI controls without the arena grid (now handled by BattleRenderer3D).
- * Includes phase/round info, HP summaries, ability buttons, reinforcement countdown.
+ * Features a hierarchical command menu system like classic JRPGs.
  */
 import { useEffect, useCallback, useState } from 'react';
 import { type BattleState, type BattleReinforcement } from '../types';
 import './BattleHUD.css';
 
+export type SelectedAction = 'move' | 'attack' | 'ability1' | 'ability2' | 'ability3' | 'ability4' | null;
+
+export interface TileCoord {
+  x: number;
+  y: number;
+}
+
 interface BattleHUDProps {
   battle: BattleState;
   onCommand: (command: string) => void;
   overviewComplete: boolean;
+  onActionSelect?: (action: SelectedAction) => void;
+  clickedTile?: { tile: TileCoord; hasEnemy: boolean } | null;
+  onTileClickHandled?: () => void;
 }
 
-function HealthBar({ current, max, label }: { current: number; max: number; label?: string }) {
+type MenuState = 'main' | 'abilities' | 'items' | 'target' | 'confirm';
+
+interface MenuItem {
+  id: string;
+  label: string;
+  shortcut?: string;
+  disabled?: boolean;
+  description?: string;
+}
+
+function HealthBar({ current, max, showNumbers = true }: { current: number; max: number; showNumbers?: boolean }) {
   const percentage = Math.max(0, Math.min(100, (current / max) * 100));
   const color = percentage > 60 ? '#44ff44' : percentage > 30 ? '#ffff44' : '#ff4444';
 
   return (
-    <div className="hud-health-bar">
-      {label && <span className="health-label">{label}</span>}
-      <div className="health-bar-track">
+    <div className="rpg-health-bar">
+      <div className="rpg-health-track">
         <div
-          className="health-bar-fill"
+          className="rpg-health-fill"
           style={{ width: `${percentage}%`, backgroundColor: color }}
         />
-        <span className="health-bar-text">{current}/{max}</span>
+        {showNumbers && <span className="rpg-health-text">{current}/{max}</span>}
       </div>
     </div>
   );
 }
 
-// Group reinforcements by type and turns
 function groupReinforcements(reinforcements: BattleReinforcement[]) {
   const groups: Record<string, { count: number; turns: number; isElite: boolean }> = {};
-
   for (const r of reinforcements) {
     const key = `${r.enemy_name}-${r.turns_until_arrival}`;
     if (!groups[key]) {
@@ -43,178 +59,300 @@ function groupReinforcements(reinforcements: BattleReinforcement[]) {
     }
     groups[key].count++;
   }
-
   return Object.entries(groups)
-    .map(([key, data]) => ({
-      name: key.split('-')[0],
-      ...data,
-    }))
+    .map(([key, data]) => ({ name: key.split('-')[0], ...data }))
     .sort((a, b) => a.turns - b.turns);
 }
 
-export function BattleHUD({ battle, onCommand, overviewComplete }: BattleHUDProps) {
-  const {
-    player, enemies,
-    reinforcements = [], round, phase, biome,
-    duplicate_seal_armed, woundglass_reveal_active
-  } = battle;
+export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect, clickedTile, onTileClickHandled }: BattleHUDProps) {
+  const { player, enemies, reinforcements = [], round, phase, biome } = battle;
 
-  // Keyboard controls (only active after overview is done)
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!overviewComplete) return;
-    if (phase !== 'PLAYER_TURN') return;
+  const [menuState, setMenuState] = useState<MenuState>('main');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
-    switch (e.key.toLowerCase()) {
-      case 'w':
-      case 'arrowup':
-        onCommand('MOVE_UP');
+  const mainMenuItems: MenuItem[] = [
+    { id: 'attack', label: 'ATTACK', shortcut: '1', description: 'Strike adjacent enemy' },
+    { id: 'abilities', label: 'ABILITIES', shortcut: '2', description: 'Special abilities' },
+    { id: 'defend', label: 'DEFEND', shortcut: '3', description: 'Brace for attacks' },
+    { id: 'flee', label: 'FLEE', shortcut: '4', description: 'Attempt escape' },
+  ];
+
+  const abilityMenuItems: MenuItem[] = [
+    { id: 'ability1', label: 'Strike', shortcut: '1', description: 'Basic attack' },
+    { id: 'ability2', label: 'Power Attack', shortcut: '2', description: 'Heavy hit' },
+    { id: 'ability3', label: 'Whirlwind', shortcut: '3', description: 'Hit all adjacent' },
+    { id: 'back', label: 'BACK', shortcut: 'ESC' },
+  ];
+
+  const getCurrentMenuItems = (): MenuItem[] => {
+    switch (menuState) {
+      case 'abilities': return abilityMenuItems;
+      default: return mainMenuItems;
+    }
+  };
+
+  const currentItems = getCurrentMenuItems();
+
+  const executeCommand = useCallback((command: string) => {
+    onCommand(command);
+    setMenuState('main');
+    setSelectedIndex(0);
+    setPendingAction(null);
+    onActionSelect?.(null);
+  }, [onCommand, onActionSelect]);
+
+  const handleSelect = useCallback((item: MenuItem) => {
+    if (item.disabled) return;
+
+    switch (item.id) {
+      case 'attack':
+        onActionSelect?.('attack');
+        setMenuState('target');
+        setPendingAction('ATTACK');
         break;
-      case 's':
-      case 'arrowdown':
-        onCommand('MOVE_DOWN');
+      case 'abilities':
+        setMenuState('abilities');
+        setSelectedIndex(0);
         break;
-      case 'a':
-      case 'arrowleft':
-        onCommand('MOVE_LEFT');
+      case 'defend':
+        executeCommand('WAIT');
         break;
-      case 'd':
-      case 'arrowright':
-        onCommand('MOVE_RIGHT');
+      case 'flee':
+        setMenuState('confirm');
+        setPendingAction('FLEE');
         break;
-      case '1':
-        onCommand('ABILITY_1');
+      case 'ability1':
+      case 'ability2':
+      case 'ability3':
+      case 'ability4':
+        onActionSelect?.(item.id as SelectedAction);
+        setMenuState('target');
+        setPendingAction(`ABILITY_${item.id.charAt(item.id.length - 1)}`);
         break;
-      case '2':
-        onCommand('ABILITY_2');
-        break;
-      case '3':
-        onCommand('ABILITY_3');
-        break;
-      case '4':
-        onCommand('ABILITY_4');
-        break;
-      case ' ':
-      case 'enter':
-        onCommand('WAIT');
-        break;
-      case 'escape':
-        onCommand('FLEE');
+      case 'back':
+        setMenuState('main');
+        setSelectedIndex(0);
+        onActionSelect?.(null);
         break;
     }
-  }, [phase, onCommand, overviewComplete]);
+  }, [executeCommand, onActionSelect]);
 
+  const handleConfirm = useCallback((confirmed: boolean) => {
+    if (confirmed && pendingAction) {
+      executeCommand(pendingAction);
+    } else {
+      setMenuState('main');
+      setPendingAction(null);
+    }
+  }, [pendingAction, executeCommand]);
+
+  // Handle tile clicks from the 3D renderer
   useEffect(() => {
+    if (!clickedTile || phase !== 'PLAYER_TURN' || menuState !== 'target') return;
+
+    const { hasEnemy } = clickedTile;
+    if (hasEnemy && pendingAction) {
+      executeCommand(pendingAction);
+    }
+    onTileClickHandled?.();
+  }, [clickedTile, menuState, pendingAction, phase, executeCommand, onTileClickHandled]);
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!overviewComplete || phase !== 'PLAYER_TURN') return;
+
+      const key = e.key.toLowerCase();
+
+      // Confirmation
+      if (menuState === 'confirm') {
+        if (key === 'y' || key === 'enter') handleConfirm(true);
+        else if (key === 'n' || key === 'escape') handleConfirm(false);
+        return;
+      }
+
+      // Target selection
+      if (menuState === 'target') {
+        if (key === 'escape') {
+          setMenuState('main');
+          setPendingAction(null);
+          onActionSelect?.(null);
+        } else if (key === 'enter' || key === ' ') {
+          if (pendingAction) executeCommand(pendingAction);
+        }
+        return;
+      }
+
+      // Movement (always available)
+      if (key === 'w' || key === 'arrowup') {
+        if (e.shiftKey || menuState !== 'main' && menuState !== 'abilities') {
+          executeCommand('MOVE_UP');
+        } else {
+          e.preventDefault();
+          setSelectedIndex(prev => (prev - 1 + currentItems.length) % currentItems.length);
+        }
+        return;
+      }
+      if (key === 's' || key === 'arrowdown') {
+        if (e.shiftKey || menuState !== 'main' && menuState !== 'abilities') {
+          executeCommand('MOVE_DOWN');
+        } else {
+          e.preventDefault();
+          setSelectedIndex(prev => (prev + 1) % currentItems.length);
+        }
+        return;
+      }
+      if (key === 'a' || key === 'arrowleft') {
+        executeCommand('MOVE_LEFT');
+        return;
+      }
+      if (key === 'd' || key === 'arrowright') {
+        executeCommand('MOVE_RIGHT');
+        return;
+      }
+
+      // Menu select
+      if (key === 'enter' || key === ' ') {
+        const item = currentItems[selectedIndex];
+        if (item) handleSelect(item);
+        return;
+      }
+
+      if (key === 'escape') {
+        if (menuState !== 'main') {
+          setMenuState('main');
+          setSelectedIndex(0);
+          onActionSelect?.(null);
+        }
+        return;
+      }
+
+      // Number shortcuts
+      const num = parseInt(key);
+      if (num >= 1 && num <= currentItems.length) {
+        const item = currentItems[num - 1];
+        if (item && !item.disabled) handleSelect(item);
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+  }, [phase, menuState, selectedIndex, currentItems, pendingAction, overviewComplete, handleSelect, handleConfirm, executeCommand, onActionSelect]);
 
-  // Group reinforcements for display
+  // Reset on phase change
+  useEffect(() => {
+    if (phase === 'PLAYER_TURN') {
+      setMenuState('main');
+      setSelectedIndex(0);
+      setPendingAction(null);
+    }
+  }, [phase]);
+
   const reinforcementGroups = groupReinforcements(reinforcements);
   const livingEnemies = enemies.filter(e => e.hp > 0);
 
   return (
     <div className="battle-hud">
-      {/* Top bar - phase info */}
-      <div className="hud-top-bar">
-        <div className="hud-phase-info">
-          <span className="hud-biome">{biome}</span>
-          <span className="hud-round">Round {round}</span>
-          <span className="hud-phase">{phase.replace('_', ' ')}</span>
-        </div>
-        {/* Artifact status indicators */}
-        <div className="hud-artifacts">
-          {duplicate_seal_armed && (
-            <span className="artifact-indicator seal-armed" title="Duplicate Seal Armed">
-              &amp;
-            </span>
-          )}
-          {woundglass_reveal_active && (
-            <span className="artifact-indicator woundglass-active" title="Woundglass Active">
-              %
-            </span>
-          )}
-        </div>
+      {/* Top bar - centered */}
+      <div className="battle-top-bar">
+        <span className="btb-biome">{biome}</span>
+        <span className="btb-sep">|</span>
+        <span className="btb-round">Round {round}</span>
+        <span className="btb-sep">|</span>
+        <span className={`btb-phase ${phase === 'PLAYER_TURN' ? 'player' : 'enemy'}`}>
+          {phase === 'PLAYER_TURN' ? 'YOUR TURN' : 'ENEMY TURN'}
+        </span>
       </div>
 
-      {/* Left panel - Player status */}
-      <div className="hud-left-panel">
-        <div className="hud-player-status">
-          <span className="hud-section-title">PLAYER</span>
+      {/* Left panel - Player */}
+      <div className="battle-panel battle-panel-left">
+        <div className="bp-header">HERO</div>
+        <div className="bp-content">
           <HealthBar current={player.hp} max={player.max_hp} />
-          <div className="hud-stats">
+          <div className="bp-stats">
             <span>ATK {player.attack}</span>
             <span>DEF {player.defense}</span>
           </div>
-          {player.status_effects && player.status_effects.length > 0 && (
-            <div className="hud-status-effects">
-              {player.status_effects.map((effect, i) => (
-                <span key={i} className="status-effect-badge">{effect}</span>
+        </div>
+      </div>
+
+      {/* Right panel - Enemies */}
+      <div className="battle-panel battle-panel-right">
+        <div className="bp-header">ENEMIES ({livingEnemies.length})</div>
+        <div className="bp-content">
+          {livingEnemies.slice(0, 3).map((enemy, i) => (
+            <div key={enemy.entity_id} className="bp-enemy">
+              <span>{enemy.symbol || 'E'} {enemy.name || `Enemy ${i+1}`}</span>
+              <HealthBar current={enemy.hp} max={enemy.max_hp} showNumbers={false} />
+            </div>
+          ))}
+          {reinforcementGroups.length > 0 && (
+            <div className="bp-reinforcements">
+              <span className="bp-incoming">INCOMING</span>
+              {reinforcementGroups.slice(0, 2).map((g, i) => (
+                <div key={i} className="bp-reinforce-entry">
+                  {g.name} {g.count > 1 && `x${g.count}`} - {g.turns}T
+                </div>
               ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Right panel - Enemies + Reinforcements */}
-      <div className="hud-right-panel">
-        <div className="hud-enemies-status">
-          <span className="hud-section-title">ENEMIES ({livingEnemies.length})</span>
-          {livingEnemies.slice(0, 4).map((enemy, i) => (
-            <HealthBar
-              key={enemy.entity_id}
-              current={enemy.hp}
-              max={enemy.max_hp}
-              label={`E${i + 1}`}
-            />
-          ))}
-          {livingEnemies.length > 4 && (
-            <span className="hud-more">+{livingEnemies.length - 4} more</span>
-          )}
-        </div>
-
-        {/* Reinforcements countdown */}
-        {reinforcementGroups.length > 0 && (
-          <div className="hud-reinforcements">
-            <span className="hud-section-title warning">INCOMING</span>
-            {reinforcementGroups.slice(0, 3).map((group, i) => (
-              <div key={i} className={`reinforcement-entry ${group.isElite ? 'elite' : ''}`}>
-                <span className="reinforcement-name">
-                  {group.name} {group.count > 1 && `x${group.count}`}
-                  {group.isElite && <span className="elite-star">*</span>}
-                </span>
-                <span className="reinforcement-timer">{group.turns}T</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Bottom bar - Actions */}
+      {/* Bottom-left command menu */}
       {phase === 'PLAYER_TURN' && overviewComplete && (
-        <div className="hud-bottom-bar">
-          <div className="hud-actions">
-            <button className="hud-action-btn" onClick={() => onCommand('ATTACK')}>
-              <span className="key">1</span> Attack
-            </button>
-            <button className="hud-action-btn" onClick={() => onCommand('ABILITY_2')}>
-              <span className="key">2</span> Special
-            </button>
-            <button className="hud-action-btn" onClick={() => onCommand('WAIT')}>
-              <span className="key">SPC</span> Wait
-            </button>
-            <button className="hud-action-btn flee" onClick={() => onCommand('FLEE')}>
-              <span className="key">ESC</span> Flee
-            </button>
+        <div className="battle-panel battle-panel-commands">
+          <div className="bp-header">
+            {menuState === 'main' ? 'COMMANDS' :
+             menuState === 'abilities' ? 'ABILITIES' :
+             menuState === 'target' ? 'SELECT TARGET' :
+             menuState === 'confirm' ? 'CONFIRM' : 'COMMANDS'}
           </div>
-          <div className="hud-move-hint">WASD to move</div>
+          <div className="bp-content">
+            {(menuState === 'main' || menuState === 'abilities') && (
+              <div className="cmd-menu">
+                {currentItems.map((item, i) => (
+                  <div
+                    key={item.id}
+                    className={`cmd-item ${i === selectedIndex ? 'selected' : ''} ${item.disabled ? 'disabled' : ''}`}
+                    onClick={() => handleSelect(item)}
+                  >
+                    <span className="cmd-key">{item.shortcut}</span>
+                    <span className="cmd-label">{item.label}</span>
+                    {i === selectedIndex && <span className="cmd-cursor">◀</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {menuState === 'target' && (
+              <div className="cmd-target">
+                <p>Click enemy or press ENTER</p>
+                <div className="cmd-buttons">
+                  <button onClick={() => pendingAction && executeCommand(pendingAction)}>OK</button>
+                  <button onClick={() => { setMenuState('main'); setPendingAction(null); onActionSelect?.(null); }}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {menuState === 'confirm' && (
+              <div className="cmd-confirm">
+                <p>Flee from battle?</p>
+                <div className="cmd-buttons">
+                  <button onClick={() => handleConfirm(true)}>Yes</button>
+                  <button onClick={() => handleConfirm(false)}>No</button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="bp-hint">A/D to move | Shift+W/S to move</div>
         </div>
       )}
 
-      {/* Waiting indicator */}
+      {/* Enemy turn indicator */}
       {phase !== 'PLAYER_TURN' && (
-        <div className="hud-waiting">
-          <span className="waiting-text">Enemy Turn...</span>
-        </div>
+        <div className="battle-waiting">Enemy Turn...</div>
       )}
     </div>
   );
