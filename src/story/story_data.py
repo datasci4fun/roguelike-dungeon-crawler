@@ -41,6 +41,15 @@ ENEMY_ENCOUNTER_MESSAGES: Dict[str, str] = {
     'Court Scribe': "A court scribe glides near the shadows, quill scratching without ink. Its records feel heavier than steel.",
     'Animated Tome': "A book snaps open like a mouth. Letters spill out, rearranging into a threat.",
     'Crystal Sentinel': "A crystal sentinel turns with a grinding hymn. Its facets reflect you… and a version that never blinked.",
+    # v6.5 spice enemies (rare floor variants)
+    'Shade': "A shade coalesces from the prison walls. The hatred of a forgotten prisoner given ephemeral form.",
+    'Bile Lurker': "Toxic ooze bubbles up from a drain. The Bile Lurker is the sewers' revenge made manifest.",
+    'Thornling': "Roots twist into a hunched form. The Thornling watches with berry-red eyes, thorns bristling.",
+    'Doppelganger': "Your reflection steps out of a mirror. The Doppelganger wears your face, but its smile is wrong.",
+    'Frost Wisp': "A pale blue light drifts through the frozen air. The Frost Wisp trails ice crystals like tears.",
+    'Ink Phantom': "Words lift off a page and swirl into shape. The Ink Phantom speaks in stolen sentences.",
+    'Ember Sprite': "A giggling spark dances between lava flows. The Ember Sprite's playfulness masks its danger.",
+    'Prism Watcher': "A crystalline eye opens in the cavern wall. The Prism Watcher sees all your possible futures.",
 }
 
 
@@ -459,6 +468,123 @@ LORE_ENTRIES: Dict[str, Dict] = {
             "Your shadow splits. Two of you, walking in parallel.",
             "But your other shadow moves... differently.",
             "A half-second ahead. Or behind. You cannot tell which.",
+        ],
+        "level_hint": 8,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # =========================================================================
+    # Micro-Event Evidence (discovered via Field Pulse events)
+    # One per floor, triggered during the first Field Pulse of each floor
+    # =========================================================================
+
+    # Floor 1 - Echo of the Fall
+    "evidence_echo_of_fall": {
+        "title": "Echo of the Fall",
+        "content": [
+            "The Field stirred, and for a moment the walls breathed memory.",
+            "You felt the presence of those who fell before you.",
+            "Their paths through this place, etched in invisible light.",
+            "The dungeon remembers everyone who enters. It never forgets.",
+        ],
+        "level_hint": 1,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 2 - Drowned Voices
+    "evidence_drowned_voices": {
+        "title": "Drowned Voices",
+        "content": [
+            "Bubbles rose from impossible cracks, carrying whispers.",
+            "The water spoke in voices long silenced.",
+            "'We waited here. We wait still.'",
+            "The Flooded Depths hold more than rats and refuse.",
+        ],
+        "level_hint": 2,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 3 - Spore Memory
+    "evidence_spore_memory": {
+        "title": "Spore Memory",
+        "content": [
+            "Luminescent spores filled the air like golden snow.",
+            "For a heartbeat, you saw through the colony's eyes.",
+            "Thousands of perspectives, layered across centuries.",
+            "The fungi remember everything the forest has consumed.",
+        ],
+        "level_hint": 3,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 4 - Ember Sigh
+    "evidence_ember_sigh": {
+        "title": "Ember Sigh",
+        "content": [
+            "The flames dimmed in unison, as if exhaling.",
+            "In that brief coolness, you sensed relief. Not yours.",
+            "Something here has burned for a very long time.",
+            "It is tired. But it cannot stop.",
+        ],
+        "level_hint": 4,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 5 - Glacial Pause
+    "evidence_glacial_pause": {
+        "title": "Glacial Pause",
+        "content": [
+            "Time crystallized around you like frost on glass.",
+            "In that frozen moment, you understood stasis.",
+            "Not death. Not sleep. Something between.",
+            "The cold holds its breath because it cannot exhale.",
+        ],
+        "level_hint": 5,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 6 - Void Glimpse
+    "evidence_void_glimpse": {
+        "title": "Void Glimpse",
+        "content": [
+            "The shadows parted like curtains at a play.",
+            "Beyond them: the spaces between spaces.",
+            "You saw where deleted knowledge goes.",
+            "It does not disappear. It waits.",
+        ],
+        "level_hint": 6,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 7 - Royal Echo
+    "evidence_royal_echo": {
+        "title": "Royal Echo",
+        "content": [
+            "A spectral crown flickered above you, eight points gleaming.",
+            "The ancient king's blessing lingered on your skin.",
+            "Warmth where there should be none. Purpose where there was doubt.",
+            "Even now, something of Valdris watches over its own.",
+        ],
+        "level_hint": 7,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 8 - The Watching
+    "evidence_the_watching": {
+        "title": "The Watching",
+        "content": [
+            "Something ancient turned its attention toward you.",
+            "Not the dragon. Something older. Something patient.",
+            "It has been watching since the first stone was laid.",
+            "It sees. It knows. And for this moment, it waits.",
         ],
         "level_hint": 8,
         "item_type": "evidence",

@@ -71,6 +71,27 @@ interface DamageNumber {
   sprite: THREE.Sprite;
 }
 
+// v6.5 Battle Polish: Camera shake effect
+interface CameraShake {
+  intensity: number;    // Current shake intensity (0-1)
+  decay: number;        // How fast shake decays per frame
+  startTime: number;    // When shake started
+}
+
+// v6.5 Battle Polish: Hit particle effect
+interface HitParticle {
+  mesh: THREE.Points;
+  startTime: number;
+  duration: number;
+}
+
+// v6.5 Battle Polish: Attack telegraph (danger zone indicator)
+interface AttackTelegraph {
+  mesh: THREE.Mesh;
+  startTime: number;
+  duration: number;
+}
+
 interface BattleRenderer3DProps {
   battle: BattleState;
   onOverviewComplete?: () => void;
@@ -185,6 +206,22 @@ function createEntitySprite(
   hpSprite.position.y = 1.6;
   group.add(hpSprite);
 
+  // v6.5 Battle Polish: Add glowing aura ring for boss enemies
+  if (entity.is_boss && !isPlayer) {
+    const ringGeometry = new THREE.RingGeometry(0.8, 1.0, 32);
+    const ringMaterial = new THREE.MeshBasicMaterial({
+      color: 0xaa00aa,
+      transparent: true,
+      opacity: 0.6,
+      side: THREE.DoubleSide,
+    });
+    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.02;
+    ring.name = 'bossRing'; // Tag for animation
+    group.add(ring);
+  }
+
   return group;
 }
 
@@ -214,6 +251,13 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
   const damageNumbersRef = useRef<DamageNumber[]>([]);
   const damageNumberIdRef = useRef<number>(0);
   const damageGroupRef = useRef<THREE.Group | null>(null);
+
+  // v6.5 Battle Polish: Visual effects tracking
+  const cameraShakeRef = useRef<CameraShake | null>(null);
+  const hitParticlesRef = useRef<HitParticle[]>([]);
+  const effectsGroupRef = useRef<THREE.Group | null>(null);
+  const telegraphsRef = useRef<AttackTelegraph[]>([]);
+  const telegraphGroupRef = useRef<THREE.Group | null>(null);
 
   // Use refs for animation loop state (avoids stale closure)
   const overviewPhaseRef = useRef<OverviewPhase>('zoom_out');
@@ -319,6 +363,16 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
     scene.add(damageGroup);
     damageGroupRef.current = damageGroup;
 
+    // v6.5 Battle Polish: Effects group for particles
+    const effectsGroup = new THREE.Group();
+    scene.add(effectsGroup);
+    effectsGroupRef.current = effectsGroup;
+
+    // v6.5 Battle Polish: Telegraph group for attack warnings
+    const telegraphGroup = new THREE.Group();
+    scene.add(telegraphGroup);
+    telegraphGroupRef.current = telegraphGroup;
+
     // Initial entity placement (show player during overview)
     updateEntities(entityGroup, battle, true);
 
@@ -378,6 +432,16 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
           anim.currentZ = anim.targetZ;
           anim.sprite.position.set(anim.currentX, 0, anim.currentZ);
         }
+
+        // v6.5 Battle Polish: Animate boss ring pulse
+        anim.sprite.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.name === 'bossRing') {
+            const pulse = 0.4 + Math.sin(now * 0.003) * 0.2;
+            (child.material as THREE.MeshBasicMaterial).opacity = pulse;
+            const scale = 1 + Math.sin(now * 0.002) * 0.1;
+            child.scale.set(scale, scale, 1);
+          }
+        });
       });
 
       // Animate damage numbers (float up, fade out, cleanup)
@@ -402,6 +466,63 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       }
       damageNumbersRef.current = activeDamage;
 
+      // v6.5 Battle Polish: Animate hit particles
+      const PARTICLE_DURATION = 600; // ms
+      const activeParticles: HitParticle[] = [];
+      for (const particle of hitParticlesRef.current) {
+        const elapsed = now - particle.startTime;
+        if (elapsed < particle.duration) {
+          // Expand particles outward and fade
+          const progress = elapsed / particle.duration;
+          const scale = 1 + progress * 2;
+          particle.mesh.scale.set(scale, scale, scale);
+          (particle.mesh.material as THREE.PointsMaterial).opacity = 1 - progress;
+          activeParticles.push(particle);
+        } else {
+          // Cleanup expired particle
+          effectsGroup.remove(particle.mesh);
+          particle.mesh.geometry.dispose();
+          (particle.mesh.material as THREE.PointsMaterial).dispose();
+        }
+      }
+      hitParticlesRef.current = activeParticles;
+
+      // v6.5 Battle Polish: Animate attack telegraphs
+      const activeTelegraphs: AttackTelegraph[] = [];
+      for (const telegraph of telegraphsRef.current) {
+        const elapsed = now - telegraph.startTime;
+        if (elapsed < telegraph.duration) {
+          // Pulse telegraph opacity
+          const progress = elapsed / telegraph.duration;
+          const pulse = Math.sin(progress * Math.PI * 4) * 0.2 + 0.3;
+          (telegraph.mesh.material as THREE.MeshBasicMaterial).opacity = pulse;
+          activeTelegraphs.push(telegraph);
+        } else {
+          // Cleanup expired telegraph
+          telegraphGroup.remove(telegraph.mesh);
+          telegraph.mesh.geometry.dispose();
+          (telegraph.mesh.material as THREE.MeshBasicMaterial).dispose();
+        }
+      }
+      telegraphsRef.current = activeTelegraphs;
+
+      // v6.5 Battle Polish: Apply camera shake
+      let shakeOffsetX = 0;
+      let shakeOffsetY = 0;
+      if (cameraShakeRef.current) {
+        const shake = cameraShakeRef.current;
+        const elapsed = now - shake.startTime;
+        const SHAKE_DURATION = 300; // ms
+        if (elapsed < SHAKE_DURATION) {
+          const progress = elapsed / SHAKE_DURATION;
+          const currentIntensity = shake.intensity * (1 - progress);
+          shakeOffsetX = (Math.random() - 0.5) * currentIntensity * 0.3;
+          shakeOffsetY = (Math.random() - 0.5) * currentIntensity * 0.15;
+        } else {
+          cameraShakeRef.current = null;
+        }
+      }
+
       // Update camera with mouse look values
       updateCamera(
         camera,
@@ -409,7 +530,9 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
         overviewPhaseRef.current,
         phaseStartTimeRef.current,
         cameraYawRef.current,
-        cameraPitchRef.current
+        cameraPitchRef.current,
+        shakeOffsetX,
+        shakeOffsetY
       );
 
       renderer.render(scene, camera);
@@ -508,6 +631,93 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
         };
 
         damageNumbersRef.current.push(dmgNumber);
+
+        // v6.5 Battle Polish: Trigger camera shake on damage
+        // Intensity scales with damage amount (capped at 1.0)
+        const shakeIntensity = Math.min(1.0, amount / 20);
+        cameraShakeRef.current = {
+          intensity: shakeIntensity,
+          decay: 0.9,
+          startTime: Date.now(),
+        };
+
+        // v6.5 Battle Polish: Create hit particle burst
+        if (effectsGroupRef.current) {
+          const particleCount = Math.min(20, amount * 2);
+          const positions = new Float32Array(particleCount * 3);
+
+          for (let i = 0; i < particleCount; i++) {
+            // Spread particles in a sphere around hit location
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI;
+            const r = 0.3;
+            positions[i * 3] = worldX + r * Math.sin(phi) * Math.cos(theta);
+            positions[i * 3 + 1] = 1.0 + r * Math.cos(phi);
+            positions[i * 3 + 2] = worldZ + r * Math.sin(phi) * Math.sin(theta);
+          }
+
+          const geometry = new THREE.BufferGeometry();
+          geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+          const particleMaterial = new THREE.PointsMaterial({
+            color: 0xff4444,
+            size: 0.15,
+            transparent: true,
+            opacity: 1.0,
+            depthTest: true,
+          });
+
+          const particles = new THREE.Points(geometry, particleMaterial);
+          effectsGroupRef.current.add(particles);
+
+          hitParticlesRef.current.push({
+            mesh: particles,
+            startTime: Date.now(),
+            duration: 600,
+          });
+        }
+      }
+    }
+  }, [events, battle.arena_width, battle.arena_height]);
+
+  // v6.5 Battle Polish: Process ENEMY_TELEGRAPH events for attack warnings
+  useEffect(() => {
+    if (!events || !telegraphGroupRef.current) return;
+
+    const { arena_width, arena_height } = battle;
+
+    for (const event of events) {
+      if (event.type === 'ENEMY_TELEGRAPH') {
+        const targetX = event.data.x as number;
+        const targetY = event.data.y as number;
+        const attackType = (event.data.attack_type as string) || 'melee';
+
+        if (targetX === undefined || targetY === undefined) continue;
+
+        // Convert arena coords to world coords
+        const worldX = (targetX - arena_width / 2) * TILE_SIZE;
+        const worldZ = (targetY - arena_height / 2) * TILE_SIZE;
+
+        // Create danger zone indicator
+        const geometry = new THREE.PlaneGeometry(TILE_SIZE * 0.9, TILE_SIZE * 0.9);
+        const material = new THREE.MeshBasicMaterial({
+          color: attackType === 'ranged' ? 0xff8800 : 0xff4444,
+          transparent: true,
+          opacity: 0.4,
+          side: THREE.DoubleSide,
+        });
+
+        const telegraph = new THREE.Mesh(geometry, material);
+        telegraph.rotation.x = -Math.PI / 2;
+        telegraph.position.set(worldX, 0.02, worldZ); // Just above floor
+
+        telegraphGroupRef.current.add(telegraph);
+
+        telegraphsRef.current.push({
+          mesh: telegraph,
+          startTime: Date.now(),
+          duration: 800, // Show for 800ms
+        });
       }
     }
   }, [events, battle.arena_width, battle.arena_height]);
@@ -1121,6 +1331,7 @@ function updateEntities(
 
 /**
  * Update camera position based on overview phase
+ * v6.5: Added shakeX/shakeY for camera shake effect
  */
 function updateCamera(
   camera: THREE.PerspectiveCamera,
@@ -1128,7 +1339,9 @@ function updateCamera(
   phase: OverviewPhase,
   phaseStartTime: number,
   yaw: number = 0,
-  pitch: number = 0
+  pitch: number = 0,
+  shakeX: number = 0,
+  shakeY: number = 0
 ) {
   const { arena_width, arena_height } = battle;
   const centerX = 0;
@@ -1142,7 +1355,8 @@ function updateCamera(
       const px = (battle.player.arena_x - arena_width / 2) * TILE_SIZE;
       const pz = (battle.player.arena_y - arena_height / 2) * TILE_SIZE;
 
-      camera.position.set(px, CAMERA_HEIGHT, pz);
+      // v6.5: Apply camera shake offset
+      camera.position.set(px + shakeX, CAMERA_HEIGHT + shakeY, pz);
 
       // Apply yaw (horizontal rotation) and pitch (vertical rotation)
       const lookDistance = 5;

@@ -274,22 +274,11 @@ def unlock_micro_event_evidence(event: MicroEvent, engine: 'GameEngine') -> bool
     if not event.evidence_id:
         return False
 
-    # Check if lore manager exists and has evidence tracking
-    lore_manager = getattr(engine, 'lore_manager', None)
-    if lore_manager is None:
+    # Get story manager from engine
+    story_manager = getattr(engine, 'story_manager', None)
+    if story_manager is None:
         return False
 
-    # Try to unlock the evidence
-    unlock_method = getattr(lore_manager, 'unlock_evidence', None)
-    if unlock_method is None:
-        # Fallback: track in completion ledger if available
-        completion_ledger = getattr(engine, 'completion_ledger', None)
-        if completion_ledger:
-            discovered = getattr(completion_ledger, 'discovered_evidence', set())
-            if event.evidence_id not in discovered:
-                discovered.add(event.evidence_id)
-                completion_ledger.discovered_evidence = discovered
-                return True
-        return False
-
-    return unlock_method(event.evidence_id)
+    # Use discover_lore to unlock the evidence entry
+    # validate=False since micro-event evidence might not be in ALL_LORE_IDS yet during testing
+    return story_manager.discover_lore(event.evidence_id, validate=True)
