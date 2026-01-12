@@ -20,6 +20,8 @@ import { GameOverCutscene, type DeathFateId } from '../components/GameOverCutsce
 import { VictoryCutscene, type VictoryLegacyId } from '../components/VictoryCutscene';
 import { LoreCodex } from '../components/LoreCodex';
 import { BattleOverlay } from '../components/BattleOverlay';
+import { BattleRenderer3D } from '../components/BattleRenderer3D';
+import { BattleHUD } from '../components/BattleHUD';
 import { TransitionCurtain } from '../components/TransitionCurtain';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
@@ -44,6 +46,7 @@ export function Play() {
   const [victoryLegacy, setVictoryLegacy] = useState<VictoryLegacyId>('unknown');
   const [showLoreJournal, setShowLoreJournal] = useState(false);
   const [pendingNewLore, setPendingNewLore] = useState<{ lore_id: string; title: string } | null>(null);
+  const [battleOverviewComplete, setBattleOverviewComplete] = useState(false);
 
   // Debug renderer controls (F8/F9/F10 hotkeys)
   const {
@@ -320,6 +323,14 @@ export function Play() {
     }
   }, [gameState?.new_lore]);
 
+  // Reset battle overview state when entering a new battle
+  useEffect(() => {
+    if (gameState?.battle) {
+      // New battle started - reset overview complete flag
+      setBattleOverviewComplete(false);
+    }
+  }, [gameState?.battle?.floor_level, gameState?.battle?.biome]);
+
   // Lore Journal hotkey (J key)
   useEffect(() => {
     const handleJournalKey = (e: KeyboardEvent) => {
@@ -540,12 +551,26 @@ export function Play() {
         onSkip={() => sendCommand('SKIP')}
       />
 
-      {/* Battle Overlay (v6.0.5) */}
+      {/* Battle Mode (v6.3: Three.js first-person OR v6.0.5 DOM fallback) */}
       {gameState?.battle && (
-        <BattleOverlay
-          battle={gameState.battle}
-          onCommand={(cmd) => sendCommand(cmd)}
-        />
+        use3DMode ? (
+          <>
+            <BattleRenderer3D
+              battle={gameState.battle}
+              onOverviewComplete={() => setBattleOverviewComplete(true)}
+            />
+            <BattleHUD
+              battle={gameState.battle}
+              onCommand={(cmd) => sendCommand(cmd)}
+              overviewComplete={battleOverviewComplete}
+            />
+          </>
+        ) : (
+          <BattleOverlay
+            battle={gameState.battle}
+            onCommand={(cmd) => sendCommand(cmd)}
+          />
+        )
       )}
 
       {/* Mobile Chat Toggle Button */}
