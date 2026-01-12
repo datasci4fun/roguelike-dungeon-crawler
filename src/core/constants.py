@@ -92,6 +92,15 @@ class EnemyType(Enum):
     COURT_SCRIBE = auto()       # Mirror Valdris - spectral (symbol: 'q')
     ANIMATED_TOME = auto()      # Library - knowledge threat (symbol: 't')
     CRYSTAL_SENTINEL = auto()   # Crystal Cave - guardian (symbol: 'C')
+    # v6.5 spice enemies (rare variants, 1 per floor)
+    SHADE = auto()              # F1 Stone - ghostly prisoner remnant (symbol: 'S')
+    BILE_LURKER = auto()        # F2 Sewers - toxic slime creature (symbol: 'B')
+    THORNLING = auto()          # F3 Forest - animated thorny plant (symbol: 'h')
+    DOPPELGANGER = auto()       # F4 Mirror - mimics player (symbol: '?')
+    FROST_WISP = auto()         # F5 Ice - frozen spirit (symbol: 'f')
+    INK_PHANTOM = auto()        # F6 Library - living manuscript (symbol: 'i')
+    EMBER_SPRITE = auto()       # F7 Volcanic - mischievous fire spirit (symbol: 'e')
+    PRISM_WATCHER = auto()      # F8 Crystal - crystalline eye creature (symbol: 'P')
 
 
 class BossType(Enum):
@@ -579,6 +588,112 @@ ENEMY_STATS = {
         'element': ElementType.LIGHTNING,
         'resistances': {'ice': 0.25, 'fire': 0.25},
     },
+    # v6.5 spice enemies (rare variants, 1 per floor at 5-10% spawn rate)
+    EnemyType.SHADE: {
+        'symbol': 'S',
+        'name': 'Shade',
+        'hp': 5,
+        'damage': 3,
+        'xp': 20,
+        'weight': 8,
+        'min_level': 1,
+        'max_level': 1,
+        'ai_type': AIBehavior.STEALTH,
+        'element': ElementType.DARK,
+        'resistances': {'physical': 0.5},  # Partially incorporeal
+    },
+    EnemyType.BILE_LURKER: {
+        'symbol': 'B',
+        'name': 'Bile Lurker',
+        'hp': 12,
+        'damage': 2,
+        'xp': 22,
+        'weight': 8,
+        'min_level': 2,
+        'max_level': 2,
+        'ai_type': AIBehavior.AGGRESSIVE,
+        'abilities': ['poison_spit'],
+        'resistances': {'poison': 1.0},  # Immune to poison
+    },
+    EnemyType.THORNLING: {
+        'symbol': 'h',
+        'name': 'Thornling',
+        'hp': 8,
+        'damage': 4,
+        'xp': 25,
+        'weight': 8,
+        'min_level': 3,
+        'max_level': 3,
+        'ai_type': AIBehavior.CHASE,
+        'abilities': ['thorn_burst'],  # Damages attacker on hit
+    },
+    EnemyType.DOPPELGANGER: {
+        'symbol': '?',
+        'name': 'Doppelganger',
+        'hp': 15,
+        'damage': 5,
+        'xp': 40,
+        'weight': 6,
+        'min_level': 4,
+        'max_level': 4,
+        'ai_type': AIBehavior.CHASE,
+        'element': ElementType.DARK,
+    },
+    EnemyType.FROST_WISP: {
+        'symbol': 'f',
+        'name': 'Frost Wisp',
+        'hp': 6,
+        'damage': 6,
+        'xp': 35,
+        'weight': 8,
+        'min_level': 5,
+        'max_level': 5,
+        'ai_type': AIBehavior.RANGED_KITE,
+        'element': ElementType.ICE,
+        'abilities': ['ice_shard'],
+        'resistances': {'ice': 1.0, 'fire': -0.5},  # Immune ice, weak fire
+    },
+    EnemyType.INK_PHANTOM: {
+        'symbol': 'i',
+        'name': 'Ink Phantom',
+        'hp': 10,
+        'damage': 7,
+        'xp': 45,
+        'weight': 8,
+        'min_level': 6,
+        'max_level': 6,
+        'ai_type': AIBehavior.STEALTH,
+        'element': ElementType.DARK,
+        'abilities': ['vanish'],
+    },
+    EnemyType.EMBER_SPRITE: {
+        'symbol': 'e',
+        'name': 'Ember Sprite',
+        'hp': 8,
+        'damage': 8,
+        'xp': 50,
+        'weight': 8,
+        'min_level': 7,
+        'max_level': 7,
+        'ai_type': AIBehavior.RANGED_KITE,
+        'element': ElementType.FIRE,
+        'abilities': ['fire_bolt'],
+        'resistances': {'fire': 1.0, 'ice': -0.5},  # Immune fire, weak ice
+    },
+    EnemyType.PRISM_WATCHER: {
+        'symbol': 'P',
+        'name': 'Prism Watcher',
+        'hp': 18,
+        'damage': 9,
+        'xp': 65,
+        'weight': 6,
+        'min_level': 8,
+        'max_level': 8,
+        'ai_type': AIBehavior.ELEMENTAL,
+        'element': ElementType.LIGHTNING,
+        'abilities': ['chain_lightning'],
+        'resistances': {'lightning': 0.75},
+    },
 }
 
 # Floor-by-floor enemy rosters (canonical, theme-first)
@@ -586,74 +701,82 @@ ENEMY_STATS = {
 FLOOR_ENEMY_POOLS = {
     # 1 — Stone Dungeon (MEMORY)
     1: [
-        (EnemyType.GOBLIN, 55),
-        (EnemyType.SKELETON, 30),
+        (EnemyType.GOBLIN, 50),
+        (EnemyType.SKELETON, 28),
         (EnemyType.ORC, 10),
         (EnemyType.WRAITH, 5),
+        (EnemyType.SHADE, 7),             # Spice: ghostly prisoner remnant
     ],
 
     # 2 — Sewers (CIRCULATION)
     2: [
-        (EnemyType.RAT, 45),
-        (EnemyType.PLAGUE_RAT, 25),
-        (EnemyType.ORC, 15),
+        (EnemyType.RAT, 42),
+        (EnemyType.PLAGUE_RAT, 23),
+        (EnemyType.ORC, 13),
         (EnemyType.ASSASSIN, 10),
         (EnemyType.SKELETON, 5),
+        (EnemyType.BILE_LURKER, 7),       # Spice: toxic slime creature
     ],
 
     # 3 — Forest Depths (GROWTH)
     3: [
-        (EnemyType.SPIDERLING, 45),
-        (EnemyType.WEBWEAVER, 25),
-        (EnemyType.RAT, 10),            # strays / carriers
-        (EnemyType.ASSASSIN, 10),       # erasure specialist intrusion
-        (EnemyType.WRAITH, 10),
+        (EnemyType.SPIDERLING, 42),
+        (EnemyType.WEBWEAVER, 23),
+        (EnemyType.RAT, 10),              # strays / carriers
+        (EnemyType.ASSASSIN, 10),         # erasure specialist intrusion
+        (EnemyType.WRAITH, 8),
+        (EnemyType.THORNLING, 7),         # Spice: animated thorny plant
     ],
 
     # 4 — Mirror Valdris (LEGITIMACY)
     4: [
-        (EnemyType.OATHBOUND_GUARD, 35),
-        (EnemyType.SKELETON, 25),
+        (EnemyType.OATHBOUND_GUARD, 32),
+        (EnemyType.SKELETON, 23),
         (EnemyType.COURT_SCRIBE, 15),
-        (EnemyType.ASSASSIN, 15),
+        (EnemyType.ASSASSIN, 13),
         (EnemyType.WRAITH, 10),
+        (EnemyType.DOPPELGANGER, 7),      # Spice: mimics player
     ],
 
     # 5 — Ice Cavern (STASIS)
     5: [
-        (EnemyType.ICE_ELEMENTAL, 30),
-        (EnemyType.SKELETON, 20),
-        (EnemyType.WRAITH, 20),
-        (EnemyType.OATHBOUND_GUARD, 15),  # oath-dead bleed through
+        (EnemyType.ICE_ELEMENTAL, 28),
+        (EnemyType.SKELETON, 18),
+        (EnemyType.WRAITH, 18),
+        (EnemyType.OATHBOUND_GUARD, 13),  # oath-dead bleed through
         (EnemyType.TROLL, 15),
+        (EnemyType.FROST_WISP, 8),        # Spice: frozen spirit
     ],
 
     # 6 — Ancient Library (COGNITION)
     6: [
-        (EnemyType.ANIMATED_TOME, 30),
-        (EnemyType.NECROMANCER, 25),
+        (EnemyType.ANIMATED_TOME, 28),
+        (EnemyType.NECROMANCER, 23),
         (EnemyType.COURT_SCRIBE, 15),     # records made hostile
-        (EnemyType.ASSASSIN, 15),
-        (EnemyType.WRAITH, 15),
+        (EnemyType.ASSASSIN, 13),
+        (EnemyType.WRAITH, 13),
+        (EnemyType.INK_PHANTOM, 8),       # Spice: living manuscript
     ],
 
     # 7 — Volcanic Depths (TRANSFORMATION)
     7: [
-        (EnemyType.FIRE_ELEMENTAL, 30),
-        (EnemyType.DEMON, 20),
-        (EnemyType.TROLL, 20),
+        (EnemyType.FIRE_ELEMENTAL, 28),
+        (EnemyType.DEMON, 18),
+        (EnemyType.TROLL, 18),
         (EnemyType.NECROMANCER, 15),
-        (EnemyType.ANIMATED_TOME, 15),    # burned knowledge walking
+        (EnemyType.ANIMATED_TOME, 13),    # burned knowledge walking
+        (EnemyType.EMBER_SPRITE, 8),      # Spice: mischievous fire spirit
     ],
 
     # 8 — Crystal Cave (INTEGRATION)
     # Dragon weight reduced to 8 for "fair-spicy" - still dangerous but not run-ending
     8: [
-        (EnemyType.CRYSTAL_SENTINEL, 37),  # Primary threat
-        (EnemyType.LIGHTNING_ELEMENTAL, 20),
+        (EnemyType.CRYSTAL_SENTINEL, 34),  # Primary threat
+        (EnemyType.LIGHTNING_ELEMENTAL, 18),
         (EnemyType.DRAGON, 8),             # Rare but terrifying
         (EnemyType.DEMON, 15),
-        (EnemyType.WRAITH, 20),
+        (EnemyType.WRAITH, 18),
+        (EnemyType.PRISM_WATCHER, 7),     # Spice: crystalline eye creature
     ],
 }
 
