@@ -75,6 +75,15 @@ W_LOW_HP_SURVIVAL = 25      # Penalty when hp<30% adjacent non-killshot
 # Maximum move tiles to consider (for performance)
 MAX_MOVE_CANDIDATES = 12
 
+# v6.2 Slice 2: Hazard Intelligence weights
+PATH_HAZARD_WEIGHT = 1.0    # Multiplier for path hazard cost
+W_EXIT_HAZARD = 15          # Bonus for moving off a hazard tile
+W_STAY_HAZARD = 40          # Penalty for staying on a hazard tile
+
+# Hazard pressure weights (cornering player)
+PRESSURE_WEIGHT = 4         # Per safe escape reduced
+SAFE_ESCAPE_BASE = 6        # "Normal" number of safe escapes
+
 
 # =============================================================================
 # Candidate Action Types
@@ -217,6 +226,158 @@ def get_hazard_cost(tile: str) -> float:
     return HAZARD_COST.get(tile, 0.0)
 
 
+# =============================================================================
+# v6.2 Slice 2: Hazard Intelligence
+# =============================================================================
+
+def min_cost_path_hazard(
+    battle: BattleState,
+    start: Tuple[int, int],
+    goal: Tuple[int, int],
+    pulse_mult: float = 1.0
+) -> float:
+    """
+    Calculate minimum hazard cost to path from start to goal.
+
+    Uses BFS/Dijkstra with hazard tile costs. Arena is small (≤11×11)
+    so this is cheap to compute.
+
+    Args:
+        battle: Current battle state
+        start: Starting (x, y) position
+        goal: Target (x, y) position
+        pulse_mult: Field pulse multiplier for hazard damage
+
+    Returns:
+        Total hazard cost along minimum-cost path, or 0 if no path.
+        Returns float('inf') if goal is unreachable.
+    """
+    import heapq
+
+    if start == goal:
+        return 0.0
+
+    # Priority queue: (cost, x, y)
+    # Use (cost, y, x) for deterministic tie-break
+    pq = [(0.0, start[1], start[0])]
+    visited = set()
+
+    # Neighbor expansion order: N, E, S, W (deterministic)
+    directions = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+
+    while pq:
+        cost, y, x = heapq.heappop(pq)
+
+        if (x, y) == goal:
+            return cost
+
+        if (x, y) in visited:
+            continue
+        visited.add((x, y))
+
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+
+            # Check bounds
+            if nx < 0 or nx >= battle.arena_width or ny < 0 or ny >= battle.arena_height:
+                continue
+
+            # Check walkable (allow hazards, they just cost more)
+            tile = battle.arena_tiles[ny][nx]
+            if tile == '#':
+                continue
+
+            if (nx, ny) in visited:
+                continue
+
+            # Calculate step cost
+            step_cost = 0.0
+            if tile in HAZARD_COST:
+                step_cost = HAZARD_COST[tile] * pulse_mult
+
+            heapq.heappush(pq, (cost + step_cost, ny, nx))
+
+    # No path found
+    return float('inf')
+
+
+def is_tile_hazard(battle: BattleState, x: int, y: int) -> bool:
+    """Check if a tile is a hazard."""
+    if y < 0 or y >= battle.arena_height or x < 0 or x >= battle.arena_width:
+        return False
+    tile = battle.arena_tiles[y][x]
+    return tile in HAZARD_COST
+
+
+def player_safe_escape_count(
+    battle: BattleState,
+    enemy_end_pos: Tuple[int, int],
+    ai_type: AIBehavior
+) -> int:
+    """
+    Count player's safe escape options after enemy moves.
+
+    Safe escape = tile that is:
+    - Walkable and in bounds
+    - Not a hazard
+    - Not adjacent to enemy_end_pos (for melee threat)
+    - Not occupied by another entity
+
+    Args:
+        battle: Current battle state
+        enemy_end_pos: Where the enemy will be after moving
+        ai_type: AI behavior type (melee vs ranged)
+
+    Returns:
+        Number of safe escape tiles for player
+    """
+    player = battle.player
+    if player is None:
+        return 0
+
+    px, py = player.arena_x, player.arena_y
+    safe_count = 0
+
+    # Check all adjacent tiles (player's movement options)
+    directions = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+
+    for dx, dy in directions:
+        nx, ny = px + dx, py + dy
+
+        # Check bounds
+        if nx < 0 or nx >= battle.arena_width or ny < 0 or ny >= battle.arena_height:
+            continue
+
+        # Check walkable
+        tile = battle.arena_tiles[ny][nx]
+        if tile == '#':
+            continue
+
+        # Check not a hazard
+        if tile in HAZARD_COST:
+            continue
+
+        # Check not occupied by enemy
+        occupied = False
+        for enemy in battle.enemies:
+            if enemy.hp > 0 and enemy.arena_x == nx and enemy.arena_y == ny:
+                occupied = True
+                break
+        if occupied:
+            continue
+
+        # Check not adjacent to enemy (melee threat)
+        # Only apply melee adjacency check for melee AI types
+        if ai_type in {AIBehavior.CHASE, AIBehavior.AGGRESSIVE, AIBehavior.STEALTH}:
+            dist_to_enemy = manhattan_distance(nx, ny, enemy_end_pos[0], enemy_end_pos[1])
+            if dist_to_enemy <= 1:
+                continue  # Adjacent to enemy = not safe
+
+        safe_count += 1
+
+    return safe_count
+
+
 def calculate_expected_damage(
     attacker: BattleEntity,
     target: BattleEntity,
@@ -321,11 +482,39 @@ def score_action(
     if action.end_tile:
         score += position_score(action.end_tile, actor, player, ai_type)
 
-    # Hazard cost at end tile
+    # Hazard cost at end tile (destination penalty)
     if action.end_tile:
         hazard = get_tile_hazard(battle, action.end_tile[0], action.end_tile[1])
         if hazard:
             score -= get_hazard_cost(hazard)
+
+    # v6.2 Slice 2: Path hazard cost (penalize pathing through hazards)
+    if action.action_type == CandidateType.MOVE and action.end_tile:
+        start_pos = (actor.arena_x, actor.arena_y)
+        path_cost = min_cost_path_hazard(battle, start_pos, action.end_tile)
+        if path_cost < float('inf'):
+            score -= PATH_HAZARD_WEIGHT * path_cost
+
+    # v6.2 Slice 2: Standing-in-hazard urgency
+    current_on_hazard = is_tile_hazard(battle, actor.arena_x, actor.arena_y)
+    if current_on_hazard:
+        if action.action_type == CandidateType.MOVE and action.end_tile:
+            # Bonus for leaving hazard
+            end_on_hazard = is_tile_hazard(battle, action.end_tile[0], action.end_tile[1])
+            if not end_on_hazard:
+                score += W_EXIT_HAZARD
+        elif action.action_type == CandidateType.WAIT:
+            # Penalty for staying on hazard
+            score -= W_STAY_HAZARD
+
+    # v6.2 Slice 2: Hazard pressure (corner player toward hazards)
+    # Only for melee AI types - prefer positions that reduce player's safe escapes
+    if ai_type in {AIBehavior.CHASE, AIBehavior.AGGRESSIVE, AIBehavior.STEALTH}:
+        if action.end_tile:
+            safe_escapes = player_safe_escape_count(battle, action.end_tile, ai_type)
+            # Reward reducing player's options (fewer safe escapes = better)
+            pressure_bonus = PRESSURE_WEIGHT * (SAFE_ESCAPE_BASE - safe_escapes)
+            score += pressure_bonus
 
     # Low HP self-preservation
     # If hp<30% and moving/staying adjacent without killing, add penalty
