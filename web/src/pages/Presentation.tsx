@@ -408,7 +408,7 @@ const SLIDES: Slide[] = [
     id: 'summary',
     type: 'bullets',
     content: {
-      section: '7. Jan 17 Share-out',
+      section: '10. Jan 17 Share-out',
       title: 'Three Takeaways',
       bullets: [
         {
@@ -427,10 +427,53 @@ const SLIDES: Slide[] = [
     },
   },
   {
+    id: 'workflow-claude',
+    type: 'showcase',
+    content: {
+      section: '7. Claude Code Workflow',
+      title: 'Session Continuity Architecture',
+      description: 'A file-based system that enables instant context restoration across devices and sessions',
+      stats: [
+        { label: 'Context Restore', value: '<30s' },
+        { label: 'Device Switches', value: 'Seamless' },
+        { label: 'Session Files', value: '3' },
+      ],
+      aiHelped: [
+        'CLAUDE.md — Project instructions, coding rules, environment setup (AI reads on every session start)',
+        'STATE.md — Current progress, what changed, what\'s next, known bugs (updated end of each session)',
+        'NEXT_SESSION.md — Handoff notes for complex multi-session work',
+        'Plan files — Detailed implementation plans preserved between sessions',
+      ],
+      lesson: 'When switching devices or starting a new day, Claude reads these files and has full project context in seconds — no manual explanation needed. The files ARE the continuity.',
+    },
+  },
+  {
+    id: 'workflow-cicd',
+    type: 'showcase',
+    content: {
+      section: '7. Claude Code Workflow',
+      title: 'Integrated CI/CD Skills',
+      description: 'Built-in slash commands that automate the development pipeline without leaving the conversation',
+      stats: [
+        { label: 'Skills Available', value: '5+' },
+        { label: 'Manual Steps', value: '0' },
+        { label: 'Pipeline Coverage', value: 'Full' },
+      ],
+      aiHelped: [
+        '/ci-healthcheck — Run lint, typecheck, build, tests; verify git cleanliness before pushing',
+        '/ci-add-github-actions — Generate CI workflow for the project stack (Node/Python)',
+        '/ci-release-gate — Add release gates so tags only happen from clean, passing builds',
+        '/project-resync — Sync with remote, resolve conflicts, handle unpushed changes',
+        '/game-integrity — Custom skill: validate all game data consistency across floors',
+      ],
+      lesson: 'CI/CD becomes conversational. "Check if this is ready to push" runs the full validation pipeline. No context switching to terminals or dashboards — everything happens in the AI conversation.',
+    },
+  },
+  {
     id: 'future',
     type: 'story',
     content: {
-      section: '8. Future Research',
+      section: '9. Future Research',
       type: 'success',
       title: 'AI-Generated 3D Asset Pipeline',
       story: 'Current research is exploring a CLI-based workflow for automated 3D model generation. The game currently uses Three.js with procedurally-generated geometry and 2D sprite overlays. The goal: replace these with actual 3D models generated from text prompts, creating a fully automated asset pipeline.',
