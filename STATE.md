@@ -1,8 +1,52 @@
 # Project State
 
-**Last Updated:** 2026-01-11
+**Last Updated:** 2026-01-12
 **Branch:** develop
-**Version:** v6.0.0 (Tactical Battle Mode) - SHIPPED
+**Version:** v6.1.0 (Cinematic Glue) - SHIPPED
+
+---
+
+## v6.1.0 SHIPPED (2026-01-12) - Cinematic Glue
+
+**Merge Commit:** feature/v6.1-cinematic-glue → develop
+
+### Core Concept
+**No-flicker transitions between exploration, battle, and cutscene modes.**
+
+Cinematic presentation layer that smooths mode changes with fade-to-black curtains and camera pans.
+
+### Key Features
+- Transition orchestrator with input locking
+- TransitionKind enum: ENGAGE, WIN, FLEE, DEFEAT, BOSS_VICTORY
+- Web transition curtain with phase-based animation
+- Letterbox bars for cinematic transitions (ENGAGE, BOSS_VICTORY)
+- Arena overview pan on battle start (zoom_out → pan_enemies → pan_player → settle)
+- Hazard/edge highlighting during overview
+- Skip support (Space/Escape) with clean state reset
+- Duration scales by arena size (9×7: 1.5s, 11×9: 1.7s, 11×11: 2.0s)
+
+### Implementation Files
+| File | Purpose |
+|------|---------|
+| `src/core/events.py` | TransitionKind enum, TransitionState dataclass |
+| `src/core/engine.py` | start_transition(), tick_transition(), is_input_locked() |
+| `src/combat/battle_manager.py` | Emit transitions on battle start/end |
+| `web/src/components/TransitionCurtain.tsx` | Fade-to-black overlay |
+| `web/src/components/BattleOverlay.tsx` | Arena overview pan |
+| `web/src/types/index.ts` | TransitionState TypeScript types |
+
+### Z-Index Layering
+| Layer | Z-Index | Component |
+|-------|---------|-----------|
+| BattleOverlay | 100 | Tactical arena |
+| TransitionCurtain | 175 | Fade-to-black |
+| Cutscenes | 200+ | Death/Victory cinematics |
+
+### Acceptance Gates Verified
+- ✅ Works on 9×7, 11×9, 11×11 arena sizes
+- ✅ Skipping resets cleanly, never breaks turn order
+- ✅ Player can't act until overview completes/skipped
+- ✅ No UI flicker between modes
 
 ---
 
