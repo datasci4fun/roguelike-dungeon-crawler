@@ -21,6 +21,18 @@ from ..core.constants import AIBehavior
 if TYPE_CHECKING:
     pass
 
+# v6.2.1: Import kiting module (deferred to avoid circular import)
+# Will be imported at function call time
+_kiting_module = None
+
+def _get_kiting_module():
+    """Lazy import of kiting module to avoid circular imports."""
+    global _kiting_module
+    if _kiting_module is None:
+        from . import ai_kiting
+        _kiting_module = ai_kiting
+    return _kiting_module
+
 
 # =============================================================================
 # Scoring Constants (v6.2)
@@ -527,6 +539,12 @@ def score_action(
         # Adjacent and not a killshot
         if dist_after == 1 and not getattr(action, 'is_killshot', False):
             score -= W_LOW_HP_SURVIVAL
+
+    # v6.2.1: Kiting heuristics for ranged AI types
+    if ai_type in {AIBehavior.RANGED_KITE, AIBehavior.ELEMENTAL}:
+        kiting = _get_kiting_module()
+        kite_score = kiting.calculate_kite_score(battle, actor, action, player)
+        score += kite_score
 
     return score
 
