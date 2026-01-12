@@ -419,6 +419,18 @@ const SLIDES: Slide[] = [
     },
   },
   {
+    id: 'future',
+    type: 'story',
+    content: {
+      section: '8. Future Research',
+      type: 'success',
+      title: 'AI-Generated 3D Asset Pipeline',
+      story: 'Current research is exploring a CLI-based workflow for automated 3D model generation. The goal: seed the game with actual 3D models instead of 2D sprites or unicode character representations on geometric shapes. This would create a fully automated asset pipeline from text prompt to in-game model.',
+      why: 'The game currently uses Three.js with procedurally-generated geometry and 2D sprite overlays. A working 3D generation pipeline would eliminate the last major bottleneck in solo AI-assisted game development — the need for traditional 3D artists or asset store purchases.',
+      lesson: 'As AI model generation matures (Meshy, Tripo, Rodin), integrating these tools into a CLI workflow could enable fully AI-generated games with production-quality 3D assets — no human artists required.',
+    },
+  },
+  {
     id: 'demo',
     type: 'cta',
     content: {
