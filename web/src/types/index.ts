@@ -191,6 +191,13 @@ export interface BattleEntity {
   status_effects: string[];
 }
 
+export interface BattleReinforcement {
+  enemy_name: string;
+  enemy_type: string;
+  is_elite: boolean;
+  turns_until_arrival: number;
+}
+
 export interface BattleState {
   phase: 'PLAYER_TURN' | 'ENEMY_TURN' | 'END_OF_ROUND';
   arena_width: number;
@@ -198,9 +205,14 @@ export interface BattleState {
   arena_tiles: string[][];
   player: BattleEntity;
   enemies: BattleEntity[];
+  reinforcements: BattleReinforcement[];
   round: number;
   floor_level: number;
   biome: string;
+  // v6.0.5: Artifact state
+  duplicate_seal_armed?: boolean;
+  woundglass_reveal_active?: boolean;
+  safe_tiles_revealed?: [number, number][];
 }
 
 // Leaderboard types

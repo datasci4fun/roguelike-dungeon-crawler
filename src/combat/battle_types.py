@@ -223,6 +223,11 @@ class BattleState:
     # Seed for deterministic generation (replay/debug)
     seed: int = 0
 
+    # v6.0.5: Artifact battle state
+    duplicate_seal_armed: bool = False      # True if next consumable is duplicated
+    woundglass_reveal_active: bool = False  # True if reinforcement ETAs revealed
+    safe_tiles_revealed: List[Tuple[int, int]] = field(default_factory=list)  # Woundglass revealed tiles
+
     def to_dict(self) -> Dict[str, Any]:
         """Serialize entire battle state for save/load."""
         return {
@@ -245,6 +250,10 @@ class BattleState:
             'phase': self.phase.name,
             'outcome': self.outcome.name,
             'seed': self.seed,
+            # v6.0.5: Artifact state
+            'duplicate_seal_armed': self.duplicate_seal_armed,
+            'woundglass_reveal_active': self.woundglass_reveal_active,
+            'safe_tiles_revealed': list(self.safe_tiles_revealed),
         }
 
     @classmethod
@@ -266,6 +275,10 @@ class BattleState:
             phase=BattlePhase[data.get('phase', 'PLAYER_TURN')],
             outcome=BattleOutcome[data.get('outcome', 'PENDING')],
             seed=data.get('seed', 0),
+            # v6.0.5: Artifact state
+            duplicate_seal_armed=data.get('duplicate_seal_armed', False),
+            woundglass_reveal_active=data.get('woundglass_reveal_active', False),
+            safe_tiles_revealed=[tuple(t) for t in data.get('safe_tiles_revealed', [])],
         )
 
         if data.get('player'):

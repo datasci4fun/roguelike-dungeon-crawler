@@ -221,6 +221,9 @@ class BattleManager:
             rng=rng
         )
 
+        # v6.0.5: Sync artifact state from player
+        battle.duplicate_seal_armed = getattr(player, 'duplicate_next_consumable', False)
+
         # Store battle state in engine
         self.engine.battle = battle
         self.engine.ui_mode = UIMode.BATTLE
@@ -236,6 +239,10 @@ class BattleManager:
                 template_description=compiled.get('description', ''),
                 reinforcement_count=len(battle.reinforcements),
             )
+
+        # v6.0.5: Check for ghost assists at battle start
+        self._check_archivist_reveal(battle)
+        self._check_beacon_guidance(battle)
 
         boss_str = " (BOSS)" if is_boss else ""
         reinf_str = f", {len(battle.reinforcements)} incoming" if battle.reinforcements else ""
@@ -341,6 +348,18 @@ class BattleManager:
         # Handle attack command
         elif command_type == 'ATTACK':
             return self._try_basic_attack(target_pos)
+
+        # v6.0.5: Handle item use
+        elif command_type.startswith('USE_ITEM_'):
+            try:
+                item_index = int(command_type.split('_')[2])
+                return self._try_use_item(item_index)
+            except (ValueError, IndexError):
+                return False
+
+        # v6.0.5: Handle Woundglass activation
+        elif command_type == 'USE_WOUNDGLASS':
+            return self._use_woundglass_battle()
 
         return False
 
@@ -632,6 +651,108 @@ class BattleManager:
         # For now, flee always succeeds
         # Could add chance based on enemy count, player speed, etc.
         self.end_battle(BattleOutcome.FLEE)
+        return True
+
+    def _try_use_item(self, item_index: int) -> bool:
+        """
+        Try to use a consumable item in battle (v6.0.5).
+
+        Supports Duplicate Seal - if armed, consumable effect happens twice.
+
+        Args:
+            item_index: Index into player's inventory
+
+        Returns:
+            True if item was used
+        """
+        battle = self.engine.battle
+        player = self.engine.player
+
+        if not player or not hasattr(player, 'inventory'):
+            return False
+
+        inventory = player.inventory
+        if item_index < 0 or item_index >= len(inventory):
+            self.engine.add_message("Invalid item selection.")
+            return False
+
+        item = inventory[item_index]
+        if not getattr(item, 'is_consumable', False):
+            self.engine.add_message("That item can't be used in battle.")
+            return False
+
+        # Use the item
+        effect_count = 1
+        if battle.duplicate_seal_armed:
+            effect_count = 2
+            battle.duplicate_seal_armed = False
+            # Also clear the player flag
+            player.duplicate_next_consumable = False
+            self.engine.add_message("The Duplicate Seal activates!")
+
+        # Apply effect (typically healing)
+        for i in range(effect_count):
+            if hasattr(item, 'heal_amount') and item.heal_amount > 0:
+                heal = item.heal_amount
+                battle.player.hp = min(battle.player.hp + heal, battle.player.max_hp)
+                self.engine.add_message(f"Used {item.name}! (+{heal} HP)")
+
+                if self.events:
+                    self.events.emit(
+                        EventType.BUFF_FLASH,
+                        entity=battle.player
+                    )
+
+        # Remove item from inventory (only once, even if duplicated)
+        inventory.pop(item_index)
+
+        # End turn after using item
+        self._end_player_turn()
+        return True
+
+    def _use_woundglass_battle(self) -> bool:
+        """
+        Activate Woundglass Shard in battle (v6.0.5).
+
+        Reveals reinforcement ETAs and highlights safe tiles.
+
+        Returns:
+            True if successfully activated
+        """
+        battle = self.engine.battle
+
+        if battle.woundglass_reveal_active:
+            self.engine.add_message("Woundglass vision already active.")
+            return False
+
+        # Mark reveal as active
+        battle.woundglass_reveal_active = True
+
+        # Find safe tiles (no hazards, far from reinforcement edges)
+        safe_tiles = []
+        for y in range(battle.arena_height):
+            for x in range(battle.arena_width):
+                tile = battle.arena_tiles[y][x]
+                if tile != '.':  # Only consider floor tiles
+                    continue
+
+                # Check distance from all reinforcement edges
+                min_edge_dist = float('inf')
+                for edge_x, edge_y in battle.reinforcement_edges:
+                    dist = manhattan_distance(x, y, edge_x, edge_y)
+                    min_edge_dist = min(min_edge_dist, dist)
+
+                # Safe if far from edges (at least 4 tiles away)
+                if min_edge_dist >= 4:
+                    safe_tiles.append((x, y))
+
+        battle.safe_tiles_revealed = safe_tiles
+
+        self.engine.add_message(
+            f"The Woundglass reveals {len(battle.reinforcements)} incoming reinforcements "
+            f"and {len(safe_tiles)} safe tiles."
+        )
+
         return True
 
     def _end_player_turn(self) -> None:
@@ -1011,12 +1132,61 @@ class BattleManager:
             # Check for game victory (floor 8 boss)
             if battle.floor_level >= 8:
                 self.engine.add_message("*** THE DRAGON EMPEROR HAS FALLEN! ***")
+                # v6.0.5: Preserve ledger/codex before clearing autosave
+                self._persist_victory_data()
                 from ..data import delete_save
                 delete_save()
                 self.engine.state = GameState.VICTORY
 
         # Also remove any reinforcements that arrived and were killed
         # (already handled above since they're added to battle.enemies)
+
+    def _persist_victory_data(self) -> None:
+        """Persist ledger and codex data for legacy/ghost system (v6.0.5).
+
+        Called before deleting autosave on victory to preserve:
+        - Completion ledger (for legacy calculation)
+        - Bestiary entries (for codex)
+        - Ghost imprint data (for future runs)
+        """
+        import json
+        import os
+        from datetime import datetime
+
+        victory_data = {
+            'timestamp': datetime.now().isoformat(),
+            'floor_reached': self.engine.current_level,
+            'player_level': self.engine.player.level if self.engine.player else 0,
+            'turns': self.engine.turn,
+        }
+
+        # Include completion ledger if available
+        if hasattr(self.engine, 'completion_ledger') and self.engine.completion_ledger:
+            victory_data['ledger'] = self.engine.completion_ledger.to_dict()
+
+        # Include bestiary/codex if available
+        if hasattr(self.engine, 'story_manager') and self.engine.story_manager:
+            if hasattr(self.engine.story_manager, 'get_codex_state'):
+                victory_data['codex'] = self.engine.story_manager.get_codex_state()
+
+        # Save to victory file (append to list of victories)
+        victory_file = "victories.json"
+        victories = []
+        if os.path.exists(victory_file):
+            try:
+                with open(victory_file, 'r') as f:
+                    victories = json.load(f)
+            except (json.JSONDecodeError, IOError):
+                victories = []
+
+        victories.append(victory_data)
+
+        try:
+            with open(victory_file, 'w') as f:
+                json.dump(victories, f, indent=2)
+        except IOError as e:
+            # Non-fatal - just log
+            print(f"Warning: Could not persist victory data: {e}")
 
     def _drop_boss_loot(self, boss) -> None:
         """Drop loot from a defeated boss at player's position."""
@@ -1127,6 +1297,94 @@ class BattleManager:
                     )
 
                 # Only one Champion can assist
+                break
+
+    def _check_archivist_reveal(self, battle: BattleState) -> None:
+        """Check if an Archivist ghost should reveal battle info (v6.0.5).
+
+        At battle start, Archivist reveals reinforcement edges and safe tiles.
+        One-time use per battle.
+        """
+        if not hasattr(self.engine, 'ghost_manager') or not self.engine.ghost_manager:
+            return
+
+        from ..entities.ghosts import GhostType
+
+        for ghost in self.engine.ghost_manager.ghosts:
+            if ghost.ghost_type == GhostType.ARCHIVIST and not ghost.triggered:
+                ghost.triggered = True
+
+                # Reveal safe tiles (similar to woundglass but automatic)
+                safe_tiles = []
+                for y in range(battle.arena_height):
+                    for x in range(battle.arena_width):
+                        tile = battle.arena_tiles[y][x]
+                        if tile != '.':
+                            continue
+                        # Check distance from reinforcement edges
+                        min_edge_dist = float('inf')
+                        for edge_x, edge_y in battle.reinforcement_edges:
+                            dist = manhattan_distance(x, y, edge_x, edge_y)
+                            min_edge_dist = min(min_edge_dist, dist)
+                        if min_edge_dist >= 3:
+                            safe_tiles.append((x, y))
+
+                battle.safe_tiles_revealed = safe_tiles
+                self.engine.add_message(
+                    "An Archivist's mark reveals the battlefield..."
+                )
+                break
+
+    def _check_beacon_guidance(self, battle: BattleState) -> None:
+        """Check if a Beacon ghost should provide guidance (v6.0.5).
+
+        Points player away from next reinforcement entry.
+        """
+        if not hasattr(self.engine, 'ghost_manager') or not self.engine.ghost_manager:
+            return
+
+        from ..entities.ghosts import GhostType
+
+        for ghost in self.engine.ghost_manager.ghosts:
+            if ghost.ghost_type == GhostType.BEACON and not ghost.triggered:
+                if not battle.reinforcements:
+                    continue
+
+                ghost.triggered = True
+
+                # Find the next reinforcement's entry edge
+                next_reinf = min(battle.reinforcements, key=lambda r: r.turns_until_arrival)
+                # Find closest edge to that reinforcement's world position
+                closest_edge = None
+                min_dist = float('inf')
+                for edge_x, edge_y in battle.reinforcement_edges:
+                    dist = manhattan_distance(
+                        edge_x, edge_y,
+                        next_reinf.world_x % battle.arena_width,
+                        next_reinf.world_y % battle.arena_height
+                    )
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_edge = (edge_x, edge_y)
+
+                if closest_edge:
+                    # Calculate direction away from that edge
+                    player = battle.player
+                    dx = player.arena_x - closest_edge[0]
+                    dy = player.arena_y - closest_edge[1]
+                    direction = ""
+                    if dy < 0:
+                        direction += "north"
+                    elif dy > 0:
+                        direction += "south"
+                    if dx < 0:
+                        direction += "west"
+                    elif dx > 0:
+                        direction += "east"
+                    if direction:
+                        self.engine.add_message(
+                            f"A guiding light pulses toward the {direction}..."
+                        )
                 break
 
     def _check_flee_vow_violation(self, battle: BattleState) -> None:
@@ -1296,6 +1554,11 @@ class BattleManager:
         """
         Calculate arrival turns based on Manhattan distance.
 
+        v6.0.5: When pulse is active, reinforcements arrive faster.
+        - MINOR pulse: 0.9x time
+        - MODERATE pulse: 0.8x time
+        - MAJOR pulse: 0.7x time
+
         Args:
             distance: Manhattan distance from encounter origin
 
@@ -1304,6 +1567,21 @@ class BattleManager:
         """
         # Base calculation: distance * factor + minimum
         turns = int(distance * DISTANCE_TO_TURNS_FACTOR) + MIN_ARRIVAL_TURNS
+
+        # v6.0.5: Apply pulse acceleration if active
+        if self._is_pulse_active():
+            pulse_amp = self._get_pulse_amplification()
+            # Convert amplification to speed multiplier (higher amp = faster arrival)
+            # 1.25 -> 0.9, 1.5 -> 0.8, 2.0 -> 0.7
+            if pulse_amp >= 2.0:
+                speed_mult = 0.7
+            elif pulse_amp >= 1.5:
+                speed_mult = 0.8
+            elif pulse_amp >= 1.25:
+                speed_mult = 0.9
+            else:
+                speed_mult = 1.0
+            turns = int(turns * speed_mult)
 
         # Ensure minimum
         return max(turns, MIN_ARRIVAL_TURNS)

@@ -20,6 +20,7 @@ class BattleAction(Enum):
     BASIC_ATTACK = auto()   # Basic melee/ranged attack
     WAIT = auto()           # Skip turn (end action)
     FLEE = auto()           # Attempt to flee battle
+    USE_ITEM = auto()       # Use consumable item (v6.0.5)
 
     # Warrior abilities
     POWER_STRIKE = auto()   # Heavy damage, single target
