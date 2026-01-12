@@ -23,6 +23,7 @@ import { BattleOverlay } from '../components/BattleOverlay';
 import { BattleRenderer3D } from '../components/BattleRenderer3D';
 import { BattleHUD, type SelectedAction, type TileCoord } from '../components/BattleHUD';
 import { TransitionCurtain } from '../components/TransitionCurtain';
+import { Graphics3DErrorBoundary } from '../components/ErrorBoundary';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
 
@@ -438,13 +439,15 @@ export function Play() {
                 {/* v6.3: Battle mode always uses Three.js renderer */}
                 {gameState?.battle ? (
                   <>
-                    <BattleRenderer3D
-                      battle={gameState.battle}
-                      onOverviewComplete={() => setBattleOverviewComplete(true)}
-                      selectedAction={battleSelectedAction}
-                      onTileClick={(tile, hasEnemy) => setBattleClickedTile({ tile, hasEnemy })}
-                      events={gameState.events}
-                    />
+                    <Graphics3DErrorBoundary name="BattleRenderer">
+                      <BattleRenderer3D
+                        battle={gameState.battle}
+                        onOverviewComplete={() => setBattleOverviewComplete(true)}
+                        selectedAction={battleSelectedAction}
+                        onTileClick={(tile, hasEnemy) => setBattleClickedTile({ tile, hasEnemy })}
+                        events={gameState.events}
+                      />
+                    </Graphics3DErrorBoundary>
                     <BattleHUD
                       battle={gameState.battle}
                       onCommand={(cmd) => sendCommand(cmd)}
@@ -455,26 +458,30 @@ export function Play() {
                     />
                   </>
                 ) : use3DMode ? (
-                  <FirstPersonRenderer3D
-                    view={gameState?.first_person_view}
-                    settings={{ biome: 'dungeon', useTileGrid }}
-                    width={sceneSize.width}
-                    height={sceneSize.height}
-                    deathCamActive={gameState?.game_state === 'DEAD'}
-                    fieldPulse={gameState?.field_pulse}
-                    zoneOverlay={gameState?.zone_overlay}
-                  />
+                  <Graphics3DErrorBoundary name="FirstPersonRenderer3D">
+                    <FirstPersonRenderer3D
+                      view={gameState?.first_person_view}
+                      settings={{ biome: 'dungeon', useTileGrid }}
+                      width={sceneSize.width}
+                      height={sceneSize.height}
+                      deathCamActive={gameState?.game_state === 'DEAD'}
+                      fieldPulse={gameState?.field_pulse}
+                      zoneOverlay={gameState?.zone_overlay}
+                    />
+                  </Graphics3DErrorBoundary>
                 ) : (
-                  <FirstPersonRenderer
-                    view={gameState?.first_person_view}
-                    settings={{ biome: 'dungeon', useTileGrid }}
-                    width={sceneSize.width}
-                    height={sceneSize.height}
-                    enableAnimations={true}
-                    debugShowWireframe={showWireframe}
-                    debugShowOccluded={showOccluded}
-                    onCorridorInfo={handleCorridorInfo}
-                  />
+                  <Graphics3DErrorBoundary name="FirstPersonRenderer">
+                    <FirstPersonRenderer
+                      view={gameState?.first_person_view}
+                      settings={{ biome: 'dungeon', useTileGrid }}
+                      width={sceneSize.width}
+                      height={sceneSize.height}
+                      enableAnimations={true}
+                      debugShowWireframe={showWireframe}
+                      debugShowOccluded={showOccluded}
+                      onCorridorInfo={handleCorridorInfo}
+                    />
+                  </Graphics3DErrorBoundary>
                 )}
                 {/* Character HUD overlay - hide during battle */}
                 {gameState?.player?.race && !gameState?.battle && (

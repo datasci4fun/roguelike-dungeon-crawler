@@ -3,6 +3,7 @@
  */
 import { useState, useEffect } from 'react';
 import { FirstPersonRenderer } from '../components/SceneRenderer';
+import { Graphics3DErrorBoundary } from '../components/ErrorBoundary';
 import type { FirstPersonView } from '../hooks/useGameSocket';
 
 // Enemy types for demo
@@ -223,12 +224,14 @@ export function FirstPersonDemo() {
               boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
             }}
           >
-            <FirstPersonRenderer
-              view={view}
-              width={500}
-              height={400}
-              enableAnimations={true}
-            />
+            <Graphics3DErrorBoundary name="FirstPersonDemo">
+              <FirstPersonRenderer
+                view={view}
+                width={500}
+                height={400}
+                enableAnimations={true}
+              />
+            </Graphics3DErrorBoundary>
           </div>
 
           <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#888' }}>

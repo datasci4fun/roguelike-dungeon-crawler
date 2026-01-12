@@ -6,6 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { SceneRenderer, gameStateToSceneFrame } from '../components/SceneRenderer';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import type { FullGameState } from '../hooks/useGameSocket';
 import './PlayScene.css';
 
@@ -153,13 +154,15 @@ export function SceneDemo() {
 
       <div className="play-scene__content">
         <div className="play-scene__renderer" style={{ outline: 'none' }}>
-          <SceneRenderer
-            frame={sceneFrame}
-            showGrid={showGrid}
-            showCoords={showDebug}
-            enableAnimations={enableAnimations}
-            className="play-scene__canvas"
-          />
+          <ErrorBoundary name="SceneDemo">
+            <SceneRenderer
+              frame={sceneFrame}
+              showGrid={showGrid}
+              showCoords={showDebug}
+              enableAnimations={enableAnimations}
+              className="play-scene__canvas"
+            />
+          </ErrorBoundary>
         </div>
 
         {/* HUD overlay */}
