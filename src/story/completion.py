@@ -5,15 +5,187 @@ This module provides:
 2. EndingId - enumeration of possible ending types
 3. resolve_ending() - determines ending based on run state
 4. derive_victory_legacy() - computes legacy from run stats (not random)
+5. SecretProgress - invisible tracking for secret ending candidate flags (v6.5.1)
 
 The secret ending is not yet implemented but hooks are in place.
+Candidate flags are tracked silently - never reveal criteria to players.
 """
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Set, Dict, Optional, TYPE_CHECKING
 
+
+# =============================================================================
+# SECRET ENDING FLAGS (v6.5.1 med-07)
+# =============================================================================
+# These are candidate conditions for a future secret ending.
+# IMPORTANT: The meaning of these flags should NEVER be revealed to players.
+# We track them now so data is preserved in save files for future use.
+# The actual secret ending criteria will be defined later.
+
+class SecretFlag(Enum):
+    """Invisible flags that may contribute to secret ending.
+
+    These are tracked silently. Players should never know which
+    flags they've triggered or what they mean.
+    """
+    # Completion-based (simple progress)
+    SWEPT_FLOOR_1 = auto()   # Cleared all enemies on floor 1
+    SWEPT_FLOOR_8 = auto()   # Cleared all enemies on floor 8
+    FULL_CODEX = auto()      # Found all codex evidence entries
+    ALL_ARTIFACTS = auto()   # Collected all 5 artifacts in one run
+    ALL_WARDENS = auto()     # Defeated all 8 wardens
+
+    # Playstyle-based (behavior patterns)
+    MERCIFUL_DESCENT = auto()   # Never killed on at least 3 floors
+    IRON_WILL = auto()          # Never used a potion
+    SPEEDRUNNER = auto()        # Completed in under N turns
+    COMPLETIONIST = auto()      # 100% completion (floors + bosses + lore)
+
+    # Challenge-based (difficulty achievements)
+    FLAWLESS_WARDEN = auto()    # Defeated a warden without taking damage
+    PULSE_MASTER = auto()       # Survived all 8 floor pulses
+    NO_ESCAPE = auto()          # Never fled from battle
+
+    # Lore-based (narrative discovery)
+    GHOST_WHISPERER = auto()    # Encountered all ghost types
+    DEEP_READER = auto()        # Found 80%+ of all lore
+    CATALYST_AWARE = auto()     # Witnessed all micro-events
+
+    # Mystery flags (placeholders for future ideas)
+    MYSTERY_A = auto()
+    MYSTERY_B = auto()
+    MYSTERY_C = auto()
+
 if TYPE_CHECKING:
     from ..entities.ghosts import GhostType
+
+
+@dataclass
+class SecretProgress:
+    """Invisible tracking of secret ending candidate flags.
+
+    v6.5.1 med-07: This class silently tracks conditions that may
+    contribute to a future secret ending. The actual criteria are
+    not yet defined - we're just collecting data.
+
+    IMPORTANT: Never expose these flags or their meaning to players.
+    """
+    # Triggered flags (set of SecretFlag enum names as strings)
+    triggered: Set[str] = field(default_factory=set)
+
+    # Per-floor tracking
+    kills_per_floor: Dict[int, int] = field(default_factory=dict)
+    damage_taken_per_warden: Dict[str, int] = field(default_factory=dict)
+    micro_events_witnessed: Set[int] = field(default_factory=set)  # Floor numbers
+
+    # Run-level tracking
+    floors_with_zero_kills: Set[int] = field(default_factory=set)
+    potions_ever_used: bool = False
+
+    def trigger(self, flag: SecretFlag):
+        """Silently trigger a secret flag."""
+        self.triggered.add(flag.name)
+
+    def has_flag(self, flag: SecretFlag) -> bool:
+        """Check if a flag is triggered (internal use only)."""
+        return flag.name in self.triggered
+
+    def record_floor_kill(self, floor: int):
+        """Record a kill on a specific floor."""
+        self.kills_per_floor[floor] = self.kills_per_floor.get(floor, 0) + 1
+
+    def record_floor_cleared_with_no_kills(self, floor: int):
+        """Record that a floor was cleared without any kills."""
+        if self.kills_per_floor.get(floor, 0) == 0:
+            self.floors_with_zero_kills.add(floor)
+
+    def record_warden_damage(self, warden_name: str, damage: int):
+        """Record damage taken from a specific warden."""
+        self.damage_taken_per_warden[warden_name] = (
+            self.damage_taken_per_warden.get(warden_name, 0) + damage
+        )
+
+    def record_potion_used(self):
+        """Record that a potion was used."""
+        self.potions_ever_used = True
+
+    def record_micro_event(self, floor: int):
+        """Record witnessing a micro-event on a floor."""
+        self.micro_events_witnessed.add(floor)
+
+    def evaluate_floor_sweep(self, floor: int, all_enemies_dead: bool):
+        """Evaluate if floor was swept (all enemies killed)."""
+        if all_enemies_dead and floor == 1:
+            self.trigger(SecretFlag.SWEPT_FLOOR_1)
+        elif all_enemies_dead and floor == 8:
+            self.trigger(SecretFlag.SWEPT_FLOOR_8)
+
+    def evaluate_warden_flawless(self, warden_name: str):
+        """Evaluate if warden was defeated flawlessly."""
+        if self.damage_taken_per_warden.get(warden_name, 0) == 0:
+            self.trigger(SecretFlag.FLAWLESS_WARDEN)
+
+    def evaluate_end_of_run(self, ledger: 'CompletionLedger', total_lore: int = 24):
+        """Evaluate flags at end of run based on final state."""
+        # All wardens defeated
+        if len(ledger.wardens_defeated) >= 8:
+            self.trigger(SecretFlag.ALL_WARDENS)
+
+        # All artifacts collected (5 total)
+        if len(ledger.artifacts_collected_ids) >= 5:
+            self.trigger(SecretFlag.ALL_ARTIFACTS)
+
+        # Pulse master (survived all 8 pulses)
+        if ledger.pulses_survived >= 8:
+            self.trigger(SecretFlag.PULSE_MASTER)
+
+        # No escape (never fled)
+        if ledger.battles_escaped == 0:
+            self.trigger(SecretFlag.NO_ESCAPE)
+
+        # Iron will (no potions)
+        if not self.potions_ever_used:
+            self.trigger(SecretFlag.IRON_WILL)
+
+        # Deep reader (80%+ lore)
+        if total_lore > 0 and ledger.lore_count >= int(total_lore * 0.8):
+            self.trigger(SecretFlag.DEEP_READER)
+
+        # Merciful descent (3+ floors with no kills)
+        if len(self.floors_with_zero_kills) >= 3:
+            self.trigger(SecretFlag.MERCIFUL_DESCENT)
+
+        # Catalyst aware (witnessed all 8 micro-events)
+        if len(self.micro_events_witnessed) >= 8:
+            self.trigger(SecretFlag.CATALYST_AWARE)
+
+        # 100% completion
+        if ledger.completion_pct >= 100.0:
+            self.trigger(SecretFlag.COMPLETIONIST)
+
+    def to_dict(self) -> dict:
+        """Serialize to dictionary."""
+        return {
+            'triggered': list(self.triggered),
+            'kills_per_floor': self.kills_per_floor.copy(),
+            'damage_taken_per_warden': self.damage_taken_per_warden.copy(),
+            'micro_events_witnessed': list(self.micro_events_witnessed),
+            'floors_with_zero_kills': list(self.floors_with_zero_kills),
+            'potions_ever_used': self.potions_ever_used,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> 'SecretProgress':
+        """Deserialize from dictionary."""
+        return cls(
+            triggered=set(data.get('triggered', [])),
+            kills_per_floor=data.get('kills_per_floor', {}).copy(),
+            damage_taken_per_warden=data.get('damage_taken_per_warden', {}).copy(),
+            micro_events_witnessed=set(data.get('micro_events_witnessed', [])),
+            floors_with_zero_kills=set(data.get('floors_with_zero_kills', [])),
+            potions_ever_used=data.get('potions_ever_used', False),
+        )
 
 
 class EndingId(Enum):
@@ -64,6 +236,9 @@ class CompletionLedger:
 
     # Reserved for future secret ending criteria
     secrets_found: Set[str] = field(default_factory=set)
+
+    # v6.5.1 med-07: Secret ending progress tracking (invisible)
+    secret_progress: SecretProgress = field(default_factory=SecretProgress)
 
     def record_turn(self):
         """Record a turn taken."""
@@ -160,11 +335,20 @@ class CompletionLedger:
             'reinforcements_faced': self.reinforcements_faced,
             'reinforcement_types': self.reinforcement_types.copy(),
             'battles_escaped': self.battles_escaped,
+            # v6.5.1 med-07: Secret ending progress
+            'secret_progress': self.secret_progress.to_dict(),
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> 'CompletionLedger':
         """Deserialize from dictionary."""
+        # v6.5.1: Handle secret_progress (backwards compatible)
+        secret_progress_data = data.get('secret_progress')
+        secret_progress = (
+            SecretProgress.from_dict(secret_progress_data)
+            if secret_progress_data else SecretProgress()
+        )
+
         return cls(
             floors_cleared=set(data.get('floors_cleared', [])),
             wardens_defeated=set(data.get('wardens_defeated', [])),
@@ -183,6 +367,8 @@ class CompletionLedger:
             reinforcements_faced=data.get('reinforcements_faced', 0),
             reinforcement_types=data.get('reinforcement_types', {}).copy(),
             battles_escaped=data.get('battles_escaped', 0),
+            # v6.5.1 med-07: Secret ending progress
+            secret_progress=secret_progress,
         )
 
 
@@ -306,6 +492,9 @@ def debug_print_completion_ledger(ledger: CompletionLedger):
     print("-" * 50)
     print(f"Completion: {ledger.completion_pct:.1f}%")
     print(f"Secrets Found: {sorted(ledger.secrets_found)}")
+    # v6.5.1: Secret progress (counts only, not meanings)
+    sp = ledger.secret_progress
+    print(f"Secret Flags Triggered: {len(sp.triggered)}")
     print("=" * 50)
 
 
