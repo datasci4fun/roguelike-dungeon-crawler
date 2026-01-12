@@ -838,35 +838,35 @@ body.export-mode .header {
 .presentation.export-mode .export-slide-wrapper {
   page-break-inside: avoid;
   break-inside: avoid;
-  min-height: auto;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 1rem 2rem 1rem;
+  padding: 1.5rem 2rem;
   border-bottom: 2px solid #333;
   background: #0a0a0a;
   position: relative;
   z-index: 200;
+  box-sizing: border-box;
 }
 
-.presentation.export-mode .export-slide-wrapper .slide {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+/* Title page gets its own page */
+.presentation.export-mode .export-slide-wrapper.title-page {
+  page-break-after: always;
+  break-after: page;
 }
 
 .presentation.export-mode .export-slide-wrapper:last-child {
   border-bottom: none;
 }
 
-/* Export header */
+/* Export header - fixed at top */
 .export-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
+  padding: 0.5rem 0 1rem;
   border-bottom: 1px solid rgba(74, 222, 128, 0.2);
-  margin-bottom: 1.5rem;
+  flex-shrink: 0;
 }
 
 .export-header-title {
@@ -882,14 +882,29 @@ body.export-mode .header {
   font-style: italic;
 }
 
-/* Export footer */
+/* Export content - fills middle */
+.export-slide-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.export-slide-content .slide {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Export footer - fixed at bottom */
 .export-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
+  padding: 1rem 0 0.5rem;
   border-top: 1px solid rgba(74, 222, 128, 0.2);
-  margin-top: 1.5rem;
+  flex-shrink: 0;
 }
 
 .export-footer-event {
@@ -1000,6 +1015,11 @@ body.export-mode .header {
    ============================================ */
 
 @media print {
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+
   body {
     background: white !important;
     color: black !important;
@@ -1015,48 +1035,69 @@ body.export-mode .header {
 
   .presentation.export-mode .export-slide-wrapper {
     background: white !important;
-    border-bottom: 1px solid #ccc !important;
-    min-height: auto !important;
-    padding: 1.5rem 2rem !important;
+    border: none !important;
+    min-height: calc(100vh - 1in) !important;
+    height: calc(100vh - 1in) !important;
+    max-height: calc(100vh - 1in) !important;
+    padding: 0 !important;
     page-break-inside: avoid;
     break-inside: avoid;
+    page-break-after: always;
+    break-after: page;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
   }
 
   .presentation.export-mode .export-slide-wrapper:last-child {
-    border-bottom: none !important;
+    page-break-after: auto;
+    break-after: auto;
   }
 
-  /* Print header/footer styles */
+  /* Print header styles */
   .export-header {
-    border-bottom-color: #ccc !important;
-    margin-bottom: 1rem !important;
-    padding: 0.5rem 0 !important;
+    border-bottom: 1px solid #ccc !important;
+    padding: 0 0 0.5rem 0 !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
   }
 
   .export-header-title {
     color: #2e7d32 !important;
-    font-size: 0.8rem !important;
+    font-size: 9pt !important;
   }
 
   .export-header-author {
     color: #6d4c41 !important;
-    font-size: 0.75rem !important;
+    font-size: 9pt !important;
   }
 
-  .export-footer {
-    border-top-color: #ccc !important;
-    margin-top: 1rem !important;
+  /* Print content fills the middle */
+  .export-slide-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
     padding: 0.5rem 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Print footer styles */
+  .export-footer {
+    border-top: 1px solid #ccc !important;
+    padding: 0.5rem 0 0 0 !important;
+    margin-top: 0 !important;
+    flex-shrink: 0 !important;
   }
 
   .export-footer-event {
     color: #666 !important;
-    font-size: 0.7rem !important;
+    font-size: 8pt !important;
   }
 
   .export-footer-page {
     color: #333 !important;
-    font-size: 0.7rem !important;
+    font-size: 8pt !important;
   }
 
   .presentation.export-mode .slide {

@@ -574,12 +574,17 @@ export function Presentation() {
           <div className="slide-container">
             <div className="export-slides">
               {SLIDES.map((s, index) => (
-                <div key={s.id} className="export-slide-wrapper">
+                <div
+                  key={s.id}
+                  className={`export-slide-wrapper ${s.type === 'title' ? 'title-page' : ''}`}
+                >
                   <div className="export-header">
                     <span className="export-header-title">Building a Full Game with AI</span>
                     <span className="export-header-author">Blixa Markham</span>
                   </div>
-                  <SlideRenderer slide={s} />
+                  <div className="export-slide-content">
+                    <SlideRenderer slide={s} />
+                  </div>
                   <div className="export-footer">
                     <span className="export-footer-event">AI Usage & Side Projects • Jan 17, 2026</span>
                     <span className="export-footer-page">Page {index + 1} of {SLIDES.length}</span>
