@@ -15,7 +15,10 @@ from .battle_actions import (
     manhattan_distance, create_status_effect, BATTLE_MOVE_RANGE
 )
 from .arena_templates import pick_template, compile_template, generate_deterministic_seed
-from ..core.constants import UIMode, DungeonTheme, LEVEL_THEMES
+from .ai_scoring import (
+    choose_action, get_enemy_ai_type, execute_ai_action, CandidateType
+)
+from ..core.constants import UIMode, DungeonTheme, LEVEL_THEMES, AIBehavior
 from ..core.events import EventType, EventQueue, TransitionKind
 
 if TYPE_CHECKING:
@@ -803,49 +806,62 @@ class BattleManager:
             self._enemy_take_turn(enemy)
 
     def _enemy_take_turn(self, enemy: BattleEntity) -> None:
-        """Execute a single enemy's turn."""
+        """Execute a single enemy's turn using v6.2 AI scoring system."""
         battle = self.engine.battle
         player = battle.player
 
         if player is None or player.hp <= 0:
             return
 
-        # Check if adjacent to player (can attack)
-        dist = manhattan_distance(
-            enemy.arena_x, enemy.arena_y,
-            player.arena_x, player.arena_y
-        )
+        # v6.2: Get AI type for this enemy
+        ai_type = get_enemy_ai_type(enemy.entity_id, self.engine)
 
-        if dist == 1:
-            # Attack player (v6.0.5: pulse amplifies enemy damage)
-            defense = player.get_effective_defense()
-            base_damage = max(1, enemy.attack - defense)
-            pulse_amp = self._get_pulse_amplification()
-            damage = int(base_damage * pulse_amp)
-            player.hp -= damage
+        # v6.2: Choose best action using scoring system
+        action = choose_action(battle, enemy, ai_type)
 
-            if self.events:
-                self.events.emit(
-                    EventType.DAMAGE_NUMBER,
-                    x=player.arena_x,
-                    y=player.arena_y,
-                    amount=damage
-                )
-                self.events.emit(EventType.HIT_FLASH, entity=player)
+        if action.action_type == CandidateType.ATTACK:
+            # Execute attack on player
+            self._execute_enemy_attack(enemy, player)
 
-            self.engine.add_message(f"Enemy hits you for {damage}!")
+        elif action.action_type == CandidateType.MOVE:
+            # Move to chosen tile
+            new_x, new_y = execute_ai_action(battle, enemy, action)
+            if (new_x, new_y) != (enemy.arena_x, enemy.arena_y):
+                enemy.arena_x = new_x
+                enemy.arena_y = new_y
+                # Check hazards on the new tile
+                self._check_tile_hazards(enemy, new_x, new_y)
 
-            # v6.0.5.5: Check for Champion ghost assist
-            self._check_champion_assist(player)
+        # WAIT does nothing (enemy skips turn)
 
-            if player.hp <= 0:
-                self._handle_entity_death(player)
-        else:
-            # Move toward player
-            self._enemy_move_toward_player(enemy)
+    def _execute_enemy_attack(self, enemy: BattleEntity, player: BattleEntity) -> None:
+        """Execute an enemy's attack on the player (v6.2 extracted for clarity)."""
+        # v6.0.5: Pulse amplifies enemy damage
+        defense = player.get_effective_defense()
+        base_damage = max(1, enemy.attack - defense)
+        pulse_amp = self._get_pulse_amplification()
+        damage = int(base_damage * pulse_amp)
+        player.hp -= damage
+
+        if self.events:
+            self.events.emit(
+                EventType.DAMAGE_NUMBER,
+                x=player.arena_x,
+                y=player.arena_y,
+                amount=damage
+            )
+            self.events.emit(EventType.HIT_FLASH, entity=player)
+
+        self.engine.add_message(f"Enemy hits you for {damage}!")
+
+        # v6.0.5.5: Check for Champion ghost assist
+        self._check_champion_assist(player)
+
+        if player.hp <= 0:
+            self._handle_entity_death(player)
 
     def _enemy_move_toward_player(self, enemy: BattleEntity) -> None:
-        """Move enemy one step toward player."""
+        """Move enemy one step toward player (legacy fallback, replaced by v6.2 AI)."""
         battle = self.engine.battle
         player = battle.player
 
