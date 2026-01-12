@@ -19,6 +19,8 @@ import { GameOver } from '../components/GameOver';
 import { GameOverCutscene, type DeathFateId } from '../components/GameOverCutscene';
 import { VictoryCutscene, type VictoryLegacyId } from '../components/VictoryCutscene';
 import { LoreCodex } from '../components/LoreCodex';
+import { BattleOverlay } from '../components/BattleOverlay';
+import { TransitionCurtain } from '../components/TransitionCurtain';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
 
@@ -531,6 +533,20 @@ export function Play() {
         isConnected={gameStatus === 'connected'}
         gameActive={!!gameState && gameState.game_state === 'PLAYING'}
       />
+
+      {/* v6.1: Transition Curtain - prevents UI flicker between modes */}
+      <TransitionCurtain
+        transition={gameState?.transition}
+        onSkip={() => sendCommand('SKIP')}
+      />
+
+      {/* Battle Overlay (v6.0.5) */}
+      {gameState?.battle && (
+        <BattleOverlay
+          battle={gameState.battle}
+          onCommand={(cmd) => sendCommand(cmd)}
+        />
+      )}
 
       {/* Mobile Chat Toggle Button */}
       <button

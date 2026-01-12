@@ -2,7 +2,210 @@
 
 **Last Updated:** 2026-01-11
 **Branch:** develop
-**Version:** v5.7.0 (Game Integrity Validation Skill)
+**Version:** v6.2.1 (Kiting Heuristics) - SHIPPED
+
+---
+
+## v6.2.1 SHIPPED (2026-01-11) - Kiting Heuristics
+
+**Merge Commit:** feature/v6.2.1-kiting-heuristics → develop
+
+### Core Concept
+**Ranged AI kiting/spacing for hunter-like behavior.**
+
+Ranged enemies now maintain preferred distance, avoid adjacency unless killshot, and don't corner themselves.
+
+### Key Features
+- Preferred range band (3-5, sweet spot 4)
+- Decisive adjacency penalty (-60) unless killshot
+- Break melee lock bonus (+20) when escaping to dist >= 3
+- Edge/corner avoidance to prevent self-cornering
+- Retreat lane preservation
+
+### Implementation
+- `src/combat/ai_kiting.py`: New kiting module (341 lines)
+- Applies to `RANGED_KITE` and `ELEMENTAL` AI behaviors
+- 13 new tests, 41 total AI tests pass
+
+### Next Steps
+- v6.3: Zone-Specific Arenas (zone overrides + boss motifs)
+- Alternative: Secret ending hooks or meta progression
+
+---
+
+## v6.2.0 SHIPPED (2026-01-11) - Tactical Depth
+
+**Merge Commit:** feature/v6.2-tactical-depth → develop
+
+### Core Concept
+**Deterministic AI scoring and boss-specific heuristics for learnable, fair combat.**
+
+All enemies use numeric scoring to select actions. Bosses layer signature abilities on top. Same seed + same state = same action, always.
+
+### Completed Slices
+
+#### Slice 1: AI Scoring Foundation
+- `enumerate_candidate_actions()` - lists legal MOVE/ATTACK/WAIT
+- `score_action()` - deterministic numeric scoring
+- `choose_action()` - picks best with stable tie-break
+
+**Scoring Weights:**
+| Weight | Value | Description |
+|--------|-------|-------------|
+| W_KILL | 80 | Kill shot priority |
+| W_DMG | 2.5 | Per HP damage |
+| W_ADJACENCY_MELEE | 18 | Melee wants adjacency |
+| W_RANGED_DIST | 12 | Ranged prefers distance 4 |
+| W_TOO_CLOSE_PENALTY | 25 | Ranged penalty for dist 1 |
+
+#### Slice 2: Hazard Intelligence
+- `min_cost_path_hazard()` - BFS/Dijkstra with hazard costs
+- `is_tile_hazard()` - check if tile is dangerous
+- `player_safe_escape_count()` - count player's safe options
+
+**Hazard Costs:**
+| Tile | Cost | Description |
+|------|------|-------------|
+| LAVA (~) | 120 | Nearly impassable |
+| POISON (!) | 55 | High penalty |
+| DEEP_WATER (≈) | 30 | Moderate penalty |
+| ICE (=) | 18 | Minor penalty |
+
+**Pressure Scoring:**
+- W_EXIT_HAZARD = 15 (bonus for leaving hazard)
+- W_STAY_HAZARD = 40 (penalty for staying)
+- PRESSURE_WEIGHT = 4 (melee cornering bonus)
+
+#### Slice 3: Boss Heuristics
+Priority-based rule system for signature boss behaviors:
+
+| Boss | Signature Abilities |
+|------|---------------------|
+| Regent | Royal Decree (summon guards), Counterfeit Crown (debuff) |
+| Rat King | Summon Swarm, Plague Bite, Burrow (escape) |
+| Spider Queen | Web Trap, Poison Bite, Summon Spiders |
+| Frost Giant | Freeze Ground, Ice Blast |
+| Arcane Keeper | Teleport (when adjacent), Arcane Bolt |
+| Flame Lord | Lava Pool, Inferno, Fire Breath |
+| Dragon Emperor | Dragon Fear (round 1), Tail Sweep, Fire Breath |
+
+**Key Features:**
+- Rule priority system with predicate-based activation
+- Cooldown tracking per boss ability
+- Falls back to ai_scoring when no rule matches
+- Deterministic: same state → same action
+- Bosses avoid stepping into lava unless killshot
+
+### Implementation Files
+
+| File | Purpose |
+|------|---------|
+| `src/combat/ai_scoring.py` | Core AI scoring (Slices 1 & 2) |
+| `src/combat/boss_heuristics.py` | Boss decision rules (Slice 3) |
+| `src/combat/battle_actions.py` | Boss ability definitions |
+| `src/combat/battle_manager.py` | Integration layer |
+| `tests/test_ai_scoring.py` | AI scoring tests (28 tests) |
+| `tests/test_boss_heuristics.py` | Boss behavior tests |
+
+### Test Results
+All 28 tests pass:
+- Determinism tests (same state → same action)
+- Hazard avoidance tests
+- Kill shot priority tests
+- Position scoring tests
+- Boss-specific behavior tests
+
+### Next Steps
+- v6.2.1: Option A - Kiting/spacing heuristics for ranged enemies (recommended)
+- v6.3+: Option B - Bresenham LoS + cover tiles (if needed)
+
+---
+
+## v6.1.0 SHIPPED (2026-01-12) - Cinematic Glue
+
+**Merge Commit:** feature/v6.1-cinematic-glue → develop
+
+### Core Concept
+**No-flicker transitions between exploration, battle, and cutscene modes.**
+
+Cinematic presentation layer that smooths mode changes with fade-to-black curtains and camera pans.
+
+### Key Features
+- Transition orchestrator with input locking
+- TransitionKind enum: ENGAGE, WIN, FLEE, DEFEAT, BOSS_VICTORY
+- Web transition curtain with phase-based animation
+- Letterbox bars for cinematic transitions (ENGAGE, BOSS_VICTORY)
+- Arena overview pan on battle start (zoom_out → pan_enemies → pan_player → settle)
+- Hazard/edge highlighting during overview
+- Skip support (Space/Escape) with clean state reset
+- Duration scales by arena size (9×7: 1.5s, 11×9: 1.7s, 11×11: 2.0s)
+
+### Implementation Files
+| File | Purpose |
+|------|---------|
+| `src/core/events.py` | TransitionKind enum, TransitionState dataclass |
+| `src/core/engine.py` | start_transition(), tick_transition(), is_input_locked() |
+| `src/combat/battle_manager.py` | Emit transitions on battle start/end |
+| `web/src/components/TransitionCurtain.tsx` | Fade-to-black overlay |
+| `web/src/components/BattleOverlay.tsx` | Arena overview pan |
+| `web/src/types/index.ts` | TransitionState TypeScript types |
+
+### Z-Index Layering
+| Layer | Z-Index | Component |
+|-------|---------|-----------|
+| BattleOverlay | 100 | Tactical arena |
+| TransitionCurtain | 175 | Fade-to-black |
+| Cutscenes | 200+ | Death/Victory cinematics |
+
+### Acceptance Gates Verified
+- ✅ Works on 9×7, 11×9, 11×11 arena sizes
+- ✅ Skipping resets cleanly, never breaks turn order
+- ✅ Player can't act until overview completes/skipped
+- ✅ No UI flicker between modes
+
+---
+
+## v6.0.0 SHIPPED (2026-01-11) - Tactical Battle Mode
+
+**Merge Commit:** feature/v6-battle-mode-skeleton → develop
+
+### Core Concept
+**Exploration is grid-based; combat is instanced tactical arenas.**
+
+Deterministic battles with reinforcement system and field pulse integration.
+
+### Key Features
+- 9x7 tactical arenas with biome-specific templates
+- 4 class ability kits (Warrior, Mage, Rogue, Cleric)
+- Reinforcement spawning from arena edges
+- Field pulse accelerates reinforcement arrival
+- Artifact effects in battle (Duplicate Seal, Woundglass, Oathstone)
+- Ghost battle effects (Champion, Archivist, Beacon)
+- Full save/load support for mid-battle state
+
+### Implementation Files
+| File | Purpose |
+|------|---------|
+| `src/combat/battle_types.py` | BattleState, BattleEntity, PendingReinforcement |
+| `src/combat/battle_actions.py` | BattleAction enum |
+| `src/combat/battle_manager.py` | Turn processing, abilities, reinforcements |
+| `web/src/components/BattleOverlay.tsx` | Arena visualization |
+| `web/src/types/index.ts` | Frontend battle types |
+
+### Manual Validation Checklist
+- [ ] Engage → win → return to exploration
+- [ ] Engage → flee → return to exploration
+- [ ] Reinforcement arrives mid-fight
+- [ ] Pulse battle (accelerated reinforcements)
+- [ ] Artifacts in battle
+- [ ] Victory floor 8
+
+### Developer Notes: Determinism
+```python
+from src.combat.battle_manager import BattleManager
+manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', seed=12345)
+# Same seed produces identical arena layout and reinforcement queue
+```
 
 ---
 

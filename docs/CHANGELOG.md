@@ -4,6 +4,145 @@ All notable changes to this project.
 
 ---
 
+## [6.2.0] - 2026-01-11 - Tactical Depth
+
+### Added
+- **AI Scoring System**: Deterministic action selection for all enemies
+  - `enumerate_candidate_actions()` lists legal MOVE/ATTACK/WAIT
+  - `score_action()` with numeric scoring weights (kill priority, damage, positioning)
+  - `choose_action()` with stable tie-breaking for reproducibility
+- **Hazard Intelligence**: Enemies navigate around hazards intelligently
+  - BFS/Dijkstra pathfinding with hazard costs (lava 120, poison 55, water 30, ice 18)
+  - Enemies exit hazardous tiles, avoid stepping into danger
+  - Melee AI pressures player toward hazards (cornering bonus)
+  - `player_safe_escape_count()` for tactical positioning
+- **Boss Heuristics**: Priority-based signature abilities for 7 boss types
+  - Regent: Royal Decree (summon guards), Counterfeit Crown (debuff)
+  - Rat King: Summon Swarm, Plague Bite, Burrow (escape when low HP)
+  - Spider Queen: Web Trap, Poison Bite, Summon Spiders
+  - Frost Giant: Freeze Ground, Ice Blast
+  - Arcane Keeper: Teleport (when adjacent), Arcane Bolt
+  - Flame Lord: Lava Pool, Inferno, Fire Breath
+  - Dragon Emperor: Dragon Fear (round 1), Tail Sweep, Fire Breath
+  - Cooldown tracking per ability, fallback to ai_scoring when no rule matches
+
+### Technical
+- `src/combat/ai_scoring.py`: Core scoring engine (682 lines)
+- `src/combat/boss_heuristics.py`: Boss decision rules (585 lines)
+- `src/combat/battle_actions.py`: Boss ability definitions added
+- `src/combat/battle_manager.py`: Integration with boss detection and ability execution
+- 28 tests covering determinism, hazard avoidance, and boss behaviors
+
+### Key Guarantee
+Same seed + same state = same action, always. Boss fights are now learnable.
+
+---
+
+## [6.2.1] - 2026-01-11 - Kiting Heuristics
+
+### Added
+- **Ranged AI Kiting**: Kiting/spacing heuristics for ranged enemies
+  - Preferred range band (3-5, sweet spot 4)
+  - Decisive adjacency penalty (-60) unless killshot
+  - Break melee lock bonus (+20) when escaping to dist >= 3
+  - Avoids reinforcement entry edges and corners
+  - Retreat lane preservation (self-cornering prevention)
+
+### Technical
+- `src/combat/ai_kiting.py`: New kiting module (341 lines)
+- Applies to `RANGED_KITE` and `ELEMENTAL` AI behaviors
+- 13 new tests for kiting determinism and behavior
+
+---
+
+## [6.1.0] - 2026-01-12 - Cinematic Glue
+
+### Added
+- **Transition Orchestrator**: Foundation for no-flicker mode changes
+  - `TransitionKind` enum: ENGAGE, WIN, FLEE, DEFEAT, BOSS_VICTORY
+  - `TransitionState` dataclass with timing, skip support, and serialization
+  - Input locking during active transitions
+  - Automatic transition ticking in game loop
+- **Transition Curtain** (web): Fade-to-black overlay between modes
+  - Phase-based animation: fade_in → hold → fade_out
+  - Letterbox bars for cinematic transitions (ENGAGE, BOSS_VICTORY)
+  - Skip support on Space/Escape/Enter when `can_skip=true`
+  - Z-index layered above BattleOverlay, below cutscenes
+- **Arena Overview Pan**: Camera pan on battle start
+  - Overview phases: zoom_out → pan_enemies → pan_player → settle
+  - Hazard tiles (lava, ice, water, poison) highlighted with pulse animation
+  - Reinforcement entry edges highlighted when enemies pending
+  - Skip with Space/Escape, input locked until complete
+  - Duration scales with arena size (9×7: 1.5s, 11×9: 1.8s, 11×11: 2.0s)
+
+### Changed
+- Battle transitions now use curtain instead of instant mode switch
+- Defeat transition snaps to black immediately (no fade)
+- BattleOverlay disabled during overview (buttons + keyboard)
+
+### Technical
+- `TransitionState` in `src/core/events.py` with start/skip/end methods
+- `Engine.start_transition()`, `tick_transition()`, `is_input_locked()` in `src/core/engine.py`
+- `BattleManager` emits transitions on battle start/end
+- `TransitionCurtain.tsx` with requestAnimationFrame-based animation
+- Camera transform via CSS `scale()` and `translate()` on arena container
+
+---
+
+## [6.0.0] - 2026-01-11 - Tactical Battle Mode
+
+### Added
+- **Instanced Tactical Combat**: Exploration remains grid-based; combat transitions to 9x7 tactical arenas
+- **Deterministic Battles**: Same seed produces identical arena layouts, reinforcement queues, and spawn positions
+- **Arena Templates**: 6 biome-specific templates with hazard placement (lava lanes, ice patches, etc.)
+- **Class Ability Kits**: 4 classes with 4 abilities each
+  - Warrior: Basic Attack, Power Strike (1.5x, 4cd), Shield Wall (2x def, 3cd), Charge (2 tiles + stun, 5cd)
+  - Mage: Basic Attack, Fireball (AOE 3 damage, 4cd), Frost Nova (freeze adjacent, 5cd), Blink (teleport 3, 4cd)
+  - Rogue: Basic Attack, Backstab (2x if behind, 3cd), Smoke Bomb (invisible 2 turns, 5cd), Dash (move 2, 2cd)
+  - Cleric: Basic Attack, Heal (restore 10 HP, 4cd), Smite (holy 1.5x undead, 3cd), Sanctuary (immune 1 turn, 6cd)
+- **Reinforcement System**: Enemies spawn from arena edges over time
+  - Countdown visible in UI
+  - Arrival accelerated by field pulse intensity (0.9x/0.8x/0.7x for minor/moderate/major)
+  - Elite spawns possible on deeper floors
+- **Battle Artifacts** (v6.0.5):
+  - Duplicate Seal: Duplicates consumable effects in battle
+  - Woundglass Shard: Reveals safe tiles and reinforcement ETAs
+  - Oathstone: Vow enforcement continues during battle
+- **Ghost Battle Effects** (v6.0.5):
+  - Champion: +3 temporary HP at battle start
+  - Archivist: Reveals safe tiles at battle start
+  - Beacon: Points player away from reinforcement entry
+- **Web Battle Overlay**:
+  - Real-time arena visualization with tile colors
+  - Entity positions and HP pips
+  - Reinforcement countdown panel
+  - Keyboard controls (WASD move, 1-4 abilities, Space wait, Escape flee)
+  - Artifact status indicators
+- **Game Integrity Tests** (v6.0.5):
+  - Battle payload contract validation (arena_tiles, entities, reinforcements)
+  - Battle determinism snapshot tests (2 seeds verified)
+
+### Changed
+- Combat encounters now transition to instanced arenas instead of bump-to-attack
+- Victory save handling now preserves ledger/codex to victories.json before clearing autosave
+- UI mode toggles between EXPLORATION and BATTLE
+
+### Technical
+- `BattleState`, `BattleEntity`, `PendingReinforcement` types with full serialization
+- `BattleManager` handles turn processing, ability execution, reinforcement spawning
+- `BattleAction` enum for all combat commands
+- Deterministic seeding for arena generation and reinforcement scheduling
+
+### Developer Notes
+To reproduce battle determinism for bug reports:
+```python
+from src.combat.battle_manager import BattleManager
+manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', seed=12345)
+# Same seed produces identical arena layout and reinforcement queue
+```
+
+---
+
 ## [5.3.0] - 2026-01-09 - Cinematics V2: Death & Victory Cutscenes
 
 ### Added

@@ -258,6 +258,19 @@ class GameSessionManager:
         session.update_activity()
         engine = session.engine
 
+        # v6.1: Check for active transition and tick it
+        if engine.transition.active:
+            engine.tick_transition()
+
+        # v6.1: Input lock during transitions
+        if engine.is_input_locked():
+            # Allow skip command during skippable transitions
+            if command_type.upper() in ('SKIP', 'CANCEL', 'CONFIRM') and engine.transition.can_skip:
+                engine.skip_transition()
+                return self.serialize_game_state(session, [])
+            # During transition, return current state without processing command
+            return self.serialize_game_state(session, [])
+
         # Convert string command to CommandType
         try:
             cmd_type = CommandType[command_type.upper()]
@@ -378,6 +391,8 @@ class GameSessionManager:
             "game_state": engine.state.name if engine.state else "UNKNOWN",
             "ui_mode": engine.ui_mode.name if engine.ui_mode else "GAME",
             "turn": session.turn_count,
+            # v6.1: Transition state for cinematic mode changes
+            "transition": engine.transition.to_dict(),
         }
 
         # Add player data if available

@@ -54,6 +54,11 @@ class CompletionLedger:
     potions_used: int = 0
     pulses_survived: int = 0
 
+    # v6.0.5: Battle mode stats
+    reinforcements_faced: int = 0
+    reinforcement_types: Dict[str, int] = field(default_factory=dict)
+    battles_escaped: int = 0
+
     # Turn tracking
     total_turns: int = 0
 
@@ -103,6 +108,17 @@ class CompletionLedger:
         """Record surviving a field pulse."""
         self.pulses_survived += 1
 
+    def record_reinforcement(self, enemy_name: str, is_elite: bool = False):
+        """Record a reinforcement that joined a battle (v6.0.5)."""
+        self.reinforcements_faced += 1
+        # Track by base name (strip "Elite" prefix if present)
+        base_name = enemy_name
+        self.reinforcement_types[base_name] = self.reinforcement_types.get(base_name, 0) + 1
+
+    def record_battle_escaped(self):
+        """Record fleeing from a battle (v6.0.5)."""
+        self.battles_escaped += 1
+
     @property
     def lore_count(self) -> int:
         """Number of lore items found."""
@@ -140,6 +156,10 @@ class CompletionLedger:
             'pulses_survived': self.pulses_survived,
             'total_turns': self.total_turns,
             'secrets_found': list(self.secrets_found),
+            # v6.0.5: Battle mode stats
+            'reinforcements_faced': self.reinforcements_faced,
+            'reinforcement_types': self.reinforcement_types.copy(),
+            'battles_escaped': self.battles_escaped,
         }
 
     @classmethod
@@ -159,6 +179,10 @@ class CompletionLedger:
             pulses_survived=data.get('pulses_survived', 0),
             total_turns=data.get('total_turns', 0),
             secrets_found=set(data.get('secrets_found', [])),
+            # v6.0.5: Battle mode stats
+            reinforcements_faced=data.get('reinforcements_faced', 0),
+            reinforcement_types=data.get('reinforcement_types', {}).copy(),
+            battles_escaped=data.get('battles_escaped', 0),
         )
 
 

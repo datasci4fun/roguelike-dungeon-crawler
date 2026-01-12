@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple, Callable
 
 from .constants import GameState, UIMode, AUTO_SAVE_INTERVAL, MAX_DUNGEON_LEVELS, Race, PlayerClass, RACE_STATS, CLASS_STATS
 from .messages import MessageLog, MessageCategory, MessageImportance
-from .events import EventType, EventQueue
+from .events import EventType, EventQueue, TransitionState, TransitionKind
 from .commands import (
     Command, CommandType,
     MOVEMENT_COMMANDS, ITEM_COMMANDS, SCROLL_COMMANDS,
@@ -27,6 +27,9 @@ from ..story.story_data import get_tutorial_hint
 from ..managers import (
     EntityManager, CombatManager, LevelManager, SaveManager
 )
+
+# v6.0: Battle mode
+from ..combat import BattleManager, BattleState
 
 
 class GameEngine:
@@ -92,6 +95,13 @@ class GameEngine:
 
         # Wire story manager to ledger (ledger is source of truth)
         self.story_manager.attach_ledger(self.completion_ledger)
+
+        # v6.0: Battle mode
+        self.battle: Optional[BattleState] = None
+        self.battle_manager = BattleManager(self, event_queue=self.event_queue)
+
+        # v6.1: Transition state (locks input during mode changes)
+        self.transition = TransitionState()
 
         # Death tracking for recap
         self.last_attacker_name = None
@@ -229,6 +239,68 @@ class GameEngine:
                                 MessageImportance.IMPORTANT)
                 return True
         return False
+
+    # =========================================================================
+    # Transition Orchestration (v6.1)
+    # =========================================================================
+
+    def start_transition(self, kind: TransitionKind, duration_ms: int = None, can_skip: bool = True):
+        """
+        Start a transition between game modes.
+
+        During a transition:
+        - Input is locked (except skip if can_skip=True)
+        - TRANSITION_START event is emitted
+        - Frontend should display transition visuals
+
+        Args:
+            kind: Type of transition (ENGAGE, WIN, FLEE, DEFEAT, BOSS_VICTORY)
+            duration_ms: Override default duration (optional)
+            can_skip: Whether player can skip by pressing any key
+        """
+        self.transition.start(kind, duration_ms, can_skip)
+        self.event_queue.emit(
+            EventType.TRANSITION_START,
+            kind=kind.name,
+            duration_ms=self.transition.duration_ms,
+            can_skip=can_skip,
+        )
+
+    def end_transition(self):
+        """
+        End the current transition.
+
+        Emits TRANSITION_END event and unlocks input.
+        Should be called after transition duration completes or on skip.
+        """
+        if self.transition.active:
+            kind = self.transition.kind
+            self.transition.end()
+            self.event_queue.emit(
+                EventType.TRANSITION_END,
+                kind=kind.name if kind else None,
+            )
+
+    def skip_transition(self):
+        """Skip the current transition if allowed."""
+        if self.transition.active and self.transition.can_skip:
+            self.end_transition()
+
+    def tick_transition(self) -> bool:
+        """
+        Check if transition has completed naturally (duration elapsed).
+
+        Call this each tick during a transition. Returns True if transition
+        just ended, False if still active or no transition.
+        """
+        if self.transition.active and self.transition.is_complete():
+            self.end_transition()
+            return True
+        return False
+
+    def is_input_locked(self) -> bool:
+        """Check if input should be locked due to active transition."""
+        return self.transition.active
 
     @property
     def messages(self) -> List[str]:
@@ -847,6 +919,22 @@ class GameEngine:
 
         elif cmd_type == CommandType.PAGE_DOWN:
             self.message_log.scroll_down(visible_lines, visible_lines)
+
+    def process_battle_command(self, command: Command) -> bool:
+        """
+        Process a command during tactical battle mode (v6.0.4).
+
+        Handles movement, abilities, and battle actions.
+
+        Returns:
+            True if command was processed
+        """
+        # Check for ability command (passed via command.data)
+        if command.data and 'ability' in command.data:
+            ability_cmd = command.data['ability']
+            return self.battle_manager.process_battle_command(ability_cmd)
+
+        return self.battle_manager.process_battle_command(command.type.name)
 
     # =========================================================================
     # Command Processing - Title/Intro

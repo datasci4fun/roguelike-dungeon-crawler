@@ -1,0 +1,415 @@
+/* BattleOverlay.css - Tactical battle mode styles for v6.0.5 */
+
+.battle-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  font-family: 'VT323', 'Courier New', monospace;
+  color: #fff;
+}
+
+.battle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: linear-gradient(180deg, #1a1a2e 0%, #0a0a15 100%);
+  border-bottom: 2px solid #444;
+}
+
+.battle-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #ff6644;
+  text-shadow: 0 0 10px rgba(255, 102, 68, 0.5);
+}
+
+.battle-info {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.battle-round,
+.battle-phase,
+.battle-biome {
+  padding: 0.25rem 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.battle-phase {
+  color: #ffff44;
+}
+
+.battle-arena-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  overflow: auto;
+}
+
+.battle-arena {
+  position: relative;
+  background: #0a0a15;
+  border: 2px solid #444;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.arena-tile {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.arena-entity {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  z-index: 10;
+}
+
+.entity-symbol {
+  font-size: 1.5rem;
+  text-shadow: 0 0 5px currentColor;
+}
+
+.entity-hp-pip {
+  position: absolute;
+  bottom: 2px;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+.battle-sidebar {
+  position: fixed;
+  right: 0;
+  top: 60px;
+  bottom: 0;
+  width: 250px;
+  background: rgba(20, 20, 30, 0.95);
+  border-left: 2px solid #444;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+.battle-sidebar h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #888;
+  text-transform: uppercase;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.25rem;
+}
+
+.player-status,
+.enemies-status {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.75rem;
+  border-radius: 4px;
+}
+
+.health-bar {
+  position: relative;
+  height: 16px;
+  background: #222;
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0.25rem 0;
+}
+
+.health-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.health-bar-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.75rem;
+  color: #fff;
+  text-shadow: 0 0 2px #000;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-top: 0.5rem;
+}
+
+.status-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.status-effect {
+  padding: 0.125rem 0.375rem;
+  background: rgba(255, 100, 100, 0.3);
+  border: 1px solid rgba(255, 100, 100, 0.5);
+  border-radius: 2px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.enemy-status {
+  margin-bottom: 0.5rem;
+}
+
+.enemy-name {
+  font-size: 0.85rem;
+  color: #ff8888;
+}
+
+.battle-actions {
+  margin-top: auto;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.75rem;
+  border-radius: 4px;
+}
+
+.battle-actions button {
+  display: block;
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
+  background: #333;
+  border: 1px solid #555;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.battle-actions button:hover {
+  background: #444;
+  border-color: #666;
+}
+
+.battle-actions button:active {
+  background: #222;
+}
+
+.battle-actions button.flee-btn {
+  background: #552222;
+  border-color: #883333;
+}
+
+.battle-actions button.flee-btn:hover {
+  background: #663333;
+}
+
+/* Reinforcements panel */
+.reinforcements-status {
+  background: rgba(80, 40, 40, 0.3);
+  padding: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 100, 100, 0.3);
+}
+
+.reinforcement-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  font-size: 0.85rem;
+}
+
+.reinforcement-row.elite {
+  color: #ffaa44;
+}
+
+.reinforcement-name {
+  color: #ff8888;
+}
+
+.elite-marker {
+  color: #ffaa44;
+  margin-left: 0.25rem;
+}
+
+.reinforcement-turns {
+  color: #888;
+}
+
+/* Safe tiles (revealed by woundglass/archivist) */
+.arena-tile.safe-tile {
+  box-shadow: inset 0 0 8px rgba(100, 255, 100, 0.4);
+}
+
+/* Artifact indicators in header */
+.battle-artifacts {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.artifact-indicator {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-weight: bold;
+}
+
+.artifact-indicator.seal-armed {
+  background: rgba(100, 255, 100, 0.3);
+  color: #88ff88;
+  border: 1px solid #88ff88;
+}
+
+.artifact-indicator.woundglass-active {
+  background: rgba(150, 100, 255, 0.3);
+  color: #aa88ff;
+  border: 1px solid #aa88ff;
+}
+
+/* Action hints */
+.action-hint {
+  font-size: 0.7rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+/* v6.1: Arena Overview Pan styles */
+.battle-arena.overview-active {
+  transition: transform 0.1s ease-out;
+}
+
+/* Hazard tile highlight during overview */
+.arena-tile.highlight-hazard {
+  animation: pulse-hazard 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-hazard {
+  0%, 100% {
+    box-shadow: inset 0 0 8px rgba(255, 100, 50, 0.6);
+  }
+  50% {
+    box-shadow: inset 0 0 16px rgba(255, 100, 50, 0.9);
+  }
+}
+
+/* Edge tile highlight for reinforcement entry points */
+.arena-tile.highlight-edge {
+  animation: pulse-edge 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-edge {
+  0%, 100% {
+    box-shadow: inset 0 0 6px rgba(255, 80, 80, 0.4);
+  }
+  50% {
+    box-shadow: inset 0 0 12px rgba(255, 80, 80, 0.7);
+  }
+}
+
+/* Combined highlight if both hazard and edge */
+.arena-tile.highlight-hazard.highlight-edge {
+  animation: pulse-combined 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-combined {
+  0%, 100% {
+    box-shadow: inset 0 0 8px rgba(255, 100, 50, 0.6), inset 0 0 6px rgba(255, 80, 80, 0.4);
+  }
+  50% {
+    box-shadow: inset 0 0 16px rgba(255, 100, 50, 0.9), inset 0 0 12px rgba(255, 80, 80, 0.7);
+  }
+}
+
+/* Overview hint overlay */
+.overview-hint {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 20;
+  text-align: center;
+  animation: fade-in-hint 0.3s ease-out;
+}
+
+.overview-phase-label {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.overview-skip-hint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+@keyframes fade-in-hint {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Disabled battle actions during overview */
+.battle-actions.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.battle-actions.disabled button {
+  cursor: not-allowed;
+  background: #222;
+  border-color: #333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .battle-sidebar {
+    position: fixed;
+    right: 0;
+    left: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    height: 200px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    border-left: none;
+    border-top: 2px solid #444;
+  }
+
+  .battle-sidebar > * {
+    flex: 1 1 45%;
+  }
+
+  .battle-arena-container {
+    padding-bottom: 220px;
+  }
+}
