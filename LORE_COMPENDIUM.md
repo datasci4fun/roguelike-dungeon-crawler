@@ -1540,14 +1540,14 @@ This document supersedes the original LORE_COMPENDIUM.md. The following elements
    - Level 1: Keys, Level 5: Oaths, Level 7: Records, Level 8: Crown
 
 4. **"What It Enforces" per Warden** — Local rules each boss maintains:
-   - Goblin King: authority-as-memory
-   - Frost Giant: endless stasis
-   - Spider Queen: growth that consumes identity
-   - Flame Lord: mandatory transformation
-   - Lich Lord: oath-bound persistence
-   - Rat King: enforced connection
-   - Arcane Keeper: knowledge as consumption
-   - Dragon Emperor: paradox of guardianship
+   - Goblin King: authority-as-memory (Level 1)
+   - Rat King: enforced connection (Level 2)
+   - Spider Queen: growth that consumes identity (Level 3)
+   - The Regent: legitimacy by repetition (Level 4)
+   - Frost Giant: endless stasis (Level 5)
+   - Arcane Keeper: knowledge as consumption (Level 6)
+   - Flame Lord: mandatory transformation (Level 7)
+   - Dragon Emperor: paradox of guardianship (Level 8)
 
 5. **Sky-Touched Artifact Table** — 8 concrete examples:
    - Duplicate Seal, Crown-Splinter, Woundglass Shard, etc.
