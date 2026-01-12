@@ -2,7 +2,7 @@
 
 A terminal-based roguelike with procedural dungeons, first-person 3D view, multiplayer backend, and React web frontend.
 
-**Current Version:** v5.7.0 (Game Integrity Validation Skill)
+**Current Version:** v6.3.1 (Battle Polish)
 
 ## Quick Start
 
@@ -26,11 +26,12 @@ python main.py
 
 | Category | Highlights |
 |----------|------------|
-| **Core** | Procedural dungeons (BSP), 5 themed levels, bump-to-attack combat, FOV |
+| **Core** | Procedural dungeons (BSP), 5 themed levels, tactical combat, FOV |
+| **Battle** | Three.js first-person arena, smooth animations, floating damage numbers |
 | **Characters** | 5 races, 3 classes, 18 feats, level-up progression |
 | **Enemies** | 12 enemy types + 5 bosses with unique abilities and AI |
 | **Items** | Weapons, armor, shields, rings, amulets, potions, scrolls |
-| **Visuals** | First-person 3D renderer, 8 biome themes, torch lighting |
+| **Visuals** | Three.js 3D renderer, 8 biome themes, cinematic cutscenes |
 | **Lore** | Codex system with bestiary, locations, scrolls, books |
 | **Multiplayer** | Accounts, leaderboards, ghost replays, real-time chat |
 | **Mobile** | Touch controls, PWA installable |
@@ -79,7 +80,7 @@ python main.py
 - **Game Engine**: Python 3.9+ with curses
 - **Backend**: FastAPI, PostgreSQL, Redis, WebSocket
 - **Frontend**: React 19, TypeScript, Vite, xterm.js
-- **3D Renderer**: Canvas 2D with perspective projection
+- **3D Renderer**: Three.js with biome-themed textures and lighting
 
 ## Links
 
