@@ -64,6 +64,22 @@ class BattleManager:
         self.engine = engine
         self.events = event_queue
 
+    def _get_pulse_amplification(self) -> float:
+        """Get current field pulse amplification (v6.0.5).
+
+        Returns amplification multiplier from active field pulse.
+        Returns 1.0 if no pulse is active or pulse manager unavailable.
+        """
+        if hasattr(self.engine, 'field_pulse_manager') and self.engine.field_pulse_manager:
+            return self.engine.field_pulse_manager.get_current_amplification()
+        return 1.0
+
+    def _is_pulse_active(self) -> bool:
+        """Check if a field pulse is currently active (v6.0.5)."""
+        if hasattr(self.engine, 'field_pulse_manager') and self.engine.field_pulse_manager:
+            return self.engine.field_pulse_manager.is_pulse_active()
+        return False
+
     def start_battle(
         self,
         enemy_ids: List[str],
@@ -179,6 +195,10 @@ class BattleManager:
                 defense=getattr(enemy, 'defense', 0),
             )
             battle.enemies.append(battle_enemy)
+
+            # v6.0.5: Register in bestiary on first encounter
+            if hasattr(self.engine, 'story_manager') and self.engine.story_manager:
+                self.engine.story_manager.encounter_enemy(enemy.name)
 
         # Store reinforcement edges for v6.0.3
         battle.reinforcement_edges = compiled.get('reinforcement_edges', [])
@@ -660,9 +680,11 @@ class BattleManager:
         )
 
         if dist == 1:
-            # Attack player
+            # Attack player (v6.0.5: pulse amplifies enemy damage)
             defense = player.get_effective_defense()
-            damage = max(1, enemy.attack - defense)
+            base_damage = max(1, enemy.attack - defense)
+            pulse_amp = self._get_pulse_amplification()
+            damage = int(base_damage * pulse_amp)
             player.hp -= damage
 
             if self.events:
@@ -675,6 +697,9 @@ class BattleManager:
                 self.events.emit(EventType.HIT_FLASH, entity=player)
 
             self.engine.add_message(f"Enemy hits you for {damage}!")
+
+            # v6.0.5.5: Check for Champion ghost assist
+            self._check_champion_assist(player)
 
             if player.hp <= 0:
                 self._handle_entity_death(player)
@@ -819,14 +844,16 @@ class BattleManager:
 
         tile = battle.arena_tiles[y][x]
 
-        # Lava (~): immediate damage + burn DOT
+        # Lava (~): immediate damage + burn DOT (v6.0.5: pulse amplifies)
         if tile == '~':
-            damage = 5
+            pulse_amp = self._get_pulse_amplification()
+            damage = int(5 * pulse_amp)
+            burn_dot = int(3 * pulse_amp)
             entity.hp -= damage
             entity.add_status({
                 'name': 'burn',
                 'duration': 2,
-                'damage_per_tick': 3,
+                'damage_per_tick': burn_dot,
             })
             if entity.is_player:
                 self.engine.add_message(f"The lava burns! (-{damage} HP)")
@@ -858,12 +885,14 @@ class BattleManager:
             if entity.is_player:
                 self.engine.add_message("You wade through deep water. (Slowed)")
 
-        # Poison Gas (!): POISON DOT
+        # Poison Gas (!): POISON DOT (v6.0.5: pulse amplifies)
         elif tile == '!':
+            pulse_amp = self._get_pulse_amplification()
+            poison_dot = int(2 * pulse_amp)
             entity.add_status({
                 'name': 'poison',
                 'duration': 3,
-                'damage_per_tick': 2,
+                'damage_per_tick': poison_dot,
             })
             if entity.is_player:
                 self.engine.add_message("You inhale poison gas!")
@@ -909,20 +938,116 @@ class BattleManager:
 
     def _apply_victory_results(self, battle: BattleState) -> None:
         """
-        Apply battle victory results to world state.
+        Apply battle victory results to world state (v6.0.5).
 
         - Sync player HP from battle
         - Remove defeated enemies from world
-        - Award XP (handled separately for now)
+        - Award XP for each killed enemy (2x for elites)
+        - Increment player kills and ledger stats
+        - Drop loot (deterministic where possible)
+        - Handle boss victory (route to victory flow if floor 8)
         """
+        from ..core.constants import ELITE_XP_MULTIPLIER, BOSS_LOOT, GameState
+        from ..items import create_item
+
+        player = self.engine.player
+
         # Sync player HP
         if battle.player:
-            self.engine.player.health = battle.player.hp
+            player.health = battle.player.hp
 
-        # Remove defeated enemies from world
+        total_xp = 0
+        boss_defeated = None
+
+        # Process each enemy (both initial and reinforcements that joined)
         for battle_enemy in battle.enemies:
             if battle_enemy.hp <= 0:
+                # Get world enemy for stats
+                world_enemy = self._get_enemy_by_id(battle_enemy.entity_id)
+
+                if world_enemy:
+                    # Increment kills
+                    player.kills += 1
+
+                    # Track in completion ledger
+                    if hasattr(self.engine, 'completion_ledger') and self.engine.completion_ledger:
+                        self.engine.completion_ledger.record_kill(
+                            is_elite=getattr(world_enemy, 'is_elite', False)
+                        )
+
+                    # Award XP
+                    base_xp = getattr(world_enemy, 'xp_reward', 10)
+                    is_elite = getattr(world_enemy, 'is_elite', False)
+                    xp_award = base_xp * ELITE_XP_MULTIPLIER if is_elite else base_xp
+
+                    # Apply Human's Adaptive trait (+10% XP)
+                    xp_mult = player.get_xp_multiplier() if hasattr(player, 'get_xp_multiplier') else 1.0
+                    xp_award = int(xp_award * xp_mult)
+                    total_xp += xp_award
+
+                    # Check if boss
+                    if getattr(world_enemy, 'is_boss', False):
+                        boss_defeated = world_enemy
+
+                        # Track warden defeat
+                        if hasattr(self.engine, 'completion_ledger') and self.engine.completion_ledger:
+                            boss_type_name = world_enemy.boss_type.name if world_enemy.boss_type else "UNKNOWN"
+                            self.engine.completion_ledger.record_warden_defeated(boss_type_name)
+
+                # Remove from world
                 self._remove_enemy_from_world(battle_enemy.entity_id)
+
+        # Award total XP
+        if total_xp > 0:
+            leveled_up = player.gain_xp(total_xp)
+            self.engine.add_message(f"Gained {total_xp} XP!")
+            if leveled_up:
+                self.engine.add_message(f"LEVEL UP! Now level {player.level}!")
+
+        # Drop boss loot if boss was defeated
+        if boss_defeated:
+            self._drop_boss_loot(boss_defeated)
+
+            # Check for game victory (floor 8 boss)
+            if battle.floor_level >= 8:
+                self.engine.add_message("*** THE DRAGON EMPEROR HAS FALLEN! ***")
+                from ..data import delete_save
+                delete_save()
+                self.engine.state = GameState.VICTORY
+
+        # Also remove any reinforcements that arrived and were killed
+        # (already handled above since they're added to battle.enemies)
+
+    def _drop_boss_loot(self, boss) -> None:
+        """Drop loot from a defeated boss at player's position."""
+        from ..core.constants import BOSS_LOOT
+        from ..items import create_item
+
+        if not boss or not hasattr(boss, 'boss_type'):
+            return
+
+        loot_names = BOSS_LOOT.get(boss.boss_type, [])
+        if not loot_names:
+            return
+
+        player = self.engine.player
+        drop_x, drop_y = player.x, player.y
+        dropped_count = 0
+
+        for loot_name in loot_names:
+            from ..items import ItemType
+            try:
+                item_type = ItemType[loot_name]
+            except KeyError:
+                continue
+
+            # Offset items slightly
+            offset_x = dropped_count % 3 - 1
+            offset_y = dropped_count // 3
+            item = create_item(item_type, drop_x + offset_x, drop_y + offset_y)
+            self.engine.entity_manager.add_item(item)
+            self.engine.add_message(f"The {boss.name} dropped {item.name}!")
+            dropped_count += 1
 
     def _apply_defeat_results(self, battle: BattleState) -> None:
         """Apply battle defeat results - player dies."""
@@ -954,11 +1079,80 @@ class BattleManager:
             player.x, player.y = safe_pos
         # else: player stays at original position (enemies will be adjacent)
 
-        # Track battles_escaped in ledger (if available)
-        if hasattr(self.engine, 'ledger') and self.engine.ledger:
-            self.engine.ledger.battles_escaped = getattr(
-                self.engine.ledger, 'battles_escaped', 0
-            ) + 1
+        # v6.0.5: Track battles_escaped in completion ledger
+        if hasattr(self.engine, 'completion_ledger') and self.engine.completion_ledger:
+            self.engine.completion_ledger.record_battle_escaped()
+
+        # v6.0.5.4: Check Oathstone vow violation if fleeing from boss
+        self._check_flee_vow_violation(battle)
+
+    def _check_champion_assist(self, player: BattleEntity) -> None:
+        """Check if a Champion ghost should provide combat assistance (v6.0.5.5).
+
+        If player's health drops below 30% and there's a Champion ghost
+        that hasn't used its assist, grant a small heal.
+        """
+        # Only trigger when health drops below 30%
+        if player.hp >= player.max_hp * 0.3:
+            return
+
+        # Check for ghost manager and Champion ghost
+        if not hasattr(self.engine, 'ghost_manager') or not self.engine.ghost_manager:
+            return
+
+        from ..entities.ghosts import GhostType
+
+        for ghost in self.engine.ghost_manager.ghosts:
+            if ghost.ghost_type == GhostType.CHAMPION and not ghost.assist_used:
+                # Use the assist
+                ghost.assist_used = True
+                ghost.triggered = True
+
+                # Grant heal
+                heal_amount = 5
+                player.hp = min(player.hp + heal_amount, player.max_hp)
+
+                # Also heal the world player entity
+                if self.engine.player:
+                    # Note: battle player HP will be synced at battle end
+
+                    self.engine.add_message(
+                        "A Champion's imprint surges! (+5 HP)"
+                    )
+
+                if self.events:
+                    self.events.emit(
+                        EventType.BUFF_FLASH,
+                        entity=player
+                    )
+
+                # Only one Champion can assist
+                break
+
+    def _check_flee_vow_violation(self, battle: BattleState) -> None:
+        """Check if fleeing from battle breaks an Oathstone vow (v6.0.5.4).
+
+        If player has SLAY_WARDEN vow and flees from a boss fight,
+        the vow is broken and penalties apply.
+        """
+        # Only matters if fleeing from boss
+        is_boss_fight = any(
+            enemy.entity_id.startswith('boss_') or
+            getattr(self._get_enemy_by_id(enemy.entity_id), 'is_boss', False)
+            for enemy in battle.enemies
+        )
+        if not is_boss_fight:
+            return
+
+        # Check for Oathstone with SLAY_WARDEN vow
+        if hasattr(self.engine, 'artifact_manager') and self.engine.artifact_manager:
+            artifact = self.engine.artifact_manager.floor_artifact
+            if artifact:
+                from ..items.artifacts import ArtifactId, VowType, check_vow_violation
+                if artifact.artifact_id == ArtifactId.OATHSTONE:
+                    violation_msg = check_vow_violation(artifact, 'flee', self.engine)
+                    if violation_msg:
+                        self.engine.add_message(violation_msg)
 
     def _find_safe_flee_position(self, origin_x: int, origin_y: int) -> Optional[Tuple[int, int]]:
         """
@@ -1160,6 +1354,15 @@ class BattleManager:
                     battle.enemies.append(battle_enemy)
                     battle.reinforcements_spawned += 1
                     spawned.append(battle_enemy)
+
+                    # v6.0.5: Register in bestiary and ledger
+                    if hasattr(self.engine, 'story_manager') and self.engine.story_manager:
+                        self.engine.story_manager.encounter_enemy(reinforcement.enemy_name)
+                    if hasattr(self.engine, 'completion_ledger') and self.engine.completion_ledger:
+                        self.engine.completion_ledger.record_reinforcement(
+                            reinforcement.enemy_name,
+                            is_elite=reinforcement.is_elite
+                        )
 
                     # Message
                     elite_str = " (Elite)" if reinforcement.is_elite else ""

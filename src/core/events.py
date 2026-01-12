@@ -18,6 +18,7 @@ class EventType(Enum):
 
     # Animation events (for renderer)
     HIT_FLASH = auto()       # Flash an entity (took damage)
+    BUFF_FLASH = auto()      # Flash an entity (received buff/heal) (v6.0.5)
     DAMAGE_NUMBER = auto()   # Show floating damage number
     DIRECTION_ARROW = auto() # Show attack direction indicator
     DEATH_FLASH = auto()     # Flash at death location

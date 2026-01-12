@@ -174,6 +174,33 @@ export interface GameState {
     title: string;
     message: string;
   };
+  // v6.0.5: Battle mode state
+  battle?: BattleState;
+}
+
+// Battle mode types (v6.0.5)
+export interface BattleEntity {
+  entity_id: string;
+  is_player: boolean;
+  arena_x: number;
+  arena_y: number;
+  hp: number;
+  max_hp: number;
+  attack: number;
+  defense: number;
+  status_effects: string[];
+}
+
+export interface BattleState {
+  phase: 'PLAYER_TURN' | 'ENEMY_TURN' | 'END_OF_ROUND';
+  arena_width: number;
+  arena_height: number;
+  arena_tiles: string[][];
+  player: BattleEntity;
+  enemies: BattleEntity[];
+  round: number;
+  floor_level: number;
+  biome: string;
 }
 
 // Leaderboard types
