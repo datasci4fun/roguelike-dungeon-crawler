@@ -4,5 +4,15 @@ from .game_result import GameResult
 from .chat_message import ChatMessage, ChatChannel
 from .user_achievement import UserAchievement
 from .game_save import GameSave
+from .daily_challenge import DailyChallenge, DailyChallengeResult
 
-__all__ = ["User", "GameResult", "ChatMessage", "ChatChannel", "UserAchievement", "GameSave"]
+__all__ = [
+    "User",
+    "GameResult",
+    "ChatMessage",
+    "ChatChannel",
+    "UserAchievement",
+    "GameSave",
+    "DailyChallenge",
+    "DailyChallengeResult",
+]

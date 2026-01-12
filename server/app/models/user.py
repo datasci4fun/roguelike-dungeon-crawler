@@ -1,8 +1,8 @@
 """User database model."""
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional
 
-from sqlalchemy import String, Boolean, DateTime, Integer
+from sqlalchemy import String, Boolean, DateTime, Integer, Date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from passlib.context import CryptContext
 
@@ -34,6 +34,13 @@ class User(Base):
     total_deaths: Mapped[int] = mapped_column(Integer, default=0)
     victories: Mapped[int] = mapped_column(Integer, default=0)
 
+    # Daily challenge stats
+    daily_streak: Mapped[int] = mapped_column(Integer, default=0)
+    daily_best_streak: Mapped[int] = mapped_column(Integer, default=0)
+    daily_high_score: Mapped[int] = mapped_column(Integer, default=0)
+    daily_completions: Mapped[int] = mapped_column(Integer, default=0)
+    last_daily_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
     # Account status
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -50,6 +57,7 @@ class User(Base):
     game_results = relationship("GameResult", back_populates="user", lazy="dynamic")
     achievements = relationship("UserAchievement", back_populates="user", lazy="dynamic")
     game_saves = relationship("GameSave", back_populates="user", lazy="dynamic")
+    daily_results = relationship("DailyChallengeResult", back_populates="user", lazy="dynamic")
 
     def verify_password(self, plain_password: str) -> bool:
         """Verify a plain password against the hash."""
