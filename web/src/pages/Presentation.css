@@ -1028,6 +1028,20 @@ body.export-mode .header {
 
 .presentation.export-mode .export-slides {
   margin-top: 60px;
+  padding-bottom: 100px;
+}
+
+/* Ensure content layer can scroll in export mode */
+body.export-mode .atm-content-layer {
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+body.export-mode .atmospheric-page {
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;
 }
 
 /* ============================================
