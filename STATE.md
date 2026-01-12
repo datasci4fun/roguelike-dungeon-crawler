@@ -1,8 +1,89 @@
 # Project State
 
-**Last Updated:** 2026-01-11
+**Last Updated:** 2026-01-12
 **Branch:** develop
-**Version:** v6.2.1 (Kiting Heuristics) - SHIPPED
+**Version:** v6.3 (Three.js Battle Renderer) - SHIPPED
+
+---
+
+## v6.3 SHIPPED (2026-01-12) - Three.js First-Person Battle Renderer
+
+**Merge Commit:** feature/v6.3-battle-firstperson-threejs → develop
+
+### Core Concept
+**Immersive first-person 3D tactical combat replacing DOM grid overlay.**
+
+Battle mode now renders in the same Three.js view as exploration, with cinematic overview and mouse-based tile interaction.
+
+### Key Features
+
+#### Three.js Battle Renderer
+- First-person 3D arena with biome-themed textures and lighting
+- Entity sprites with HP bars (player during overview, enemies always)
+- Tile highlighting for move/attack/ability ranges (green/red/blue)
+- Mouse-based tile selection with raycasting
+- Camera drag controls (right-click or shift+click to look around)
+- Cinematic overview phase: zoom_out → pan_enemies → pan_player → settle
+
+#### Overlay Containment
+- All cutscenes and overlays contained within scene-wrapper
+- CutscenePlayer, TransitionCurtain, GameOver use `position: absolute`
+- Proper z-index stacking within 3D view container
+- No more full-screen overlays breaking layout
+
+#### Death Cutscene Spacing
+- Reduced font sizes for death-title, death-claim, death-whisper
+- Tightened line-height and padding for abyss-claims, fate, prompt scenes
+- Compact GameOver stats panel and ghost lore components
+- All text fits properly within contained 3D view
+
+#### Battle UI Fixes
+- BattleHUD with pointer-events: none (panels have their own)
+- Fixed mouse-to-tile coordinate calculation (+0.5 offset)
+- Removed debug console.log statements
+- CharacterHUD allows clicks through to 3D canvas
+
+### Implementation Files
+
+| File | Purpose |
+|------|---------|
+| `web/src/components/BattleRenderer3D.tsx` | Three.js battle arena renderer |
+| `web/src/components/BattleHUD.tsx` | RPG-style battle menu overlay |
+| `web/src/components/BattleHUD.css` | Battle menu styling |
+| `web/src/components/GameOver.css` | Compact game over styling |
+| `web/src/components/CharacterHUD.css` | Pointer-events fix |
+| `web/src/cutscenes/engine/CutscenePlayer.scss` | Absolute positioning |
+| `web/src/cutscenes/engine/text/RetroCaption.scss` | Death scene spacing |
+| `web/src/pages/Play.tsx` | Component containment in scene-wrapper |
+
+### Technical Details
+
+**Arena Rendering:**
+- TILE_SIZE = 2, WALL_HEIGHT = 2.5, CAMERA_HEIGHT = 1.4
+- Biome-themed floor/wall/ceiling colors from `getBiome()`
+- Hazard tiles with emissive glow (lava, poison, water, ice)
+- 3-tile padding around arena for immersion
+
+**Tile Coordinate Fix:**
+```javascript
+// Before (offset by half tile):
+const tileX = Math.floor(intersectPoint.x / TILE_SIZE + arena_width / 2);
+
+// After (correct):
+const tileX = Math.floor(intersectPoint.x / TILE_SIZE + 0.5 + arena_width / 2);
+```
+
+**Z-Index Layering (within scene-wrapper):**
+| Layer | Z-Index | Component |
+|-------|---------|-----------|
+| Battle HUD | 10 | Command menus, status panels |
+| TransitionCurtain | 50 | Fade-to-black |
+| GameOver/Cutscenes | 100 | Death/victory screens |
+
+### Next Steps
+- Polish battle animations (attack effects, damage numbers)
+- Add sound effects for battle actions
+- Consider isometric camera option for better tactical overview
 
 ---
 
