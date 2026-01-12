@@ -643,6 +643,8 @@ class GameSessionManager:
                     "max_hp": battle.player.max_hp,
                     "attack": battle.player.attack,
                     "defense": battle.player.defense,
+                    "status_effects": [e.get('name', '') for e in battle.player.status_effects],
+                    "cooldowns": battle.player.cooldowns,
                 } if battle.player else None,
                 "enemies": [
                     {
@@ -653,6 +655,7 @@ class GameSessionManager:
                         "max_hp": e.max_hp,
                         "attack": e.attack,
                         "defense": e.defense,
+                        "status_effects": [ef.get('name', '') for ef in e.status_effects],
                     }
                     for e in battle.get_living_enemies()
                 ],
