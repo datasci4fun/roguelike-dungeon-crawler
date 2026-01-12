@@ -696,11 +696,11 @@ class BattleManager:
             return False
 
         inventory = player.inventory
-        if item_index < 0 or item_index >= len(inventory):
+        if item_index < 0 or item_index >= len(inventory.items):
             self.engine.add_message("Invalid item selection.")
             return False
 
-        item = inventory[item_index]
+        item = inventory.get_item(item_index)
         if not getattr(item, 'is_consumable', False):
             self.engine.add_message("That item can't be used in battle.")
             return False
@@ -728,7 +728,7 @@ class BattleManager:
                     )
 
         # Remove item from inventory (only once, even if duplicated)
-        inventory.pop(item_index)
+        inventory.remove_item(item_index)
 
         # End turn after using item
         self._end_player_turn()
