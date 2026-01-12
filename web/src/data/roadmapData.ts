@@ -177,7 +177,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     title: 'Field Pulse Micro-Events',
     description: 'Add 1 micro-event per floor during Field Pulse windows',
     priority: 'high',
-    status: 'planned',
+    status: 'completed',
     category: ['gameplay', 'lore'],
     effort: 'medium',
     details: [
@@ -185,6 +185,9 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
       'Deterministic per seed/floor',
       '1-2 narrative messages + safe effect',
       'Never blocks paths or violates hazard fairness',
+      '8 floor-specific events with unique effects',
+      'Each event unlocks codex evidence entry',
+      'Completed 2026-01-12',
     ],
   },
   {
