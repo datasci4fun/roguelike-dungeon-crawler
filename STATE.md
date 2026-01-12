@@ -2,7 +2,51 @@
 
 **Last Updated:** 2026-01-11
 **Branch:** develop
-**Version:** v5.7.0 (Game Integrity Validation Skill)
+**Version:** v6.0.0 (Tactical Battle Mode) - SHIPPED
+
+---
+
+## v6.0.0 SHIPPED (2026-01-11) - Tactical Battle Mode
+
+**Merge Commit:** feature/v6-battle-mode-skeleton → develop
+
+### Core Concept
+**Exploration is grid-based; combat is instanced tactical arenas.**
+
+Deterministic battles with reinforcement system and field pulse integration.
+
+### Key Features
+- 9x7 tactical arenas with biome-specific templates
+- 4 class ability kits (Warrior, Mage, Rogue, Cleric)
+- Reinforcement spawning from arena edges
+- Field pulse accelerates reinforcement arrival
+- Artifact effects in battle (Duplicate Seal, Woundglass, Oathstone)
+- Ghost battle effects (Champion, Archivist, Beacon)
+- Full save/load support for mid-battle state
+
+### Implementation Files
+| File | Purpose |
+|------|---------|
+| `src/combat/battle_types.py` | BattleState, BattleEntity, PendingReinforcement |
+| `src/combat/battle_actions.py` | BattleAction enum |
+| `src/combat/battle_manager.py` | Turn processing, abilities, reinforcements |
+| `web/src/components/BattleOverlay.tsx` | Arena visualization |
+| `web/src/types/index.ts` | Frontend battle types |
+
+### Manual Validation Checklist
+- [ ] Engage → win → return to exploration
+- [ ] Engage → flee → return to exploration
+- [ ] Reinforcement arrives mid-fight
+- [ ] Pulse battle (accelerated reinforcements)
+- [ ] Artifacts in battle
+- [ ] Victory floor 8
+
+### Developer Notes: Determinism
+```python
+from src.combat.battle_manager import BattleManager
+manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', seed=12345)
+# Same seed produces identical arena layout and reinforcement queue
+```
 
 ---
 
