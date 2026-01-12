@@ -55,11 +55,15 @@ export function StatusHUD({ fieldPulse, artifacts = [] }: StatusHUDProps) {
   const woundglass = artifacts.find(a => a.id === 'WOUNDGLASS_SHARD');
 
   return (
-    <div className="status-hud">
+    <div className="status-hud" role="region" aria-label="Status effects">
       {/* Field Pulse Indicator */}
       {fieldPulse?.active && (
-        <div className={`status-indicator field-pulse ${getPulseIntensity(fieldPulse.amplification).className}`}>
-          <div className="indicator-icon pulse-icon">
+        <div
+          className={`status-indicator field-pulse ${getPulseIntensity(fieldPulse.amplification).className}`}
+          role="status"
+          aria-label={`Field Pulse active: ${getPulseIntensity(fieldPulse.amplification).label} intensity, ${fieldPulse.amplification.toFixed(2)}x amplification`}
+        >
+          <div className="indicator-icon pulse-icon" aria-hidden="true">
             <span className="pulse-wave"></span>
           </div>
           <div className="indicator-content">
@@ -73,8 +77,12 @@ export function StatusHUD({ fieldPulse, artifacts = [] }: StatusHUDProps) {
 
       {/* Oathstone Vow Indicator */}
       {oathstone?.active_vow && (
-        <div className={`status-indicator vow-indicator ${oathstone.vow_broken ? 'vow-broken' : 'vow-active'}`}>
-          <div className="indicator-icon vow-icon">
+        <div
+          className={`status-indicator vow-indicator ${oathstone.vow_broken ? 'vow-broken' : 'vow-active'}`}
+          role="status"
+          aria-label={`Vow of ${VOW_NAMES[oathstone.active_vow]}${oathstone.vow_broken ? ', broken' : ''}: ${VOW_DESCRIPTIONS[oathstone.active_vow]}`}
+        >
+          <div className="indicator-icon vow-icon" aria-hidden="true">
             {oathstone.vow_broken ? '!' : oathstone.symbol}
           </div>
           <div className="indicator-content">
@@ -91,8 +99,12 @@ export function StatusHUD({ fieldPulse, artifacts = [] }: StatusHUDProps) {
 
       {/* Duplicate Seal Indicator */}
       {duplicateSeal && (
-        <div className={`status-indicator artifact-indicator ${sealArmed ? 'seal-armed' : 'seal-used'}`}>
-          <div className="indicator-icon artifact-icon">
+        <div
+          className={`status-indicator artifact-indicator ${sealArmed ? 'seal-armed' : 'seal-used'}`}
+          role="status"
+          aria-label={`Duplicate Seal: ${sealArmed ? 'Armed, next consumable will be duplicated' : 'Used'}`}
+        >
+          <div className="indicator-icon artifact-icon" aria-hidden="true">
             {duplicateSeal.symbol}
           </div>
           <div className="indicator-content">
@@ -106,8 +118,12 @@ export function StatusHUD({ fieldPulse, artifacts = [] }: StatusHUDProps) {
 
       {/* Woundglass Shard Indicator */}
       {woundglass && !woundglass.used && (
-        <div className="status-indicator artifact-indicator woundglass">
-          <div className="indicator-icon artifact-icon">
+        <div
+          className="status-indicator artifact-indicator woundglass"
+          role="status"
+          aria-label={`Woundglass Shard: ${woundglass.charges > 0 ? `${woundglass.charges} charge remaining` : 'Depleted'}`}
+        >
+          <div className="indicator-icon artifact-icon" aria-hidden="true">
             {woundglass.symbol}
           </div>
           <div className="indicator-content">

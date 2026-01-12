@@ -68,16 +68,22 @@ export function CharacterHUD({
   }
 
   return (
-    <div className={`character-hud ${compact ? 'compact' : ''}`}>
+    <div
+      className={`character-hud ${compact ? 'compact' : ''}`}
+      role="region"
+      aria-label="Character status"
+    >
       {/* Race/Class Badges */}
-      <div className="hud-identity">
+      <div className="hud-identity" role="group" aria-label="Character identity">
         {raceVisual && (
           <div
             className="hud-badge race-badge"
             style={{ backgroundColor: raceVisual.bgColor, borderColor: raceVisual.color }}
             title={`${race?.name} - ${race?.trait_name}: ${race?.trait_description}`}
+            role="img"
+            aria-label={`Race: ${race?.name}. Trait: ${race?.trait_name}, ${race?.trait_description}`}
           >
-            <span className="badge-symbol" style={{ color: raceVisual.color }}>
+            <span className="badge-symbol" style={{ color: raceVisual.color }} aria-hidden="true">
               {raceVisual.symbol}
             </span>
           </div>
@@ -87,8 +93,10 @@ export function CharacterHUD({
             className="hud-badge class-badge"
             style={{ backgroundColor: classVisual.bgColor, borderColor: classVisual.color }}
             title={`${playerClass?.name} - ${playerClass?.description}`}
+            role="img"
+            aria-label={`Class: ${playerClass?.name}. ${playerClass?.description}`}
           >
-            <span className="badge-symbol" style={{ color: classVisual.color }}>
+            <span className="badge-symbol" style={{ color: classVisual.color }} aria-hidden="true">
               {classVisual.symbol}
             </span>
           </div>
@@ -112,18 +120,26 @@ export function CharacterHUD({
 
       {/* Health Bar */}
       {health !== undefined && maxHealth !== undefined && (
-        <div className="hud-health">
-          <div className="health-bar-container">
+        <div className="hud-health" role="group" aria-label="Health">
+          <div
+            className="health-bar-container"
+            role="progressbar"
+            aria-valuenow={health}
+            aria-valuemin={0}
+            aria-valuemax={maxHealth}
+            aria-label={`Health: ${health} of ${maxHealth}`}
+          >
             <div
               className="health-bar-fill"
               style={{
                 width: `${(health / maxHealth) * 100}%`,
                 backgroundColor: getHealthColor(),
               }}
+              aria-hidden="true"
             />
           </div>
           {!compact && (
-            <span className="health-text">
+            <span className="health-text" aria-hidden="true">
               {health}/{maxHealth}
             </span>
           )}
@@ -132,7 +148,7 @@ export function CharacterHUD({
 
       {/* Abilities */}
       {showAbilities && abilities.length > 0 && (
-        <div className="hud-abilities">
+        <div className="hud-abilities" role="group" aria-label="Abilities">
           {abilities.map((ability) => {
             const icon = ABILITY_ICONS[ability.id] || '??';
             const isReady = ability.is_ready;
@@ -143,9 +159,11 @@ export function CharacterHUD({
                 key={ability.id}
                 className={`ability-slot ${isReady ? 'ready' : 'on-cooldown'}`}
                 title={`${ability.name}: ${ability.description}`}
+                role="img"
+                aria-label={`${ability.name}: ${ability.description}. ${isReady ? 'Ready' : `Cooldown: ${cooldown} turns`}`}
               >
-                <span className="ability-icon">{icon}</span>
-                {!isReady && <span className="cooldown-number">{cooldown}</span>}
+                <span className="ability-icon" aria-hidden="true">{icon}</span>
+                {!isReady && <span className="cooldown-number" aria-hidden="true">{cooldown}</span>}
               </div>
             );
           })}
@@ -154,10 +172,16 @@ export function CharacterHUD({
 
       {/* Passive Indicator */}
       {passives.length > 0 && !compact && (
-        <div className="hud-passives">
+        <div className="hud-passives" role="group" aria-label="Passive abilities">
           {passives.map((passive) => (
-            <div key={passive.id} className="passive-indicator" title={passive.description}>
-              <span className="passive-icon">[P]</span>
+            <div
+              key={passive.id}
+              className="passive-indicator"
+              title={passive.description}
+              role="img"
+              aria-label={`Passive: ${passive.name}. ${passive.description}`}
+            >
+              <span className="passive-icon" aria-hidden="true">[P]</span>
               <span className="passive-name">{passive.name}</span>
             </div>
           ))}
