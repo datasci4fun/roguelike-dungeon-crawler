@@ -45,7 +45,8 @@ savegame.pkl
 # Virtual environments (Windows)
 .venv/
 
-# Claude Code
-.claude/
+# Claude Code (ignore all except skills)
+.claude/*
+!.claude/skills/
 nul
 tmpclaude-*-cwd
