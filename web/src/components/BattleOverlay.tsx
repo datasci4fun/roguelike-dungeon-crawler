@@ -87,13 +87,21 @@ function groupReinforcements(reinforcements: BattleReinforcement[]) {
 // v6.1: Overview phases
 type OverviewPhase = 'zoom_out' | 'pan_enemies' | 'pan_player' | 'settle' | 'done';
 
-// v6.1: Phase durations (ms)
-const OVERVIEW_TIMINGS = {
+// v6.1: Phase durations (ms) - base timings, scaled by arena size
+const OVERVIEW_BASE_TIMINGS = {
   zoom_out: 250,
   pan_enemies: 450,
   pan_player: 450,
   settle: 350,
 };
+
+// Arena size -> timing multiplier (larger arenas get slightly longer overview)
+function getTimingMultiplier(width: number, height: number): number {
+  const area = width * height;
+  if (area <= 63) return 1.0;      // 9x7 = 63
+  if (area <= 99) return 1.15;    // 11x9 = 99
+  return 1.3;                      // 11x11 = 121+
+}
 
 // Generate a unique key for a battle to detect new battles
 function getBattleKey(battle: BattleState): string {
@@ -190,6 +198,9 @@ export function BattleOverlay({ battle, onCommand }: BattleOverlayProps) {
     let currentPhaseIndex = 0;
     let phaseStartTime = performance.now();
 
+    // Calculate timing multiplier based on arena size
+    const timingMultiplier = getTimingMultiplier(arena_width, arena_height);
+
     // Calculate zoom-out scale to fit arena in viewport
     // Assume viewport is roughly 600x400 for the arena container
     const viewportWidth = 600;
@@ -202,7 +213,7 @@ export function BattleOverlay({ battle, onCommand }: BattleOverlayProps) {
 
     const animate = (time: number) => {
       const currentPhase = phases[currentPhaseIndex];
-      const phaseDuration = OVERVIEW_TIMINGS[currentPhase];
+      const phaseDuration = OVERVIEW_BASE_TIMINGS[currentPhase] * timingMultiplier;
       const elapsed = time - phaseStartTime;
       const progress = Math.min(elapsed / phaseDuration, 1);
 
@@ -264,7 +275,7 @@ export function BattleOverlay({ battle, onCommand }: BattleOverlayProps) {
     };
 
     animationFrameRef.current = requestAnimationFrame(animate);
-  }, [canvasWidth, canvasHeight, arenaCenter, enemyCenter, playerCenter]);
+  }, [canvasWidth, canvasHeight, arenaCenter, enemyCenter, playerCenter, arena_width, arena_height]);
 
   // v6.1: Skip overview
   const skipOverview = useCallback(() => {

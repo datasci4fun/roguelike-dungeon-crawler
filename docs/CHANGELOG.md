@@ -4,6 +4,40 @@ All notable changes to this project.
 
 ---
 
+## [6.1.0] - 2026-01-12 - Cinematic Glue
+
+### Added
+- **Transition Orchestrator**: Foundation for no-flicker mode changes
+  - `TransitionKind` enum: ENGAGE, WIN, FLEE, DEFEAT, BOSS_VICTORY
+  - `TransitionState` dataclass with timing, skip support, and serialization
+  - Input locking during active transitions
+  - Automatic transition ticking in game loop
+- **Transition Curtain** (web): Fade-to-black overlay between modes
+  - Phase-based animation: fade_in → hold → fade_out
+  - Letterbox bars for cinematic transitions (ENGAGE, BOSS_VICTORY)
+  - Skip support on Space/Escape/Enter when `can_skip=true`
+  - Z-index layered above BattleOverlay, below cutscenes
+- **Arena Overview Pan**: Camera pan on battle start
+  - Overview phases: zoom_out → pan_enemies → pan_player → settle
+  - Hazard tiles (lava, ice, water, poison) highlighted with pulse animation
+  - Reinforcement entry edges highlighted when enemies pending
+  - Skip with Space/Escape, input locked until complete
+  - Duration scales with arena size (9×7: 1.5s, 11×9: 1.8s, 11×11: 2.0s)
+
+### Changed
+- Battle transitions now use curtain instead of instant mode switch
+- Defeat transition snaps to black immediately (no fade)
+- BattleOverlay disabled during overview (buttons + keyboard)
+
+### Technical
+- `TransitionState` in `src/core/events.py` with start/skip/end methods
+- `Engine.start_transition()`, `tick_transition()`, `is_input_locked()` in `src/core/engine.py`
+- `BattleManager` emits transitions on battle start/end
+- `TransitionCurtain.tsx` with requestAnimationFrame-based animation
+- Camera transform via CSS `scale()` and `translate()` on arena container
+
+---
+
 ## [6.0.0] - 2026-01-11 - Tactical Battle Mode
 
 ### Added
