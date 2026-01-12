@@ -2,7 +2,75 @@
 
 **Last Updated:** 2026-01-12
 **Branch:** master
-**Version:** v6.4.0 (Frontend Lore Alignment) - SHIPPED
+**Version:** v6.5.1 (Roadmap Complete) - SHIPPED
+
+---
+
+## v6.5.1 SHIPPED (2026-01-12) - Roadmap Complete
+
+**Merge Commits:** PRs #21-24 → develop → master
+
+### Summary
+All roadmap implementation items completed. Only research/exploratory items remain.
+
+### Completed Roadmap Items
+
+#### Critical Priority (crit-01, crit-02) ✅
+- Investigated missing enums - none found, marked resolved
+- Ghost victory behaviors fully implemented
+
+#### High Priority (high-01 through high-06) ✅
+- **high-01**: Database Save System - PostgreSQL game saves with multiple slots
+- **high-02**: Stealth AI - Sneak attacks, backstab detection, noise system
+- **high-03**: Elemental AI - Fire/ice/poison elemental behaviors with hazard creation
+- **high-04**: Missing Artifacts - All 3 artifacts spawn correctly
+- **high-05**: Field Pulse Events - Micro-events with codex evidence
+- **high-06**: Error Boundaries - React error boundaries with graceful fallbacks
+
+#### Medium Priority (med-01 through med-07) ✅
+- **med-01**: Micro-Event Codex - Evidence collection and display
+- **med-02**: Stats Dashboard - Player statistics page
+- **med-03**: Social Features - Friends list and activity feed
+- **med-04**: Settings Persistence - User preferences saved to backend
+- **med-05**: Keyboard Navigation - Arrow key navigation in character creation
+- **med-06**: Screen Reader Labels - ARIA labels and live regions for accessibility
+- **med-07**: Secret Ending Hooks - SecretFlag enum and SecretProgress tracker
+
+#### Low Priority (low-01 through low-06) ✅
+- **low-01**: ICE Slide Mechanic - Players slide on ice tiles until hitting obstacle
+- **low-02**: Floor Diorama 3D - Three.js visualization of all 8 floors on Home page
+- **low-03**: Character Preview 3D - Interactive 3D character in creation screen
+- **low-04**: Achievement System - Already implemented (33 achievements)
+- **low-05**: Daily Challenges - Backend API for seeded daily runs with leaderboards
+- **low-06**: Spectator Mode - Already implemented (WebSocket streaming)
+
+### Remaining Items (Research Priority)
+| ID | Title | Description | Effort |
+|----|-------|-------------|--------|
+| res-01 | 3D Asset Pipeline | CLI workflow for AI-generated 3D models | Epic |
+| res-02 | Mobile Performance | Profile and optimize for mobile devices | Large |
+| res-03 | WebGPU Migration | Future-proof 3D rendering | Epic |
+| res-04 | Procedural Music | Dynamic music responding to gameplay | Large |
+
+### New Components Created (v6.5.1)
+
+| Component | Purpose |
+|-----------|---------|
+| `FloorDiorama3D` | 8-floor visualization with biome colors, boss symbols, camera rotation |
+| `CharacterPreview3D` | Race/class preview with drag-to-rotate, idle animation |
+| `DailyChallenge` model | Seeded daily runs with deterministic generation |
+| `DailyChallengeResult` model | User attempt tracking with score/rank |
+| `DailyChallengeService` | Streak tracking, leaderboards, daily seed generation |
+
+### API Endpoints Added (v6.5.1)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/daily` | Today's challenge overview with user stats |
+| `POST /api/daily/result` | Submit daily challenge result |
+| `GET /api/daily/leaderboard` | Daily challenge leaderboard |
+| `GET /api/daily/stats` | User's daily challenge statistics |
+| `GET /api/daily/streaks` | Active streak leaderboard |
 
 ---
 
