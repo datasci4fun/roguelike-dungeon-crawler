@@ -24,6 +24,7 @@ import { BattleRenderer3D } from '../components/BattleRenderer3D';
 import { BattleHUD, type SelectedAction, type TileCoord } from '../components/BattleHUD';
 import { TransitionCurtain } from '../components/TransitionCurtain';
 import { Graphics3DErrorBoundary } from '../components/ErrorBoundary';
+import { GameAnnouncer } from '../components/GameAnnouncer';
 import { GAME_STATE_MUSIC } from '../config/audioConfig';
 import './Play.css';
 
@@ -551,14 +552,18 @@ export function Play() {
             )}
           </div>
 
-          <div className="game-controls">
+          <div className="game-controls" role="group" aria-label="View settings">
             <label className="scene-toggle">
               <input
                 type="checkbox"
                 checked={showSceneView}
                 onChange={(e) => setShowSceneView(e.target.checked)}
+                aria-describedby="scene-view-desc"
               />
               First-Person View
+              <span id="scene-view-desc" className="visually-hidden">
+                Toggle the first-person dungeon view
+              </span>
             </label>
 
             <label className="scene-toggle">
@@ -567,8 +572,12 @@ export function Play() {
                 checked={useTileGrid}
                 onChange={(e) => setUseTileGrid(e.target.checked)}
                 disabled={!showSceneView}
+                aria-describedby="tile-grid-desc"
               />
               Tile Grid
+              <span id="tile-grid-desc" className="visually-hidden">
+                Show tile grid overlay on dungeon floor
+              </span>
             </label>
 
             <label className="scene-toggle">
@@ -577,8 +586,12 @@ export function Play() {
                 checked={use3DMode}
                 onChange={(e) => setUse3DMode(e.target.checked)}
                 disabled={!showSceneView}
+                aria-describedby="3d-mode-desc"
               />
               3D Mode
+              <span id="3d-mode-desc" className="visually-hidden">
+                Use Three.js 3D rendering instead of canvas 2D
+              </span>
             </label>
 
           </div>
@@ -699,6 +712,9 @@ export function Play() {
           <span className="lore-notification-hint">Press [J] to read</span>
         </div>
       )}
+
+      {/* v6.5.1 med-06: Screen reader announcements */}
+      <GameAnnouncer gameState={gameState} events={gameState?.events} />
     </div>
   );
 }

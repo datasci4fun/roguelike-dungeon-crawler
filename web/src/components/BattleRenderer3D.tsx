@@ -49,6 +49,50 @@ const PHASE_DURATIONS: Record<string, number> = {
   settle: 400,
 };
 
+// v6.5.1 Performance: Shared geometry cache to avoid recreating geometries
+// These are created once and reused across all arena builds
+let sharedGeometries: {
+  floorPlane: THREE.PlaneGeometry;
+  wallBox: THREE.BoxGeometry;
+  highlightPlane: THREE.PlaneGeometry;
+  telegraphPlane: THREE.PlaneGeometry;
+} | null = null;
+
+function getSharedGeometries() {
+  if (!sharedGeometries) {
+    sharedGeometries = {
+      floorPlane: new THREE.PlaneGeometry(TILE_SIZE, TILE_SIZE),
+      wallBox: new THREE.BoxGeometry(TILE_SIZE, WALL_HEIGHT, TILE_SIZE),
+      highlightPlane: new THREE.PlaneGeometry(TILE_SIZE * 0.9, TILE_SIZE * 0.9),
+      telegraphPlane: new THREE.PlaneGeometry(TILE_SIZE * 0.9, TILE_SIZE * 0.9),
+    };
+  }
+  return sharedGeometries;
+}
+
+// v6.5.1 Performance: Damage number canvas pool for reuse
+const DAMAGE_CANVAS_POOL_SIZE = 10;
+const damageCanvasPool: HTMLCanvasElement[] = [];
+
+function getDamageCanvas(): HTMLCanvasElement {
+  if (damageCanvasPool.length > 0) {
+    return damageCanvasPool.pop()!;
+  }
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 64;
+  return canvas;
+}
+
+function returnDamageCanvas(canvas: HTMLCanvasElement): void {
+  if (damageCanvasPool.length < DAMAGE_CANVAS_POOL_SIZE) {
+    // Clear the canvas before returning to pool
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    damageCanvasPool.push(canvas);
+  }
+}
+
 const PHASE_ORDER = ['zoom_out', 'pan_enemies', 'pan_player', 'settle', 'complete'] as const;
 type OverviewPhase = typeof PHASE_ORDER[number];
 
@@ -69,6 +113,7 @@ interface DamageNumber {
   amount: number;
   createdAt: number;
   sprite: THREE.Sprite;
+  canvas: HTMLCanvasElement; // v6.5.1: Track canvas for pool return
 }
 
 // v6.5 Battle Polish: Camera shake effect
@@ -458,10 +503,11 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
           dmg.sprite.material.opacity = 1 - fadeProgress * fadeProgress; // Ease out
           activeDamage.push(dmg);
         } else {
-          // Expired - remove from scene
+          // Expired - remove from scene and return canvas to pool
           damageGroup.remove(dmg.sprite);
           dmg.sprite.material.map?.dispose();
           dmg.sprite.material.dispose();
+          returnDamageCanvas(dmg.canvas); // v6.5.1: Return canvas to pool
         }
       }
       damageNumbersRef.current = activeDamage;
@@ -498,9 +544,9 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
           (telegraph.mesh.material as THREE.MeshBasicMaterial).opacity = pulse;
           activeTelegraphs.push(telegraph);
         } else {
-          // Cleanup expired telegraph
+          // Cleanup expired telegraph (don't dispose shared geometry)
           telegraphGroup.remove(telegraph.mesh);
-          telegraph.mesh.geometry.dispose();
+          // v6.5.1: Don't dispose geometry - it's shared
           (telegraph.mesh.material as THREE.MeshBasicMaterial).dispose();
         }
       }
@@ -584,10 +630,8 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
         const worldX = (arenaX - arena_width / 2) * TILE_SIZE;
         const worldZ = (arenaY - arena_height / 2) * TILE_SIZE;
 
-        // Create damage number sprite
-        const canvas = document.createElement('canvas');
-        canvas.width = 128;
-        canvas.height = 64;
+        // v6.5.1 Performance: Use pooled canvas instead of creating new one
+        const canvas = getDamageCanvas();
         const ctx = canvas.getContext('2d')!;
 
         // Clear background
@@ -628,6 +672,7 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
           amount,
           createdAt: Date.now(),
           sprite,
+          canvas, // v6.5.1: Track canvas for pool return
         };
 
         damageNumbersRef.current.push(dmgNumber);
@@ -698,8 +743,8 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
         const worldX = (targetX - arena_width / 2) * TILE_SIZE;
         const worldZ = (targetY - arena_height / 2) * TILE_SIZE;
 
-        // Create danger zone indicator
-        const geometry = new THREE.PlaneGeometry(TILE_SIZE * 0.9, TILE_SIZE * 0.9);
+        // v6.5.1 Performance: Use shared geometry instead of creating new one
+        const sharedGeo = getSharedGeometries();
         const material = new THREE.MeshBasicMaterial({
           color: attackType === 'ranged' ? 0xff8800 : 0xff4444,
           transparent: true,
@@ -707,7 +752,7 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
           side: THREE.DoubleSide,
         });
 
-        const telegraph = new THREE.Mesh(geometry, material);
+        const telegraph = new THREE.Mesh(sharedGeo.telegraphPlane, material);
         telegraph.rotation.x = -Math.PI / 2;
         telegraph.position.set(worldX, 0.02, worldZ); // Just above floor
 
@@ -1071,12 +1116,12 @@ function updateHighlights(
   selectedAction: string | null | undefined,
   overviewComplete: boolean
 ) {
-  // Clear existing highlights
+  // v6.5.1 Performance: Clear existing highlights (only dispose materials, not shared geometry)
   while (group.children.length > 0) {
     const child = group.children[0];
     group.remove(child);
     if (child instanceof THREE.Mesh) {
-      child.geometry.dispose();
+      // Don't dispose geometry - it's shared
       (child.material as THREE.Material).dispose();
     }
   }
@@ -1096,6 +1141,9 @@ function updateHighlights(
   const highlightColor = isAttack ? HIGHLIGHT_COLORS.attack :
                          isAbility ? HIGHLIGHT_COLORS.ability :
                          HIGHLIGHT_COLORS.move;
+
+  // v6.5.1 Performance: Get shared geometry for all highlights
+  const sharedGeo = getSharedGeometries();
 
   // Find tiles within range
   for (let dy = -range; dy <= range; dy++) {
@@ -1125,11 +1173,10 @@ function updateHighlights(
         if (isAttack && !hasEnemy) continue;
       }
 
-      // Create highlight plane
+      // Create highlight plane using shared geometry
       const worldX = (tx - arena_width / 2) * TILE_SIZE;
       const worldZ = (ty - arena_height / 2) * TILE_SIZE;
 
-      const highlightGeometry = new THREE.PlaneGeometry(TILE_SIZE * 0.9, TILE_SIZE * 0.9);
       const highlightMaterial = new THREE.MeshBasicMaterial({
         color: highlightColor,
         transparent: true,
@@ -1137,7 +1184,7 @@ function updateHighlights(
         side: THREE.DoubleSide,
       });
 
-      const highlight = new THREE.Mesh(highlightGeometry, highlightMaterial);
+      const highlight = new THREE.Mesh(sharedGeo.highlightPlane, highlightMaterial);
       highlight.rotation.x = -Math.PI / 2;
       highlight.position.set(worldX, 0.03, worldZ);
       group.add(highlight);
