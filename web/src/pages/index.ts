@@ -13,3 +13,4 @@ export { Friends } from './Friends';
 export { PlayScene } from './PlayScene';
 export { SceneDemo } from './SceneDemo';
 export { Presentation } from './Presentation';
+export { Roadmap } from './Roadmap';

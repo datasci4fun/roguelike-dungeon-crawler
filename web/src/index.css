@@ -55,6 +55,27 @@
   /* Phosphor text effect */
   --sf-phosphor-blur: 0.5px;
   --sf-phosphor-glow: 0 0 8px var(--sf-gold-glow);
+
+  /* ========================================================================
+   * Roadmap Priority Colors
+   * ======================================================================== */
+  --roadmap-critical: #ef4444;
+  --roadmap-critical-dim: rgba(239, 68, 68, 0.2);
+  --roadmap-high: #f97316;
+  --roadmap-high-dim: rgba(249, 115, 22, 0.2);
+  --roadmap-medium: #eab308;
+  --roadmap-medium-dim: rgba(234, 179, 8, 0.2);
+  --roadmap-low: #22c55e;
+  --roadmap-low-dim: rgba(34, 197, 94, 0.2);
+  --roadmap-research: #a855f7;
+  --roadmap-research-dim: rgba(168, 85, 247, 0.2);
+
+  /* Roadmap Status Colors */
+  --roadmap-status-planned: #6b7280;
+  --roadmap-status-progress: #3b82f6;
+  --roadmap-status-completed: #22c55e;
+  --roadmap-status-blocked: #ef4444;
+  --roadmap-status-deferred: #4b5563;
 }
 
 a {
