@@ -73,15 +73,16 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'crit-01',
     title: 'Fix Missing Enum Values',
-    description: 'Add missing CandidateType.SELF and KitingPhase.RETREAT to prevent runtime errors',
+    description: 'Investigation found no missing enums - TargetType.SELF exists, KitingPhase not needed',
     priority: 'critical',
-    status: 'planned',
+    status: 'completed',
     category: ['backend'],
     effort: 'small',
     details: [
-      'CandidateType enum missing SELF value',
-      'KitingPhase enum missing RETREAT value',
-      'Can cause crashes in specific combat scenarios',
+      'Investigated: CandidateType.SELF not needed - self-buffs use ABILITY with self_buff=True',
+      'Investigated: KitingPhase enum does not exist and is not needed',
+      'All 54 tests pass, no runtime errors found',
+      'Marked as resolved/invalid on 2026-01-12',
     ],
   },
   {
