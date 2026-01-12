@@ -14,6 +14,7 @@ from .api.chat import router as chat_router
 from .api.achievements import router as achievements_router
 from .api.profile import router as profile_router
 from .api.friends import router as friends_router
+from .api.saves import router as saves_router
 
 
 @asynccontextmanager
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
     app.include_router(achievements_router)
     app.include_router(profile_router)
     app.include_router(friends_router)
+    app.include_router(saves_router)
 
     return app
 

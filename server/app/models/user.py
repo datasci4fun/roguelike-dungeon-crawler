@@ -49,6 +49,7 @@ class User(Base):
     # Relationships
     game_results = relationship("GameResult", back_populates="user", lazy="dynamic")
     achievements = relationship("UserAchievement", back_populates="user", lazy="dynamic")
+    game_saves = relationship("GameSave", back_populates="user", lazy="dynamic")
 
     def verify_password(self, plain_password: str) -> bool:
         """Verify a plain password against the hash."""
