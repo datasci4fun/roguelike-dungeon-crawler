@@ -57,7 +57,8 @@ export type BackgroundType =
   | 'awakening'
   | 'victory'
   | 'defeat'
-  | 'black';
+  | 'black'
+  | 'landing';
 
 export interface BackgroundConfig {
   type: BackgroundType;

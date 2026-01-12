@@ -1,0 +1,1226 @@
+/**
+ * Presentation Page - Slide-based layout for AI case study
+ */
+
+/* ============================================
+   Base Layout
+   ============================================ */
+
+.presentation {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+}
+
+/* ============================================
+   Progress Bar
+   ============================================ */
+
+.presentation-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  z-index: 100;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ade80, #22c55e);
+  transition: width 0.3s ease;
+}
+
+/* ============================================
+   Slide Container
+   ============================================ */
+
+.slide-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  min-height: calc(100vh - 150px);
+}
+
+.slide {
+  width: 100%;
+  max-width: 900px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   Navigation
+   ============================================ */
+
+.presentation-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 1rem;
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 30, 0.9);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 50px;
+  backdrop-filter: blur(10px);
+}
+
+.nav-btn {
+  background: transparent;
+  border: none;
+  color: #a0a0a0;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.nav-btn:hover:not(:disabled) {
+  color: #4ade80;
+}
+
+.nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.slide-dots {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dot:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.dot.active {
+  background: #4ade80;
+  transform: scale(1.2);
+}
+
+.keyboard-hint {
+  position: fixed;
+  bottom: 0.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  color: #666;
+}
+
+/* ============================================
+   Common Slide Elements
+   ============================================ */
+
+.section-label {
+  display: inline-block;
+  font-size: 0.8rem;
+  color: #4ade80;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 1rem;
+  padding: 0.25rem 0.75rem;
+  background: rgba(74, 222, 128, 0.1);
+  border-radius: 4px;
+}
+
+.slide h2 {
+  font-size: 2rem;
+  color: #f0f0f0;
+  margin: 0 0 1.5rem;
+  font-weight: 600;
+}
+
+/* ============================================
+   Title Slide
+   ============================================ */
+
+.slide-title {
+  text-align: center;
+}
+
+.slide-title h1 {
+  font-size: 3.5rem;
+  color: #4ade80;
+  margin: 0 0 1rem;
+  text-shadow: 0 0 40px rgba(74, 222, 128, 0.3);
+}
+
+.slide-title .subtitle {
+  font-size: 1.5rem;
+  color: #c0c0c0;
+  margin: 0 0 2rem;
+}
+
+.slide-title .author {
+  font-size: 1.25rem;
+  color: #d4a574;
+  margin: 0 0 2rem;
+  font-style: italic;
+}
+
+.slide-title .meta {
+  font-size: 1rem;
+  color: #666;
+}
+
+/* ============================================
+   Basics Slide
+   ============================================ */
+
+.basics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.basic-item {
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(74, 222, 128, 0.15);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.basic-item.full-width {
+  grid-column: span 2;
+}
+
+.basic-item .label {
+  display: block;
+  font-size: 0.8rem;
+  color: #4ade80;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.basic-item .value {
+  font-size: 1.1rem;
+  color: #e0e0e0;
+  line-height: 1.5;
+}
+
+.basic-item .value.highlight {
+  color: #f0f0f0;
+  font-weight: 500;
+}
+
+/* ============================================
+   Checklist Slide
+   ============================================ */
+
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(10, 10, 20, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.check-item.checked {
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.2);
+}
+
+.checkbox {
+  font-size: 1.25rem;
+  color: #666;
+  width: 1.5rem;
+}
+
+.check-item.checked .checkbox {
+  color: #4ade80;
+}
+
+.check-label {
+  font-size: 1.1rem;
+  color: #b0b0b0;
+}
+
+.check-item.checked .check-label {
+  color: #e0e0e0;
+}
+
+.check-note {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: #4ade80;
+  font-style: italic;
+}
+
+/* ============================================
+   Highlight Slide
+   ============================================ */
+
+.slide-highlight {
+  text-align: center;
+}
+
+.highlight-value {
+  font-size: 5rem;
+  font-weight: 700;
+  color: #4ade80;
+  text-shadow: 0 0 60px rgba(74, 222, 128, 0.4);
+  margin-bottom: 1rem;
+}
+
+.highlight-subtitle {
+  font-size: 1.2rem;
+  color: #a0a0a0;
+  margin-bottom: 2rem;
+}
+
+.highlight-details {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.highlight-details li {
+  color: #b0b0b0;
+  padding: 0.5rem 1rem;
+  background: rgba(10, 10, 20, 0.5);
+  border-radius: 4px;
+}
+
+/* ============================================
+   Use Case Slide
+   ============================================ */
+
+.usecase-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.usecase-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #4ade80;
+  opacity: 0.5;
+}
+
+.usecase-header h2 {
+  margin: 0;
+}
+
+.usecase-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.usecase-item {
+  background: rgba(10, 10, 20, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.usecase-item .label {
+  display: block;
+  font-size: 0.75rem;
+  color: #4ade80;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.usecase-item p {
+  margin: 0;
+  color: #b0b0b0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.usecase-item .impact {
+  color: #4ade80;
+  font-weight: 500;
+}
+
+/* ============================================
+   Comparison Slide
+   ============================================ */
+
+.slide-comparison {
+  text-align: center;
+}
+
+.slide-comparison.slow h2 {
+  color: #f87171;
+}
+
+.slide-comparison.fast h2 {
+  color: #4ade80;
+}
+
+.comparison-list {
+  list-style: none;
+  padding: 0;
+  text-align: left;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.comparison-list li {
+  padding: 1rem 1.25rem;
+  margin-bottom: 0.5rem;
+  background: rgba(10, 10, 20, 0.5);
+  border-radius: 8px;
+  color: #b0b0b0;
+  font-size: 1.1rem;
+}
+
+.slide-comparison.slow .comparison-list li {
+  border-left: 3px solid #f87171;
+}
+
+.slide-comparison.fast .comparison-list li {
+  border-left: 3px solid #4ade80;
+}
+
+/* ============================================
+   Two Column Slide
+   ============================================ */
+
+.two-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.column {
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+.column.improvement {
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+.column.risk {
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.column h3 {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 1rem;
+}
+
+.column.improvement h3 {
+  color: #4ade80;
+}
+
+.column.risk h3 {
+  color: #fbbf24;
+}
+
+.column p {
+  margin: 0;
+  color: #c0c0c0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+
+/* ============================================
+   Showcase Slide
+   ============================================ */
+
+.showcase-desc {
+  font-size: 1.15rem;
+  color: #a0a0a0;
+  margin-bottom: 2rem;
+}
+
+.showcase-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.stat {
+  text-align: center;
+  padding: 1rem 1.5rem;
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(74, 222, 128, 0.15);
+  border-radius: 8px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #8a8a8a;
+  text-transform: uppercase;
+}
+
+.showcase-helped {
+  background: rgba(10, 10, 20, 0.5);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.showcase-helped h3 {
+  font-size: 0.9rem;
+  color: #4ade80;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 1rem;
+}
+
+.showcase-helped ul {
+  margin: 0;
+  padding-left: 1.25rem;
+  columns: 2;
+  column-gap: 2rem;
+}
+
+.showcase-helped li {
+  color: #b0b0b0;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.showcase-lesson {
+  color: #a78bfa;
+  font-style: italic;
+  padding: 1rem;
+  background: rgba(139, 92, 246, 0.1);
+  border-radius: 8px;
+}
+
+/* ============================================
+   Story Slide
+   ============================================ */
+
+.slide-story {
+  text-align: center;
+}
+
+.story-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.slide-story.success .story-icon {
+  color: #4ade80;
+}
+
+.slide-story.warning .story-icon {
+  color: #fbbf24;
+}
+
+.story-text {
+  font-size: 1.2rem;
+  color: #c0c0c0;
+  line-height: 1.8;
+  max-width: 700px;
+  margin: 0 auto 1.5rem;
+}
+
+.story-why,
+.story-lesson {
+  font-size: 1rem;
+  color: #a0a0a0;
+  max-width: 600px;
+  margin: 0.5rem auto;
+}
+
+.story-why strong,
+.story-lesson strong {
+  color: #4ade80;
+}
+
+/* ============================================
+   Recommendation Slide
+   ============================================ */
+
+.recommendations {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.rec-item {
+  background: rgba(10, 10, 20, 0.6);
+  border: 1px solid rgba(74, 222, 128, 0.15);
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.rec-item h3 {
+  font-size: 1.15rem;
+  color: #4ade80;
+  margin: 0 0 0.75rem;
+}
+
+.rec-item p {
+  margin: 0;
+  color: #a0a0a0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* ============================================
+   Bullets Slide
+   ============================================ */
+
+.bullet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bullet-item {
+  background: rgba(10, 10, 20, 0.6);
+  border-left: 4px solid #4ade80;
+  border-radius: 0 8px 8px 0;
+  padding: 1.5rem;
+}
+
+.bullet-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #4ade80;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.bullet-item p {
+  margin: 0;
+  color: #c0c0c0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+/* ============================================
+   CTA Slide
+   ============================================ */
+
+.slide-cta {
+  text-align: center;
+}
+
+.slide-cta h2 {
+  font-size: 2.5rem;
+  color: #4ade80;
+}
+
+.cta-subtitle {
+  font-size: 1.2rem;
+  color: #a0a0a0;
+  margin-bottom: 2.5rem;
+}
+
+.cta-links {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.cta-link {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 8px;
+  color: #4ade80;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.cta-link:hover {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: #4ade80;
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+  .slide-title h1 {
+    font-size: 2.5rem;
+  }
+
+  .basics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .basic-item.full-width {
+    grid-column: span 1;
+  }
+
+  .usecase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .showcase-helped ul {
+    columns: 1;
+  }
+
+  .highlight-value {
+    font-size: 3.5rem;
+  }
+
+  .presentation-nav {
+    padding: 0.75rem 1.5rem;
+    gap: 1rem;
+  }
+
+  .slide-dots {
+    display: none;
+  }
+
+  .keyboard-hint {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .slide-container {
+    padding: 1rem;
+  }
+
+  .slide h2 {
+    font-size: 1.5rem;
+  }
+
+  .slide-title h1 {
+    font-size: 2rem;
+  }
+
+  .slide-title .subtitle {
+    font-size: 1.1rem;
+  }
+}
+
+/* ============================================
+   Hide Layout Footer on Presentation Page
+   ============================================ */
+
+body.presentation-page .footer {
+  display: none !important;
+}
+
+/* Adjust main content to not need footer space */
+body.presentation-page .main {
+  padding-bottom: 0;
+}
+
+/* Ensure header doesn't overlap export controls */
+body.presentation-page .header {
+  position: relative;
+  z-index: 50;
+}
+
+/* ============================================
+   Export Mode
+   ============================================ */
+
+/* Hide atmospheric overlays on presentation page */
+body.presentation-page .atm-crt-overlay,
+body.presentation-page .atm-vignette {
+  display: none !important;
+}
+
+body.presentation-page .atm-particles {
+  opacity: 0.05 !important;
+}
+
+/* In export mode, hide everything except content */
+body.export-mode .atm-crt-overlay,
+body.export-mode .atm-vignette,
+body.export-mode .atm-particles,
+body.export-mode .atm-fog,
+body.export-mode .scene-background {
+  display: none !important;
+}
+
+body.export-mode .atmospheric-page {
+  background: #0a0a0a !important;
+}
+
+/* Hide scrollbar in export mode - apply to all elements */
+body.export-mode,
+body.export-mode *,
+body.export-mode .atmospheric-page,
+body.export-mode .atm-content-layer,
+body.export-mode .presentation,
+body.export-mode .export-slides,
+body.export-mode .export-slide-wrapper {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+body.export-mode::-webkit-scrollbar,
+body.export-mode *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
+}
+
+body.export-mode .header {
+  display: none !important;
+}
+
+.presentation.export-mode {
+  padding: 0;
+  position: relative;
+  z-index: 200;
+}
+
+.presentation.export-mode .presentation-progress,
+.presentation.export-mode .presentation-nav,
+.presentation.export-mode .keyboard-hint,
+.presentation.export-mode .export-btn {
+  display: none;
+}
+
+.presentation.export-mode .slide-container {
+  min-height: auto;
+  padding: 0;
+  position: relative;
+  z-index: 200;
+}
+
+.presentation.export-mode .export-slides {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  z-index: 200;
+}
+
+.presentation.export-mode .export-slide-wrapper {
+  page-break-inside: avoid;
+  break-inside: avoid;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #333;
+  background: #0a0a0a;
+  position: relative;
+  z-index: 200;
+  box-sizing: border-box;
+}
+
+/* Title page gets its own page */
+.presentation.export-mode .export-slide-wrapper.title-page {
+  page-break-after: always;
+  break-after: page;
+}
+
+.presentation.export-mode .export-slide-wrapper:last-child {
+  border-bottom: none;
+}
+
+/* Export header - fixed at top */
+.export-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0 1rem;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.2);
+  flex-shrink: 0;
+}
+
+.export-header-title {
+  font-size: 0.9rem;
+  color: #4ade80;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.export-header-author {
+  font-size: 0.85rem;
+  color: #d4a574;
+  font-style: italic;
+}
+
+/* Export content - fills middle */
+.export-slide-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.export-slide-content .slide {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Export footer - fixed at bottom */
+.export-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0 0.5rem;
+  border-top: 1px solid rgba(74, 222, 128, 0.2);
+  flex-shrink: 0;
+}
+
+.export-footer-event {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.export-footer-page {
+  font-size: 0.8rem;
+  color: #888;
+  font-weight: 500;
+}
+
+.presentation.export-mode .slide {
+  animation: none;
+  position: relative;
+  z-index: 200;
+  width: 100%;
+  max-width: 900px;
+}
+
+/* Export button */
+.export-btn {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.export-btn:hover {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: #4ade80;
+}
+
+/* Export controls bar */
+.export-controls {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #1a1a2e;
+  border-bottom: 1px solid #4ade80;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 9999;
+}
+
+.export-controls h3 {
+  margin: 0;
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.export-controls-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.export-controls button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.export-controls .print-btn {
+  background: #4ade80;
+  border: none;
+  color: #0a0a0a;
+  font-weight: 500;
+}
+
+.export-controls .print-btn:hover {
+  background: #22c55e;
+}
+
+.export-controls .back-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: #a0a0a0;
+}
+
+.export-controls .back-btn:hover {
+  border-color: #666;
+  color: #e0e0e0;
+}
+
+.presentation.export-mode .export-slides {
+  margin-top: 60px;
+  padding-bottom: 100px;
+}
+
+/* Ensure content layer can scroll in export mode */
+body.export-mode .atm-content-layer {
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+body.export-mode .atmospheric-page {
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  @page {
+    size: letter;
+    margin: 0.5in;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    overflow: visible !important;
+  }
+
+  /* Hide any scrollbars in print */
+  body::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .export-controls {
+    display: none !important;
+  }
+
+  .presentation.export-mode .export-slides {
+    margin-top: 0 !important;
+  }
+
+  .presentation.export-mode .export-slide-wrapper {
+    background: white !important;
+    border: none !important;
+    min-height: calc(100vh - 1in) !important;
+    height: calc(100vh - 1in) !important;
+    max-height: calc(100vh - 1in) !important;
+    padding: 0 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    page-break-after: always;
+    break-after: page;
+    display: flex !important;
+    flex-direction: column !important;
+    box-sizing: border-box !important;
+  }
+
+  .presentation.export-mode .export-slide-wrapper:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  /* Print header styles */
+  .export-header {
+    border-bottom: 1px solid #ccc !important;
+    padding: 0 0 0.5rem 0 !important;
+    margin-bottom: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .export-header-title {
+    color: #2e7d32 !important;
+    font-size: 9pt !important;
+  }
+
+  .export-header-author {
+    color: #6d4c41 !important;
+    font-size: 9pt !important;
+  }
+
+  /* Print content fills the middle */
+  .export-slide-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 0.5rem 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Print footer styles */
+  .export-footer {
+    border-top: 1px solid #ccc !important;
+    padding: 0.5rem 0 0 0 !important;
+    margin-top: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .export-footer-event {
+    color: #666 !important;
+    font-size: 8pt !important;
+  }
+
+  .export-footer-page {
+    color: #333 !important;
+    font-size: 8pt !important;
+  }
+
+  .presentation.export-mode .slide {
+    color: black !important;
+  }
+
+  .presentation.export-mode .slide h1,
+  .presentation.export-mode .slide h2,
+  .presentation.export-mode .slide h3,
+  .presentation.export-mode .slide h4 {
+    color: #1a1a1a !important;
+  }
+
+  .presentation.export-mode .section-label {
+    background: #e8f5e9 !important;
+    color: #2e7d32 !important;
+  }
+
+  .presentation.export-mode .slide-title h1 {
+    color: #2e7d32 !important;
+    text-shadow: none !important;
+  }
+
+  .presentation.export-mode .slide-title .author {
+    color: #6d4c41 !important;
+  }
+
+  .presentation.export-mode .highlight-value {
+    color: #2e7d32 !important;
+    text-shadow: none !important;
+  }
+
+  .presentation.export-mode .basic-item,
+  .presentation.export-mode .check-item,
+  .presentation.export-mode .usecase-item,
+  .presentation.export-mode .quality-card,
+  .presentation.export-mode .rec-item,
+  .presentation.export-mode .bullet-item,
+  .presentation.export-mode .stat,
+  .presentation.export-mode .showcase-helped,
+  .presentation.export-mode .showcase-lesson,
+  .presentation.export-mode .column {
+    background: #f5f5f5 !important;
+    border-color: #ddd !important;
+  }
+
+  .presentation.export-mode .check-item.checked {
+    background: #e8f5e9 !important;
+    border-color: #a5d6a7 !important;
+  }
+
+  .presentation.export-mode .comparison-list li {
+    background: #f5f5f5 !important;
+  }
+
+  .presentation.export-mode .slide-comparison.slow h2 {
+    color: #c62828 !important;
+  }
+
+  .presentation.export-mode .slide-comparison.fast h2 {
+    color: #2e7d32 !important;
+  }
+
+  .presentation.export-mode .checkbox,
+  .presentation.export-mode .check-note,
+  .presentation.export-mode .ai-role,
+  .presentation.export-mode .stat-value,
+  .presentation.export-mode .bullet-label,
+  .presentation.export-mode .story-icon,
+  .presentation.export-mode .usecase-number,
+  .presentation.export-mode .impact {
+    color: #2e7d32 !important;
+  }
+
+  .presentation.export-mode p,
+  .presentation.export-mode li,
+  .presentation.export-mode span {
+    color: #333 !important;
+  }
+
+  .presentation.export-mode .cta-link {
+    background: #e8f5e9 !important;
+    border-color: #a5d6a7 !important;
+    color: #2e7d32 !important;
+  }
+}

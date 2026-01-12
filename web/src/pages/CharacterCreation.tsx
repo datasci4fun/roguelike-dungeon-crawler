@@ -1,5 +1,10 @@
 /**
- * Character Creation page - select race and class before starting the game.
+ * Character Creation page - Prepare Your Descent
+ *
+ * Enhanced with:
+ * - AtmosphericPage wrapper (underground theme)
+ * - PhosphorHeader with lore title
+ * - Race/class lore from Skyfall Seed canon
  */
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +12,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
 import { useAudioManager } from '../hooks/useAudioManager';
 import { GameIntro } from '../components/GameIntroNew';
+import { AtmosphericPage } from '../components/AtmosphericPage';
+import { PhosphorHeader } from '../components/PhosphorHeader';
+import { RACE_LORE, CLASS_LORE, CHARACTER_CREATION } from '../data/loreSkyfall';
 import type { RaceId, ClassId } from '../hooks/useGameSocket';
 import { RACES, CLASSES, ABILITY_DESCRIPTIONS, calculateStats } from '../data/characterData';
 import './CharacterCreation.css';
@@ -74,154 +82,177 @@ export function CharacterCreation() {
   }
 
   return (
-    <div className="character-creation">
-      <h1 className="title">Create Your Hero</h1>
+    <AtmosphericPage
+      backgroundType="underground"
+      particles={{ type: 'dust', count: 30, speed: 'slow', opacity: 0.2 }}
+      crt={true}
+      crtIntensity="light"
+    >
+      <div className="character-creation">
+        <div className="creation-header">
+          <PhosphorHeader
+            title={CHARACTER_CREATION.title}
+            subtitle={CHARACTER_CREATION.subtitle}
+            style="dramatic"
+            delay={100}
+          />
+        </div>
 
-      <div className="creation-layout">
-        {/* Race Selection */}
-        <div className="selection-section">
-          <h2>Choose Race</h2>
-          <div className="option-grid">
-            {(Object.keys(RACES) as RaceId[]).map((raceId) => {
-              const r = RACES[raceId];
-              return (
-                <button
-                  key={raceId}
-                  className={`option-card ${selectedRace === raceId ? 'selected' : ''}`}
-                  onClick={() => setSelectedRace(raceId)}
-                >
-                  <div className="option-name">{r.name}</div>
-                  <div className="option-desc">{r.description}</div>
-                  <div className="option-modifiers">
-                    <span className={r.hp_modifier > 0 ? 'positive' : r.hp_modifier < 0 ? 'negative' : ''}>
-                      HP {r.hp_modifier >= 0 ? '+' : ''}{r.hp_modifier}
-                    </span>
-                    <span className={r.atk_modifier > 0 ? 'positive' : r.atk_modifier < 0 ? 'negative' : ''}>
-                      ATK {r.atk_modifier >= 0 ? '+' : ''}{r.atk_modifier}
-                    </span>
-                    <span className={r.def_modifier > 0 ? 'positive' : r.def_modifier < 0 ? 'negative' : ''}>
-                      DEF {r.def_modifier >= 0 ? '+' : ''}{r.def_modifier}
-                    </span>
+        <div className="creation-layout">
+          {/* Race Selection */}
+          <div className="selection-section">
+            <h2>Choose Your Heritage</h2>
+            <div className="option-grid">
+              {(Object.keys(RACES) as RaceId[]).map((raceId) => {
+                const r = RACES[raceId];
+                const lore = RACE_LORE[raceId];
+                return (
+                  <button
+                    key={raceId}
+                    className={`option-card ${selectedRace === raceId ? 'selected' : ''}`}
+                    onClick={() => setSelectedRace(raceId)}
+                  >
+                    <div className="option-name">{r.name}</div>
+                    <div className="option-desc">{r.description}</div>
+                    <div className="option-modifiers">
+                      <span className={r.hp_modifier > 0 ? 'positive' : r.hp_modifier < 0 ? 'negative' : ''}>
+                        HP {r.hp_modifier >= 0 ? '+' : ''}{r.hp_modifier}
+                      </span>
+                      <span className={r.atk_modifier > 0 ? 'positive' : r.atk_modifier < 0 ? 'negative' : ''}>
+                        ATK {r.atk_modifier >= 0 ? '+' : ''}{r.atk_modifier}
+                      </span>
+                      <span className={r.def_modifier > 0 ? 'positive' : r.def_modifier < 0 ? 'negative' : ''}>
+                        DEF {r.def_modifier >= 0 ? '+' : ''}{r.def_modifier}
+                      </span>
+                    </div>
+                    <div className="option-trait">
+                      <span className="trait-name">{r.trait_name}:</span> {r.trait_description}
+                    </div>
+                    {lore && <div className="option-lore">{lore}</div>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Class Selection */}
+          <div className="selection-section">
+            <h2>Choose Your Path</h2>
+            <div className="option-grid">
+              {(Object.keys(CLASSES) as ClassId[]).map((classId) => {
+                const c = CLASSES[classId];
+                const lore = CLASS_LORE[classId];
+                return (
+                  <button
+                    key={classId}
+                    className={`option-card ${selectedClass === classId ? 'selected' : ''}`}
+                    onClick={() => setSelectedClass(classId)}
+                  >
+                    <div className="option-name">{c.name}</div>
+                    <div className="option-desc">{c.description}</div>
+                    <div className="option-modifiers">
+                      <span className={c.hp_modifier > 0 ? 'positive' : c.hp_modifier < 0 ? 'negative' : ''}>
+                        HP {c.hp_modifier >= 0 ? '+' : ''}{c.hp_modifier}
+                      </span>
+                      <span className={c.atk_modifier > 0 ? 'positive' : c.atk_modifier < 0 ? 'negative' : ''}>
+                        ATK {c.atk_modifier >= 0 ? '+' : ''}{c.atk_modifier}
+                      </span>
+                      <span className={c.def_modifier > 0 ? 'positive' : c.def_modifier < 0 ? 'negative' : ''}>
+                        DEF {c.def_modifier >= 0 ? '+' : ''}{c.def_modifier}
+                      </span>
+                    </div>
+                    <div className="option-abilities">
+                      {c.active_abilities.concat(c.passive_abilities).map((abilityId) => {
+                        const ability = ABILITY_DESCRIPTIONS[abilityId];
+                        return (
+                          <div key={abilityId} className="ability-item">
+                            <span className="ability-name">{ability.name}</span>
+                            {ability.cooldown && <span className="ability-cd">CD:{ability.cooldown}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {lore && <div className="option-lore">{lore}</div>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Stats Preview */}
+          <div className="preview-section">
+            <h2>{race.name} {playerClass.name}</h2>
+            <div className="stats-preview">
+              <div className="stat-row">
+                <span className="stat-label">Health</span>
+                <span className="stat-value hp">{stats.hp}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Attack</span>
+                <span className="stat-value atk">{stats.atk}</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Defense</span>
+                <span className="stat-value def">{stats.def}</span>
+              </div>
+            </div>
+
+            <div className="trait-preview">
+              <h3>Racial Trait</h3>
+              <div className="trait-info">
+                <span className="trait-name">{race.trait_name}</span>
+                <span className="trait-desc">{race.trait_description}</span>
+              </div>
+            </div>
+
+            <div className="abilities-preview">
+              <h3>Abilities</h3>
+              {playerClass.active_abilities.map((abilityId) => {
+                const ability = ABILITY_DESCRIPTIONS[abilityId];
+                return (
+                  <div key={abilityId} className="ability-preview">
+                    <span className="ability-name">{ability.name}</span>
+                    <span className="ability-desc">{ability.description}</span>
+                    {ability.cooldown && <span className="ability-cd">Cooldown: {ability.cooldown} turns</span>}
                   </div>
-                  <div className="option-trait">
-                    <span className="trait-name">{r.trait_name}:</span> {r.trait_description}
+                );
+              })}
+              <h4>Passive</h4>
+              {playerClass.passive_abilities.map((abilityId) => {
+                const ability = ABILITY_DESCRIPTIONS[abilityId];
+                return (
+                  <div key={abilityId} className="ability-preview passive">
+                    <span className="ability-name">{ability.name}</span>
+                    <span className="ability-desc">{ability.description}</span>
                   </div>
-                </button>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            <div className="descent-warning">
+              <span className="warning-icon">☠</span>
+              <span>{CHARACTER_CREATION.warning}</span>
+            </div>
+
+            <button
+              className="start-button"
+              onClick={handleBeginAdventure}
+              disabled={status !== 'connected'}
+            >
+              {status === 'connecting' ? 'Connecting...' : 'Begin Your Descent'}
+            </button>
           </div>
         </div>
 
-        {/* Class Selection */}
-        <div className="selection-section">
-          <h2>Choose Class</h2>
-          <div className="option-grid">
-            {(Object.keys(CLASSES) as ClassId[]).map((classId) => {
-              const c = CLASSES[classId];
-              return (
-                <button
-                  key={classId}
-                  className={`option-card ${selectedClass === classId ? 'selected' : ''}`}
-                  onClick={() => setSelectedClass(classId)}
-                >
-                  <div className="option-name">{c.name}</div>
-                  <div className="option-desc">{c.description}</div>
-                  <div className="option-modifiers">
-                    <span className={c.hp_modifier > 0 ? 'positive' : c.hp_modifier < 0 ? 'negative' : ''}>
-                      HP {c.hp_modifier >= 0 ? '+' : ''}{c.hp_modifier}
-                    </span>
-                    <span className={c.atk_modifier > 0 ? 'positive' : c.atk_modifier < 0 ? 'negative' : ''}>
-                      ATK {c.atk_modifier >= 0 ? '+' : ''}{c.atk_modifier}
-                    </span>
-                    <span className={c.def_modifier > 0 ? 'positive' : c.def_modifier < 0 ? 'negative' : ''}>
-                      DEF {c.def_modifier >= 0 ? '+' : ''}{c.def_modifier}
-                    </span>
-                  </div>
-                  <div className="option-abilities">
-                    {c.active_abilities.concat(c.passive_abilities).map((abilityId) => {
-                      const ability = ABILITY_DESCRIPTIONS[abilityId];
-                      return (
-                        <div key={abilityId} className="ability-item">
-                          <span className="ability-name">{ability.name}</span>
-                          {ability.cooldown && <span className="ability-cd">CD:{ability.cooldown}</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Stats Preview */}
-        <div className="preview-section">
-          <h2>{race.name} {playerClass.name}</h2>
-          <div className="stats-preview">
-            <div className="stat-row">
-              <span className="stat-label">Health</span>
-              <span className="stat-value hp">{stats.hp}</span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Attack</span>
-              <span className="stat-value atk">{stats.atk}</span>
-            </div>
-            <div className="stat-row">
-              <span className="stat-label">Defense</span>
-              <span className="stat-value def">{stats.def}</span>
-            </div>
-          </div>
-
-          <div className="trait-preview">
-            <h3>Racial Trait</h3>
-            <div className="trait-info">
-              <span className="trait-name">{race.trait_name}</span>
-              <span className="trait-desc">{race.trait_description}</span>
-            </div>
-          </div>
-
-          <div className="abilities-preview">
-            <h3>Abilities</h3>
-            {playerClass.active_abilities.map((abilityId) => {
-              const ability = ABILITY_DESCRIPTIONS[abilityId];
-              return (
-                <div key={abilityId} className="ability-preview">
-                  <span className="ability-name">{ability.name}</span>
-                  <span className="ability-desc">{ability.description}</span>
-                  {ability.cooldown && <span className="ability-cd">Cooldown: {ability.cooldown} turns</span>}
-                </div>
-              );
-            })}
-            <h4>Passive</h4>
-            {playerClass.passive_abilities.map((abilityId) => {
-              const ability = ABILITY_DESCRIPTIONS[abilityId];
-              return (
-                <div key={abilityId} className="ability-preview passive">
-                  <span className="ability-name">{ability.name}</span>
-                  <span className="ability-desc">{ability.description}</span>
-                </div>
-              );
-            })}
-          </div>
-
-          <button
-            className="start-button"
-            onClick={handleBeginAdventure}
-            disabled={status !== 'connected'}
-          >
-            {status === 'connecting' ? 'Connecting...' : 'Begin Adventure'}
-          </button>
-        </div>
+        {/* Game Intro Overlay */}
+        {showIntro && (
+          <GameIntro
+            onComplete={handleIntroComplete}
+            onSkip={handleIntroComplete}
+            onMusicChange={handleIntroMusic}
+          />
+        )}
       </div>
-
-      {/* Game Intro Overlay */}
-      {showIntro && (
-        <GameIntro
-          onComplete={handleIntroComplete}
-          onSkip={handleIntroComplete}
-          onMusicChange={handleIntroMusic}
-        />
-      )}
-    </div>
+    </AtmosphericPage>
   );
 }
