@@ -200,7 +200,7 @@ Common (white) → Uncommon (cyan) → Rare (blue) → Epic (magenta) → Legend
 
 ## First-Person Renderer (v4.1.0+)
 
-### Visual Features
+### Exploration View
 - Directional FOV based on player facing
 - Perspective projection with depth fog
 - 9 enemy visual styles + elite variants
@@ -219,6 +219,32 @@ Common (white) → Uncommon (cyan) → Rare (blue) → Epic (magenta) → Legend
 - Medieval compass HUD
 - Trap rendering with animations
 - Dust and fog particles
+
+---
+
+## Three.js Battle Renderer (v6.3.0+)
+
+### 3D Tactical Arena
+- WebGL-powered arena view via Three.js
+- Isometric camera angle for tactical overview
+- Tile-based floor with hazard coloring (lava, ice, poison, water)
+- Entity meshes with animated health bar overlays
+
+### Battle HUD
+- React overlay on Three.js canvas
+- Reinforcement countdown panel
+- Ability buttons with cooldown indicators
+- Turn indicator and action feedback
+
+### Visual Polish (v6.3.1)
+- Smooth movement transitions (200ms slide animations)
+- Floating damage numbers (rise and fade)
+- Color-coded feedback (red damage, green healing)
+
+### Arena Lighting
+- Ambient and directional lights
+- Hazard tile glow effects
+- Dynamic shadows for entities
 
 ---
 

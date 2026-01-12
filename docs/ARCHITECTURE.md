@@ -170,17 +170,22 @@ web/
     │   ├── FeatSelector.tsx    # Feat selection
     │   ├── GhostReplayViewer.tsx
     │   │
-    │   └── SceneRenderer/      # First-person 3D
-    │       ├── FirstPersonRenderer.tsx
-    │       ├── biomes.ts       # 8 biome themes
-    │       ├── projection.ts   # Perspective math
-    │       ├── compass.ts      # Compass HUD
-    │       ├── walls/          # Wall rendering
-    │       ├── entities/       # Enemy/item rendering
-    │       ├── effects/        # Particles, water
-    │       ├── lighting/       # Torch lights
-    │       └── tiles/          # Tile loading system
-    │
+    │   ├── SceneRenderer/      # First-person 3D (exploration)
+    │   │   ├── FirstPersonRenderer.tsx
+    │   │   ├── biomes.ts       # 8 biome themes
+    │   │   ├── projection.ts   # Perspective math
+    │   │   ├── compass.ts      # Compass HUD
+    │   │   ├── walls/          # Wall rendering
+    │   │   ├── entities/       # Enemy/item rendering
+    │   │   ├── effects/        # Particles, water
+    │   │   ├── lighting/       # Torch lights
+    │   │   └── tiles/          # Tile loading system
+    │   │
+    │   ├── BattleRenderer3D.tsx  # Three.js tactical arena (v6.3.0)
+    │   ├── BattleHUD.tsx         # Battle UI overlay
+    │   ├── BattleHUD.css         # Battle UI styles
+    │   ├── BattleOverlay.tsx     # Turn controls/ability buttons
+    │   │
     ├── contexts/
     │   ├── AuthContext.tsx     # JWT state
     │   └── GameContext.tsx     # Shared WebSocket
@@ -245,3 +250,11 @@ web/
 - 8 themes defined in `biomes.ts`
 - Each theme has full color palette
 - Rendering functions accept biome parameter
+
+### Three.js Battle Renderer (v6.3.0)
+- `BattleRenderer3D.tsx` renders tactical arena via WebGL
+- Isometric camera for tactical overview
+- Entity meshes with health bar overlays
+- Hazard tiles (lava, ice, poison, water) with glow effects
+- Smooth move transitions and floating damage numbers (v6.3.1)
+- React overlay (`BattleHUD.tsx`) for ability buttons and turn UI

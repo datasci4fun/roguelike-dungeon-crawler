@@ -97,7 +97,7 @@ Colors:
 │                                                                             │
 │                        ─────────────────────                                │
 │                                                                             │
-│                           v4.1.0                                            │
+│                           v6.3.1                                            │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -326,7 +326,7 @@ Colors:
 │                  │          PLAY NOW               │                        │
 │                  └─────────────────────────────────┘                        │
 │                                                                             │
-│                           v4.1.0                                            │
+│                           v6.3.1                                            │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -890,6 +890,79 @@ Three demo pages allow testing the renderer without the full game:
 - **/first-person-demo** - Interactive first-person view with mock dungeon
 - **/scene-demo** - Top-down sprite-based scene renderer
 - **/play-scene** - Alternative play page with scene view layout
+
+---
+
+## Three.js Battle Renderer (v6.3.0)
+
+### Tactical Arena Overview
+
+When combat is triggered, the view transitions to a 3D tactical arena rendered with Three.js.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        THREE.JS BATTLE ARENA                        │    │
+│  │                                                                     │    │
+│  │    ╔═══╤═══╤═══╤═══╤═══╤═══╤═══╤═══╤═══╗   Reinforcements: 3       │    │
+│  │    ║   │   │   │ g │   │   │   │   │   ║   Next wave: 2 turns      │    │
+│  │    ╟───┼───┼───┼───┼───┼───┼───┼───┼───╢                           │    │
+│  │    ║   │   │ ~ │ ~ │ ~ │   │   │   │   ║   ┌─────────────────────┐ │    │
+│  │    ╟───┼───┼───┼───┼───┼───┼───┼───┼───╢   │ [1] Attack  (Ready) │ │    │
+│  │    ║   │   │   │ @ │   │   │ s │   │   ║   │ [2] Power    (3cd)  │ │    │
+│  │    ╟───┼───┼───┼───┼───┼───┼───┼───┼───╢   │ [3] Shield   (5cd)  │ │    │
+│  │    ║   │   │   │   │   │   │   │   │   ║   │ [4] Charge  (Ready) │ │    │
+│  │    ╟───┼───┼───┼───┼───┼───┼───┼───┼───╢   │                     │ │    │
+│  │    ║   │   │ o │   │   │   │   │   │   ║   │ [Space] Wait        │ │    │
+│  │    ╟───┼───┼───┼───┼───┼───┼───┼───┼───╢   │ [ESC] Flee          │ │    │
+│  │    ║   │   │   │   │   │   │   │   │   ║   └─────────────────────┘ │    │
+│  │    ╚═══╧═══╧═══╧═══╧═══╧═══╧═══╧═══╧═══╝                           │    │
+│  │                                                                     │    │
+│  │    Legend: @ Player  g Goblin  s Skeleton  o Orc  ~ Lava           │    │
+│  │                                                                     │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
+│                                                                             │
+│  HP: ████████░░ 45/60    Turn 5    Enemies: 3                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Visual Features
+
+- **Isometric Camera**: Top-down tactical view of the 9x7 arena
+- **Entity Meshes**: 3D representations of player and enemies
+- **Health Bars**: Floating HP indicators above each entity
+- **Hazard Tiles**: Color-coded floor tiles for lava (red), ice (blue), poison (green), water (cyan)
+- **Smooth Movement**: 200ms slide transitions when entities move (v6.3.1)
+- **Floating Damage**: Numbers rise and fade when damage is dealt (v6.3.1)
+
+### Hazard Tile Rendering
+
+```
+  FLOOR        LAVA         ICE          POISON       WATER
+ ┌─────┐      ┌─────┐      ┌─────┐      ┌─────┐      ┌─────┐
+ │     │      │~~~~~│      │═════│      │*****│      │≈≈≈≈≈│
+ │     │      │~~~~~│      │═════│      │*****│      │≈≈≈≈≈│
+ └─────┘      └─────┘      └─────┘      └─────┘      └─────┘
+  gray       red glow     blue sheen   green fog    blue tint
+```
+
+### Reinforcement Indicators
+
+```
+Entry edges highlight when enemies are pending:
+
+    ╔═══════════════════════╗
+    ║ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓ ↓   ║  <- Enemies arriving from North
+    ║                       ║
+    ║→                     ←║  <- Enemies arriving from sides
+    ║→       ARENA         ←║
+    ║→                     ←║
+    ║                       ║
+    ║                       ║
+    ╚═══════════════════════╝
+```
 
 ---
 

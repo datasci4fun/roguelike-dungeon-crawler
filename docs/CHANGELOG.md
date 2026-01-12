@@ -4,6 +4,55 @@ All notable changes to this project.
 
 ---
 
+## [6.3.1] - 2026-01-12 - Battle Polish
+
+### Added
+- **Smooth Move Transitions**: Animated entity movement in tactical combat
+  - CSS-based slide transitions for all entity moves
+  - 200ms duration for responsive feel
+- **Floating Damage Numbers**: Visual damage feedback in combat
+  - Numbers rise and fade above damaged entities
+  - Color-coded: red for damage, green for healing
+  - Staggered timing for multiple hits
+
+### Fixed
+- **Reinforcement Enemy Symbols**: Correct enemy glyphs now display for spawned reinforcements
+- **Exploration Mode Safety**: Enemy attacks disabled when not in battle mode
+  - Prevents errant damage during exploration transitions
+
+### Technical
+- `web/src/components/BattleRenderer3D.tsx`: Smooth transitions and damage numbers
+- `web/src/components/BattleHUD.css`: Animation keyframes for damage display
+
+---
+
+## [6.3.0] - 2026-01-12 - Three.js Battle Renderer
+
+### Added
+- **Three.js Battle Visualization**: Full 3D tactical arena rendering
+  - WebGL-powered arena view replacing Canvas 2D
+  - Camera positioned for isometric tactical overview
+  - Entity meshes with health bar overlays
+  - Tile-based floor with hazard coloring (lava, ice, poison, water)
+- **Battle HUD Overlay**: React-based UI layer on 3D canvas
+  - Reinforcement countdown panel
+  - Ability buttons with cooldown indicators
+  - Turn indicator and action feedback
+- **Arena Lighting**: Dynamic lighting for atmosphere
+  - Ambient and directional lights
+  - Hazard tile glow effects
+
+### Changed
+- Battle mode now uses Three.js renderer instead of Canvas 2D
+- Improved visual clarity for tactical positioning
+
+### Technical
+- `web/src/components/BattleRenderer3D.tsx`: Three.js scene setup (1,200+ lines)
+- `web/src/components/BattleHUD.tsx`: Battle UI overlay
+- `web/src/components/BattleHUD.css`: HUD styling
+
+---
+
 ## [6.2.0] - 2026-01-11 - Tactical Depth
 
 ### Added

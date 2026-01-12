@@ -43,6 +43,15 @@ How to play the Roguelike Dungeon Crawler.
 | **Y** | Confirm |
 | **N** | Cancel |
 
+### Battle Controls (Tactical Mode)
+
+| Key | Action |
+|-----|--------|
+| **WASD** or **Arrow Keys** | Move in arena |
+| **1-4** | Use class ability |
+| **Space** or **Enter** | Wait (skip turn) |
+| **ESC** | Attempt to flee |
+
 ### Ghost Replay Viewer
 
 | Key | Action |
@@ -70,9 +79,11 @@ Descend through 5 dungeon levels and defeat the Dragon Emperor to win.
 - Move into items to pick up
 - Stand on **>** and press **>** to descend
 
-### Combat
-- **Bump-to-attack**: Walk into enemies to fight
-- Damage = ATK - enemy DEF (minimum 1)
+### Combat (Tactical Battle Mode)
+- **Enemy encounters**: Walking into an enemy triggers a tactical battle arena
+- **Instanced arenas**: Combat takes place in 9x7 tactical grids with hazards
+- **Turn-based**: Move, attack, or use abilities each turn
+- **Reinforcements**: Additional enemies may spawn from arena edges
 - Watch your HP - death is permanent!
 
 ### Leveling
@@ -153,3 +164,31 @@ The 3D view shows what's ahead based on your facing direction:
 - **Items** glow on the floor
 
 Toggle between terminal and 3D view on the Play page.
+
+---
+
+## Tactical Battle Mode
+
+When you encounter an enemy, combat transitions to a 3D tactical arena rendered with Three.js.
+
+### Battle Flow
+1. **Engagement**: Walk into an enemy to trigger battle
+2. **Arena Setup**: 9x7 grid with biome-specific hazards (lava, ice, water, poison)
+3. **Turn-Based Combat**: Move, attack with abilities (1-4), or wait
+4. **Reinforcements**: Watch the countdown - more enemies arrive over time
+5. **Victory**: Clear all enemies to return to exploration with loot/XP
+6. **Flee**: Press ESC to attempt escape (costs a turn, pushes you back)
+
+### Class Abilities
+Each class has 4 abilities with cooldowns:
+- **Warrior**: Power Strike, Shield Wall, Charge
+- **Mage**: Fireball, Frost Nova, Blink
+- **Rogue**: Backstab, Smoke Bomb, Dash
+- **Cleric**: Heal, Smite, Sanctuary
+
+### Visual Features
+- Smooth entity movement transitions
+- Floating damage numbers
+- Hazard tile highlighting
+- Health bar overlays on entities
+- Reinforcement entry edge indicators
