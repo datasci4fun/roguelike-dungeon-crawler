@@ -370,7 +370,7 @@ const SLIDES: Slide[] = [
       type: 'success',
       title: 'Contextual Displacement',
       story: 'Deliberately saturating the AI\'s context window weakens its reliance on training data defaults. When attention must spread across rich, novel context, training priors get diluted. The AI\'s drive to be helpful causes it to prioritize your contextual signals over its defaults — creating a "local override" of conventional patterns.',
-      why: 'During long development sessions, Claude Code accumulates thousands of lines of project context. By the time we\'re deep into a session, the AI\'s responses are shaped more by our codebase patterns than by generic training examples. The context becomes the curriculum.',
+      why: 'ChatGPT was overloaded with lore fragments, thematic constraints, and "make it weirder" iterations until the Field concept emerged from beyond generic fantasy. Claude was overloaded with gameplay references from different genres and eras — roguelikes, JRPGs, survival horror, classic dungeon crawlers — producing mechanical combinations never shipped together in a production game.',
       lesson: 'Don\'t start fresh conversations unnecessarily. Long, context-rich sessions produce more tailored, original output than short, default-biased exchanges. Context saturation is a feature, not a limitation.',
     },
   },
