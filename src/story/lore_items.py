@@ -17,12 +17,15 @@ LORE_WARNING_STONE = "warning_stone"
 # Evidence entries
 EVIDENCE_DUPLICATE_PLAQUES = "evidence_duplicate_plaques"
 EVIDENCE_SCRATCH_TALLIES = "evidence_scratch_tallies"
+# Micro-event evidence
+EVIDENCE_ECHO_OF_FALL = "evidence_echo_of_fall"
 
 FLOOR_1_LORE_IDS: Set[str] = {
     LORE_JOURNAL_ADVENTURER_1,
     LORE_WARNING_STONE,
     EVIDENCE_DUPLICATE_PLAQUES,
     EVIDENCE_SCRATCH_TALLIES,
+    EVIDENCE_ECHO_OF_FALL,
 }
 
 # =============================================================================
@@ -33,12 +36,15 @@ LORE_PLAGUE_WARNING = "plague_warning"
 # Evidence entries
 EVIDENCE_WAX_SEALS_NESTS = "evidence_wax_seals_nests"
 EVIDENCE_DECREE_FRAGMENTS = "evidence_decree_fragments"
+# Micro-event evidence
+EVIDENCE_DROWNED_VOICES = "evidence_drowned_voices"
 
 FLOOR_2_LORE_IDS: Set[str] = {
     LORE_SEWER_WORKER,
     LORE_PLAGUE_WARNING,
     EVIDENCE_WAX_SEALS_NESTS,
     EVIDENCE_DECREE_FRAGMENTS,
+    EVIDENCE_DROWNED_VOICES,
 }
 
 # =============================================================================
@@ -49,12 +55,15 @@ LORE_WEBBED_NOTE = "webbed_note"
 # Evidence entries
 EVIDENCE_WEB_SIGIL_GEOMETRY = "evidence_web_sigil_geometry"
 EVIDENCE_ROOTS_AVOIDING_CROWN = "evidence_roots_avoiding_crown"
+# Micro-event evidence
+EVIDENCE_SPORE_MEMORY = "evidence_spore_memory"
 
 FLOOR_3_LORE_IDS: Set[str] = {
     LORE_DRUID_LOG,
     LORE_WEBBED_NOTE,
     EVIDENCE_WEB_SIGIL_GEOMETRY,
     EVIDENCE_ROOTS_AVOIDING_CROWN,
+    EVIDENCE_SPORE_MEMORY,
 }
 
 # =============================================================================
@@ -65,12 +74,15 @@ LORE_PRIEST_CONFESSION = "priest_confession"  # Repurposed as Regent's Ledger
 # Evidence entries
 EVIDENCE_TWO_CORONATIONS_BELL = "evidence_two_coronations_bell"
 EVIDENCE_CONTRADICTORY_PLAQUES = "evidence_contradictory_plaques"
+# Micro-event evidence
+EVIDENCE_EMBER_SIGH = "evidence_ember_sigh"
 
 FLOOR_4_LORE_IDS: Set[str] = {
     LORE_CRYPT_INSCRIPTION,
     LORE_PRIEST_CONFESSION,
     EVIDENCE_TWO_CORONATIONS_BELL,
     EVIDENCE_CONTRADICTORY_PLAQUES,
+    EVIDENCE_EMBER_SIGH,
 }
 
 # =============================================================================
@@ -81,12 +93,15 @@ LORE_ICE_WARNING = "ice_warning"
 # Evidence entries
 EVIDENCE_REPEATING_DAY_12 = "evidence_repeating_day_12"
 EVIDENCE_THAW_NEVER_COMPLETES = "evidence_thaw_never_completes"
+# Micro-event evidence
+EVIDENCE_GLACIAL_PAUSE = "evidence_glacial_pause"
 
 FLOOR_5_LORE_IDS: Set[str] = {
     LORE_FROZEN_EXPLORER,
     LORE_ICE_WARNING,
     EVIDENCE_REPEATING_DAY_12,
     EVIDENCE_THAW_NEVER_COMPLETES,
+    EVIDENCE_GLACIAL_PAUSE,
 }
 
 # =============================================================================
@@ -97,12 +112,15 @@ LORE_HISTORY_VALDRIS = "history_valdris"
 # Evidence entries
 EVIDENCE_SELF_CATALOGING_SHELVES = "evidence_self_cataloging_shelves"
 EVIDENCE_FINAL_VERSION_LABELS = "evidence_final_version_labels"
+# Micro-event evidence
+EVIDENCE_VOID_GLIMPSE = "evidence_void_glimpse"
 
 FLOOR_6_LORE_IDS: Set[str] = {
     LORE_WIZARD_RESEARCH,
     LORE_HISTORY_VALDRIS,
     EVIDENCE_SELF_CATALOGING_SHELVES,
     EVIDENCE_FINAL_VERSION_LABELS,
+    EVIDENCE_VOID_GLIMPSE,
 }
 
 # =============================================================================
@@ -113,12 +131,15 @@ LORE_OBSIDIAN_TABLET = "obsidian_tablet"
 # Evidence entries
 EVIDENCE_MELTED_CREST = "evidence_melted_crest"
 EVIDENCE_RUNE_PLATES_STAMPED = "evidence_rune_plates_stamped"
+# Micro-event evidence
+EVIDENCE_ROYAL_ECHO = "evidence_royal_echo"
 
 FLOOR_7_LORE_IDS: Set[str] = {
     LORE_SMITH_JOURNAL,
     LORE_OBSIDIAN_TABLET,
     EVIDENCE_MELTED_CREST,
     EVIDENCE_RUNE_PLATES_STAMPED,
+    EVIDENCE_ROYAL_ECHO,
 }
 
 # =============================================================================
@@ -129,12 +150,15 @@ LORE_FINAL_ENTRY = "final_entry"
 # Evidence entries
 EVIDENCE_MISSING_SIGIL_SEGMENT = "evidence_missing_sigil_segment"
 EVIDENCE_DOUBLE_SHADOW_REFRACTION = "evidence_double_shadow_refraction"
+# Micro-event evidence
+EVIDENCE_THE_WATCHING = "evidence_the_watching"
 
 FLOOR_8_LORE_IDS: Set[str] = {
     LORE_DRAGON_PACT,
     LORE_FINAL_ENTRY,
     EVIDENCE_MISSING_SIGIL_SEGMENT,
     EVIDENCE_DOUBLE_SHADOW_REFRACTION,
+    EVIDENCE_THE_WATCHING,
 }
 
 # =============================================================================

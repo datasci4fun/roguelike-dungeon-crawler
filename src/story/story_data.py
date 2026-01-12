@@ -464,6 +464,123 @@ LORE_ENTRIES: Dict[str, Dict] = {
         "item_type": "evidence",
         "category": "history",
     },
+
+    # =========================================================================
+    # Micro-Event Evidence (discovered via Field Pulse events)
+    # One per floor, triggered during the first Field Pulse of each floor
+    # =========================================================================
+
+    # Floor 1 - Echo of the Fall
+    "evidence_echo_of_fall": {
+        "title": "Echo of the Fall",
+        "content": [
+            "The Field stirred, and for a moment the walls breathed memory.",
+            "You felt the presence of those who fell before you.",
+            "Their paths through this place, etched in invisible light.",
+            "The dungeon remembers everyone who enters. It never forgets.",
+        ],
+        "level_hint": 1,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 2 - Drowned Voices
+    "evidence_drowned_voices": {
+        "title": "Drowned Voices",
+        "content": [
+            "Bubbles rose from impossible cracks, carrying whispers.",
+            "The water spoke in voices long silenced.",
+            "'We waited here. We wait still.'",
+            "The Flooded Depths hold more than rats and refuse.",
+        ],
+        "level_hint": 2,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 3 - Spore Memory
+    "evidence_spore_memory": {
+        "title": "Spore Memory",
+        "content": [
+            "Luminescent spores filled the air like golden snow.",
+            "For a heartbeat, you saw through the colony's eyes.",
+            "Thousands of perspectives, layered across centuries.",
+            "The fungi remember everything the forest has consumed.",
+        ],
+        "level_hint": 3,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 4 - Ember Sigh
+    "evidence_ember_sigh": {
+        "title": "Ember Sigh",
+        "content": [
+            "The flames dimmed in unison, as if exhaling.",
+            "In that brief coolness, you sensed relief. Not yours.",
+            "Something here has burned for a very long time.",
+            "It is tired. But it cannot stop.",
+        ],
+        "level_hint": 4,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 5 - Glacial Pause
+    "evidence_glacial_pause": {
+        "title": "Glacial Pause",
+        "content": [
+            "Time crystallized around you like frost on glass.",
+            "In that frozen moment, you understood stasis.",
+            "Not death. Not sleep. Something between.",
+            "The cold holds its breath because it cannot exhale.",
+        ],
+        "level_hint": 5,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 6 - Void Glimpse
+    "evidence_void_glimpse": {
+        "title": "Void Glimpse",
+        "content": [
+            "The shadows parted like curtains at a play.",
+            "Beyond them: the spaces between spaces.",
+            "You saw where deleted knowledge goes.",
+            "It does not disappear. It waits.",
+        ],
+        "level_hint": 6,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 7 - Royal Echo
+    "evidence_royal_echo": {
+        "title": "Royal Echo",
+        "content": [
+            "A spectral crown flickered above you, eight points gleaming.",
+            "The ancient king's blessing lingered on your skin.",
+            "Warmth where there should be none. Purpose where there was doubt.",
+            "Even now, something of Valdris watches over its own.",
+        ],
+        "level_hint": 7,
+        "item_type": "evidence",
+        "category": "history",
+    },
+
+    # Floor 8 - The Watching
+    "evidence_the_watching": {
+        "title": "The Watching",
+        "content": [
+            "Something ancient turned its attention toward you.",
+            "Not the dragon. Something older. Something patient.",
+            "It has been watching since the first stone was laid.",
+            "It sees. It knows. And for this moment, it waits.",
+        ],
+        "level_hint": 8,
+        "item_type": "evidence",
+        "category": "history",
+    },
 }
 
 
