@@ -471,6 +471,19 @@
 
 .descent-visual {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.diorama-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto 2rem;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(74, 222, 128, 0.15), inset 0 0 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(74, 222, 128, 0.2);
 }
 
 .depth-line {

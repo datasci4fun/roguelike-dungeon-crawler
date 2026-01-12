@@ -14,6 +14,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAudioManager } from '../hooks';
 import { AtmosphericPage } from '../components/AtmosphericPage';
 import { PhosphorHeader } from '../components/PhosphorHeader';
+import { FloorDiorama3D } from '../components/FloorDiorama3D';
 import {
   LORE_QUOTES,
   FLOOR_DESCRIPTIONS,
@@ -191,7 +192,12 @@ export function Home() {
           </div>
 
           <div className="descent-visual">
-            <div className="depth-line" />
+            {/* 3D Floor Diorama */}
+            <div className="diorama-container">
+              <FloorDiorama3D height={450} enableParallax={true} />
+            </div>
+
+            {/* Floor list overlay */}
             <div className="depth-markers">
               {FLOOR_DESCRIPTIONS.map((floor) => (
                 <div key={floor.floor} className="depth-marker">
