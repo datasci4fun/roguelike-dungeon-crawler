@@ -1,0 +1,177 @@
+/**
+ * AtmosphericPage Styles
+ * Layered atmospheric effects for pre-game pages
+ */
+
+.atmospheric-page {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+  background: var(--sf-bg-solid);
+}
+
+/* ============================================
+ * LAYER STACKING
+ * ============================================ */
+
+.atm-three-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.atm-three-layer canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.atm-background-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.atm-fog-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 120% 80% at 50% 100%,
+    rgba(74, 222, 128, 0.03) 0%,
+    transparent 60%
+  );
+  animation: atmFogDrift 30s ease-in-out infinite;
+}
+
+@keyframes atmFogDrift {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateX(-2%);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(2%);
+  }
+}
+
+.atm-particles-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.atm-content-layer {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
+}
+
+.atm-crt-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.atm-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 80% 70% at 50% 50%,
+    transparent 0%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.25) 80%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+}
+
+/* ============================================
+ * SCENE-SPECIFIC VARIATIONS
+ * ============================================ */
+
+/* Landing page - Field presence glow */
+.atmospheric-page.cs-scene-landing .atm-fog-layer {
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 50% 30%,
+      rgba(139, 92, 246, 0.04) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 120% 80% at 50% 100%,
+      rgba(74, 222, 128, 0.03) 0%,
+      transparent 60%
+    );
+}
+
+/* Entrance - warm ember glow */
+.atmospheric-page.cs-scene-entrance .atm-fog-layer {
+  background: radial-gradient(
+    ellipse 100% 80% at 50% 80%,
+    rgba(255, 120, 50, 0.05) 0%,
+    transparent 60%
+  );
+}
+
+/* Kingdom - distant stars feeling */
+.atmospheric-page.cs-scene-kingdom .atm-fog-layer {
+  background: radial-gradient(
+    ellipse 150% 100% at 50% 20%,
+    rgba(100, 150, 255, 0.02) 0%,
+    transparent 50%
+  );
+}
+
+/* Underground - oppressive darkness (lightened for readability) */
+.atmospheric-page.cs-scene-underground .atm-fog-layer {
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 100%,
+    rgba(255, 150, 50, 0.04) 0%,
+    transparent 40%
+  );
+}
+
+.atmospheric-page.cs-scene-underground .atm-vignette {
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    transparent 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.3) 80%,
+    rgba(0, 0, 0, 0.5) 100%
+  );
+}
+
+/* ============================================
+ * RESPONSIVE ADJUSTMENTS
+ * ============================================ */
+
+@media (max-width: 768px) {
+  .atm-vignette {
+    background: radial-gradient(
+      ellipse 90% 80% at 50% 50%,
+      transparent 0%,
+      transparent 40%,
+      rgba(0, 0, 0, 0.5) 80%,
+      rgba(0, 0, 0, 0.8) 100%
+    );
+  }
+}
+
+/* ============================================
+ * REDUCED MOTION
+ * ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .atm-fog-layer {
+    animation: none;
+  }
+}

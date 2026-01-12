@@ -1,7 +1,20 @@
+/**
+ * Login Page - Resume Your Descent
+ *
+ * Full scene treatment with:
+ * - DungeonPortal3D background
+ * - Atmospheric particles and CRT
+ * - PhosphorHeader with lore text
+ */
+
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ApiError } from '../services/api';
+import { AtmosphericPage } from '../components/AtmosphericPage';
+import { PhosphorHeader } from '../components/PhosphorHeader';
+import { DungeonPortal3D } from '../components/DungeonPortal3D';
+import { AUTH_CONTENT } from '../data/loreSkyfall';
 import './Auth.css';
 
 // Demo account credentials (publicly available for testing)
@@ -56,63 +69,82 @@ export function Login() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h2>Login</h2>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="username">Username</label>
-            <input
-              type="text"
-              id="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoComplete="username"
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              autoComplete="current-password"
-            />
-          </div>
-          <button
-            type="submit"
-            className="btn btn-primary btn-full"
-            disabled={isSubmitting || isDemoLoading}
-          >
-            {isSubmitting ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <div className="demo-section">
-          <div className="demo-divider">
-            <span>or</span>
-          </div>
-          <button
-            type="button"
-            className="btn btn-demo btn-full"
-            onClick={handleDemoLogin}
-            disabled={isSubmitting || isDemoLoading}
-          >
-            {isDemoLoading ? 'Loading Demo...' : 'Try Demo'}
-          </button>
-          <p className="demo-hint">
-            No registration required - jump right in!
-          </p>
+    <AtmosphericPage
+      backgroundType="entrance"
+      particles={{ type: 'embers', count: 18, speed: 'slow', opacity: 0.3 }}
+      crt={true}
+      crtIntensity="light"
+      threeLayer={<DungeonPortal3D variant="return" />}
+    >
+      <div className="auth-scene">
+        <div className="auth-header">
+          <PhosphorHeader
+            title={AUTH_CONTENT.login.title}
+            subtitle={AUTH_CONTENT.login.subtitle}
+            style="dramatic"
+            delay={200}
+          />
         </div>
 
-        <p className="auth-footer">
-          Don't have an account? <Link to="/register">Register</Link>
-        </p>
+        <div className="auth-card">
+          {error && <div className="error-message">{error}</div>}
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label htmlFor="username">Username</label>
+              <input
+                type="text"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoComplete="username"
+                placeholder="Enter your name..."
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                placeholder="Your secret word..."
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-primary btn-full"
+              disabled={isSubmitting || isDemoLoading}
+            >
+              {isSubmitting ? 'Entering...' : 'Resume Descent'}
+            </button>
+          </form>
+
+          <div className="demo-section">
+            <div className="demo-divider">
+              <span>or</span>
+            </div>
+            <button
+              type="button"
+              className="btn btn-demo btn-full"
+              onClick={handleDemoLogin}
+              disabled={isSubmitting || isDemoLoading}
+            >
+              {isDemoLoading ? 'Awakening...' : 'Quick Descent'}
+            </button>
+            <p className="demo-hint">
+              Skip registration - experience the Field immediately
+            </p>
+          </div>
+
+          <p className="auth-footer">
+            {AUTH_CONTENT.login.footer}{' '}
+            <Link to="/register">Begin your legend</Link>
+          </p>
+        </div>
       </div>
-    </div>
+    </AtmosphericPage>
   );
 }

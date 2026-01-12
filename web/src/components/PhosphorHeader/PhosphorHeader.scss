@@ -1,0 +1,152 @@
+/**
+ * PhosphorHeader - Phosphor text reveal styles
+ */
+
+$gold: #ffd700;
+$text-primary: #e0e0e0;
+$text-dim: #a0a0a0;
+
+// ============================================
+// BASE
+// ============================================
+.phosphor-header {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.ph-title {
+  margin: 0 0 0.5rem 0;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+  text-transform: uppercase;
+
+  // Animation timing defaults
+  --ph-rise: 14px;
+  --ph-char-stagger: 12ms;
+  --ph-char-dur: 720ms;
+}
+
+.ph-subtitle {
+  margin: 0.5rem 0 0 0;
+  font-size: clamp(0.9rem, 2vw, 1.2rem);
+  line-height: 1.5;
+  font-style: italic;
+  color: #c0c0c0;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+
+  --ph-rise: 8px;
+  --ph-char-stagger: 14ms;
+  --ph-char-dur: 640ms;
+}
+
+// ============================================
+// STYLE VARIANTS
+// ============================================
+.ph-style-dramatic {
+  color: $gold;
+  text-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.8),
+    0 0 10px rgba($gold, 0.6),
+    0 0 20px rgba($gold, 0.4),
+    0 0 40px rgba($gold, 0.3);
+
+  --ph-rise: 16px;
+  --ph-char-stagger: 0ms; // All at once for impact
+  --ph-char-dur: 800ms;
+}
+
+.ph-style-emphasis {
+  color: $gold;
+  text-shadow: 0 0 12px rgba($gold, 0.4);
+
+  --ph-rise: 12px;
+  --ph-char-stagger: 8ms;
+  --ph-char-dur: 560ms;
+}
+
+.ph-style-normal {
+  color: $text-primary;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.1);
+
+  --ph-rise: 10px;
+  --ph-char-stagger: 10ms;
+  --ph-char-dur: 560ms;
+}
+
+.ph-style-whisper {
+  color: $text-dim;
+  font-weight: normal;
+  text-shadow: none;
+
+  --ph-rise: 6px;
+  --ph-char-stagger: 16ms;
+  --ph-char-dur: 700ms;
+}
+
+// ============================================
+// PHOSPHOR EFFECT
+// ============================================
+.ph-char {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(var(--ph-rise));
+  filter: blur(1px);
+  will-change: opacity, transform, filter, text-shadow;
+}
+
+// When revealed, animate each character
+.is-revealed .ph-char {
+  animation: ph_phosphorRise var(--ph-char-dur) cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  animation-delay: calc(var(--ph-char-index) * var(--ph-char-stagger));
+}
+
+// ============================================
+// KEYFRAMES
+// ============================================
+@keyframes ph_phosphorRise {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--ph-rise));
+    filter: blur(1.2px);
+    text-shadow: 0 0 12px rgba(255, 200, 80, 0);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2px);
+    filter: blur(0px);
+    text-shadow: 0 0 20px rgba(255, 200, 80, 0.4);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px);
+    filter: blur(0px);
+    text-shadow: 0 0 14px rgba(255, 200, 80, 0.2);
+  }
+}
+
+// ============================================
+// RESPONSIVE
+// ============================================
+@media (max-width: 768px) {
+  .phosphor-header {
+    padding: 0.75rem 0;
+  }
+
+  .ph-title {
+    letter-spacing: 0.05em;
+  }
+}
+
+// ============================================
+// REDUCED MOTION
+// ============================================
+@media (prefers-reduced-motion: reduce) {
+  .ph-char {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    animation: none !important;
+  }
+}

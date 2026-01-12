@@ -2,6 +2,7 @@ export { Home } from './Home';
 export { Login } from './Login';
 export { Register } from './Register';
 export { Play } from './Play';
+export { Features } from './Features';
 export { Leaderboard } from './Leaderboard';
 export { Ghosts } from './Ghosts';
 export { Profile } from './Profile';

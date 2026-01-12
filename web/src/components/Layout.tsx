@@ -39,6 +39,7 @@ export function Layout() {
             Roguelike Dungeon
           </Link>
           <nav className="nav">
+            <Link to="/features">Features</Link>
             <Link to="/leaderboard">Leaderboard</Link>
             <Link to="/ghosts">Ghosts</Link>
             <Link to="/spectate">Spectate</Link>
@@ -56,7 +57,11 @@ export function Layout() {
               {'\u{1F50A}'}
             </button>
             {showVolumePanel && (
-              <div className="volume-panel">
+              <div
+                className="volume-panel"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <VolumeControls compact showSfx={false} />
               </div>
             )}
