@@ -6,11 +6,12 @@
  * - PhosphorHeader with lore title
  * - Race/class lore from Skyfall Seed canon
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
 import { useAudioManager } from '../hooks/useAudioManager';
+import { useKeyboardNavigation } from '../hooks/useKeyboardNavigation';
 import { GameIntro } from '../components/GameIntroNew';
 import { AtmosphericPage } from '../components/AtmosphericPage';
 import { PhosphorHeader } from '../components/PhosphorHeader';
@@ -18,6 +19,10 @@ import { RACE_LORE, CLASS_LORE, CHARACTER_CREATION } from '../data/loreSkyfall';
 import type { RaceId, ClassId } from '../hooks/useGameSocket';
 import { RACES, CLASSES, ABILITY_DESCRIPTIONS, calculateStats } from '../data/characterData';
 import './CharacterCreation.css';
+
+// Get arrays of IDs for index-based navigation
+const RACE_IDS = Object.keys(RACES) as RaceId[];
+const CLASS_IDS = Object.keys(CLASSES) as ClassId[];
 
 export function CharacterCreation() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -30,6 +35,24 @@ export function CharacterCreation() {
 
   const { status, gameState, newGame } = useGame();
   const { crossfadeTo, isUnlocked } = useAudioManager();
+
+  // Keyboard navigation for race selection (2-column grid)
+  const raceNav = useKeyboardNavigation({
+    itemCount: RACE_IDS.length,
+    columns: 2,
+    selectedIndex: RACE_IDS.indexOf(selectedRace),
+    onSelect: (index) => setSelectedRace(RACE_IDS[index]),
+    enabled: !showIntro && !isStarting,
+  });
+
+  // Keyboard navigation for class selection (2-column grid)
+  const classNav = useKeyboardNavigation({
+    itemCount: CLASS_IDS.length,
+    columns: 2,
+    selectedIndex: CLASS_IDS.indexOf(selectedClass),
+    onSelect: (index) => setSelectedClass(CLASS_IDS[index]),
+    enabled: !showIntro && !isStarting,
+  });
 
   // Handle music change from intro
   const handleIntroMusic = useCallback((trackId: string) => {
@@ -101,14 +124,20 @@ export function CharacterCreation() {
         <div className="creation-layout">
           {/* Race Selection */}
           <div className="selection-section">
-            <h2>Choose Your Heritage</h2>
-            <div className="option-grid">
-              {(Object.keys(RACES) as RaceId[]).map((raceId) => {
+            <h2 id="race-selection-label">Choose Your Heritage</h2>
+            <div
+              className="option-grid"
+              {...raceNav.containerProps}
+              aria-labelledby="race-selection-label"
+            >
+              {RACE_IDS.map((raceId, index) => {
                 const r = RACES[raceId];
                 const lore = RACE_LORE[raceId];
+                const itemProps = raceNav.getItemProps(index);
                 return (
                   <button
                     key={raceId}
+                    {...itemProps}
                     className={`option-card ${selectedRace === raceId ? 'selected' : ''}`}
                     onClick={() => setSelectedRace(raceId)}
                   >
@@ -137,14 +166,20 @@ export function CharacterCreation() {
 
           {/* Class Selection */}
           <div className="selection-section">
-            <h2>Choose Your Path</h2>
-            <div className="option-grid">
-              {(Object.keys(CLASSES) as ClassId[]).map((classId) => {
+            <h2 id="class-selection-label">Choose Your Path</h2>
+            <div
+              className="option-grid"
+              {...classNav.containerProps}
+              aria-labelledby="class-selection-label"
+            >
+              {CLASS_IDS.map((classId, index) => {
                 const c = CLASSES[classId];
                 const lore = CLASS_LORE[classId];
+                const itemProps = classNav.getItemProps(index);
                 return (
                   <button
                     key={classId}
+                    {...itemProps}
                     className={`option-card ${selectedClass === classId ? 'selected' : ''}`}
                     onClick={() => setSelectedClass(classId)}
                   >

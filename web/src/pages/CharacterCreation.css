@@ -91,6 +91,50 @@
   box-shadow: 0 0 20px rgba(74, 222, 128, 0.2);
 }
 
+/* ============================================
+   Keyboard Focus Indicators (v6.5.1 med-05)
+   ============================================ */
+
+/* Focus indicator for the grid container */
+.option-grid:focus {
+  outline: 2px solid #60a5fa;
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+/* Enhanced selected state when container has focus (keyboard nav active) */
+.option-grid:focus .option-card.selected {
+  border-color: #60a5fa;
+  box-shadow:
+    0 0 0 2px rgba(96, 165, 250, 0.5),
+    0 0 20px rgba(96, 165, 250, 0.3);
+}
+
+/* Visual pulse animation for focused item */
+@keyframes focus-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2px rgba(96, 165, 250, 0.5),
+      0 0 20px rgba(96, 165, 250, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(96, 165, 250, 0.7),
+      0 0 30px rgba(96, 165, 250, 0.4);
+  }
+}
+
+.option-grid:focus .option-card.selected {
+  animation: focus-pulse 1.5s ease-in-out infinite;
+}
+
+/* Stop animation on hover to avoid visual confusion */
+.option-grid:focus .option-card.selected:hover {
+  animation: none;
+  border-color: #4ade80;
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.2);
+}
+
 .option-name {
   font-size: 1.1rem;
   font-weight: 600;
