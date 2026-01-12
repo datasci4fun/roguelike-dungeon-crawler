@@ -201,6 +201,10 @@ export interface BattleEntity {
   max_hp: number;
   attack: number;
   defense: number;
+  name?: string;
+  symbol?: string;
+  is_elite?: boolean;
+  is_boss?: boolean;
   status_effects: string[];
 }
 

@@ -42,33 +42,34 @@ export function GameOverGhostLore({ fate }: Props) {
   return (
     <div
       style={{
-        marginTop: '12px',
-        padding: '12px 14px',
-        borderRadius: '10px',
+        marginTop: '8px',
+        marginBottom: '4px',
+        padding: '8px 10px',
+        borderRadius: '6px',
         border: '1px solid rgba(255,215,0,0.25)',
         background: 'rgba(0,0,0,0.55)',
-        boxShadow: '0 0 18px rgba(0,0,0,0.35)',
-        maxWidth: 720,
+        boxShadow: '0 0 12px rgba(0,0,0,0.35)',
+        maxWidth: 400,
       }}
     >
       <div
         style={{
           color: 'rgba(255,215,0,0.95)',
           fontWeight: 800,
-          letterSpacing: '0.12em',
-          fontSize: '0.95rem',
+          letterSpacing: '0.1em',
+          fontSize: '0.7rem',
           textTransform: 'uppercase',
-          marginBottom: 8,
+          marginBottom: 4,
         }}
       >
         {title}
       </div>
 
-      <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.55, fontSize: '0.98rem' }}>
+      <div style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 1.4, fontSize: '0.72rem' }}>
         {body}
       </div>
 
-      <div style={{ marginTop: 10, color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', fontStyle: 'italic' }}>
+      <div style={{ marginTop: 6, color: 'rgba(255,255,255,0.5)', fontSize: '0.65rem', fontStyle: 'italic' }}>
         In another descent, you may be seen again.
       </div>
     </div>

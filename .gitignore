@@ -48,3 +48,4 @@ savegame.pkl
 # Claude Code
 .claude/
 nul
+tmpclaude-*-cwd

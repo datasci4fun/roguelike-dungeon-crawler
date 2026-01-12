@@ -1,0 +1,411 @@
+/**
+ * BattleHUD.css - Classic RPG-style battle menu (v6.3)
+ */
+
+/* Main container - covers scene area, above Three.js canvas */
+.battle-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none; /* Allow clicks through to 3D canvas, panels have their own pointer-events */
+  font-family: 'Courier New', monospace;
+}
+
+/* ============================================
+   Top Bar - Phase Info (centered at top)
+   ============================================ */
+.battle-top-bar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  background: linear-gradient(180deg, rgba(20, 20, 40, 0.95) 0%, rgba(30, 30, 50, 0.9) 100%);
+  border: 2px solid #4a4a6a;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  pointer-events: auto;
+}
+
+.btb-biome {
+  color: #88aaff;
+  font-weight: bold;
+}
+
+.btb-sep {
+  color: #444;
+}
+
+.btb-round {
+  color: #ffcc44;
+}
+
+.btb-phase {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: bold;
+}
+
+.btb-phase.player {
+  background: rgba(68, 255, 68, 0.2);
+  color: #44ff44;
+  border: 1px solid #44ff44;
+  animation: pulse-turn 1.5s ease-in-out infinite;
+}
+
+.btb-phase.enemy {
+  background: rgba(255, 68, 68, 0.2);
+  color: #ff4444;
+  border: 1px solid #ff4444;
+}
+
+@keyframes pulse-turn {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ============================================
+   Battle Panel Base Style
+   ============================================ */
+.battle-panel {
+  position: absolute;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border: 3px solid #4a4a6a;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.8),
+    0 0 0 1px #0a0a15;
+  pointer-events: auto;
+}
+
+.bp-header {
+  background: linear-gradient(90deg, #2a2a4a 0%, #3a3a5a 50%, #2a2a4a 100%);
+  border-bottom: 2px solid #4a4a6a;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: #88aaff;
+  text-align: center;
+  text-shadow: 0 0 8px rgba(136, 170, 255, 0.5);
+}
+
+.bp-content {
+  padding: 10px;
+}
+
+.bp-hint {
+  padding: 6px 10px;
+  border-top: 1px solid #3a3a5a;
+  font-size: 10px;
+  color: #666;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+/* ============================================
+   Left Panel - Player Status
+   ============================================ */
+.battle-panel-left {
+  top: 60px;
+  left: 10px;
+  width: 180px;
+}
+
+.bp-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.bp-stats span {
+  color: #ddd;
+}
+
+/* ============================================
+   Right Panel - Enemies
+   ============================================ */
+.battle-panel-right {
+  top: 60px;
+  right: 10px;
+  width: 200px;
+}
+
+.bp-enemy {
+  margin-bottom: 8px;
+}
+
+.bp-enemy span {
+  display: block;
+  font-size: 11px;
+  color: #ddd;
+  margin-bottom: 2px;
+}
+
+.bp-reinforcements {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #4a4a6a;
+}
+
+.bp-incoming {
+  display: block;
+  font-size: 10px;
+  color: #ff6644;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  animation: blink-warning 1.5s ease-in-out infinite;
+}
+
+@keyframes blink-warning {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.bp-reinforce-entry {
+  font-size: 10px;
+  color: #ff8866;
+  margin-bottom: 4px;
+}
+
+/* ============================================
+   Health Bar Component
+   ============================================ */
+.rpg-health-bar {
+  margin-bottom: 4px;
+}
+
+.rpg-health-track {
+  position: relative;
+  height: 18px;
+  background: linear-gradient(180deg, #1a1a1a 0%, #2a2a2a 100%);
+  border: 2px solid #444;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.rpg-health-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  transition: width 0.3s ease;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+}
+
+.rpg-health-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  color: #fff;
+  text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+  font-weight: bold;
+}
+
+/* ============================================
+   Bottom-Left Command Menu
+   ============================================ */
+.battle-panel-commands {
+  bottom: 10px;
+  left: 10px;
+  min-width: 200px;
+}
+
+.cmd-menu {
+  padding: 4px 0;
+}
+
+.cmd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cmd-item:hover:not(.disabled) {
+  background: rgba(136, 170, 255, 0.1);
+}
+
+.cmd-item.selected {
+  background: linear-gradient(90deg, rgba(68, 136, 255, 0.3) 0%, rgba(68, 136, 255, 0.1) 100%);
+  border-left: 3px solid #4488ff;
+}
+
+.cmd-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cmd-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #555;
+  border-radius: 3px;
+  font-size: 10px;
+  color: #888;
+}
+
+.cmd-label {
+  flex: 1;
+  font-size: 13px;
+  color: #ddd;
+  letter-spacing: 1px;
+}
+
+.cmd-item.selected .cmd-label {
+  color: #fff;
+}
+
+.cmd-cursor {
+  color: #ffcc00;
+  font-size: 12px;
+  animation: cursor-blink 0.8s ease-in-out infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ============================================
+   Target Selection Mode
+   ============================================ */
+.cmd-target {
+  padding: 16px;
+  text-align: center;
+}
+
+.cmd-target p {
+  margin: 0 0 12px 0;
+  color: #ddd;
+  font-size: 13px;
+}
+
+.cmd-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.cmd-buttons button {
+  padding: 8px 20px;
+  background: linear-gradient(180deg, #3a4a6a 0%, #2a3a5a 100%);
+  border: 2px solid #5a6a8a;
+  border-radius: 4px;
+  color: #ddd;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cmd-buttons button:hover {
+  background: linear-gradient(180deg, #4a5a7a 0%, #3a4a6a 100%);
+  border-color: #6a7a9a;
+  color: #fff;
+}
+
+.cmd-buttons button:active {
+  transform: translateY(1px);
+}
+
+/* ============================================
+   Confirmation Dialog
+   ============================================ */
+.cmd-confirm {
+  padding: 16px;
+  text-align: center;
+}
+
+.cmd-confirm p {
+  margin: 0 0 12px 0;
+  color: #ddd;
+  font-size: 14px;
+}
+
+/* ============================================
+   Enemy Turn Waiting Indicator
+   ============================================ */
+.battle-waiting {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 32px;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #4a4a6a;
+  border-radius: 6px;
+  color: #ff8844;
+  font-size: 14px;
+  letter-spacing: 2px;
+  animation: pulse-waiting 1s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes pulse-waiting {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 700px) {
+  .battle-panel-left,
+  .battle-panel-right {
+    width: 150px;
+  }
+
+  .battle-panel-commands {
+    min-width: 160px;
+  }
+
+  .cmd-item {
+    padding: 6px 10px;
+  }
+
+  .battle-top-bar {
+    padding: 6px 12px;
+    font-size: 11px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 500px) {
+  .battle-panel-left {
+    top: auto;
+    bottom: 120px;
+    left: 10px;
+    width: 130px;
+  }
+
+  .battle-panel-right {
+    top: 60px;
+    right: 10px;
+    width: 130px;
+  }
+}
