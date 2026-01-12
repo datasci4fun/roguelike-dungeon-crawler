@@ -351,6 +351,18 @@ const SLIDES: Slide[] = [
     },
   },
   {
+    id: 'divergence',
+    type: 'story',
+    content: {
+      section: '6. Key Insight',
+      type: 'success',
+      title: 'The Iterative Divergence Protocol',
+      story: 'LLMs are biased toward their training data — ask any question and the first answers will be grounded in what\'s already known. To get truly original output, you must guide the AI step-by-step through logical refinement until it drifts away from conventional knowledge. Only then do you see novel ideas that don\'t exist in the public domain.',
+      why: 'The Skyfall Seed lore started as generic fantasy. Through 10+ iterations of "make it weirder," "what if memories are the real target," and "connect this to the gameplay," we arrived at the Field concept — something that feels genuinely original.',
+      lesson: 'In a world where everyone has AI access, competitive advantage comes from pushing models beyond their training distribution. First-response AI output is commodity. Iteratively divergent output is differentiation.',
+    },
+  },
+  {
     id: 'recommendation',
     type: 'recommendation',
     content: {
@@ -358,12 +370,12 @@ const SLIDES: Slide[] = [
       title: 'What Works',
       items: [
         {
-          tip: 'Be specific about intent',
-          detail: '"Add a button" vs "Add a primary CTA button in the hero section that links to registration and has hover effects consistent with the design system"',
+          tip: 'Apply Iterative Divergence',
+          detail: 'Don\'t accept the first answer. Push the AI: "Make it more unusual," "What if we inverted this assumption," "Connect these unrelated concepts." Each iteration moves further from training data toward originality.',
         },
         {
-          tip: 'Iterate, don\'t accept first output',
-          detail: 'First generation is a draft. Critique it, refine it, sometimes completely redo it.',
+          tip: 'Be specific about intent',
+          detail: '"Add a button" vs "Add a primary CTA button in the hero section that links to registration and has hover effects consistent with the design system"',
         },
         {
           tip: 'Let AI see your codebase',
@@ -385,7 +397,7 @@ const SLIDES: Slide[] = [
         },
         {
           label: 'What I Learned',
-          text: 'The difference between "AI slop" and quality is the same as always: clear vision, iterative refinement, and refusing to ship something you don\'t understand.',
+          text: 'First-response AI output is commodity — everyone gets the same answers. Competitive advantage comes from the Iterative Divergence Protocol: pushing AI beyond its training distribution through guided refinement until you reach genuinely original territory.',
         },
         {
           label: 'What We Should Try',
