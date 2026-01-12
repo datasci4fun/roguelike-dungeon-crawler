@@ -4,6 +4,40 @@ All notable changes to this project.
 
 ---
 
+## [6.2.0] - 2026-01-11 - Tactical Depth
+
+### Added
+- **AI Scoring System**: Deterministic action selection for all enemies
+  - `enumerate_candidate_actions()` lists legal MOVE/ATTACK/WAIT
+  - `score_action()` with numeric scoring weights (kill priority, damage, positioning)
+  - `choose_action()` with stable tie-breaking for reproducibility
+- **Hazard Intelligence**: Enemies navigate around hazards intelligently
+  - BFS/Dijkstra pathfinding with hazard costs (lava 120, poison 55, water 30, ice 18)
+  - Enemies exit hazardous tiles, avoid stepping into danger
+  - Melee AI pressures player toward hazards (cornering bonus)
+  - `player_safe_escape_count()` for tactical positioning
+- **Boss Heuristics**: Priority-based signature abilities for 7 boss types
+  - Regent: Royal Decree (summon guards), Counterfeit Crown (debuff)
+  - Rat King: Summon Swarm, Plague Bite, Burrow (escape when low HP)
+  - Spider Queen: Web Trap, Poison Bite, Summon Spiders
+  - Frost Giant: Freeze Ground, Ice Blast
+  - Arcane Keeper: Teleport (when adjacent), Arcane Bolt
+  - Flame Lord: Lava Pool, Inferno, Fire Breath
+  - Dragon Emperor: Dragon Fear (round 1), Tail Sweep, Fire Breath
+  - Cooldown tracking per ability, fallback to ai_scoring when no rule matches
+
+### Technical
+- `src/combat/ai_scoring.py`: Core scoring engine (682 lines)
+- `src/combat/boss_heuristics.py`: Boss decision rules (585 lines)
+- `src/combat/battle_actions.py`: Boss ability definitions added
+- `src/combat/battle_manager.py`: Integration with boss detection and ability execution
+- 28 tests covering determinism, hazard avoidance, and boss behaviors
+
+### Key Guarantee
+Same seed + same state = same action, always. Boss fights are now learnable.
+
+---
+
 ## [6.1.0] - 2026-01-12 - Cinematic Glue
 
 ### Added
