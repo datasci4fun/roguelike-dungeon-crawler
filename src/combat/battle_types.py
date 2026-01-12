@@ -16,6 +16,13 @@ class BattleOutcome(Enum):
     PENDING = auto()      # Battle still in progress
 
 
+class BattlePhase(Enum):
+    """Current phase within a battle turn (v6.0.4)."""
+    PLAYER_TURN = auto()    # Player is acting
+    ENEMY_TURN = auto()     # Enemies are acting
+    END_OF_ROUND = auto()   # Processing end-of-round effects
+
+
 @dataclass
 class BattleEntity:
     """
@@ -39,7 +46,8 @@ class BattleEntity:
 
     # Battle-specific state
     has_acted: bool = False           # Has taken action this turn
-    status_effects: List[str] = field(default_factory=list)
+    status_effects: List[Dict[str, Any]] = field(default_factory=list)  # [{name, duration, ...}]
+    cooldowns: Dict[str, int] = field(default_factory=dict)  # {ability_name: turns_remaining}
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize for save/load."""
@@ -55,13 +63,14 @@ class BattleEntity:
             'attack': self.attack,
             'defense': self.defense,
             'has_acted': self.has_acted,
-            'status_effects': self.status_effects.copy(),
+            'status_effects': [e.copy() for e in self.status_effects],
+            'cooldowns': self.cooldowns.copy(),
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'BattleEntity':
         """Deserialize from save data."""
-        return cls(
+        entity = cls(
             entity_id=data['entity_id'],
             is_player=data['is_player'],
             arena_x=data['arena_x'],
@@ -73,8 +82,43 @@ class BattleEntity:
             attack=data['attack'],
             defense=data['defense'],
             has_acted=data.get('has_acted', False),
-            status_effects=data.get('status_effects', []).copy(),
         )
+        entity.status_effects = [e.copy() for e in data.get('status_effects', [])]
+        entity.cooldowns = data.get('cooldowns', {}).copy()
+        return entity
+
+    def has_status(self, name: str) -> bool:
+        """Check if entity has a specific status effect."""
+        return any(e.get('name') == name for e in self.status_effects)
+
+    def get_status(self, name: str) -> Optional[Dict[str, Any]]:
+        """Get a specific status effect if present."""
+        for e in self.status_effects:
+            if e.get('name') == name:
+                return e
+        return None
+
+    def add_status(self, effect: Dict[str, Any]) -> None:
+        """Add or refresh a status effect."""
+        # Remove existing effect of same name
+        self.status_effects = [e for e in self.status_effects if e.get('name') != effect.get('name')]
+        self.status_effects.append(effect.copy())
+
+    def remove_status(self, name: str) -> None:
+        """Remove a status effect by name."""
+        self.status_effects = [e for e in self.status_effects if e.get('name') != name]
+
+    def get_effective_defense(self) -> int:
+        """Get defense after status modifiers."""
+        defense = self.defense
+        for effect in self.status_effects:
+            mod = effect.get('defense_mod', 1.0)
+            defense = int(defense * mod)
+        return defense
+
+    def is_hidden(self) -> bool:
+        """Check if entity is hidden/invisible."""
+        return any(e.get('is_hidden', False) for e in self.status_effects)
 
 
 @dataclass
@@ -171,8 +215,9 @@ class BattleState:
     outside_time: float = 0.0         # Time accumulated from actions
     noise_level: float = 0.0          # Current noise (decays, affects arrival)
 
-    # Turn tracking
+    # Turn tracking (v6.0.4)
     turn_number: int = 0
+    phase: BattlePhase = BattlePhase.PLAYER_TURN
     outcome: BattleOutcome = BattleOutcome.PENDING
 
     # Seed for deterministic generation (replay/debug)
@@ -197,6 +242,7 @@ class BattleState:
             'outside_time': self.outside_time,
             'noise_level': self.noise_level,
             'turn_number': self.turn_number,
+            'phase': self.phase.name,
             'outcome': self.outcome.name,
             'seed': self.seed,
         }
@@ -217,6 +263,7 @@ class BattleState:
             outside_time=data.get('outside_time', 0.0),
             noise_level=data.get('noise_level', 0.0),
             turn_number=data.get('turn_number', 0),
+            phase=BattlePhase[data.get('phase', 'PLAYER_TURN')],
             outcome=BattleOutcome[data.get('outcome', 'PENDING')],
             seed=data.get('seed', 0),
         )

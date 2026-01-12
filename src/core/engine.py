@@ -857,11 +857,18 @@ class GameEngine:
 
     def process_battle_command(self, command: Command) -> bool:
         """
-        Process a command during tactical battle mode (v6.0).
+        Process a command during tactical battle mode (v6.0.4).
+
+        Handles movement, abilities, and battle actions.
 
         Returns:
             True if command was processed
         """
+        # Check for ability command (passed via command.data)
+        if command.data and 'ability' in command.data:
+            ability_cmd = command.data['ability']
+            return self.battle_manager.process_battle_command(ability_cmd)
+
         return self.battle_manager.process_battle_command(command.type.name)
 
     # =========================================================================

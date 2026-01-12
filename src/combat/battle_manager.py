@@ -6,7 +6,14 @@ Works with both curses and web clients (client-agnostic).
 import random
 from typing import TYPE_CHECKING, Optional, Tuple, List, Dict
 
-from .battle_types import BattleState, BattleEntity, BattleOutcome, PendingReinforcement
+from .battle_types import (
+    BattleState, BattleEntity, BattleOutcome, BattlePhase, PendingReinforcement
+)
+from .battle_actions import (
+    BattleAction, AbilityDef, ActionResult, StatusEffect,
+    get_class_abilities, get_valid_move_tiles, get_valid_attack_targets,
+    manhattan_distance, create_status_effect, BATTLE_MOVE_RANGE
+)
 from .arena_templates import pick_template, compile_template, generate_deterministic_seed
 from ..core.constants import UIMode, DungeonTheme, LEVEL_THEMES
 from ..core.events import EventType, EventQueue
@@ -252,15 +259,16 @@ class BattleManager:
         self.engine.battle = None
         self.engine.ui_mode = UIMode.GAME
 
-    def process_battle_command(self, command_type: str) -> bool:
+    def process_battle_command(self, command_type: str, target_pos: Tuple[int, int] = None) -> bool:
         """
-        Process a command during battle mode.
+        Process a command during battle mode (v6.0.4).
 
-        v6.0.1 stub: any command ends battle with victory.
-        Full battle logic in v6.0.4.
+        Handles player turn actions. When player acts, processes enemy turns,
+        then end-of-round tick.
 
         Args:
             command_type: The type of command issued
+            target_pos: Optional target position for move/attack
 
         Returns:
             True if command was processed
@@ -269,15 +277,575 @@ class BattleManager:
         if battle is None:
             return False
 
-        # v6.0.1 STUB: Any action immediately wins the battle
-        # This allows testing the mode switch without full combat logic
-        if command_type in ('CONFIRM', 'MOVE_UP', 'MOVE_DOWN', 'MOVE_LEFT', 'MOVE_RIGHT', 'ANY_KEY'):
-            self.end_battle(BattleOutcome.VICTORY)
+        # Only process player input during player turn
+        if battle.phase != BattlePhase.PLAYER_TURN:
+            return False
+
+        # Check for battle end conditions
+        if self._check_battle_end():
             return True
 
-        # ESC or Q returns to exploration (flee stub)
-        if command_type in ('CANCEL', 'QUIT'):
-            self.end_battle(BattleOutcome.FLEE)
+        player = battle.player
+        if player is None or player.hp <= 0:
+            self.end_battle(BattleOutcome.DEFEAT)
+            return True
+
+        # Handle movement commands
+        if command_type == 'MOVE_UP':
+            return self._try_player_move(0, -1)
+        elif command_type == 'MOVE_DOWN':
+            return self._try_player_move(0, 1)
+        elif command_type == 'MOVE_LEFT':
+            return self._try_player_move(-1, 0)
+        elif command_type == 'MOVE_RIGHT':
+            return self._try_player_move(1, 0)
+
+        # Handle wait/pass turn
+        elif command_type in ('WAIT', 'CONFIRM'):
+            self.engine.add_message("You wait...")
+            self._end_player_turn()
+            return True
+
+        # Handle flee attempt
+        elif command_type in ('CANCEL', 'QUIT', 'FLEE'):
+            return self._try_flee()
+
+        # Handle ability selection (1-4 keys)
+        elif command_type.startswith('ABILITY_'):
+            try:
+                ability_index = int(command_type.split('_')[1]) - 1
+                return self._try_use_ability(ability_index, target_pos)
+            except (ValueError, IndexError):
+                return False
+
+        # Handle attack command
+        elif command_type == 'ATTACK':
+            return self._try_basic_attack(target_pos)
+
+        return False
+
+    def _try_player_move(self, dx: int, dy: int) -> bool:
+        """
+        Try to move player in direction. If enemy present, attack instead.
+
+        Args:
+            dx, dy: Direction to move
+
+        Returns:
+            True if action was taken
+        """
+        battle = self.engine.battle
+        player = battle.player
+
+        new_x = player.arena_x + dx
+        new_y = player.arena_y + dy
+
+        # Check for enemy at target (bump attack)
+        target = battle.get_entity_at(new_x, new_y)
+        if target and not target.is_player and target.hp > 0:
+            return self._execute_attack(player, target, damage_mult=1.0)
+
+        # Check if valid move
+        if not battle.is_tile_walkable(new_x, new_y):
+            self.engine.add_message("Can't move there.")
+            return False
+
+        if battle.get_entity_at(new_x, new_y) is not None:
+            self.engine.add_message("Space is occupied.")
+            return False
+
+        # Execute move
+        player.arena_x = new_x
+        player.arena_y = new_y
+        self.add_noise('move')
+
+        # Check hazards on-step
+        self._check_tile_hazards(player, new_x, new_y)
+
+        self._end_player_turn()
+        return True
+
+    def _try_basic_attack(self, target_pos: Tuple[int, int] = None) -> bool:
+        """
+        Try to attack an adjacent enemy.
+
+        If target_pos specified, attack that position.
+        Otherwise, attack first adjacent enemy found.
+        """
+        battle = self.engine.battle
+        player = battle.player
+
+        # Get player abilities to find basic attack
+        player_class = getattr(self.engine.player, 'player_class', 'WARRIOR')
+        if hasattr(player_class, 'name'):
+            player_class = player_class.name
+        abilities = get_class_abilities(player_class)
+
+        basic_attack = abilities[0]  # First ability is always basic attack
+
+        # Find target
+        targets = get_valid_attack_targets(player, battle, basic_attack)
+
+        if not targets:
+            self.engine.add_message("No enemies in range.")
+            return False
+
+        # If specific target requested, use it
+        if target_pos:
+            target = battle.get_entity_at(target_pos[0], target_pos[1])
+            if target and target in targets:
+                return self._execute_attack(player, target, basic_attack.damage_mult)
+            else:
+                self.engine.add_message("Invalid target.")
+                return False
+
+        # Otherwise attack closest
+        target = targets[0]
+        return self._execute_attack(player, target, basic_attack.damage_mult)
+
+    def _try_use_ability(self, ability_index: int, target_pos: Tuple[int, int] = None) -> bool:
+        """
+        Try to use a class ability.
+
+        Args:
+            ability_index: Index into player's ability list
+            target_pos: Optional target position
+        """
+        battle = self.engine.battle
+        player = battle.player
+
+        # Get player abilities
+        player_class = getattr(self.engine.player, 'player_class', 'WARRIOR')
+        if hasattr(player_class, 'name'):
+            player_class = player_class.name
+        abilities = get_class_abilities(player_class)
+
+        if ability_index < 0 or ability_index >= len(abilities):
+            self.engine.add_message("Invalid ability.")
+            return False
+
+        ability = abilities[ability_index]
+
+        # Check cooldown
+        if player.cooldowns.get(ability.name, 0) > 0:
+            self.engine.add_message(f"{ability.name} on cooldown ({player.cooldowns[ability.name]} turns).")
+            return False
+
+        # Self-buff abilities
+        if ability.self_buff:
+            return self._execute_self_buff(player, ability)
+
+        # Targeted abilities
+        targets = get_valid_attack_targets(player, battle, ability)
+        if not targets:
+            self.engine.add_message(f"No valid targets for {ability.name}.")
+            return False
+
+        # If specific target, verify it's valid
+        target = None
+        if target_pos:
+            target = battle.get_entity_at(target_pos[0], target_pos[1])
+            if target not in targets:
+                self.engine.add_message("Invalid target for ability.")
+                return False
+        else:
+            target = targets[0]
+
+        # Execute ability
+        return self._execute_ability(player, target, ability)
+
+    def _execute_attack(self, attacker: BattleEntity, target: BattleEntity, damage_mult: float) -> bool:
+        """Execute a basic attack against a target."""
+        battle = self.engine.battle
+
+        # Calculate damage
+        base_damage = attacker.attack
+        defense = target.get_effective_defense()
+        damage = max(1, int(base_damage * damage_mult) - defense)
+
+        # Apply damage
+        target.hp -= damage
+
+        # Emit damage event
+        if self.events:
+            self.events.emit(
+                EventType.DAMAGE_NUMBER,
+                x=target.arena_x,
+                y=target.arena_y,
+                amount=damage
+            )
+            self.events.emit(EventType.HIT_FLASH, entity=target)
+
+        # Message
+        target_name = "enemy" if not target.is_player else "you"
+        if attacker.is_player:
+            self.engine.add_message(f"You hit for {damage} damage!")
+        else:
+            self.engine.add_message(f"Enemy hits you for {damage} damage!")
+
+        # Check death
+        if target.hp <= 0:
+            self._handle_entity_death(target)
+
+        self.add_noise('attack')
+        self._end_player_turn()
+        return True
+
+    def _execute_ability(self, caster: BattleEntity, target: BattleEntity, ability: AbilityDef) -> bool:
+        """Execute a targeted ability."""
+        battle = self.engine.battle
+
+        # Calculate damage if ability does damage
+        damage = 0
+        if ability.damage_mult > 0:
+            base_damage = caster.attack
+            defense = target.get_effective_defense()
+            damage = max(1, int(base_damage * ability.damage_mult) - defense)
+            target.hp -= damage
+
+            if self.events:
+                self.events.emit(
+                    EventType.DAMAGE_NUMBER,
+                    x=target.arena_x,
+                    y=target.arena_y,
+                    amount=damage
+                )
+
+        # Apply status effect if any
+        if ability.effect and ability.effect_duration > 0:
+            effect = create_status_effect(ability.effect, ability.effect_duration)
+            if effect:
+                target.add_status(effect.to_dict())
+                self.engine.add_message(f"{ability.effect.title()} applied!")
+
+        # Handle AoE
+        if ability.aoe_radius > 0:
+            self._apply_aoe(caster, target.arena_x, target.arena_y, ability)
+
+        # Set cooldown
+        if ability.cooldown > 0:
+            caster.cooldowns[ability.name] = ability.cooldown
+
+        # Message
+        self.engine.add_message(f"Used {ability.name}!" + (f" {damage} damage!" if damage > 0 else ""))
+
+        # Check death
+        if target.hp <= 0:
+            self._handle_entity_death(target)
+
+        self.add_noise('spell' if ability.cooldown > 0 else 'attack')
+        self._end_player_turn()
+        return True
+
+    def _execute_self_buff(self, caster: BattleEntity, ability: AbilityDef) -> bool:
+        """Execute a self-targeting buff ability."""
+        # Apply effect to self
+        if ability.effect and ability.effect_duration > 0:
+            effect = create_status_effect(ability.effect, ability.effect_duration)
+            if effect:
+                caster.add_status(effect.to_dict())
+
+        # Set cooldown
+        if ability.cooldown > 0:
+            caster.cooldowns[ability.name] = ability.cooldown
+
+        self.engine.add_message(f"Used {ability.name}!")
+        self.add_noise('spell')
+        self._end_player_turn()
+        return True
+
+    def _apply_aoe(self, caster: BattleEntity, center_x: int, center_y: int, ability: AbilityDef) -> None:
+        """Apply AoE damage/effects around a center point."""
+        battle = self.engine.battle
+
+        for enemy in battle.enemies:
+            if enemy.hp <= 0:
+                continue
+
+            dist = manhattan_distance(center_x, center_y, enemy.arena_x, enemy.arena_y)
+            if dist > 0 and dist <= ability.aoe_radius:
+                # Apply reduced damage to secondary targets
+                aoe_damage = max(1, int(caster.attack * ability.damage_mult * 0.5))
+                enemy.hp -= aoe_damage
+
+                if self.events:
+                    self.events.emit(
+                        EventType.DAMAGE_NUMBER,
+                        x=enemy.arena_x,
+                        y=enemy.arena_y,
+                        amount=aoe_damage
+                    )
+
+                if enemy.hp <= 0:
+                    self._handle_entity_death(enemy)
+
+    def _try_flee(self) -> bool:
+        """Attempt to flee from battle."""
+        # For now, flee always succeeds
+        # Could add chance based on enemy count, player speed, etc.
+        self.end_battle(BattleOutcome.FLEE)
+        return True
+
+    def _end_player_turn(self) -> None:
+        """End player turn and start enemy phase."""
+        battle = self.engine.battle
+        if battle is None:
+            return
+
+        battle.player.has_acted = True
+        battle.phase = BattlePhase.ENEMY_TURN
+
+        # Process enemy turns
+        self._process_enemy_turns()
+
+        # End of round
+        self._process_end_of_round()
+
+        # Check for battle end
+        self._check_battle_end()
+
+    def _process_enemy_turns(self) -> None:
+        """Process all enemy actions."""
+        battle = self.engine.battle
+        if battle is None:
+            return
+
+        for enemy in battle.get_living_enemies():
+            if enemy.hp <= 0:
+                continue
+
+            # Simple AI: move toward player and attack if adjacent
+            self._enemy_take_turn(enemy)
+
+    def _enemy_take_turn(self, enemy: BattleEntity) -> None:
+        """Execute a single enemy's turn."""
+        battle = self.engine.battle
+        player = battle.player
+
+        if player is None or player.hp <= 0:
+            return
+
+        # Check if adjacent to player (can attack)
+        dist = manhattan_distance(
+            enemy.arena_x, enemy.arena_y,
+            player.arena_x, player.arena_y
+        )
+
+        if dist == 1:
+            # Attack player
+            defense = player.get_effective_defense()
+            damage = max(1, enemy.attack - defense)
+            player.hp -= damage
+
+            if self.events:
+                self.events.emit(
+                    EventType.DAMAGE_NUMBER,
+                    x=player.arena_x,
+                    y=player.arena_y,
+                    amount=damage
+                )
+                self.events.emit(EventType.HIT_FLASH, entity=player)
+
+            self.engine.add_message(f"Enemy hits you for {damage}!")
+
+            if player.hp <= 0:
+                self._handle_entity_death(player)
+        else:
+            # Move toward player
+            self._enemy_move_toward_player(enemy)
+
+    def _enemy_move_toward_player(self, enemy: BattleEntity) -> None:
+        """Move enemy one step toward player."""
+        battle = self.engine.battle
+        player = battle.player
+
+        dx = 0
+        dy = 0
+
+        if player.arena_x > enemy.arena_x:
+            dx = 1
+        elif player.arena_x < enemy.arena_x:
+            dx = -1
+
+        if player.arena_y > enemy.arena_y:
+            dy = 1
+        elif player.arena_y < enemy.arena_y:
+            dy = -1
+
+        # Try primary direction first
+        moves_to_try = []
+        if abs(player.arena_x - enemy.arena_x) >= abs(player.arena_y - enemy.arena_y):
+            moves_to_try = [(dx, 0), (0, dy), (dx, dy)]
+        else:
+            moves_to_try = [(0, dy), (dx, 0), (dx, dy)]
+
+        for mx, my in moves_to_try:
+            if mx == 0 and my == 0:
+                continue
+
+            new_x = enemy.arena_x + mx
+            new_y = enemy.arena_y + my
+
+            if battle.is_tile_walkable(new_x, new_y) and battle.get_entity_at(new_x, new_y) is None:
+                enemy.arena_x = new_x
+                enemy.arena_y = new_y
+                return
+
+    def _process_end_of_round(self) -> None:
+        """Process end-of-round effects: status ticks, hazards, reinforcements."""
+        battle = self.engine.battle
+        if battle is None:
+            return
+
+        battle.phase = BattlePhase.END_OF_ROUND
+
+        # Tick status effects for all entities
+        self._tick_status_effects(battle.player)
+        for enemy in battle.enemies:
+            self._tick_status_effects(enemy)
+
+        # Tick cooldowns
+        self._tick_cooldowns(battle.player)
+        for enemy in battle.enemies:
+            self._tick_cooldowns(enemy)
+
+        # Tick reinforcements
+        spawned = self.tick_reinforcements()
+
+        # Increment turn counter
+        battle.turn_number += 1
+
+        # Reset for next turn
+        battle.player.has_acted = False
+        for enemy in battle.enemies:
+            enemy.has_acted = False
+
+        battle.phase = BattlePhase.PLAYER_TURN
+
+    def _tick_status_effects(self, entity: BattleEntity) -> None:
+        """Process status effect ticks for an entity."""
+        if entity is None or entity.hp <= 0:
+            return
+
+        remaining_effects = []
+
+        for effect_dict in entity.status_effects:
+            # Apply DOT
+            dot = effect_dict.get('damage_per_tick', 0)
+            if dot > 0:
+                entity.hp -= dot
+                if self.events:
+                    self.events.emit(
+                        EventType.DAMAGE_NUMBER,
+                        x=entity.arena_x,
+                        y=entity.arena_y,
+                        amount=dot
+                    )
+
+                name = effect_dict.get('name', 'effect')
+                if entity.is_player:
+                    self.engine.add_message(f"You take {dot} {name} damage!")
+
+            # Decrement duration
+            effect_dict['duration'] = effect_dict.get('duration', 1) - 1
+
+            if effect_dict['duration'] > 0:
+                remaining_effects.append(effect_dict)
+            else:
+                name = effect_dict.get('name', 'effect')
+                if entity.is_player:
+                    self.engine.add_message(f"{name.title()} wore off.")
+
+        entity.status_effects = remaining_effects
+
+        # Check death from DOT
+        if entity.hp <= 0:
+            self._handle_entity_death(entity)
+
+    def _tick_cooldowns(self, entity: BattleEntity) -> None:
+        """Decrement ability cooldowns for an entity."""
+        if entity is None:
+            return
+
+        to_remove = []
+        for ability_name, turns in entity.cooldowns.items():
+            entity.cooldowns[ability_name] = max(0, turns - 1)
+            if entity.cooldowns[ability_name] == 0:
+                to_remove.append(ability_name)
+
+        for name in to_remove:
+            del entity.cooldowns[name]
+
+    def _check_tile_hazards(self, entity: BattleEntity, x: int, y: int) -> None:
+        """Check for hazards at tile and apply on-step effects."""
+        battle = self.engine.battle
+        if battle is None:
+            return
+
+        tile = battle.arena_tiles[y][x]
+
+        # Water/swamp: slow
+        if tile == '~':
+            entity.add_status({
+                'name': 'wet',
+                'duration': 2,
+                'speed_mod': 0.5,
+            })
+            if entity.is_player:
+                self.engine.add_message("You wade through water. (Slowed)")
+
+        # Lava: burn
+        elif tile == 'L':
+            damage = 5
+            entity.hp -= damage
+            entity.add_status({
+                'name': 'burn',
+                'duration': 2,
+                'damage_per_tick': 3,
+            })
+            if entity.is_player:
+                self.engine.add_message(f"The lava burns! (-{damage} HP)")
+
+            if self.events:
+                self.events.emit(
+                    EventType.DAMAGE_NUMBER,
+                    x=x, y=y,
+                    amount=damage
+                )
+
+        # Ice: slide (simplified: no action)
+        elif tile == 'I':
+            if entity.is_player:
+                self.engine.add_message("You slide on the ice!")
+
+    def _handle_entity_death(self, entity: BattleEntity) -> None:
+        """Handle entity death in battle."""
+        if entity.is_player:
+            self.engine.add_message("You have fallen in battle!")
+        else:
+            self.engine.add_message("Enemy defeated!")
+
+            if self.events:
+                self.events.emit(
+                    EventType.DEATH_FLASH,
+                    x=entity.arena_x,
+                    y=entity.arena_y
+                )
+
+    def _check_battle_end(self) -> bool:
+        """Check if battle should end and handle accordingly."""
+        battle = self.engine.battle
+        if battle is None:
+            return True
+
+        # Check player death
+        if battle.player is None or battle.player.hp <= 0:
+            self.end_battle(BattleOutcome.DEFEAT)
+            return True
+
+        # Check all enemies dead
+        if not battle.get_living_enemies() and not battle.reinforcements:
+            self.end_battle(BattleOutcome.VICTORY)
             return True
 
         return False

@@ -150,14 +150,23 @@ class CursesInputAdapter:
         ord('A'): CommandType.MOVE_LEFT,
         ord('d'): CommandType.MOVE_RIGHT,
         ord('D'): CommandType.MOVE_RIGHT,
-        # Confirm action
+        # Confirm/wait
         ord(' '): CommandType.CONFIRM,
         ord('\n'): CommandType.CONFIRM,
         curses.KEY_ENTER: CommandType.CONFIRM,
+        ord('.'): CommandType.CONFIRM,  # Wait key
         # Cancel/flee
         ord('q'): CommandType.CANCEL,
         ord('Q'): CommandType.CANCEL,
         27: CommandType.CANCEL,  # ESC
+    }
+
+    # v6.0.4: Ability keys (handled specially in translate_battle)
+    BATTLE_ABILITY_KEYS = {
+        ord('1'): 'ABILITY_1',
+        ord('2'): 'ABILITY_2',
+        ord('3'): 'ABILITY_3',
+        ord('4'): 'ABILITY_4',
     }
 
     def translate_game(self, key: int) -> Command:
@@ -235,13 +244,19 @@ class CursesInputAdapter:
         return Command(CommandType.CLOSE_SCREEN)
 
     def translate_battle(self, key: int) -> Command:
-        """Translate a key press during tactical battle mode (v6.0)."""
+        """Translate a key press during tactical battle mode (v6.0.4)."""
         if key == -1:
             return Command.none()
+
+        # Check for ability keys (1-4)
+        ability_cmd = self.BATTLE_ABILITY_KEYS.get(key)
+        if ability_cmd:
+            # Return special command with ability info in data
+            return Command(CommandType.CONFIRM, data={'ability': ability_cmd})
 
         cmd_type = self.BATTLE_KEYS.get(key)
         if cmd_type:
             return Command(cmd_type)
 
-        # v6.0.1 stub: any other key also confirms (auto-win)
-        return Command(CommandType.ANY_KEY)
+        # Unknown key - no action
+        return Command.none()
