@@ -375,31 +375,41 @@ const SLIDES: Slide[] = [
     },
   },
   {
-    id: 'recommendation',
+    id: 'recommendation-1',
     type: 'recommendation',
     content: {
       section: '6. Recommendations',
-      title: 'What Works',
+      title: 'Techniques That Work',
       items: [
         {
           tip: 'Apply Iterative Divergence',
-          detail: 'Push past first answers: "Make it more unusual," "Invert this assumption," "Connect these unrelated concepts." Each iteration moves further from training defaults toward originality.',
+          detail: 'Push past first answers: "Make it more unusual," "Invert this assumption," "Connect these unrelated concepts." Each iteration moves further from training defaults.',
         },
         {
           tip: 'Use Contextual Displacement',
-          detail: 'Saturate the context with your project\'s patterns, terminology, and examples. Rich context dilutes training priors and creates AI responses shaped by your domain, not generic defaults.',
+          detail: 'Saturate the context with your project\'s patterns and examples. Rich context dilutes training priors and shapes AI responses to your domain.',
         },
         {
           tip: 'Orchestrate multiple AIs by strength',
-          detail: 'Claude for architecture and code, ChatGPT for creative writing, Suno for music, DALL-E for visuals. Each model has different training biases — leverage them as specialized team members.',
+          detail: 'Claude for architecture/code, ChatGPT for creative writing, Suno for music, DALL-E for visuals. Leverage each model\'s training biases as specializations.',
         },
+      ],
+    },
+  },
+  {
+    id: 'recommendation-2',
+    type: 'recommendation',
+    content: {
+      section: '6. Recommendations',
+      title: 'Process That Works',
+      items: [
         {
           tip: 'Maintain creative direction',
-          detail: 'AI amplifies your vision, it doesn\'t replace it. You decide what\'s good, what needs iteration, and when to push back. The human remains the creative director; AI is the execution engine.',
+          detail: 'AI amplifies your vision, it doesn\'t replace it. You decide what\'s good, what needs iteration, and when to push back. Human = creative director; AI = execution engine.',
         },
         {
           tip: 'Preserve session continuity',
-          detail: 'Don\'t start fresh conversations unnecessarily. Long sessions build contextual understanding. When you must start fresh, front-load context by having AI read key files and prior decisions first.',
+          detail: 'Long sessions build contextual understanding. When starting fresh, front-load context by having AI read key files and prior decisions first.',
         },
       ],
     },
