@@ -289,6 +289,106 @@
   text-align: center;
 }
 
+/* v6.1: Arena Overview Pan styles */
+.battle-arena.overview-active {
+  transition: transform 0.1s ease-out;
+}
+
+/* Hazard tile highlight during overview */
+.arena-tile.highlight-hazard {
+  animation: pulse-hazard 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-hazard {
+  0%, 100% {
+    box-shadow: inset 0 0 8px rgba(255, 100, 50, 0.6);
+  }
+  50% {
+    box-shadow: inset 0 0 16px rgba(255, 100, 50, 0.9);
+  }
+}
+
+/* Edge tile highlight for reinforcement entry points */
+.arena-tile.highlight-edge {
+  animation: pulse-edge 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-edge {
+  0%, 100% {
+    box-shadow: inset 0 0 6px rgba(255, 80, 80, 0.4);
+  }
+  50% {
+    box-shadow: inset 0 0 12px rgba(255, 80, 80, 0.7);
+  }
+}
+
+/* Combined highlight if both hazard and edge */
+.arena-tile.highlight-hazard.highlight-edge {
+  animation: pulse-combined 0.8s ease-in-out infinite;
+}
+
+@keyframes pulse-combined {
+  0%, 100% {
+    box-shadow: inset 0 0 8px rgba(255, 100, 50, 0.6), inset 0 0 6px rgba(255, 80, 80, 0.4);
+  }
+  50% {
+    box-shadow: inset 0 0 16px rgba(255, 100, 50, 0.9), inset 0 0 12px rgba(255, 80, 80, 0.7);
+  }
+}
+
+/* Overview hint overlay */
+.overview-hint {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 20;
+  text-align: center;
+  animation: fade-in-hint 0.3s ease-out;
+}
+
+.overview-phase-label {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+
+.overview-skip-hint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+@keyframes fade-in-hint {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Disabled battle actions during overview */
+.battle-actions.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.battle-actions.disabled button {
+  cursor: not-allowed;
+  background: #222;
+  border-color: #333;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .battle-sidebar {
