@@ -803,19 +803,24 @@ body.export-mode .atmospheric-page {
   background: #0a0a0a !important;
 }
 
-/* Hide scrollbar in export mode */
-body.export-mode {
-  overflow-x: hidden !important;
-}
-
-body.export-mode::-webkit-scrollbar {
-  display: none !important;
-  width: 0 !important;
-}
-
-body.export-mode {
+/* Hide scrollbar in export mode - apply to all elements */
+body.export-mode,
+body.export-mode *,
+body.export-mode .atmospheric-page,
+body.export-mode .atm-content-layer,
+body.export-mode .presentation,
+body.export-mode .export-slides,
+body.export-mode .export-slide-wrapper {
   -ms-overflow-style: none !important;
   scrollbar-width: none !important;
+}
+
+body.export-mode::-webkit-scrollbar,
+body.export-mode *::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent !important;
 }
 
 body.export-mode .header {
