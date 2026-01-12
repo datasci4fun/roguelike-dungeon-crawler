@@ -390,8 +390,16 @@ const SLIDES: Slide[] = [
           detail: 'Saturate the context with your project\'s patterns, terminology, and examples. Rich context dilutes training priors and creates AI responses shaped by your domain, not generic defaults.',
         },
         {
-          tip: 'Let AI see your codebase',
-          detail: 'Tools like Claude Code that can read your files produce dramatically better results than copy-pasting snippets into chat.',
+          tip: 'Orchestrate multiple AIs by strength',
+          detail: 'Claude for architecture and code, ChatGPT for creative writing, Suno for music, DALL-E for visuals. Each model has different training biases — leverage them as specialized team members.',
+        },
+        {
+          tip: 'Maintain creative direction',
+          detail: 'AI amplifies your vision, it doesn\'t replace it. You decide what\'s good, what needs iteration, and when to push back. The human remains the creative director; AI is the execution engine.',
+        },
+        {
+          tip: 'Preserve session continuity',
+          detail: 'Don\'t start fresh conversations unnecessarily. Long sessions build contextual understanding. When you must start fresh, front-load context by having AI read key files and prior decisions first.',
         },
       ],
     },
@@ -425,9 +433,8 @@ const SLIDES: Slide[] = [
       section: '8. Future Research',
       type: 'success',
       title: 'AI-Generated 3D Asset Pipeline',
-      story: 'Current research is exploring a CLI-based workflow for automated 3D model generation. The goal: seed the game with actual 3D models instead of 2D sprites or unicode character representations on geometric shapes. This would create a fully automated asset pipeline from text prompt to in-game model.',
-      why: 'The game currently uses Three.js with procedurally-generated geometry and 2D sprite overlays. A working 3D generation pipeline would eliminate the last major bottleneck in solo AI-assisted game development — the need for traditional 3D artists or asset store purchases.',
-      lesson: 'As AI model generation matures (Meshy, Tripo, Rodin), integrating these tools into a CLI workflow could enable fully AI-generated games with production-quality 3D assets — no human artists required.',
+      story: 'Current research is exploring a CLI-based workflow for automated 3D model generation. The game currently uses Three.js with procedurally-generated geometry and 2D sprite overlays. The goal: replace these with actual 3D models generated from text prompts, creating a fully automated asset pipeline.',
+      lesson: 'As AI 3D generation matures (Meshy, Tripo, Rodin), integrating these tools into a CLI workflow would eliminate the last major bottleneck in solo AI-assisted game development — the need for traditional 3D artists or asset store purchases. Fully AI-generated games with production-quality 3D assets are within reach.',
     },
   },
   {
