@@ -40,6 +40,7 @@ export function Layout() {
           </Link>
           <nav className="nav">
             <Link to="/features">Features</Link>
+            <Link to="/about">About</Link>
             <Link to="/leaderboard">Leaderboard</Link>
             <Link to="/ghosts">Ghosts</Link>
             <Link to="/spectate">Spectate</Link>

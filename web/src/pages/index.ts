@@ -3,6 +3,7 @@ export { Login } from './Login';
 export { Register } from './Register';
 export { Play } from './Play';
 export { Features } from './Features';
+export { About } from './About';
 export { Leaderboard } from './Leaderboard';
 export { Ghosts } from './Ghosts';
 export { Profile } from './Profile';
