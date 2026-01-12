@@ -733,9 +733,84 @@ class Enemy(Entity):
         # v4.0 Stealth attributes
         self.is_invisible = False
 
+        # v4.0 Element cycling attributes (for ELEMENTAL AI)
+        self.current_element = self.element  # Start with base element
+        self.element_cycle_turns = 0  # Turns until next cycle
+
         # Level restrictions for spawning
         self.min_level = stats.get('min_level', 1)
         self.max_level = stats.get('max_level', 5)
+
+    def tick_element_cycle(self):
+        """
+        Tick the element cycle timer and cycle if needed.
+
+        Returns:
+            Tuple of (cycled: bool, new_element: ElementType, message: str)
+        """
+        from ..core.constants import (
+            AIBehavior, ElementType, ELEMENT_CYCLE_TURNS, ELEMENT_CYCLE_ORDER
+        )
+
+        # Only ELEMENTAL AI enemies cycle elements
+        if self.ai_type != AIBehavior.ELEMENTAL:
+            return False, self.current_element, ""
+
+        # Increment cycle counter
+        self.element_cycle_turns += 1
+
+        # Check if it's time to cycle
+        if self.element_cycle_turns >= ELEMENT_CYCLE_TURNS:
+            self.element_cycle_turns = 0
+
+            # Find current position in cycle order
+            if self.current_element in ELEMENT_CYCLE_ORDER:
+                current_idx = ELEMENT_CYCLE_ORDER.index(self.current_element)
+                next_idx = (current_idx + 1) % len(ELEMENT_CYCLE_ORDER)
+                new_element = ELEMENT_CYCLE_ORDER[next_idx]
+            else:
+                # Start cycling from the first element
+                new_element = ELEMENT_CYCLE_ORDER[0]
+
+            old_element = self.current_element
+            self.current_element = new_element
+
+            # Update resistances based on new element
+            self._update_resistances_for_element()
+
+            # Generate cycling message
+            element_names = {
+                ElementType.FIRE: "FIRE",
+                ElementType.ICE: "ICE",
+                ElementType.LIGHTNING: "LIGHTNING",
+            }
+            new_name = element_names.get(new_element, str(new_element.name))
+            message = f"The {self.name} shifts... now attuned to {new_name}!"
+
+            return True, new_element, message
+
+        return False, self.current_element, ""
+
+    def _update_resistances_for_element(self):
+        """Update resistances based on current element."""
+        from ..core.constants import ElementType
+
+        # Clear previous elemental resistances
+        element_keys = ['fire', 'ice', 'lightning', 'dark']
+        for key in element_keys:
+            self.resistances.pop(key, None)
+
+        # Add immunity to current element
+        element_resistance_map = {
+            ElementType.FIRE: 'fire',
+            ElementType.ICE: 'ice',
+            ElementType.LIGHTNING: 'lightning',
+            ElementType.DARK: 'dark',
+        }
+
+        resistance_key = element_resistance_map.get(self.current_element)
+        if resistance_key:
+            self.resistances[resistance_key] = 1.0  # Immune to current element
 
     def make_boss(self, boss_type):
         """Configure this enemy as a boss."""

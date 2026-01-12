@@ -453,6 +453,14 @@ class GameEngine:
         for msg in messages:
             self.add_message(msg, MessageCategory.SYSTEM, MessageImportance.IMPORTANT)
 
+        # Spawn champion trial enemy if triggered
+        if self.ghost_manager.has_pending_trial():
+            trial_messages = self.ghost_manager.spawn_champion_trial(
+                self.dungeon, self.entity_manager
+            )
+            for msg in trial_messages:
+                self.add_message(msg, MessageCategory.COMBAT, MessageImportance.IMPORTANT)
+
         # Track newly triggered ghosts in completion ledger
         if self.completion_ledger:
             post_triggered = {g.ghost_type.name for g in self.ghost_manager.ghosts if g.triggered}
@@ -673,6 +681,9 @@ class GameEngine:
         Field pulses are seeded environmental events that temporarily
         amplify zone behaviors. When a pulse triggers, it shows a
         narrative message and applies amplification effects.
+
+        Micro-events trigger once per floor during the first pulse,
+        providing narrative moments and safe beneficial effects.
         """
         pulse = self.field_pulse_manager.tick()
 
@@ -688,6 +699,17 @@ class GameEngine:
                 amplification=pulse.amplification,
                 duration=pulse.duration,
             )
+
+            # Find which pulse index this is
+            pulse_index = -1
+            for i, p in enumerate(self.field_pulse_manager.pulses):
+                if p is pulse:
+                    pulse_index = i
+                    break
+
+            # Check for micro-event trigger
+            if self.field_pulse_manager.should_trigger_micro_event(pulse_index):
+                self.field_pulse_manager.trigger_micro_event(self)
 
         # Update hazard amplification based on current pulse state
         current_amp = self.field_pulse_manager.get_current_amplification()

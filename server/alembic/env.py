@@ -9,7 +9,7 @@ from alembic import context
 # Import the app's settings and models
 from app.core.config import settings
 from app.core.database import Base
-from app.models import User, GameResult, ChatMessage, ChatChannel, UserAchievement
+from app.models import User, GameResult, ChatMessage, ChatChannel, UserAchievement, GameSave
 
 # this is the Alembic Config object
 config = context.config

@@ -65,6 +65,9 @@ class CombatManager:
             vision_bonus = player.get_vision_bonus() if hasattr(player, 'get_vision_bonus') else 0
             self.game.dungeon.update_fov(player.x, player.y, vision_bonus=vision_bonus)
 
+            # Check for nearby invisible enemies (detection radius)
+            self._check_stealth_detection(player)
+
             # Check for level transitions and item pickups
             self.game.level_manager.check_stairs()
             picked_item = self.game.entity_manager.check_item_pickup(player, self.game.add_message)
@@ -102,6 +105,66 @@ class CombatManager:
 
         return False
 
+    def _check_stealth_detection(self, player):
+        """Check for nearby invisible enemies and alert player."""
+        detection_radius = 1  # Chebyshev distance for detection
+
+        for enemy in self.game.entity_manager.enemies:
+            if not enemy.is_alive():
+                continue
+
+            is_invisible = getattr(enemy, 'is_invisible', False)
+            if not is_invisible:
+                continue
+
+            # Calculate Chebyshev distance
+            distance = max(abs(enemy.x - player.x), abs(enemy.y - player.y))
+
+            if distance <= detection_radius:
+                # Player senses the invisible enemy
+                self.game.add_message(
+                    "You sense a presence lurking in the shadows nearby...",
+                    important=True
+                )
+                # Only alert once per move (don't spam if multiple stealthed enemies)
+                return
+
+    def _process_shadow_concealment(self, enemy):
+        """
+        Handle automatic stealth concealment for STEALTH behavior enemies.
+
+        Enemies with STEALTH AI auto-hide in shadows (unlit tiles) and
+        become visible when in lit areas.
+        """
+        # Only applies to stealth behavior enemies
+        ai_type = getattr(enemy, 'ai_type', None)
+        if ai_type != AIBehavior.STEALTH:
+            return
+
+        # Check if torch manager is available
+        torch_manager = getattr(self.game, 'torch_manager', None)
+        if not torch_manager:
+            return
+
+        # Check light level at enemy's position
+        is_lit = torch_manager.is_tile_lit(enemy.x, enemy.y)
+        is_invisible = getattr(enemy, 'is_invisible', False)
+
+        if is_lit and is_invisible:
+            # Light reveals the enemy
+            enemy.is_invisible = False
+            self.game.add_message(
+                f"The light reveals {enemy.name} lurking nearby!",
+                important=True
+            )
+        elif not is_lit and not is_invisible:
+            # Darkness conceals the enemy (if not adjacent to player)
+            player = self.game.player
+            distance = max(abs(enemy.x - player.x), abs(enemy.y - player.y))
+            if distance > 1:  # Not adjacent - can hide
+                enemy.is_invisible = True
+                # Silent concealment - player won't know
+
     def _player_attack_enemy(self, enemy):
         """Handle player attacking an enemy."""
         player = self.game.player
@@ -124,6 +187,18 @@ class CombatManager:
         # Use new player_attack with ability bonuses
         damage, enemy_died, bonus_message = player_attack(player, enemy)
 
+        # Apply Champion's Blessing damage boost (+20%)
+        champion_blessing_msg = ""
+        if hasattr(player, 'champion_blessing') and player.champion_blessing > 0:
+            bonus_damage = int(damage * 0.2)
+            damage += bonus_damage
+            enemy.health -= bonus_damage  # Apply extra damage
+            enemy_died = enemy.health <= 0
+            player.champion_blessing -= 1
+            champion_blessing_msg = f"Champion's Blessing! (+{bonus_damage}) "
+            if player.champion_blessing == 0:
+                champion_blessing_msg += "[Blessing fades] "
+
         # Use enemy name (with "Elite" prefix for elites, boss uses full name)
         if enemy.is_boss:
             enemy_name = f"The {enemy.name}"
@@ -132,9 +207,9 @@ class CombatManager:
         else:
             enemy_name = enemy.name
 
-        # Prepend bonus message (RAGE!, CRITICAL!, etc.)
+        # Prepend bonus message (RAGE!, CRITICAL!, Champion's Blessing, etc.)
         base_message = get_combat_message("You", enemy_name, damage, enemy_died)
-        message = bonus_message + base_message if bonus_message else base_message
+        message = champion_blessing_msg + bonus_message + base_message if bonus_message else champion_blessing_msg + base_message
         self.game.add_message(message)
 
         # Emit combat events (renderer will consume these)
@@ -168,6 +243,14 @@ class CombatManager:
                     self.game.add_message(f"LEVEL UP! You are now level {player.level}!")
                     self.game.add_message(f"HP: {player.max_health}, ATK: {player.attack_damage}")
                     self.game.show_hint("first_level_up")
+
+            # Check for champion trial completion
+            if hasattr(self.game, 'ghost_manager') and self.game.ghost_manager:
+                trial_messages = self.game.ghost_manager.check_trial_completion(
+                    self.game.entity_manager, player
+                )
+                for msg in trial_messages:
+                    self.game.add_message(msg)
 
     def _handle_boss_death(self, boss):
         """Handle boss death: XP, loot drops, and messages."""
@@ -251,6 +334,14 @@ class CombatManager:
 
             # Tick ability cooldowns
             tick_enemy_cooldowns(enemy)
+
+            # Tick element cycling for elemental enemies
+            cycled, new_element, cycle_message = enemy.tick_element_cycle()
+            if cycled and cycle_message:
+                self.game.add_message(cycle_message, important=True)
+
+            # Shadow concealment for stealth enemies
+            self._process_shadow_concealment(enemy)
 
             # Boss enemies use their own turn processing
             if enemy.is_boss:

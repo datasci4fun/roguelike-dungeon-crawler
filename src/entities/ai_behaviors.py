@@ -230,15 +230,39 @@ def _elemental_behavior(
 ) -> Tuple[Optional[Tuple[int, int]], Optional[str], Optional[str]]:
     """
     Elemental behavior:
-    - Prioritize ranged elemental attacks
-    - Move to maintain optimal range
+    - Prioritize abilities matching current element
+    - Cycle through elements every few turns
+    - Maintain optimal range for ranged attacks
     """
+    from ..core.constants import ElementType
+
     distance = enemy.distance_to(player.x, player.y)
     abilities = _get_abilities(enemy)
-    preferred_range = 3
+    current_element = getattr(enemy, 'current_element', ElementType.NONE)
 
-    # Try elemental abilities
-    for ability_name in abilities:
+    # Map elements to their preferred abilities
+    element_abilities = {
+        ElementType.FIRE: ['fire_bolt', 'fire_strike', 'fire_breath', 'lava_pool', 'inferno'],
+        ElementType.ICE: ['ice_shard', 'ice_blast', 'freeze_ground'],
+        ElementType.LIGHTNING: ['chain_lightning', 'lightning_bolt', 'thunder_strike'],
+        ElementType.DARK: ['dark_bolt', 'shadow_strike', 'drain_life'],
+    }
+
+    # Get abilities that match current element (preferred)
+    preferred_abilities = element_abilities.get(current_element, [])
+    matching_abilities = [a for a in abilities if a in preferred_abilities]
+    other_abilities = [a for a in abilities if a not in preferred_abilities]
+
+    # Try matching element abilities first (prioritized)
+    for ability_name in matching_abilities:
+        success, message = _try_use_ability(
+            enemy, player, dungeon, entity_manager, ability_name
+        )
+        if success:
+            return None, ability_name, message
+
+    # Fall back to other abilities if element abilities on cooldown
+    for ability_name in other_abilities:
         success, message = _try_use_ability(
             enemy, player, dungeon, entity_manager, ability_name
         )

@@ -3,11 +3,17 @@
 The Field is a meta-narrative energy that permeates the dungeon.
 Pulses are seeded surges that temporarily amplify zone behaviors
 without breaking fairness guarantees.
+
+Micro-events trigger once per floor during a pulse window,
+providing narrative moments and safe beneficial effects.
 """
 import random
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ..core.engine import GameEngine
 
 
 class PulseIntensity(Enum):
@@ -78,6 +84,9 @@ class FieldPulseManager:
         self.floor_turn = 0
         self.active_pulse: Optional[FieldPulse] = None
         self.active_pulse_end_turn = 0
+        # Micro-event tracking
+        self.micro_event_triggered = False  # One per floor
+        self.micro_event_pulse_index = -1   # Which pulse triggers the event
 
     def initialize_floor(self, floor: int, seed: Optional[int] = None):
         """Initialize pulses for a new floor.
@@ -92,6 +101,9 @@ class FieldPulseManager:
         self.floor_turn = 0
         self.active_pulse = None
         self.active_pulse_end_turn = 0
+        # Reset micro-event tracking
+        self.micro_event_triggered = False
+        self.micro_event_pulse_index = -1
 
         # Use seeded RNG for deterministic pulse generation
         rng = random.Random(self.seed)
@@ -115,6 +127,11 @@ class FieldPulseManager:
 
         # Sort by turn order
         self.pulses.sort(key=lambda p: p.turn)
+
+        # Deterministically select which pulse triggers the micro-event
+        if self.pulses:
+            # First pulse always triggers the micro-event for predictability
+            self.micro_event_pulse_index = 0
 
     def _generate_pulse_turns(self, rng: random.Random, num_pulses: int) -> List[int]:
         """Generate well-spaced pulse turn numbers."""
@@ -255,6 +272,8 @@ class FieldPulseManager:
                 for p in self.pulses
             ],
             "active_pulse_end_turn": self.active_pulse_end_turn,
+            "micro_event_triggered": self.micro_event_triggered,
+            "micro_event_pulse_index": self.micro_event_pulse_index,
         }
 
     def load_state(self, state: dict):
@@ -263,6 +282,8 @@ class FieldPulseManager:
         self.seed = state.get("seed", 0)
         self.floor_turn = state.get("floor_turn", 0)
         self.active_pulse_end_turn = state.get("active_pulse_end_turn", 0)
+        self.micro_event_triggered = state.get("micro_event_triggered", False)
+        self.micro_event_pulse_index = state.get("micro_event_pulse_index", -1)
 
         self.pulses = []
         for p_data in state.get("pulses", []):
@@ -279,3 +300,62 @@ class FieldPulseManager:
                 # Find the most recently triggered pulse
                 if self.active_pulse is None or pulse.turn > self.active_pulse.turn:
                     self.active_pulse = pulse
+
+    def should_trigger_micro_event(self, pulse_index: int) -> bool:
+        """Check if a micro-event should trigger for this pulse.
+
+        Args:
+            pulse_index: Index of the pulse that just triggered.
+
+        Returns:
+            True if micro-event should trigger, False otherwise.
+        """
+        # Only trigger once per floor
+        if self.micro_event_triggered:
+            return False
+
+        # Check if this is the designated micro-event pulse
+        return pulse_index == self.micro_event_pulse_index
+
+    def get_micro_event(self):
+        """Get the micro-event for the current floor.
+
+        Returns:
+            MicroEvent instance or None if floor has no event.
+        """
+        from .micro_events_data import get_micro_event_for_floor
+        return get_micro_event_for_floor(self.floor)
+
+    def trigger_micro_event(self, engine: 'GameEngine') -> bool:
+        """Trigger the micro-event for this floor.
+
+        Args:
+            engine: The game engine instance.
+
+        Returns:
+            True if event was triggered, False if already triggered or no event.
+        """
+        if self.micro_event_triggered:
+            return False
+
+        event = self.get_micro_event()
+        if event is None:
+            return False
+
+        from .micro_events_data import apply_micro_event_effect, unlock_micro_event_evidence
+
+        # Display messages
+        for message in event.messages:
+            engine.add_message(message, important=True)
+
+        # Apply the effect
+        apply_micro_event_effect(event, engine)
+
+        # Unlock codex evidence
+        if event.evidence_id:
+            if unlock_micro_event_evidence(event, engine):
+                engine.add_message(f"[Codex entry discovered: {event.title}]", important=True)
+
+        # Mark as triggered
+        self.micro_event_triggered = True
+        return True

@@ -6,6 +6,10 @@ from .hazards import Hazard, HazardManager
 from .secrets import SecretDoor, SecretDoorManager
 from .torches import Torch, TorchManager
 from .field_pulses import FieldPulseManager, FieldPulse, PulseIntensity
+from .micro_events_data import (
+    MicroEvent, MicroEventEffect, MICRO_EVENTS_BY_FLOOR,
+    get_micro_event_for_floor, apply_micro_event_effect,
+)
 
 __all__ = [
     'Dungeon', 'calculate_fov',
@@ -14,4 +18,6 @@ __all__ = [
     'SecretDoor', 'SecretDoorManager',
     'Torch', 'TorchManager',
     'FieldPulseManager', 'FieldPulse', 'PulseIntensity',
+    'MicroEvent', 'MicroEventEffect', 'MICRO_EVENTS_BY_FLOOR',
+    'get_micro_event_for_floor', 'apply_micro_event_effect',
 ]

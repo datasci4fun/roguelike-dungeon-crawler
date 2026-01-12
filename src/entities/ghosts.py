@@ -146,6 +146,9 @@ class Ghost:
 
     # Champion-specific
     assist_used: bool = False
+    trial_spawned: bool = False       # Combat trial spawned
+    trial_enemy_id: Optional[int] = None  # ID of spawned trial enemy
+    trial_completed: bool = False     # Trial enemy was defeated
 
     # Secondary flourish (for hybrid legacy)
     secondary_tag: Optional[str] = None  # "archivist_mark" or "champion_edge"
@@ -206,6 +209,9 @@ class GhostManager:
         self._silence_positions: Set[Tuple[int, int]] = set()
         # Anti-spam: track which message types shown this floor
         self._messages_shown: Set[GhostType] = set()
+        # Champion trial system
+        self._pending_trial_ghost: Optional[Ghost] = None
+        self._trial_enemies: Set[int] = set()  # IDs of trial enemies
 
     def initialize_floor(self, floor: int, dungeon: 'Dungeon',
                          ghost_data: List[dict] = None, seed: int = None,
@@ -523,8 +529,9 @@ class GhostManager:
                             direction = f"{dy} {dx}".strip()
                             messages.append(f"The light pulses toward the {direction}...")
 
-            # Champion: assist when health low or near boss
+            # Champion: assist when health low, OR offer combat trial
             if ghost.ghost_type == GhostType.CHAMPION:
+                # Priority 1: HP assist when health is critical or near boss
                 should_assist = False
                 if player.health < player.max_health * 0.3:
                     should_assist = True
@@ -550,6 +557,19 @@ class GhostManager:
                                 rx, ry = player.x + dx, player.y + dy
                                 if 0 <= rx < dungeon.width and 0 <= ry < dungeon.height:
                                     dungeon.explored[ry][rx] = True
+
+                # Priority 2: Combat trial when healthy and near ghost
+                elif distance <= 2 and not ghost.trial_spawned and not ghost.triggered:
+                    # Player is healthy enough for a trial
+                    ghost.triggered = True
+                    if ghost.ghost_type not in self._messages_shown:
+                        self._messages_shown.add(ghost.ghost_type)
+                        messages.append(ghost.get_message())
+                    messages.append("The champion offers you a trial of combat...")
+                    messages.append("Defeat the challenger for a reward!")
+                    # Mark trial as ready to spawn (actual spawn handled by game engine)
+                    ghost.trial_spawned = True
+                    self._pending_trial_ghost = ghost
 
             # Archivist: reveal lore/secrets in record zones, otherwise tiles
             if ghost.ghost_type == GhostType.ARCHIVIST:
@@ -640,6 +660,129 @@ class GhostManager:
 
         return spawned_any
 
+    def has_pending_trial(self) -> bool:
+        """Check if there's a pending champion trial to spawn."""
+        return self._pending_trial_ghost is not None
+
+    def spawn_champion_trial(self, dungeon: 'Dungeon', entity_manager) -> List[str]:
+        """Spawn a champion trial enemy if one is pending.
+
+        Creates a challenging elite enemy near the ghost position.
+        Defeating it grants bonus rewards.
+
+        Returns:
+            List of messages to display
+        """
+        messages = []
+
+        if not self._pending_trial_ghost:
+            return messages
+
+        ghost = self._pending_trial_ghost
+        self._pending_trial_ghost = None
+
+        from ..core.constants import EnemyType, FLOOR_ENEMY_POOLS
+        from .entities import Enemy
+
+        # Select a challenging enemy type based on floor
+        floor_pool = FLOOR_ENEMY_POOLS.get(self.floor, [])
+        if floor_pool:
+            # Choose the enemy with highest weight (most thematic)
+            enemy_types = [(t, w) for (t, w) in floor_pool]
+            enemy_types.sort(key=lambda x: x[1], reverse=True)
+            trial_type = enemy_types[0][0]
+        else:
+            # Fallback to skeleton
+            trial_type = EnemyType.SKELETON
+
+        # Find spawn position near ghost (within 3 tiles)
+        spawn_pos = None
+        for dx in range(-3, 4):
+            for dy in range(-3, 4):
+                nx, ny = ghost.x + dx, ghost.y + dy
+                if dungeon.is_walkable(nx, ny):
+                    # Check not occupied by entity
+                    occupied = False
+                    for enemy in entity_manager.enemies:
+                        if enemy.is_alive() and enemy.x == nx and enemy.y == ny:
+                            occupied = True
+                            break
+                    if not occupied:
+                        spawn_pos = (nx, ny)
+                        break
+            if spawn_pos:
+                break
+
+        if not spawn_pos:
+            messages.append("The trial fades... no space for combat.")
+            ghost.trial_completed = True  # Skip trial, no reward
+            return messages
+
+        # Create elite trial enemy
+        trial_enemy = Enemy(spawn_pos[0], spawn_pos[1], enemy_type=trial_type, is_elite=True)
+        trial_enemy.name = "Champion's Challenger"
+        trial_enemy.xp_reward = int(trial_enemy.xp_reward * 1.5)  # Bonus XP
+
+        # Track the trial enemy by its id
+        trial_id = id(trial_enemy)
+        ghost.trial_enemy_id = trial_id
+        self._trial_enemies.add(trial_id)
+
+        entity_manager.enemies.append(trial_enemy)
+        messages.append(f"A {trial_enemy.name} materializes!")
+
+        return messages
+
+    def check_trial_completion(self, entity_manager, player: 'Player') -> List[str]:
+        """Check if any champion trials have been completed.
+
+        Called after combat to check if trial enemies were defeated.
+
+        Returns:
+            List of messages to display (including reward messages)
+        """
+        messages = []
+
+        for ghost in self.ghosts:
+            if ghost.ghost_type != GhostType.CHAMPION:
+                continue
+            if not ghost.trial_spawned or ghost.trial_completed:
+                continue
+            if ghost.trial_enemy_id is None:
+                continue
+
+            # Check if trial enemy is still alive
+            trial_alive = False
+            for enemy in entity_manager.enemies:
+                if id(enemy) == ghost.trial_enemy_id and enemy.is_alive():
+                    trial_alive = True
+                    break
+
+            if not trial_alive:
+                # Trial completed! Grant reward
+                ghost.trial_completed = True
+                self._trial_enemies.discard(ghost.trial_enemy_id)
+
+                messages.append("You have proven yourself worthy!")
+                messages.append("The champion's blessing strengthens you!")
+
+                # Rewards: +5 HP (can exceed max), +10% damage for remainder of floor
+                player.health = min(player.health + 5, player.max_health + 5)
+                messages.append("  +5 HP restored!")
+
+                # Mark player with temporary damage buff (handled by combat system)
+                if not hasattr(player, 'champion_blessing'):
+                    player.champion_blessing = 0
+                player.champion_blessing = 3  # 3 combats with bonus damage
+
+                messages.append("  Champion's Blessing: +20% damage for next 3 combats!")
+
+        return messages
+
+    def is_trial_enemy(self, enemy) -> bool:
+        """Check if an enemy is a champion trial enemy."""
+        return id(enemy) in self._trial_enemies
+
     def get_state(self) -> dict:
         """Get serializable state."""
         return {
@@ -657,6 +800,8 @@ class GhostManager:
                     'triggered': g.triggered,
                     'active': g.active,
                     'assist_used': g.assist_used,
+                    'trial_spawned': g.trial_spawned,
+                    'trial_completed': g.trial_completed,
                     'secondary_tag': g.secondary_tag,
                     'secondary_used': g.secondary_used,
                     'path_positions': g.path.positions if g.path else None,
@@ -681,6 +826,9 @@ class GhostManager:
         )
 
         self.ghosts = []
+        self._pending_trial_ghost = None
+        self._trial_enemies.clear()
+
         for g_data in state.get('ghosts', []):
             ghost = Ghost(
                 ghost_type=GhostType[g_data['ghost_type']],
@@ -693,6 +841,8 @@ class GhostManager:
                 triggered=g_data.get('triggered', False),
                 active=g_data.get('active', True),
                 assist_used=g_data.get('assist_used', False),
+                trial_spawned=g_data.get('trial_spawned', False),
+                trial_completed=g_data.get('trial_completed', False),
                 secondary_tag=g_data.get('secondary_tag'),
                 secondary_used=g_data.get('secondary_used', False),
             )
@@ -712,3 +862,5 @@ class GhostManager:
         self.ghosts.clear()
         self._silence_positions.clear()
         self._messages_shown.clear()
+        self._pending_trial_ghost = None
+        self._trial_enemies.clear()
