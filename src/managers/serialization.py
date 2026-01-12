@@ -48,6 +48,9 @@ class SaveManager:
             'artifact_manager': self.game.entity_manager.artifact_manager.get_state() if hasattr(self.game.entity_manager, 'artifact_manager') else None,
             'ghost_manager': self.game.ghost_manager.get_state() if hasattr(self.game, 'ghost_manager') and self.game.ghost_manager else None,
             'completion_ledger': self.game.completion_ledger.to_dict() if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger else None,
+            # v6.0: Save UI mode and battle state
+            'ui_mode': self.game.ui_mode.name if hasattr(self.game, 'ui_mode') else 'GAME',
+            'battle': self.game.battle.to_dict() if hasattr(self.game, 'battle') and self.game.battle else None,
         }
 
         return save_game(game_state)
@@ -113,6 +116,20 @@ class SaveManager:
                 self.game.ghost_manager.load_state(game_state['ghost_manager'])
 
             # Note: completion_ledger is restored earlier (before story_manager)
+
+            # v6.0: Restore UI mode and battle state
+            if game_state.get('ui_mode'):
+                from ..core.constants import UIMode
+                try:
+                    self.game.ui_mode = UIMode[game_state['ui_mode']]
+                except KeyError:
+                    self.game.ui_mode = UIMode.GAME
+
+            if game_state.get('battle'):
+                from ..combat import BattleState
+                self.game.battle = BattleState.from_dict(game_state['battle'])
+            else:
+                self.game.battle = None
 
             # Update FOV after loading (with vision bonus from race traits)
             vision_bonus = self.game.player.get_vision_bonus() if hasattr(self.game.player, 'get_vision_bonus') else 0

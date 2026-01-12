@@ -11,9 +11,79 @@ Complete feature list organized by category and version.
 - **Inventory System**: 10-slot inventory with auto-pickup
 - **Equipment System**: Weapons (+ATK), armor (+DEF), shields, rings, amulets
 - **FOV System**: Raycasting-based field of view with fog of war
-- **Combat**: Bump-to-attack with animated feedback
+- **Dual Combat Modes**: Exploration is grid-based; combat is instanced tactical arenas (v6.0)
 - **XP & Leveling**: Level up to increase HP and ATK
 - **Save/Load**: Full state persistence with permadeath option
+
+---
+
+## Tactical Battle Mode (v6.0.0)
+
+**Exploration is grid-based; combat is instanced tactical arenas.**
+
+### Battle Flow
+1. Enemy encounter triggers transition to 9x7 tactical arena
+2. Arena template selected based on biome (hazard placement varies)
+3. Player and enemies placed; reinforcement queue generated
+4. Turn-based combat with movement and abilities
+5. Victory: enemies cleared, loot/XP applied, return to exploration
+6. Flee: player pushed back, enemy remains, ledger tracks escape
+
+### Determinism
+Same seed produces identical results:
+- Arena layout and tile placement
+- Reinforcement queue (enemy type, arrival turn, elite status)
+- Entity spawn positions
+
+### Arena Templates
+| Biome | Hazards | Notes |
+|-------|---------|-------|
+| Stone | None | Basic template |
+| Sewer | Water pools | Movement penalty |
+| Forest | Tree obstacles | Line-of-sight blockers |
+| Crypt | Tombstones | Cover positions |
+| Ice | Ice patches | Slide mechanic |
+| Volcanic | Lava lanes | Damage tiles |
+| Library | Bookshelf walls | Maze-like |
+| Crystal | Crystal formations | Reflective |
+
+### Class Ability Kits
+
+| Class | Ability 1 | Ability 2 | Ability 3 | Ability 4 |
+|-------|-----------|-----------|-----------|-----------|
+| Warrior | Basic Attack | Power Strike (1.5x, 4cd) | Shield Wall (2x def, 3cd) | Charge (2 tiles + stun, 5cd) |
+| Mage | Basic Attack | Fireball (AOE 3 dmg, 4cd) | Frost Nova (freeze adj, 5cd) | Blink (teleport 3, 4cd) |
+| Rogue | Basic Attack | Backstab (2x if behind, 3cd) | Smoke Bomb (invis 2t, 5cd) | Dash (move 2, 2cd) |
+| Cleric | Basic Attack | Heal (10 HP, 4cd) | Smite (1.5x undead, 3cd) | Sanctuary (immune 1t, 6cd) |
+
+### Reinforcement System
+- Enemies spawn from arena edges over time
+- Countdown visible in battle UI
+- Field pulse accelerates arrival:
+  - Minor (1.25x amp): 0.9x arrival time
+  - Moderate (1.5x amp): 0.8x arrival time
+  - Major (2.0x amp): 0.7x arrival time
+- Elite spawns possible on deeper floors
+
+### Battle Artifacts
+| Artifact | Effect in Battle |
+|----------|------------------|
+| Duplicate Seal | Duplicates consumable effects |
+| Woundglass Shard | Reveals safe tiles and reinforcement ETAs |
+| Oathstone | Vow enforcement continues |
+
+### Ghost Battle Effects
+| Ghost Type | Battle Effect |
+|------------|---------------|
+| Champion | +3 temporary HP at battle start |
+| Archivist | Reveals safe tiles at battle start |
+| Beacon | Points player away from reinforcement entry |
+
+### Web Controls
+- **WASD / Arrow Keys**: Move in arena
+- **1-4**: Use class abilities
+- **Space / Enter**: Wait turn
+- **Escape**: Attempt to flee
 
 ---
 

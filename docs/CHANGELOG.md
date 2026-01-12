@@ -4,6 +4,60 @@ All notable changes to this project.
 
 ---
 
+## [6.0.0] - 2026-01-11 - Tactical Battle Mode
+
+### Added
+- **Instanced Tactical Combat**: Exploration remains grid-based; combat transitions to 9x7 tactical arenas
+- **Deterministic Battles**: Same seed produces identical arena layouts, reinforcement queues, and spawn positions
+- **Arena Templates**: 6 biome-specific templates with hazard placement (lava lanes, ice patches, etc.)
+- **Class Ability Kits**: 4 classes with 4 abilities each
+  - Warrior: Basic Attack, Power Strike (1.5x, 4cd), Shield Wall (2x def, 3cd), Charge (2 tiles + stun, 5cd)
+  - Mage: Basic Attack, Fireball (AOE 3 damage, 4cd), Frost Nova (freeze adjacent, 5cd), Blink (teleport 3, 4cd)
+  - Rogue: Basic Attack, Backstab (2x if behind, 3cd), Smoke Bomb (invisible 2 turns, 5cd), Dash (move 2, 2cd)
+  - Cleric: Basic Attack, Heal (restore 10 HP, 4cd), Smite (holy 1.5x undead, 3cd), Sanctuary (immune 1 turn, 6cd)
+- **Reinforcement System**: Enemies spawn from arena edges over time
+  - Countdown visible in UI
+  - Arrival accelerated by field pulse intensity (0.9x/0.8x/0.7x for minor/moderate/major)
+  - Elite spawns possible on deeper floors
+- **Battle Artifacts** (v6.0.5):
+  - Duplicate Seal: Duplicates consumable effects in battle
+  - Woundglass Shard: Reveals safe tiles and reinforcement ETAs
+  - Oathstone: Vow enforcement continues during battle
+- **Ghost Battle Effects** (v6.0.5):
+  - Champion: +3 temporary HP at battle start
+  - Archivist: Reveals safe tiles at battle start
+  - Beacon: Points player away from reinforcement entry
+- **Web Battle Overlay**:
+  - Real-time arena visualization with tile colors
+  - Entity positions and HP pips
+  - Reinforcement countdown panel
+  - Keyboard controls (WASD move, 1-4 abilities, Space wait, Escape flee)
+  - Artifact status indicators
+- **Game Integrity Tests** (v6.0.5):
+  - Battle payload contract validation (arena_tiles, entities, reinforcements)
+  - Battle determinism snapshot tests (2 seeds verified)
+
+### Changed
+- Combat encounters now transition to instanced arenas instead of bump-to-attack
+- Victory save handling now preserves ledger/codex to victories.json before clearing autosave
+- UI mode toggles between EXPLORATION and BATTLE
+
+### Technical
+- `BattleState`, `BattleEntity`, `PendingReinforcement` types with full serialization
+- `BattleManager` handles turn processing, ability execution, reinforcement spawning
+- `BattleAction` enum for all combat commands
+- Deterministic seeding for arena generation and reinforcement scheduling
+
+### Developer Notes
+To reproduce battle determinism for bug reports:
+```python
+from src.combat.battle_manager import BattleManager
+manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', seed=12345)
+# Same seed produces identical arena layout and reinforcement queue
+```
+
+---
+
 ## [5.3.0] - 2026-01-09 - Cinematics V2: Death & Victory Cutscenes
 
 ### Added

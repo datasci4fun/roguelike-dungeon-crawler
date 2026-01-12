@@ -319,6 +319,9 @@ class Game:
         elif self.engine.ui_mode == UIMode.MESSAGE_LOG:
             self._message_log_loop()
             return
+        elif self.engine.ui_mode == UIMode.BATTLE:
+            self._battle_loop()
+            return
 
         # Process any pending events from previous tick
         self._process_events()
@@ -433,6 +436,99 @@ class Game:
         max_y, _ = self.stdscr.getmaxyx()
         visible_lines = max_y - 7
         self.engine.process_message_log_command(command, visible_lines)
+
+    def _battle_loop(self):
+        """Handle tactical battle mode UI (v6.0.4)."""
+        from ..combat import get_class_abilities
+
+        battle = self.engine.battle
+        if not battle:
+            # Battle ended, return to game
+            self.engine.ui_mode = UIMode.GAME
+            return
+
+        # v6.0.4: Text-based battle display with abilities
+        self.stdscr.clear()
+        max_y, max_x = self.stdscr.getmaxyx()
+
+        # Title
+        phase_str = battle.phase.name.replace('_', ' ')
+        title = f"=== BATTLE: {battle.biome} (Turn {battle.turn_number}) ==="
+        self.stdscr.addstr(1, max(0, (max_x - len(title)) // 2), title)
+
+        # Phase indicator
+        self.stdscr.addstr(2, max(0, (max_x - len(phase_str)) // 2), f"[{phase_str}]")
+
+        # Player info
+        if battle.player:
+            player = battle.player
+            hp_bar = f"HP: {player.hp}/{player.max_hp}"
+            pos_str = f"Pos: ({player.arena_x},{player.arena_y})"
+            self.stdscr.addstr(4, 2, f"YOU: {hp_bar}  {pos_str}")
+
+            # Status effects
+            if player.status_effects:
+                effects = ", ".join(e.get('name', '?') for e in player.status_effects)
+                self.stdscr.addstr(5, 4, f"Status: {effects[:max_x - 12]}")
+
+        # Enemy info
+        living_enemies = battle.get_living_enemies()
+        self.stdscr.addstr(7, 2, f"ENEMIES ({len(living_enemies)}):")
+        for i, enemy in enumerate(living_enemies[:4]):
+            dist = abs(enemy.arena_x - battle.player.arena_x) + abs(enemy.arena_y - battle.player.arena_y)
+            status_str = ""
+            if enemy.status_effects:
+                status_str = " [" + ",".join(e.get('name', '?')[:3] for e in enemy.status_effects) + "]"
+            self.stdscr.addstr(8 + i, 4, f"- HP:{enemy.hp}/{enemy.max_hp} Dist:{dist}{status_str}"[:max_x - 6])
+
+        # Reinforcement countdown UI
+        reinf_summary = self.engine.battle_manager.get_reinforcement_summary()
+        reinf_y = 13
+        if reinf_summary:
+            cap_str = f"({battle.reinforcements_spawned}/{battle.max_reinforcements})"
+            self.stdscr.addstr(reinf_y, 2, f"INCOMING {cap_str}:")
+            for i, group in enumerate(reinf_summary[:3]):
+                elite_mark = "*" if group['has_elite'] else ""
+                count_str = f"x{group['count']}" if group['count'] > 1 else ""
+                line = f"  {group['type']}{count_str}{elite_mark} in {group['turns']}t"
+                if reinf_y + 1 + i < max_y - 10:
+                    self.stdscr.addstr(reinf_y + 1 + i, 2, line[:max_x - 4])
+            reinf_y += len(reinf_summary[:3]) + 1
+
+        # Abilities display
+        ability_y = max(reinf_y + 1, 17)
+        player_class = getattr(self.engine.player, 'player_class', 'WARRIOR')
+        if hasattr(player_class, 'name'):
+            player_class = player_class.name
+        abilities = get_class_abilities(player_class)
+
+        self.stdscr.addstr(ability_y, 2, f"ABILITIES ({player_class}):")
+        for i, ability in enumerate(abilities[:4]):
+            cooldown = battle.player.cooldowns.get(ability.name, 0) if battle.player else 0
+            cd_str = f" (CD:{cooldown})" if cooldown > 0 else ""
+            key_str = f"[{i+1}]"
+            range_str = f"R:{ability.range}" if ability.range > 0 else "Self"
+            line = f"  {key_str} {ability.name} - {range_str}{cd_str}"
+            if ability_y + 1 + i < max_y - 6:
+                self.stdscr.addstr(ability_y + 1 + i, 2, line[:max_x - 4])
+
+        # Controls
+        ctrl_y = max_y - 5
+        self.stdscr.addstr(ctrl_y, 2, "Controls: WASD/Arrows=Move  1-4=Ability  .=Wait  Q=Flee")
+
+        # Recent messages
+        msg_y = max_y - 4
+        messages = self.engine.messages[-3:]
+        for i, msg in enumerate(messages):
+            if msg_y + i < max_y - 1:
+                self.stdscr.addstr(msg_y + i, 2, msg[:max_x - 4])
+
+        self.stdscr.refresh()
+
+        # Handle input
+        key = self.stdscr.getch()
+        command = self.input_adapter.translate_battle(key)
+        self.engine.process_battle_command(command)
 
     def _game_over_loop(self):
         """Game over state loop."""

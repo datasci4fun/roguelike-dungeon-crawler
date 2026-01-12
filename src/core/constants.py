@@ -41,6 +41,7 @@ class UIMode(Enum):
     READING = auto()    # Reading a lore item (scroll/book)
     DIALOG = auto()     # Confirmation dialog
     MESSAGE_LOG = auto() # Full message history screen
+    BATTLE = auto()     # Tactical battle mode (v6.0)
 
 
 class DungeonTheme(Enum):
