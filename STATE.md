@@ -2,7 +2,34 @@
 
 **Last Updated:** 2026-01-11
 **Branch:** develop
-**Version:** v6.2.0 (Tactical Depth) - SHIPPED
+**Version:** v6.2.1 (Kiting Heuristics) - SHIPPED
+
+---
+
+## v6.2.1 SHIPPED (2026-01-11) - Kiting Heuristics
+
+**Merge Commit:** feature/v6.2.1-kiting-heuristics → develop
+
+### Core Concept
+**Ranged AI kiting/spacing for hunter-like behavior.**
+
+Ranged enemies now maintain preferred distance, avoid adjacency unless killshot, and don't corner themselves.
+
+### Key Features
+- Preferred range band (3-5, sweet spot 4)
+- Decisive adjacency penalty (-60) unless killshot
+- Break melee lock bonus (+20) when escaping to dist >= 3
+- Edge/corner avoidance to prevent self-cornering
+- Retreat lane preservation
+
+### Implementation
+- `src/combat/ai_kiting.py`: New kiting module (341 lines)
+- Applies to `RANGED_KITE` and `ELEMENTAL` AI behaviors
+- 13 new tests, 41 total AI tests pass
+
+### Next Steps
+- v6.3: Zone-Specific Arenas (zone overrides + boss motifs)
+- Alternative: Secret ending hooks or meta progression
 
 ---
 

@@ -38,6 +38,23 @@ Same seed + same state = same action, always. Boss fights are now learnable.
 
 ---
 
+## [6.2.1] - 2026-01-11 - Kiting Heuristics
+
+### Added
+- **Ranged AI Kiting**: Kiting/spacing heuristics for ranged enemies
+  - Preferred range band (3-5, sweet spot 4)
+  - Decisive adjacency penalty (-60) unless killshot
+  - Break melee lock bonus (+20) when escaping to dist >= 3
+  - Avoids reinforcement entry edges and corners
+  - Retreat lane preservation (self-cornering prevention)
+
+### Technical
+- `src/combat/ai_kiting.py`: New kiting module (341 lines)
+- Applies to `RANGED_KITE` and `ELEMENTAL` AI behaviors
+- 13 new tests for kiting determinism and behavior
+
+---
+
 ## [6.1.0] - 2026-01-12 - Cinematic Glue
 
 ### Added
