@@ -47,8 +47,13 @@ class CombatManager:
         # Check for enemy at target position
         enemy = self.game.entity_manager.get_enemy_at(new_x, new_y)
         if enemy:
-            # Don't auto-turn - player controls facing with Q/E
-            self._player_attack_enemy(enemy)
+            # v6.0: Start tactical battle instead of exploration damage
+            enemy_id = str(id(enemy))
+            self.game.battle_manager.start_battle(
+                enemy_ids=[enemy_id],
+                trigger_x=new_x,
+                trigger_y=new_y,
+            )
             return True
 
         # Check if position is walkable

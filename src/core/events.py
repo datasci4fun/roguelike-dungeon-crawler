@@ -44,6 +44,10 @@ class EventType(Enum):
     # Environmental events
     FIELD_PULSE = auto()     # Field surge event triggered
 
+    # Battle mode events (v6.0)
+    BATTLE_START = auto()    # Entered tactical battle mode
+    BATTLE_END = auto()      # Exited battle mode (victory/defeat/flee)
+
 
 @dataclass
 class GameEvent:

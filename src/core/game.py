@@ -319,6 +319,9 @@ class Game:
         elif self.engine.ui_mode == UIMode.MESSAGE_LOG:
             self._message_log_loop()
             return
+        elif self.engine.ui_mode == UIMode.BATTLE:
+            self._battle_loop()
+            return
 
         # Process any pending events from previous tick
         self._process_events()
@@ -433,6 +436,53 @@ class Game:
         max_y, _ = self.stdscr.getmaxyx()
         visible_lines = max_y - 7
         self.engine.process_message_log_command(command, visible_lines)
+
+    def _battle_loop(self):
+        """Handle tactical battle mode UI (v6.0)."""
+        battle = self.engine.battle
+        if not battle:
+            # Battle ended, return to game
+            self.engine.ui_mode = UIMode.GAME
+            return
+
+        # v6.0.1 stub: Simple text-based battle display
+        # Full battle renderer in v6.0.2+
+        self.stdscr.clear()
+        max_y, max_x = self.stdscr.getmaxyx()
+
+        # Title
+        title = f"=== BATTLE MODE ({battle.biome}) ==="
+        self.stdscr.addstr(1, max(0, (max_x - len(title)) // 2), title)
+
+        # Arena info
+        self.stdscr.addstr(3, 2, f"Arena: {battle.arena_width}x{battle.arena_height}")
+        self.stdscr.addstr(4, 2, f"Turn: {battle.turn_number}")
+
+        # Player info
+        if battle.player:
+            self.stdscr.addstr(6, 2, f"Player HP: {battle.player.hp}/{battle.player.max_hp}")
+
+        # Enemy info
+        self.stdscr.addstr(8, 2, f"Enemies: {len(battle.get_living_enemies())}")
+        for i, enemy in enumerate(battle.get_living_enemies()[:5]):
+            self.stdscr.addstr(9 + i, 4, f"- Enemy {enemy.entity_id[:8]}... HP: {enemy.hp}/{enemy.max_hp}")
+
+        # Instructions
+        self.stdscr.addstr(max_y - 4, 2, "[v6.0.1 STUB] Press any key to auto-win battle")
+        self.stdscr.addstr(max_y - 3, 2, "Press Q or ESC to flee")
+
+        # Recent messages
+        messages = self.engine.messages[-3:]
+        for i, msg in enumerate(messages):
+            if max_y - 7 + i < max_y - 5:
+                self.stdscr.addstr(max_y - 7 + i, 2, msg[:max_x - 4])
+
+        self.stdscr.refresh()
+
+        # Handle input
+        key = self.stdscr.getch()
+        command = self.input_adapter.translate_battle(key)
+        self.engine.process_battle_command(command)
 
     def _game_over_loop(self):
         """Game over state loop."""

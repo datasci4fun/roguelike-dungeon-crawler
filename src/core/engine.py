@@ -28,6 +28,9 @@ from ..managers import (
     EntityManager, CombatManager, LevelManager, SaveManager
 )
 
+# v6.0: Battle mode
+from ..combat import BattleManager, BattleState
+
 
 class GameEngine:
     """
@@ -92,6 +95,10 @@ class GameEngine:
 
         # Wire story manager to ledger (ledger is source of truth)
         self.story_manager.attach_ledger(self.completion_ledger)
+
+        # v6.0: Battle mode
+        self.battle: Optional[BattleState] = None
+        self.battle_manager = BattleManager(self, event_queue=self.event_queue)
 
         # Death tracking for recap
         self.last_attacker_name = None
@@ -847,6 +854,15 @@ class GameEngine:
 
         elif cmd_type == CommandType.PAGE_DOWN:
             self.message_log.scroll_down(visible_lines, visible_lines)
+
+    def process_battle_command(self, command: Command) -> bool:
+        """
+        Process a command during tactical battle mode (v6.0).
+
+        Returns:
+            True if command was processed
+        """
+        return self.battle_manager.process_battle_command(command.type.name)
 
     # =========================================================================
     # Command Processing - Title/Intro

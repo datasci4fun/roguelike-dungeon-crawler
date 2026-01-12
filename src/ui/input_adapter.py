@@ -135,6 +135,31 @@ class CursesInputAdapter:
         # Handled specially - any key except -1 closes
     }
 
+    # v6.0: Battle mode keys
+    BATTLE_KEYS = {
+        # Movement (for arena positioning)
+        curses.KEY_UP: CommandType.MOVE_UP,
+        curses.KEY_DOWN: CommandType.MOVE_DOWN,
+        curses.KEY_LEFT: CommandType.MOVE_LEFT,
+        curses.KEY_RIGHT: CommandType.MOVE_RIGHT,
+        ord('w'): CommandType.MOVE_UP,
+        ord('W'): CommandType.MOVE_UP,
+        ord('s'): CommandType.MOVE_DOWN,
+        ord('S'): CommandType.MOVE_DOWN,
+        ord('a'): CommandType.MOVE_LEFT,
+        ord('A'): CommandType.MOVE_LEFT,
+        ord('d'): CommandType.MOVE_RIGHT,
+        ord('D'): CommandType.MOVE_RIGHT,
+        # Confirm action
+        ord(' '): CommandType.CONFIRM,
+        ord('\n'): CommandType.CONFIRM,
+        curses.KEY_ENTER: CommandType.CONFIRM,
+        # Cancel/flee
+        ord('q'): CommandType.CANCEL,
+        ord('Q'): CommandType.CANCEL,
+        27: CommandType.CANCEL,  # ESC
+    }
+
     def translate_game(self, key: int) -> Command:
         """Translate a key press during normal gameplay."""
         if key == -1:
@@ -208,3 +233,15 @@ class CursesInputAdapter:
         if key == -1:
             return Command.none()
         return Command(CommandType.CLOSE_SCREEN)
+
+    def translate_battle(self, key: int) -> Command:
+        """Translate a key press during tactical battle mode (v6.0)."""
+        if key == -1:
+            return Command.none()
+
+        cmd_type = self.BATTLE_KEYS.get(key)
+        if cmd_type:
+            return Command(cmd_type)
+
+        # v6.0.1 stub: any other key also confirms (auto-win)
+        return Command(CommandType.ANY_KEY)
