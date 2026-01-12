@@ -1,9 +1,11 @@
 """Sky-Touched Artifacts - rare items with powerful effects and costs.
 
-Three artifacts for MVP:
+Five artifacts available:
 - Duplicate Seal: duplicates next scroll/consumable use
 - Woundglass Shard: reveals hidden information
 - Oathstone: choose a vow for bonus rewards
+- Crown-Splinter: see through walls at cost of vision
+- Ledger of the Unborn: summon phantom ally at cost of max HP
 """
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -20,6 +22,8 @@ class ArtifactId(Enum):
     DUPLICATE_SEAL = auto()
     WOUNDGLASS_SHARD = auto()
     OATHSTONE = auto()
+    CROWN_SPLINTER = auto()
+    LEDGER_OF_UNBORN = auto()
 
 
 class VowType(Enum):
@@ -75,6 +79,20 @@ ARTIFACT_DATA = {
         'symbol': '*',
         'description': 'Take a vow for this floor. Keep it for rewards, break it for consequences.',
         'zone_bias': ['oath_chambers', 'oath_interface', 'throne_hall_ruins'],
+        'base_weight': 1.0,
+    },
+    ArtifactId.CROWN_SPLINTER: {
+        'name': 'Crown-Splinter',
+        'symbol': '^',
+        'description': 'See through walls briefly. The longer held, the more your vision fractures.',
+        'zone_bias': ['throne_hall_ruins', 'seal_chambers', 'catalog_chambers'],
+        'base_weight': 1.0,
+    },
+    ArtifactId.LEDGER_OF_UNBORN: {
+        'name': 'Ledger of the Unborn',
+        'symbol': 'L',
+        'description': 'Summon a phantom ally. A name is added, another forgotten.',
+        'zone_bias': ['record_vaults', 'catalog_chambers', 'geometry_wells'],
         'base_weight': 1.0,
     },
 }
@@ -452,9 +470,135 @@ def grant_vow_reward(artifact: ArtifactInstance, engine: 'GameEngine') -> str:
     return ""
 
 
+def use_crown_splinter(artifact: ArtifactInstance, engine: 'GameEngine') -> Tuple[bool, str]:
+    """Activate the Crown-Splinter effect.
+
+    Grants temporary X-ray vision (see through walls) for a few turns.
+    Cost: Each use reduces max vision radius permanently on this floor.
+
+    Returns:
+        (success, message)
+    """
+    if artifact.charges <= 0:
+        return False, "The Crown-Splinter has fractured beyond use."
+
+    if not engine.player or not engine.dungeon:
+        return False, "Cannot use artifact."
+
+    # Effect: Grant X-ray vision (reveal all tiles in large radius)
+    player_x, player_y = engine.player.x, engine.player.y
+    reveal_radius = 12
+    revealed_count = 0
+
+    for dx in range(-reveal_radius, reveal_radius + 1):
+        for dy in range(-reveal_radius, reveal_radius + 1):
+            nx, ny = player_x + dx, player_y + dy
+            if 0 <= nx < engine.dungeon.width and 0 <= ny < engine.dungeon.height:
+                if not engine.dungeon.explored[ny][nx]:
+                    engine.dungeon.explored[ny][nx] = True
+                    revealed_count += 1
+                # Also make visible temporarily
+                engine.dungeon.visible[ny][nx] = True
+
+    artifact.charges -= 1
+
+    # Cost: Apply a debuff - reduce vision for rest of floor
+    if hasattr(engine.player, 'vision_penalty'):
+        engine.player.vision_penalty += 1
+    else:
+        engine.player.vision_penalty = 1
+
+    if revealed_count > 0:
+        return True, f"Reality fractures... {revealed_count} tiles revealed. Your vision narrows (-1 sight range)."
+    else:
+        return True, "The splinter shows only what you already know. Your vision narrows anyway."
+
+
+def use_ledger_of_unborn(artifact: ArtifactInstance, engine: 'GameEngine') -> Tuple[bool, str]:
+    """Activate the Ledger of the Unborn effect.
+
+    Summons a phantom ally that fights for you temporarily.
+    Cost: Lose some max HP (a name is forgotten).
+
+    Returns:
+        (success, message)
+    """
+    if artifact.charges <= 0:
+        return False, "The Ledger's pages are full."
+
+    if not engine.player or not engine.dungeon or not engine.entity_manager:
+        return False, "Cannot use artifact."
+
+    # Effect: Summon a phantom ally
+    spawned = _spawn_phantom_ally(engine)
+
+    if spawned:
+        artifact.charges -= 1
+
+        # Cost: Lose 2 max HP (a name is forgotten)
+        hp_cost = 2
+        engine.player.max_health = max(1, engine.player.max_health - hp_cost)
+        if engine.player.health > engine.player.max_health:
+            engine.player.health = engine.player.max_health
+
+        return True, f"A name appears in the Ledger... A phantom ally manifests! (-{hp_cost} max HP)"
+
+    return False, "No space for the phantom to manifest."
+
+
 # ============================================================================
 # Helper Functions
 # ============================================================================
+
+def _spawn_phantom_ally(engine: 'GameEngine') -> bool:
+    """Spawn a phantom ally near the player.
+
+    The phantom is a temporary friendly entity that attacks enemies.
+
+    Returns:
+        True if spawned successfully
+    """
+    if not engine.dungeon or not engine.player:
+        return False
+
+    from ..core.constants import EnemyType
+    from ..entities import Enemy
+
+    # Find a floor tile near the player
+    player_x, player_y = engine.player.x, engine.player.y
+    spawn_positions = []
+
+    for dx in range(-2, 3):
+        for dy in range(-2, 3):
+            if dx == 0 and dy == 0:
+                continue
+            nx, ny = player_x + dx, player_y + dy
+            if engine.dungeon.is_walkable(nx, ny):
+                # Check no entity there
+                occupied = False
+                for e in engine.entity_manager.enemies:
+                    if e.x == nx and e.y == ny:
+                        occupied = True
+                        break
+                if not occupied:
+                    spawn_positions.append((nx, ny))
+
+    if spawn_positions:
+        pos = random.choice(spawn_positions)
+        # Create a friendly "phantom" - uses skeleton base but marked as ally
+        phantom = Enemy(pos[0], pos[1], enemy_type=EnemyType.SKELETON)
+        phantom.name = "Phantom Ally"
+        phantom.is_phantom_ally = True  # Special flag for ally behavior
+        phantom.health = 15
+        phantom.max_health = 15
+        phantom.attack_damage = 8
+        # Phantoms are translucent (will be rendered differently)
+        phantom.is_invisible = False  # Visible to player
+        engine.entity_manager.enemies.append(phantom)
+        return True
+
+    return False
+
 
 def _spawn_witness_enemy(engine: 'GameEngine'):
     """Spawn a witness enemy near the player as artifact cost."""
