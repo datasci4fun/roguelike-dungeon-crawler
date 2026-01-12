@@ -2,7 +2,74 @@
 
 **Last Updated:** 2026-01-12
 **Branch:** develop
-**Version:** v6.3 (Three.js Battle Renderer) - SHIPPED
+**Version:** v6.3.1 (Battle Polish) - SHIPPED
+
+---
+
+## v6.3.1 SHIPPED (2026-01-12) - Battle Polish
+
+**Merge Commit:** fix/v6.3.1-battle-polish → develop
+
+### Core Concept
+**Combat polish with smooth animations, damage feedback, and tactical consistency.**
+
+Enemies now properly initiate battles instead of dealing exploration damage, entity sprites animate smoothly, damage numbers float up when hits land, and reinforcements display correct symbols.
+
+### Key Features
+
+#### Enemy Attack Consistency
+- Enemies no longer attack directly in exploration mode
+- When enemy bumps into player, initiates tactical battle instead
+- Same flow whether player or enemy initiates combat
+
+#### Smooth Move Transitions
+- Entity sprites lerp to target positions (15% per frame)
+- Position tracking via `EntityAnimState` map by entity ID
+- HP bars recreated when health changes, preserving position
+- Natural, fluid movement instead of instant snapping
+
+#### Floating Damage Numbers
+- DAMAGE_NUMBER events spawn floating text sprites
+- Red damage numbers rise and fade over 1.2 seconds
+- Eased opacity for smooth fade-out
+- Automatic cleanup when expired
+
+#### Reinforcement Symbol Fix
+- Added `name`, `symbol`, `is_elite`, `is_boss` to BattleEntity
+- Added `symbol` to PendingReinforcement
+- Fields populated when entities are created
+- Serialization updated to send display data to frontend
+
+### Implementation Files
+
+| File | Changes |
+|------|---------|
+| `src/managers/combat_manager.py` | Enemy bump → start_battle() |
+| `src/combat/battle_types.py` | Display fields on BattleEntity/PendingReinforcement |
+| `src/combat/battle_manager.py` | Populate display fields on entity creation |
+| `server/app/services/game_session.py` | Serialize display fields |
+| `web/src/components/BattleRenderer3D.tsx` | Animation system + damage numbers |
+| `web/src/pages/Play.tsx` | Pass events to BattleRenderer3D |
+
+### Technical Details
+
+**Entity Animation State:**
+```typescript
+interface EntityAnimState {
+  sprite: THREE.Group;
+  currentX: number;
+  currentZ: number;
+  targetX: number;
+  targetZ: number;
+  lastHp: number;
+}
+```
+
+**Damage Number Lifecycle:**
+- Created on DAMAGE_NUMBER event with arena coords
+- Float speed: 0.002 units/ms
+- Duration: 1200ms
+- Opacity: `1 - (elapsed/duration)²` (eased fade)
 
 ---
 
