@@ -197,6 +197,10 @@ class BattleManager:
                 max_hp=enemy.max_health,
                 attack=enemy.attack_damage,
                 defense=getattr(enemy, 'defense', 0),
+                name=getattr(enemy, 'name', ''),
+                symbol=getattr(enemy, 'symbol', ''),
+                is_elite=getattr(enemy, 'is_elite', False),
+                is_boss=getattr(enemy, 'is_boss', False),
             )
             battle.enemies.append(battle_enemy)
 
@@ -1762,6 +1766,7 @@ class BattleManager:
                 max_hp=enemy.max_health,
                 attack=enemy.attack_damage,
                 defense=getattr(enemy, 'defense', 0),
+                symbol=getattr(enemy, 'symbol', ''),
             )
             reinforcements.append(reinforcement)
 
@@ -1848,6 +1853,10 @@ class BattleManager:
                         max_hp=reinforcement.max_hp,
                         attack=reinforcement.attack,
                         defense=reinforcement.defense,
+                        name=reinforcement.enemy_name,
+                        symbol=reinforcement.symbol,
+                        is_elite=reinforcement.is_elite,
+                        is_boss=False,  # Reinforcements are not bosses
                     )
                     battle.enemies.append(battle_enemy)
                     battle.reinforcements_spawned += 1

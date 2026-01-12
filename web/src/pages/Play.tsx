@@ -443,6 +443,7 @@ export function Play() {
                       onOverviewComplete={() => setBattleOverviewComplete(true)}
                       selectedAction={battleSelectedAction}
                       onTileClick={(tile, hasEnemy) => setBattleClickedTile({ tile, hasEnemy })}
+                      events={gameState.events}
                     />
                     <BattleHUD
                       battle={gameState.battle}

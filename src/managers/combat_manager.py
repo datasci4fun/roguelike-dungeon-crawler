@@ -301,7 +301,14 @@ class CombatManager:
 
                         # Check if moving into player
                         if new_x == self.game.player.x and new_y == self.game.player.y:
-                            self._enemy_attack_player(enemy)
+                            # v6.3.1: Start tactical battle instead of direct attack
+                            enemy_id = str(id(enemy))
+                            self.game.battle_manager.start_battle(
+                                enemy_ids=[enemy_id],
+                                trigger_x=enemy.x,
+                                trigger_y=enemy.y,
+                            )
+                            return  # Battle started, exit processing
                         else:
                             # Check if another enemy is at target position
                             if not self.game.entity_manager.get_enemy_at(new_x, new_y):
@@ -323,7 +330,14 @@ class CombatManager:
 
             # Check if moving into player
             if new_x == self.game.player.x and new_y == self.game.player.y:
-                self._enemy_attack_player(enemy)
+                # v6.3.1: Start tactical battle instead of direct attack
+                enemy_id = str(id(enemy))
+                self.game.battle_manager.start_battle(
+                    enemy_ids=[enemy_id],
+                    trigger_x=enemy.x,
+                    trigger_y=enemy.y,
+                )
+                return  # Battle started, exit processing
             else:
                 # Check if another enemy is at target position
                 if not self.game.entity_manager.get_enemy_at(new_x, new_y):

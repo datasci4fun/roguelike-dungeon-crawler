@@ -655,6 +655,10 @@ class GameSessionManager:
                         "max_hp": e.max_hp,
                         "attack": e.attack,
                         "defense": e.defense,
+                        "name": e.name,
+                        "symbol": e.symbol,
+                        "is_elite": e.is_elite,
+                        "is_boss": e.is_boss,
                         "status_effects": [ef.get('name', '') for ef in e.status_effects],
                     }
                     for e in battle.get_living_enemies()
@@ -665,6 +669,7 @@ class GameSessionManager:
                         "enemy_name": r.enemy_name,
                         "turns_until_arrival": r.turns_until_arrival,
                         "is_elite": r.is_elite,
+                        "symbol": r.symbol,
                     }
                     for r in battle.reinforcements
                     if r.turns_until_arrival > 0

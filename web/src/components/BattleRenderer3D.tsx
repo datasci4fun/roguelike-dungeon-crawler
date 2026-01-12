@@ -57,12 +57,27 @@ interface TileCoord {
   y: number;
 }
 
+interface GameEvent {
+  type: string;
+  data: Record<string, unknown>;
+}
+
+interface DamageNumber {
+  id: number;
+  x: number;
+  z: number;
+  amount: number;
+  createdAt: number;
+  sprite: THREE.Sprite;
+}
+
 interface BattleRenderer3DProps {
   battle: BattleState;
   onOverviewComplete?: () => void;
   selectedAction?: 'move' | 'attack' | 'ability1' | 'ability2' | 'ability3' | 'ability4' | null;
   onTileClick?: (tile: TileCoord, hasEnemy: boolean) => void;
   onTileHover?: (tile: TileCoord | null) => void;
+  events?: GameEvent[];
 }
 
 // Highlight colors for different actions
@@ -173,7 +188,7 @@ function createEntitySprite(
   return group;
 }
 
-export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, onTileClick, onTileHover }: BattleRenderer3DProps) {
+export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, onTileClick, onTileHover, events }: BattleRenderer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -191,6 +206,14 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const cameraYawRef = useRef(0);
   const cameraPitchRef = useRef(0);
+
+  // Entity animation tracking for smooth transitions (type defined at module level)
+  const entityAnimRef = useRef<Map<string, EntityAnimState>>(new Map());
+
+  // Damage number tracking for floating damage text
+  const damageNumbersRef = useRef<DamageNumber[]>([]);
+  const damageNumberIdRef = useRef<number>(0);
+  const damageGroupRef = useRef<THREE.Group | null>(null);
 
   // Use refs for animation loop state (avoids stale closure)
   const overviewPhaseRef = useRef<OverviewPhase>('zoom_out');
@@ -291,6 +314,11 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
     scene.add(entityGroup);
     entityGroupRef.current = entityGroup;
 
+    // Damage number group (always rendered on top of entities)
+    const damageGroup = new THREE.Group();
+    scene.add(damageGroup);
+    damageGroupRef.current = damageGroup;
+
     // Initial entity placement (show player during overview)
     updateEntities(entityGroup, battle, true);
 
@@ -331,6 +359,49 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       }
       lastPhase = phase;
 
+      // Lerp entity positions for smooth transitions
+      const lerpSpeed = 0.15; // How fast entities move (0-1)
+      entityAnimRef.current.forEach((anim) => {
+        // Calculate distance to target
+        const dx = anim.targetX - anim.currentX;
+        const dz = anim.targetZ - anim.currentZ;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+
+        // Only lerp if not at target (threshold to avoid jitter)
+        if (dist > 0.01) {
+          anim.currentX += dx * lerpSpeed;
+          anim.currentZ += dz * lerpSpeed;
+          anim.sprite.position.set(anim.currentX, 0, anim.currentZ);
+        } else if (dist > 0) {
+          // Snap to target when close enough
+          anim.currentX = anim.targetX;
+          anim.currentZ = anim.targetZ;
+          anim.sprite.position.set(anim.currentX, 0, anim.currentZ);
+        }
+      });
+
+      // Animate damage numbers (float up, fade out, cleanup)
+      const DAMAGE_DURATION = 1200; // ms
+      const DAMAGE_FLOAT_SPEED = 0.002; // units per ms
+      const activeDamage: DamageNumber[] = [];
+
+      for (const dmg of damageNumbersRef.current) {
+        const elapsed = now - dmg.createdAt;
+        if (elapsed < DAMAGE_DURATION) {
+          // Still active - update position and opacity
+          dmg.sprite.position.y = 1.5 + elapsed * DAMAGE_FLOAT_SPEED;
+          const fadeProgress = elapsed / DAMAGE_DURATION;
+          dmg.sprite.material.opacity = 1 - fadeProgress * fadeProgress; // Ease out
+          activeDamage.push(dmg);
+        } else {
+          // Expired - remove from scene
+          damageGroup.remove(dmg.sprite);
+          dmg.sprite.material.map?.dispose();
+          dmg.sprite.material.dispose();
+        }
+      }
+      damageNumbersRef.current = activeDamage;
+
       // Update camera with mouse look values
       updateCamera(
         camera,
@@ -355,12 +426,12 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
     };
   }, [battle]);
 
-  // Update entities when battle state changes
+  // Update entities when battle state changes (uses animation map for smooth transitions)
   useEffect(() => {
     if (entityGroupRef.current && battle) {
       // Only show player sprite during overview, not in first-person
       const showPlayer = overviewPhaseRef.current !== 'complete';
-      updateEntities(entityGroupRef.current, battle, showPlayer);
+      updateEntities(entityGroupRef.current, battle, showPlayer, entityAnimRef.current);
     }
   }, [battle.player?.hp, battle.player?.arena_x, battle.player?.arena_y, battle.enemies]);
 
@@ -371,6 +442,75 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       updateHighlights(highlightGroupRef.current, battle, selectedAction, isComplete);
     }
   }, [selectedAction, battle.player?.arena_x, battle.player?.arena_y, battle.enemies]);
+
+  // Process DAMAGE_NUMBER events to create floating damage text
+  useEffect(() => {
+    if (!events || !damageGroupRef.current) return;
+
+    const { arena_width, arena_height } = battle;
+
+    for (const event of events) {
+      if (event.type === 'DAMAGE_NUMBER') {
+        const arenaX = event.data.x as number;
+        const arenaY = event.data.y as number;
+        const amount = event.data.amount as number;
+
+        if (arenaX === undefined || arenaY === undefined || amount === undefined) continue;
+
+        // Convert arena coords to world coords
+        const worldX = (arenaX - arena_width / 2) * TILE_SIZE;
+        const worldZ = (arenaY - arena_height / 2) * TILE_SIZE;
+
+        // Create damage number sprite
+        const canvas = document.createElement('canvas');
+        canvas.width = 128;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d')!;
+
+        // Clear background
+        ctx.clearRect(0, 0, 128, 64);
+
+        // Draw damage number with outline
+        const text = amount.toString();
+        ctx.font = 'bold 48px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Black outline
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 6;
+        ctx.strokeText(text, 64, 32);
+
+        // Red fill for damage
+        ctx.fillStyle = '#ff4444';
+        ctx.fillText(text, 64, 32);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({
+          map: texture,
+          transparent: true,
+          depthTest: false,
+        });
+
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(1.5, 0.75, 1);
+        sprite.position.set(worldX, 1.5, worldZ);
+
+        damageGroupRef.current.add(sprite);
+
+        const dmgNumber: DamageNumber = {
+          id: damageNumberIdRef.current++,
+          x: worldX,
+          z: worldZ,
+          amount,
+          createdAt: Date.now(),
+          sprite,
+        };
+
+        damageNumbersRef.current.push(dmgNumber);
+      }
+    }
+  }, [events, battle.arena_width, battle.arena_height]);
 
   // Skip overview on keypress
   useEffect(() => {
@@ -428,7 +568,7 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       }
     };
 
-    const handleMouseUp = (e: MouseEvent) => {
+    const handleMouseUp = (_e: MouseEvent) => {
       if (isDraggingRef.current) {
         isDraggingRef.current = false;
         container.style.cursor = 'default';
@@ -812,45 +952,171 @@ function addLavaGlow(scene: THREE.Scene, x: number, z: number) {
   scene.add(glow);
 }
 
+// Entity animation state interface (used by component)
+interface EntityAnimState {
+  sprite: THREE.Group;
+  currentX: number;
+  currentZ: number;
+  targetX: number;
+  targetZ: number;
+  lastHp: number;
+}
+
 /**
  * Update entity sprites based on current battle state
+ * Supports smooth transitions by updating target positions
  * Note: Player sprite is NOT rendered in first-person view (we ARE the player)
  */
-function updateEntities(group: THREE.Group, battle: BattleState, showPlayer: boolean = false) {
-  // Clear existing entities
-  while (group.children.length > 0) {
-    const child = group.children[0];
-    group.remove(child);
-    // Dispose of textures/materials to prevent memory leaks
-    child.traverse((obj) => {
-      if (obj instanceof THREE.Sprite) {
-        obj.material.map?.dispose();
-        obj.material.dispose();
-      }
-    });
-  }
-
+function updateEntities(
+  group: THREE.Group,
+  battle: BattleState,
+  showPlayer: boolean = false,
+  animMap?: Map<string, EntityAnimState>
+) {
   const { arena_width, arena_height } = battle;
 
-  // Only add player during overview (showPlayer = true)
-  if (showPlayer && battle.player) {
-    const playerSprite = createEntitySprite(battle.player as BattleEntity, true);
-    const px = (battle.player.arena_x - arena_width / 2) * TILE_SIZE;
-    const pz = (battle.player.arena_y - arena_height / 2) * TILE_SIZE;
-    playerSprite.position.set(px, 0, pz);
-    group.add(playerSprite);
+  // If no animation map provided, fall back to simple mode (clear and recreate)
+  if (!animMap) {
+    // Clear existing entities
+    while (group.children.length > 0) {
+      const child = group.children[0];
+      group.remove(child);
+      child.traverse((obj) => {
+        if (obj instanceof THREE.Sprite) {
+          obj.material.map?.dispose();
+          obj.material.dispose();
+        }
+      });
+    }
+
+    // Only add player during overview (showPlayer = true)
+    if (showPlayer && battle.player) {
+      const playerSprite = createEntitySprite(battle.player as BattleEntity, true);
+      const px = (battle.player.arena_x - arena_width / 2) * TILE_SIZE;
+      const pz = (battle.player.arena_y - arena_height / 2) * TILE_SIZE;
+      playerSprite.position.set(px, 0, pz);
+      group.add(playerSprite);
+    }
+
+    // Add enemies
+    for (const enemy of battle.enemies) {
+      if (enemy.hp > 0) {
+        const enemySprite = createEntitySprite(enemy, false);
+        const ex = (enemy.arena_x - arena_width / 2) * TILE_SIZE;
+        const ez = (enemy.arena_y - arena_height / 2) * TILE_SIZE;
+        enemySprite.position.set(ex, 0, ez);
+        group.add(enemySprite);
+      }
+    }
+    return;
   }
 
-  // Add enemies
-  for (const enemy of battle.enemies) {
-    if (enemy.hp > 0) {
-      const enemySprite = createEntitySprite(enemy, false);
-      const ex = (enemy.arena_x - arena_width / 2) * TILE_SIZE;
-      const ez = (enemy.arena_y - arena_height / 2) * TILE_SIZE;
-      enemySprite.position.set(ex, 0, ez);
-      group.add(enemySprite);
+  // Smart mode: update targets and handle sprite lifecycle
+  const currentIds = new Set<string>();
+
+  // Handle player
+  const playerId = 'player';
+  if (showPlayer && battle.player) {
+    currentIds.add(playerId);
+    const px = (battle.player.arena_x - arena_width / 2) * TILE_SIZE;
+    const pz = (battle.player.arena_y - arena_height / 2) * TILE_SIZE;
+
+    const existing = animMap.get(playerId);
+    if (existing) {
+      // Update target position
+      existing.targetX = px;
+      existing.targetZ = pz;
+      // Recreate sprite if HP changed
+      if (existing.lastHp !== battle.player.hp) {
+        group.remove(existing.sprite);
+        existing.sprite.traverse((obj) => {
+          if (obj instanceof THREE.Sprite) {
+            obj.material.map?.dispose();
+            obj.material.dispose();
+          }
+        });
+        const newSprite = createEntitySprite(battle.player as BattleEntity, true);
+        newSprite.position.set(existing.currentX, 0, existing.currentZ);
+        group.add(newSprite);
+        existing.sprite = newSprite;
+        existing.lastHp = battle.player.hp;
+      }
+    } else {
+      // New entity - create sprite at target position
+      const sprite = createEntitySprite(battle.player as BattleEntity, true);
+      sprite.position.set(px, 0, pz);
+      group.add(sprite);
+      animMap.set(playerId, {
+        sprite,
+        currentX: px,
+        currentZ: pz,
+        targetX: px,
+        targetZ: pz,
+        lastHp: battle.player.hp,
+      });
     }
   }
+
+  // Handle enemies
+  for (const enemy of battle.enemies) {
+    if (enemy.hp > 0) {
+      const enemyId = enemy.entity_id;
+      currentIds.add(enemyId);
+      const ex = (enemy.arena_x - arena_width / 2) * TILE_SIZE;
+      const ez = (enemy.arena_y - arena_height / 2) * TILE_SIZE;
+
+      const existing = animMap.get(enemyId);
+      if (existing) {
+        // Update target position
+        existing.targetX = ex;
+        existing.targetZ = ez;
+        // Recreate sprite if HP changed
+        if (existing.lastHp !== enemy.hp) {
+          group.remove(existing.sprite);
+          existing.sprite.traverse((obj) => {
+            if (obj instanceof THREE.Sprite) {
+              obj.material.map?.dispose();
+              obj.material.dispose();
+            }
+          });
+          const newSprite = createEntitySprite(enemy, false);
+          newSprite.position.set(existing.currentX, 0, existing.currentZ);
+          group.add(newSprite);
+          existing.sprite = newSprite;
+          existing.lastHp = enemy.hp;
+        }
+      } else {
+        // New entity - create sprite at target position
+        const sprite = createEntitySprite(enemy, false);
+        sprite.position.set(ex, 0, ez);
+        group.add(sprite);
+        animMap.set(enemyId, {
+          sprite,
+          currentX: ex,
+          currentZ: ez,
+          targetX: ex,
+          targetZ: ez,
+          lastHp: enemy.hp,
+        });
+      }
+    }
+  }
+
+  // Remove entities that are no longer present
+  const entriesToRemove: string[] = [];
+  animMap.forEach((anim, id) => {
+    if (!currentIds.has(id)) {
+      group.remove(anim.sprite);
+      anim.sprite.traverse((obj) => {
+        if (obj instanceof THREE.Sprite) {
+          obj.material.map?.dispose();
+          obj.material.dispose();
+        }
+      });
+      entriesToRemove.push(id);
+    }
+  });
+  entriesToRemove.forEach(id => animMap.delete(id));
 }
 
 /**

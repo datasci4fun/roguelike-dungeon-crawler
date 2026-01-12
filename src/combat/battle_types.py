@@ -44,6 +44,12 @@ class BattleEntity:
     attack: int
     defense: int
 
+    # Display info (for UI rendering)
+    name: str = ""                    # Entity display name
+    symbol: str = ""                  # Entity symbol for sprite
+    is_elite: bool = False            # Elite enemy flag
+    is_boss: bool = False             # Boss enemy flag
+
     # Battle-specific state
     has_acted: bool = False           # Has taken action this turn
     status_effects: List[Dict[str, Any]] = field(default_factory=list)  # [{name, duration, ...}]
@@ -62,6 +68,10 @@ class BattleEntity:
             'max_hp': self.max_hp,
             'attack': self.attack,
             'defense': self.defense,
+            'name': self.name,
+            'symbol': self.symbol,
+            'is_elite': self.is_elite,
+            'is_boss': self.is_boss,
             'has_acted': self.has_acted,
             'status_effects': [e.copy() for e in self.status_effects],
             'cooldowns': self.cooldowns.copy(),
@@ -81,6 +91,10 @@ class BattleEntity:
             max_hp=data['max_hp'],
             attack=data['attack'],
             defense=data['defense'],
+            name=data.get('name', ''),
+            symbol=data.get('symbol', ''),
+            is_elite=data.get('is_elite', False),
+            is_boss=data.get('is_boss', False),
             has_acted=data.get('has_acted', False),
         )
         entity.status_effects = [e.copy() for e in data.get('status_effects', [])]
@@ -142,6 +156,7 @@ class PendingReinforcement:
     max_hp: int
     attack: int
     defense: int = 0
+    symbol: str = ""                  # Enemy symbol for sprite rendering
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -156,6 +171,7 @@ class PendingReinforcement:
             'max_hp': self.max_hp,
             'attack': self.attack,
             'defense': self.defense,
+            'symbol': self.symbol,
         }
 
     @classmethod
@@ -172,6 +188,7 @@ class PendingReinforcement:
             max_hp=data['max_hp'],
             attack=data['attack'],
             defense=data.get('defense', 0),
+            symbol=data.get('symbol', ''),
         )
 
 
