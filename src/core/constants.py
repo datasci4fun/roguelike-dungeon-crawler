@@ -1135,7 +1135,7 @@ HAZARD_STATS = {
         'damage_per_turn': 0,
         'effect': None,
         'blocks_movement': False,
-        'causes_slide': False,  # Slide mechanic deferred (not yet implemented)
+        'causes_slide': True,  # v6.5.1 low-01: Ice slide mechanic enabled
         'color': 5,  # Cyan
     },
     HazardType.POISON_GAS: {

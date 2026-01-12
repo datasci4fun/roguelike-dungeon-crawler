@@ -130,6 +130,9 @@ class GameEngine:
         self._pending_drop_item = None
         self._pending_drop_index = None
 
+        # v6.5.1 low-01: Ice slide tracking
+        self._last_move_direction: Tuple[int, int] = (0, 0)
+
     # =========================================================================
     # Public API
     # =========================================================================
@@ -336,12 +339,18 @@ class GameEngine:
             player_moved = self.combat_manager.try_move_or_attack(dx, dy)
 
             if player_moved:
+                # v6.5.1: Track movement direction for ice sliding
+                self._last_move_direction = (dx, dy)
+
                 # v4.0: Check for traps at new position
                 self._process_traps()
 
                 # v4.0: Process hazards at new position
                 # Returns True if on slow terrain (deep water)
                 on_slow_terrain = self._process_hazards()
+
+                # v6.5.1 low-01: Handle ice slide mechanic
+                self._process_ice_slide(dx, dy)
 
                 # v4.0: Process player status effects
                 self._process_player_status_effects()
@@ -660,6 +669,83 @@ class GameEngine:
             self.add_message("You wade through deep water...")
             return True
         return False
+
+    def _process_ice_slide(self, dx: int, dy: int):
+        """Handle ice slide mechanic when player steps on ice.
+
+        v6.5.1 low-01: When stepping onto ice, player slides in
+        their movement direction until hitting a wall, non-ice tile,
+        or enemy.
+
+        Args:
+            dx, dy: The movement direction that brought player here
+        """
+        if not self.player or not self.dungeon:
+            return
+
+        # Check if standing on ice that causes sliding
+        if not self.hazard_manager.is_ice_at(self.player.x, self.player.y):
+            return
+
+        hazard = self.hazard_manager.get_hazard_at(self.player.x, self.player.y)
+        if not hazard or not hazard.stats.get('causes_slide', False):
+            return
+
+        # No slide if no movement direction
+        if dx == 0 and dy == 0:
+            return
+
+        slide_count = 0
+        max_slides = 20  # Safety limit to prevent infinite loops
+
+        self.add_message("You slide across the ice!")
+
+        while slide_count < max_slides:
+            next_x = self.player.x + dx
+            next_y = self.player.y + dy
+
+            # Check if next tile is walkable
+            if not self.dungeon.is_walkable(next_x, next_y):
+                # Hit a wall - stop sliding
+                self.add_message("You slam into the wall!")
+                break
+
+            # Check for enemy at next position
+            enemy = self.entity_manager.get_enemy_at(next_x, next_y)
+            if enemy:
+                # Collide with enemy - stop sliding, deal minor damage to both
+                self.add_message(f"You crash into the {enemy.name}!")
+                # Small collision damage
+                collision_damage = 2
+                enemy.health -= collision_damage
+                self.player.health -= collision_damage
+                self.last_attacker_name = "ice collision"
+                self.last_damage_taken = collision_damage
+                break
+
+            # Move to next position
+            self.player.x = next_x
+            self.player.y = next_y
+            slide_count += 1
+
+            # Update FOV after each slide step
+            self.dungeon.update_fov(self.player.x, self.player.y)
+
+            # Check if still on ice
+            if not self.hazard_manager.is_ice_at(self.player.x, self.player.y):
+                # Reached non-ice tile - stop sliding
+                self.add_message("You regain your footing.")
+                break
+
+            # Process traps at each slide position
+            self._process_traps()
+
+            # Check for items
+            self.entity_manager.check_item_pickup(self.player)
+
+        if slide_count >= max_slides:
+            # Safety: shouldn't happen with properly designed maps
+            self.add_message("You finally stop sliding.")
 
     def _process_player_status_effects(self):
         """Process player's active status effects."""
