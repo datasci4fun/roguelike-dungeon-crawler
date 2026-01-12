@@ -499,6 +499,14 @@ export function Presentation() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [exportMode, setExportMode] = useState(false);
 
+  // Add class to body to hide footer
+  useEffect(() => {
+    document.body.classList.add('presentation-page');
+    return () => {
+      document.body.classList.remove('presentation-page');
+    };
+  }, []);
+
   const nextSlide = () => {
     if (currentSlide < SLIDES.length - 1) {
       setCurrentSlide(currentSlide + 1);
@@ -517,6 +525,7 @@ export function Presentation() {
 
   const handleExport = () => {
     setExportMode(true);
+    document.body.classList.add('export-mode');
   };
 
   const handlePrint = () => {
@@ -525,6 +534,7 @@ export function Presentation() {
 
   const handleBack = () => {
     setExportMode(false);
+    document.body.classList.remove('export-mode');
   };
 
   const slide = SLIDES[currentSlide];

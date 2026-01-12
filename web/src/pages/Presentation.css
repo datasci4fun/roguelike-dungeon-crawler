@@ -751,11 +751,59 @@
 }
 
 /* ============================================
+   Hide Layout Footer on Presentation Page
+   ============================================ */
+
+body.presentation-page .footer {
+  display: none !important;
+}
+
+/* Adjust main content to not need footer space */
+body.presentation-page .main {
+  padding-bottom: 0;
+}
+
+/* Ensure header doesn't overlap export controls */
+body.presentation-page .header {
+  position: relative;
+  z-index: 50;
+}
+
+/* ============================================
    Export Mode
    ============================================ */
 
+/* Hide atmospheric overlays on presentation page */
+body.presentation-page .atm-crt-overlay,
+body.presentation-page .atm-vignette {
+  display: none !important;
+}
+
+body.presentation-page .atm-particles {
+  opacity: 0.05 !important;
+}
+
+/* In export mode, hide everything except content */
+body.export-mode .atm-crt-overlay,
+body.export-mode .atm-vignette,
+body.export-mode .atm-particles,
+body.export-mode .atm-fog,
+body.export-mode .scene-background {
+  display: none !important;
+}
+
+body.export-mode .atmospheric-page {
+  background: #0a0a0a !important;
+}
+
+body.export-mode .header {
+  display: none !important;
+}
+
 .presentation.export-mode {
   padding: 0;
+  position: relative;
+  z-index: 200;
 }
 
 .presentation.export-mode .presentation-progress,
@@ -768,12 +816,16 @@
 .presentation.export-mode .slide-container {
   min-height: auto;
   padding: 0;
+  position: relative;
+  z-index: 200;
 }
 
 .presentation.export-mode .export-slides {
   display: flex;
   flex-direction: column;
   gap: 0;
+  position: relative;
+  z-index: 200;
 }
 
 .presentation.export-mode .export-slide-wrapper {
@@ -783,9 +835,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  border-bottom: 1px solid #333;
+  padding: 3rem 2rem;
+  border-bottom: 2px solid #333;
   background: #0a0a0a;
+  position: relative;
+  z-index: 200;
 }
 
 .presentation.export-mode .export-slide-wrapper:last-child {
@@ -794,6 +848,10 @@
 
 .presentation.export-mode .slide {
   animation: none;
+  position: relative;
+  z-index: 200;
+  width: 100%;
+  max-width: 900px;
 }
 
 /* Export button */
@@ -827,12 +885,12 @@
   left: 0;
   right: 0;
   background: #1a1a2e;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #4ade80;
   padding: 1rem 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 300;
+  z-index: 9999;
 }
 
 .export-controls h3 {
