@@ -115,6 +115,19 @@ class Renderer:
         screen_y = world_y - viewport_y
         return 0 <= screen_x < viewport_width and 0 <= screen_y < viewport_height
 
+    def _get_element_color(self, enemy) -> int:
+        """Get the curses color pair for an enemy based on their current element."""
+        from ..core.constants import ElementType, ELEMENT_COLORS
+
+        # Get current element (for cycling elemental enemies)
+        current_element = getattr(enemy, 'current_element', None)
+        if current_element is None:
+            current_element = getattr(enemy, 'element', ElementType.NONE)
+
+        # Map element to color pair
+        color_pair = ELEMENT_COLORS.get(current_element, 3)  # Default to red (color pair 3)
+        return curses.color_pair(color_pair)
+
     def _smart_truncate(self, text: str, max_length: int) -> str:
         """
         Truncate text intelligently, respecting word boundaries.
@@ -590,12 +603,14 @@ class Renderer:
 
                     # Bosses render in bright magenta with bold
                     # Elites render in magenta, regular enemies in red
+                    # Elemental enemies render in their element's color
                     if enemy.is_boss:
                         color = curses.color_pair(6) | curses.A_BOLD
                     elif enemy.is_elite:
                         color = curses.color_pair(6)
                     else:
-                        color = curses.color_pair(3)
+                        # Check for elemental coloring
+                        color = self._get_element_color(enemy)
 
                     # Apply hit animation: flash with reverse video and bold
                     if is_animated:

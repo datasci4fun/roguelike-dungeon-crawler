@@ -335,6 +335,11 @@ class CombatManager:
             # Tick ability cooldowns
             tick_enemy_cooldowns(enemy)
 
+            # Tick element cycling for elemental enemies
+            cycled, new_element, cycle_message = enemy.tick_element_cycle()
+            if cycled and cycle_message:
+                self.game.add_message(cycle_message, important=True)
+
             # Shadow concealment for stealth enemies
             self._process_shadow_concealment(enemy)
 

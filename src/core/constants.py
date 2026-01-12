@@ -172,6 +172,32 @@ class ElementType(Enum):
     DARK = auto()  # For necromancer
 
 
+# Element cycling configuration
+ELEMENT_CYCLE_TURNS = 5  # Turns between element changes
+ELEMENT_CYCLE_ORDER = [ElementType.FIRE, ElementType.ICE, ElementType.LIGHTNING]
+
+# Element weaknesses (attacker element -> defender weakness)
+# If attacking with an element that the defender is weak to, deal bonus damage
+ELEMENT_WEAKNESSES = {
+    ElementType.FIRE: ElementType.ICE,       # Fire is weak to Ice
+    ElementType.ICE: ElementType.FIRE,       # Ice is weak to Fire
+    ElementType.LIGHTNING: ElementType.DARK, # Lightning is weak to Dark
+    ElementType.DARK: ElementType.LIGHTNING, # Dark is weak to Lightning
+}
+
+# Damage multiplier when hitting weakness
+WEAKNESS_DAMAGE_MULTIPLIER = 1.5
+
+# Element colors for visual indicators (curses color pair indices)
+ELEMENT_COLORS = {
+    ElementType.NONE: 7,       # White
+    ElementType.FIRE: 3,       # Red
+    ElementType.ICE: 8,        # Cyan
+    ElementType.LIGHTNING: 4,  # Yellow
+    ElementType.DARK: 6,       # Magenta
+}
+
+
 class Race(Enum):
     """Player races with distinct stat modifiers and traits."""
     HUMAN = auto()

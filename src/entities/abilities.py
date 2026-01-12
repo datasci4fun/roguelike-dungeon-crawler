@@ -306,6 +306,76 @@ BOSS_ABILITIES = {
 }
 
 
+# Element to resistance key mapping
+ELEMENT_RESISTANCE_KEYS = {
+    'fire': 'fire',
+    'ice': 'ice',
+    'lightning': 'lightning',
+    'dark': 'dark',
+}
+
+
+def calculate_elemental_damage(
+    base_damage: int,
+    element_type: str,
+    target,
+    attacker=None,
+) -> Tuple[int, str]:
+    """
+    Calculate damage with elemental weaknesses and resistances.
+
+    Args:
+        base_damage: Base damage before modifiers
+        element_type: Element of the attack ('fire', 'ice', 'lightning', 'dark')
+        target: Entity being attacked (has resistances dict and current_element)
+        attacker: Entity attacking (for weakness checking)
+
+    Returns:
+        Tuple of (final_damage, modifier_message)
+    """
+    from ..core.constants import (
+        ElementType, ELEMENT_WEAKNESSES, WEAKNESS_DAMAGE_MULTIPLIER
+    )
+
+    damage = base_damage
+    message = ""
+
+    # Get target's resistances
+    resistances = getattr(target, 'resistances', {})
+    resistance = resistances.get(element_type, 0.0)
+
+    # Apply resistance reduction
+    if resistance >= 1.0:
+        # Immune - no damage
+        return 0, " (Immune!)"
+    elif resistance > 0:
+        # Partial resistance
+        damage = int(damage * (1.0 - resistance))
+        message = f" (Resisted {int(resistance * 100)}%)"
+
+    # Check for weakness (target's current element is weak to attack element)
+    target_element = getattr(target, 'current_element', None)
+    if target_element:
+        # Map attack element string to ElementType
+        attack_element_map = {
+            'fire': ElementType.FIRE,
+            'ice': ElementType.ICE,
+            'lightning': ElementType.LIGHTNING,
+            'dark': ElementType.DARK,
+        }
+        attack_element = attack_element_map.get(element_type)
+
+        # Check if attack element is what target is weak to
+        if attack_element:
+            weakness = ELEMENT_WEAKNESSES.get(target_element)
+            if weakness == attack_element:
+                # Super effective!
+                damage = int(damage * WEAKNESS_DAMAGE_MULTIPLIER)
+                message = " (Super effective!)"
+
+    return max(1, damage), message
+
+
 def execute_ability(
     ability_name: str,
     boss: 'Enemy',
@@ -675,9 +745,11 @@ def _execute_fire_bolt(
 
     distance = abs(player.x - caster.x) + abs(player.y - caster.y)
     if distance <= ability.range:
-        damage = player.take_damage(ability.damage)
+        # Apply elemental damage calculation
+        final_damage, element_msg = calculate_elemental_damage(ability.damage, 'fire', player, caster)
+        damage = player.take_damage(final_damage)
         burn_msg = player.apply_status_effect(StatusEffectType.BURN, caster.name)
-        return True, f"The {caster.name} hurls a fire bolt for {damage} damage! {burn_msg}", damage
+        return True, f"The {caster.name} hurls a fire bolt for {damage} damage{element_msg}! {burn_msg}", damage
     return False, "", 0
 
 
@@ -693,9 +765,11 @@ def _execute_ice_shard(
 
     distance = abs(player.x - caster.x) + abs(player.y - caster.y)
     if distance <= ability.range:
-        damage = player.take_damage(ability.damage)
+        # Apply elemental damage calculation
+        final_damage, element_msg = calculate_elemental_damage(ability.damage, 'ice', player, caster)
+        damage = player.take_damage(final_damage)
         freeze_msg = player.apply_status_effect(StatusEffectType.FREEZE, caster.name)
-        return True, f"The {caster.name} launches an ice shard for {damage} damage! {freeze_msg}", damage
+        return True, f"The {caster.name} launches an ice shard for {damage} damage{element_msg}! {freeze_msg}", damage
     return False, "", 0
 
 
@@ -709,8 +783,10 @@ def _execute_chain_lightning(
     """Lightning that can jump to nearby enemies (damages player primarily)."""
     distance = abs(player.x - caster.x) + abs(player.y - caster.y)
     if distance <= ability.range:
-        damage = player.take_damage(ability.damage)
-        msg = f"The {caster.name} unleashes chain lightning for {damage} damage!"
+        # Apply elemental damage calculation
+        final_damage, element_msg = calculate_elemental_damage(ability.damage, 'lightning', player, caster)
+        damage = player.take_damage(final_damage)
+        msg = f"The {caster.name} unleashes chain lightning for {damage} damage{element_msg}!"
 
         # Lightning can stun
         from ..core.constants import StatusEffectType
