@@ -180,8 +180,8 @@ class Renderer:
         # Render items (before enemies and player) - only visible
         self._render_items(items, dungeon, vp_x, vp_y, vp_w, vp_h)
 
-        # Render enemies - only visible
-        self._render_enemies(enemies, dungeon, vp_x, vp_y, vp_w, vp_h)
+        # Render enemies - only visible (pass player for stealth detection)
+        self._render_enemies(enemies, dungeon, player, vp_x, vp_y, vp_w, vp_h)
 
         # Render player (always on top)
         self._render_player(player, vp_x, vp_y, vp_w, vp_h)
@@ -546,8 +546,11 @@ class Renderer:
             except curses.error:
                 pass
 
-    def _render_enemies(self, enemies: List[Enemy], dungeon: Dungeon, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
-        """Render all living enemies (only if visible)."""
+    def _render_enemies(self, enemies: List[Enemy], dungeon: Dungeon, player: Player, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
+        """Render all living enemies (only if visible).
+
+        Invisible enemies are hidden unless player is within detection radius (1 tile).
+        """
         for enemy in enemies:
             if not enemy.is_alive():
                 continue
@@ -560,6 +563,17 @@ class Renderer:
             if not dungeon.visible[enemy.y][enemy.x]:
                 continue
 
+            # Check for invisibility - invisible enemies don't render
+            # unless player is adjacent (detection radius of 1)
+            is_invisible = getattr(enemy, 'is_invisible', False)
+            show_shimmer = False
+            if is_invisible:
+                # Detection radius: player can sense nearby invisible enemies
+                distance = max(abs(enemy.x - player.x), abs(enemy.y - player.y))
+                if distance > 1:
+                    continue  # Too far to detect, skip rendering
+                show_shimmer = True  # Close enough to sense a presence
+
             screen_x, screen_y = self._world_to_screen(enemy.x, enemy.y, vp_x, vp_y)
 
             try:
@@ -567,6 +581,13 @@ class Renderer:
                 is_animated = any(anim['entity'] == enemy for anim in self.animations)
 
                 if curses.has_colors():
+                    # Shimmer effect for detected invisible enemies
+                    if show_shimmer:
+                        # Render as dim '?' to indicate sensed presence
+                        color = curses.color_pair(8) | curses.A_DIM  # Cyan, dimmed
+                        self.stdscr.addstr(screen_y, screen_x, '?', color)
+                        continue
+
                     # Bosses render in bright magenta with bold
                     # Elites render in magenta, regular enemies in red
                     if enemy.is_boss:
@@ -582,7 +603,13 @@ class Renderer:
 
                     self.stdscr.addstr(screen_y, screen_x, enemy.symbol, color)
                 else:
-                    # No color: use '!' for boss, '*' for elite, symbol for regular
+                    # No color mode
+                    if show_shimmer:
+                        # Render as '?' for detected invisible enemies
+                        self.stdscr.addstr(screen_y, screen_x, '?', curses.A_DIM)
+                        continue
+
+                    # Use '!' for boss, '*' for elite, symbol for regular
                     if enemy.is_boss:
                         symbol = '!'
                     elif enemy.is_elite:

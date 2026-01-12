@@ -65,6 +65,9 @@ class CombatManager:
             vision_bonus = player.get_vision_bonus() if hasattr(player, 'get_vision_bonus') else 0
             self.game.dungeon.update_fov(player.x, player.y, vision_bonus=vision_bonus)
 
+            # Check for nearby invisible enemies (detection radius)
+            self._check_stealth_detection(player)
+
             # Check for level transitions and item pickups
             self.game.level_manager.check_stairs()
             picked_item = self.game.entity_manager.check_item_pickup(player, self.game.add_message)
@@ -101,6 +104,66 @@ class CombatManager:
             return True
 
         return False
+
+    def _check_stealth_detection(self, player):
+        """Check for nearby invisible enemies and alert player."""
+        detection_radius = 1  # Chebyshev distance for detection
+
+        for enemy in self.game.entity_manager.enemies:
+            if not enemy.is_alive():
+                continue
+
+            is_invisible = getattr(enemy, 'is_invisible', False)
+            if not is_invisible:
+                continue
+
+            # Calculate Chebyshev distance
+            distance = max(abs(enemy.x - player.x), abs(enemy.y - player.y))
+
+            if distance <= detection_radius:
+                # Player senses the invisible enemy
+                self.game.add_message(
+                    "You sense a presence lurking in the shadows nearby...",
+                    important=True
+                )
+                # Only alert once per move (don't spam if multiple stealthed enemies)
+                return
+
+    def _process_shadow_concealment(self, enemy):
+        """
+        Handle automatic stealth concealment for STEALTH behavior enemies.
+
+        Enemies with STEALTH AI auto-hide in shadows (unlit tiles) and
+        become visible when in lit areas.
+        """
+        # Only applies to stealth behavior enemies
+        ai_type = getattr(enemy, 'ai_type', None)
+        if ai_type != AIBehavior.STEALTH:
+            return
+
+        # Check if torch manager is available
+        torch_manager = getattr(self.game, 'torch_manager', None)
+        if not torch_manager:
+            return
+
+        # Check light level at enemy's position
+        is_lit = torch_manager.is_tile_lit(enemy.x, enemy.y)
+        is_invisible = getattr(enemy, 'is_invisible', False)
+
+        if is_lit and is_invisible:
+            # Light reveals the enemy
+            enemy.is_invisible = False
+            self.game.add_message(
+                f"The light reveals {enemy.name} lurking nearby!",
+                important=True
+            )
+        elif not is_lit and not is_invisible:
+            # Darkness conceals the enemy (if not adjacent to player)
+            player = self.game.player
+            distance = max(abs(enemy.x - player.x), abs(enemy.y - player.y))
+            if distance > 1:  # Not adjacent - can hide
+                enemy.is_invisible = True
+                # Silent concealment - player won't know
 
     def _player_attack_enemy(self, enemy):
         """Handle player attacking an enemy."""
@@ -271,6 +334,9 @@ class CombatManager:
 
             # Tick ability cooldowns
             tick_enemy_cooldowns(enemy)
+
+            # Shadow concealment for stealth enemies
+            self._process_shadow_concealment(enemy)
 
             # Boss enemies use their own turn processing
             if enemy.is_boss:
