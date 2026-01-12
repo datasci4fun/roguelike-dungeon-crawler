@@ -150,7 +150,7 @@ const SLIDES: Slide[] = [
     content: {
       title: 'Building a Full Game with AI',
       subtitle: 'A Solo Developer Case Study',
-      meta: 'AI Usage & Side Projects • Jan 17, 2025',
+      meta: 'AI Usage & Side Projects • Jan 17, 2026',
     },
   },
   {
@@ -199,10 +199,10 @@ const SLIDES: Slide[] = [
       section: '2. AI Usage Summary',
       title: 'Frequency',
       value: 'Daily',
-      subtitle: 'Multiple sessions per day over several months',
+      subtitle: 'Multiple sessions per day over two weeks',
       details: [
-        '100+ development sessions',
-        '4-8 hours average per session',
+        'Intensive development sprint (Dec 30 - Jan 12)',
+        'Multiple Claude Code sessions daily',
         'Continuous iteration and refinement',
       ],
     },
