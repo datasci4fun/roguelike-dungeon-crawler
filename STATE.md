@@ -1,14 +1,14 @@
 # Project State
 
 **Last Updated:** 2026-01-11
-**Branch:** feature/v6.2-boss-heuristics
-**Version:** v6.2.0 (Tactical Depth) - IN PROGRESS
+**Branch:** develop
+**Version:** v6.2.0 (Tactical Depth) - SHIPPED
 
 ---
 
-## v6.2.0 IN PROGRESS (2026-01-11) - Tactical Depth
+## v6.2.0 SHIPPED (2026-01-11) - Tactical Depth
 
-**Branch:** `feature/v6.2-boss-heuristics` (Slice 3 complete, ready to merge)
+**Merge Commit:** feature/v6.2-tactical-depth → develop
 
 ### Core Concept
 **Deterministic AI scoring and boss-specific heuristics for learnable, fair combat.**
@@ -89,8 +89,8 @@ All 28 tests pass:
 - Boss-specific behavior tests
 
 ### Next Steps
-- Merge to develop
-- Decide on Slice 4: Ranged policy vs Line of Sight
+- v6.2.1: Option A - Kiting/spacing heuristics for ranged enemies (recommended)
+- v6.3+: Option B - Bresenham LoS + cover tiles (if needed)
 
 ---
 
