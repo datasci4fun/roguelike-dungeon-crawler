@@ -195,7 +195,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     title: 'Error Boundaries',
     description: 'Add React error boundaries for graceful failure handling',
     priority: 'high',
-    status: 'planned',
+    status: 'completed',
     category: ['frontend'],
     effort: 'small',
     details: [
@@ -203,6 +203,9 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
       'Display user-friendly error messages',
       'Log errors for debugging',
       'Recovery options where possible',
+      'Specialized Graphics3DErrorBoundary for WebGL',
+      'Root-level and component-level boundaries',
+      'Completed 2026-01-12',
     ],
   },
 
