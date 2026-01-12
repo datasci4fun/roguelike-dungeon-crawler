@@ -11,6 +11,50 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* ========================================================================
+   * Skyfall Seed Atmosphere Variables
+   * ======================================================================== */
+
+  /* Primary palette */
+  --sf-gold: #ffd700;
+  --sf-gold-dim: #b8960a;
+  --sf-gold-glow: rgba(255, 215, 0, 0.4);
+  --sf-green-glow: #4ade80;
+  --sf-green-dim: rgba(74, 222, 128, 0.6);
+  --sf-field-purple: #8b5cf6;
+  --sf-field-purple-dim: rgba(139, 92, 246, 0.4);
+  --sf-blood-red: #8b0000;
+  --sf-blood-glow: rgba(139, 0, 0, 0.5);
+
+  /* Text hierarchy */
+  --sf-text-primary: #e0e0e0;
+  --sf-text-secondary: #a0a0a0;
+  --sf-text-dim: #707070;
+  --sf-text-muted: #505050;
+
+  /* Surfaces */
+  --sf-bg-solid: #0a0a0f;
+  --sf-bg-dark: rgba(10, 10, 15, 0.85);
+  --sf-bg-darker: rgba(5, 5, 8, 0.92);
+  --sf-bg-translucent: rgba(15, 15, 20, 0.7);
+
+  /* Borders and glows */
+  --sf-border-subtle: rgba(74, 222, 128, 0.15);
+  --sf-border-glow: rgba(74, 222, 128, 0.3);
+  --sf-border-focus: rgba(74, 222, 128, 0.6);
+  --sf-shadow-glow: 0 0 20px rgba(74, 222, 128, 0.15);
+  --sf-shadow-gold: 0 0 15px rgba(255, 215, 0, 0.2);
+
+  /* Animation timing */
+  --sf-reveal-duration: 560ms;
+  --sf-fade-duration: 800ms;
+  --sf-transition-fast: 150ms;
+  --sf-transition-normal: 300ms;
+
+  /* Phosphor text effect */
+  --sf-phosphor-blur: 0.5px;
+  --sf-phosphor-glow: 0 0 8px var(--sf-gold-glow);
 }
 
 a {

@@ -1,15 +1,41 @@
-.auth-page {
+/**
+ * Auth Pages - Login & Register
+ * Full scene treatment with atmospheric backgrounds
+ */
+
+/* ============================================
+   Scene Layout
+   ============================================ */
+
+.auth-scene {
+  position: relative;
+  z-index: 10;
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  min-height: 60vh;
+  justify-content: center;
+  padding: 2rem;
 }
 
+.auth-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* ============================================
+   Auth Card (Terminal-style)
+   ============================================ */
+
 .auth-card {
-  background: #1a1a2e;
+  background: rgba(10, 10, 15, 0.85);
+  backdrop-filter: blur(8px);
   padding: 2rem;
   border-radius: 8px;
-  border: 1px solid #333;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  box-shadow:
+    0 0 30px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(74, 222, 128, 0.05);
   width: 100%;
   max-width: 400px;
 }
@@ -18,64 +44,103 @@
   text-align: center;
   color: #4ade80;
   margin-bottom: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
+/* ============================================
+   Form Elements
+   ============================================ */
+
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-group label {
   display: block;
   margin-bottom: 0.5rem;
   color: #a0a0a0;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
 }
 
 .form-group input {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #333;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(74, 222, 128, 0.2);
   border-radius: 4px;
-  background: #0a0a0a;
+  background: rgba(0, 0, 0, 0.4);
   color: #e0e0e0;
   font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.form-group input::placeholder {
+  color: #8a8a8a;
+  font-style: italic;
 }
 
 .form-group input:focus {
   outline: none;
   border-color: #4ade80;
+  box-shadow: 0 0 15px rgba(74, 222, 128, 0.15);
+  background: rgba(0, 0, 0, 0.6);
 }
 
+/* ============================================
+   Error Message
+   ============================================ */
+
 .error-message {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid #ef4444;
-  color: #ef4444;
-  padding: 0.75rem;
+  background: rgba(220, 38, 38, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.5);
+  color: #f87171;
+  padding: 0.85rem 1rem;
   border-radius: 4px;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
   text-align: center;
+  font-size: 0.9rem;
 }
+
+/* ============================================
+   Buttons
+   ============================================ */
 
 .btn-full {
   width: 100%;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
 }
 
-.auth-footer {
-  text-align: center;
-  margin-top: 1.5rem;
-  color: #a0a0a0;
+.btn-primary {
+  background: #4ade80;
+  color: #0a0a0f;
+  border: none;
+  padding: 0.85rem 1.5rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
 }
 
-.auth-footer a {
-  color: #4ade80;
-  text-decoration: none;
+.btn-primary:hover:not(:disabled) {
+  background: #22c55e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
 }
 
-.auth-footer a:hover {
-  text-decoration: underline;
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-/* Demo section */
+/* ============================================
+   Demo Section
+   ============================================ */
+
 .demo-section {
   margin-top: 1.5rem;
   padding-top: 1rem;
@@ -92,31 +157,34 @@
 .demo-divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.2);
 }
 
 .demo-divider span {
   padding: 0 1rem;
-  color: #666;
-  font-size: 0.875rem;
+  color: #8a8a8a;
+  font-size: 0.8rem;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .btn-demo {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
   color: white;
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.5rem;
   border-radius: 4px;
   font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  letter-spacing: 0.05em;
 }
 
 .btn-demo:hover:not(:disabled) {
-  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
 }
 
 .btn-demo:disabled {
@@ -127,6 +195,60 @@
 .demo-hint {
   text-align: center;
   margin-top: 0.75rem;
-  color: #666;
+  color: #8a8a8a;
   font-size: 0.8rem;
+  font-style: italic;
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+.auth-footer {
+  text-align: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(74, 222, 128, 0.1);
+  color: #888;
+  font-size: 0.9rem;
+}
+
+.auth-footer a {
+  color: #4ade80;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.auth-footer a:hover {
+  color: #22c55e;
+  text-shadow: 0 0 10px rgba(74, 222, 128, 0.3);
+}
+
+/* ============================================
+   Legacy .auth-page support (for non-scene pages)
+   ============================================ */
+
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 480px) {
+  .auth-scene {
+    padding: 1rem;
+  }
+
+  .auth-card {
+    padding: 1.5rem;
+  }
+
+  .auth-header {
+    margin-bottom: 1.5rem;
+  }
 }
