@@ -85,7 +85,7 @@ python main.py
 
 ## Built With AI
 
-This project was built entirely with AI assistance in approximately two weeks:
+v1.0 through v6.4.0 was built entirely with AI assistance in approximately two weeks (Dec 30, 2025 – Jan 12, 2026):
 
 - **Claude Opus 4.5** — Architecture, code, debugging
 - **ChatGPT 5.2** — Lore, writing, design
