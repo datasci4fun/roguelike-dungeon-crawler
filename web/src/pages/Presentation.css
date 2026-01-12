@@ -749,3 +749,234 @@
     font-size: 1.1rem;
   }
 }
+
+/* ============================================
+   Export Mode
+   ============================================ */
+
+.presentation.export-mode {
+  padding: 0;
+}
+
+.presentation.export-mode .presentation-progress,
+.presentation.export-mode .presentation-nav,
+.presentation.export-mode .keyboard-hint,
+.presentation.export-mode .export-btn {
+  display: none;
+}
+
+.presentation.export-mode .slide-container {
+  min-height: auto;
+  padding: 0;
+}
+
+.presentation.export-mode .export-slides {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.presentation.export-mode .export-slide-wrapper {
+  page-break-after: always;
+  page-break-inside: avoid;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  border-bottom: 1px solid #333;
+  background: #0a0a0a;
+}
+
+.presentation.export-mode .export-slide-wrapper:last-child {
+  border-bottom: none;
+}
+
+.presentation.export-mode .slide {
+  animation: none;
+}
+
+/* Export button */
+.export-btn {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.export-btn:hover {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: #4ade80;
+}
+
+/* Export controls bar */
+.export-controls {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #1a1a2e;
+  border-bottom: 1px solid #333;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 300;
+}
+
+.export-controls h3 {
+  margin: 0;
+  color: #e0e0e0;
+  font-size: 1rem;
+}
+
+.export-controls-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.export-controls button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.export-controls .print-btn {
+  background: #4ade80;
+  border: none;
+  color: #0a0a0a;
+  font-weight: 500;
+}
+
+.export-controls .print-btn:hover {
+  background: #22c55e;
+}
+
+.export-controls .back-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: #a0a0a0;
+}
+
+.export-controls .back-btn:hover {
+  border-color: #666;
+  color: #e0e0e0;
+}
+
+.presentation.export-mode .export-slides {
+  margin-top: 60px;
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  .export-controls {
+    display: none !important;
+  }
+
+  .presentation.export-mode .export-slide-wrapper {
+    background: white !important;
+    border-bottom: none !important;
+    min-height: 100vh;
+  }
+
+  .presentation.export-mode .slide {
+    color: black !important;
+  }
+
+  .presentation.export-mode .slide h1,
+  .presentation.export-mode .slide h2,
+  .presentation.export-mode .slide h3,
+  .presentation.export-mode .slide h4 {
+    color: #1a1a1a !important;
+  }
+
+  .presentation.export-mode .section-label {
+    background: #e8f5e9 !important;
+    color: #2e7d32 !important;
+  }
+
+  .presentation.export-mode .slide-title h1 {
+    color: #2e7d32 !important;
+    text-shadow: none !important;
+  }
+
+  .presentation.export-mode .highlight-value {
+    color: #2e7d32 !important;
+    text-shadow: none !important;
+  }
+
+  .presentation.export-mode .basic-item,
+  .presentation.export-mode .check-item,
+  .presentation.export-mode .usecase-item,
+  .presentation.export-mode .quality-card,
+  .presentation.export-mode .rec-item,
+  .presentation.export-mode .bullet-item,
+  .presentation.export-mode .stat,
+  .presentation.export-mode .showcase-helped,
+  .presentation.export-mode .showcase-lesson,
+  .presentation.export-mode .column {
+    background: #f5f5f5 !important;
+    border-color: #ddd !important;
+  }
+
+  .presentation.export-mode .check-item.checked {
+    background: #e8f5e9 !important;
+    border-color: #a5d6a7 !important;
+  }
+
+  .presentation.export-mode .comparison-list li {
+    background: #f5f5f5 !important;
+  }
+
+  .presentation.export-mode .slide-comparison.slow h2 {
+    color: #c62828 !important;
+  }
+
+  .presentation.export-mode .slide-comparison.fast h2 {
+    color: #2e7d32 !important;
+  }
+
+  .presentation.export-mode .checkbox,
+  .presentation.export-mode .check-note,
+  .presentation.export-mode .ai-role,
+  .presentation.export-mode .stat-value,
+  .presentation.export-mode .bullet-label,
+  .presentation.export-mode .story-icon,
+  .presentation.export-mode .usecase-number,
+  .presentation.export-mode .impact {
+    color: #2e7d32 !important;
+  }
+
+  .presentation.export-mode p,
+  .presentation.export-mode li,
+  .presentation.export-mode span {
+    color: #333 !important;
+  }
+
+  .presentation.export-mode .cta-link {
+    background: #e8f5e9 !important;
+    border-color: #a5d6a7 !important;
+    color: #2e7d32 !important;
+  }
+}

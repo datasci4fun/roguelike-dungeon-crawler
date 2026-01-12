@@ -497,6 +497,7 @@ const SLIDES: Slide[] = [
 
 export function Presentation() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [exportMode, setExportMode] = useState(false);
 
   const nextSlide = () => {
     if (currentSlide < SLIDES.length - 1) {
@@ -514,7 +515,53 @@ export function Presentation() {
     setCurrentSlide(index);
   };
 
+  const handleExport = () => {
+    setExportMode(true);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleBack = () => {
+    setExportMode(false);
+  };
+
   const slide = SLIDES[currentSlide];
+
+  // Export mode - show all slides for printing
+  if (exportMode) {
+    return (
+      <AtmosphericPage
+        backgroundType="underground"
+        particles={{ type: 'dust', count: 5, speed: 'slow', opacity: 0.05 }}
+        crt={false}
+      >
+        <div className="presentation export-mode">
+          <div className="export-controls">
+            <h3>Export Preview — {SLIDES.length} slides</h3>
+            <div className="export-controls-buttons">
+              <button className="back-btn" onClick={handleBack}>
+                ← Back to Presentation
+              </button>
+              <button className="print-btn" onClick={handlePrint}>
+                Print / Save as PDF
+              </button>
+            </div>
+          </div>
+          <div className="slide-container">
+            <div className="export-slides">
+              {SLIDES.map((s) => (
+                <div key={s.id} className="export-slide-wrapper">
+                  <SlideRenderer slide={s} />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </AtmosphericPage>
+    );
+  }
 
   return (
     <AtmosphericPage
@@ -523,6 +570,11 @@ export function Presentation() {
       crt={false}
     >
       <div className="presentation">
+        {/* Export button */}
+        <button className="export-btn" onClick={handleExport}>
+          Export / Print
+        </button>
+
         {/* Progress bar */}
         <div className="presentation-progress">
           <div
