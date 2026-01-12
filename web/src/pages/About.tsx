@@ -38,7 +38,7 @@ const TECH_STACK = {
   ],
 };
 
-// AI models used
+// AI models/tools used
 const AI_MODELS = [
   {
     name: 'Claude Opus 4.5',
@@ -51,6 +51,7 @@ const AI_MODELS = [
       'FastAPI backend and database schema',
       'Cutscene engine and cinematic system',
       'CSS styling and responsive design',
+      'Procedural sound effects (Web Audio API)',
       'Bug fixes and optimization',
     ],
     color: '#d4a574',
@@ -65,9 +66,32 @@ const AI_MODELS = [
       'UI/UX design consultation',
       'Game balance suggestions',
       'ASCII art generation',
-      'Sound effect descriptions',
     ],
     color: '#74d4a5',
+  },
+  {
+    name: 'Suno v4.5',
+    company: 'Suno AI',
+    role: 'Music Generation',
+    contributions: [
+      'All 16 soundtrack tracks',
+      'Biome-specific ambient music',
+      'Boss battle themes',
+      'Victory and death cinematics',
+      'Menu and exploration themes',
+    ],
+    color: '#a574d4',
+  },
+  {
+    name: 'DALL-E 3',
+    company: 'OpenAI',
+    role: 'Visual Assets',
+    contributions: [
+      'Dungeon tileset generation',
+      'Environment textures',
+      'Biome-specific visual themes',
+    ],
+    color: '#d47474',
   },
 ];
 
@@ -146,7 +170,7 @@ export function About() {
         <section className="about-section solo-section">
           <h2 className="section-title">
             <span className="title-decoration">═══</span>
-            One Human, Two AIs
+            One Human, Four AIs
             <span className="title-decoration">═══</span>
           </h2>
           <div className="solo-content">
@@ -156,8 +180,8 @@ export function About() {
                 <h3>Solo Developer</h3>
                 <p>
                   One person. No team. No contractors. Just a single human with a vision,
-                  directing two AI models to build something that would typically require
-                  a full development studio.
+                  directing four AI tools to build something that would typically require
+                  a full development studio—in just two weeks.
                 </p>
               </div>
             </div>
@@ -176,7 +200,7 @@ export function About() {
             <span className="title-decoration">═══</span>
           </h2>
           <p className="section-intro">
-            Two frontier AI models, guided by one human, built this game from the ground up.
+            Four AI tools, guided by one human, built this game from the ground up.
           </p>
           <div className="ai-models">
             {AI_MODELS.map((model) => (
@@ -380,7 +404,7 @@ export function About() {
             Built with AI. Refined with care. Shipped with pride.
           </p>
           <p className="footer-models">
-            Claude Opus 4.5 (Anthropic) + ChatGPT 5.2 (OpenAI)
+            Claude Opus 4.5 + ChatGPT 5.2 + Suno v4.5 + DALL-E 3
           </p>
         </footer>
       </div>

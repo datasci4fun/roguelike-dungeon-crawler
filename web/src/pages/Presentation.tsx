@@ -172,10 +172,9 @@ const SLIDES: Slide[] = [
       title: 'Tools Used',
       items: [
         { label: 'Claude (Opus 4.5)', checked: true, note: 'Primary — architecture, code, debugging' },
-        { label: 'ChatGPT (5.2)', checked: true, note: 'Creative — lore, writing, design consultation' },
-        { label: 'GitHub Copilot', checked: false },
-        { label: 'Cursor / AI IDE', checked: false },
-        { label: 'Local Models', checked: false },
+        { label: 'ChatGPT (5.2)', checked: true, note: 'Creative — lore, writing, design' },
+        { label: 'Suno v4.5', checked: true, note: 'All 16 music tracks' },
+        { label: 'DALL-E 3', checked: true, note: 'Tileset generation' },
       ],
     },
   },
@@ -298,15 +297,16 @@ const SLIDES: Slide[] = [
       stats: [
         { label: 'Lines of Code', value: '50,000+' },
         { label: 'Components', value: '80+' },
-        { label: 'Development Time', value: '~3 months' },
+        { label: 'Development Time', value: '~2 weeks' },
         { label: 'Human Developers', value: '1' },
       ],
       aiHelped: [
         'Core game architecture (BSP dungeon generation, combat system)',
         'Full React frontend with Three.js 3D rendering',
         'FastAPI backend with JWT auth and WebSockets',
-        'Cinematic cutscene engine',
-        'All CSS styling and responsive design',
+        'Cinematic cutscene engine with procedural SFX',
+        'All 16 music tracks (Suno v4.5)',
+        'Tileset art generation (DALL-E 3)',
         'Lore writing and world-building',
       ],
       lesson: 'AI excels when given clear direction and iterative feedback. The human provides vision and quality control; the AI provides execution speed.',
@@ -365,7 +365,7 @@ const SLIDES: Slide[] = [
       bullets: [
         {
           label: 'What I Did',
-          text: 'Built a complete 50k+ line game as a solo developer using Claude and ChatGPT — proving AI can produce production-quality code, not just snippets.',
+          text: 'Built a complete 50k+ line game as a solo developer using 4 AI tools (Claude, ChatGPT, Suno, DALL-E) in just 2 weeks — proving AI can produce production-quality results.',
         },
         {
           label: 'What I Learned',
