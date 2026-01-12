@@ -13,6 +13,7 @@ import './Presentation.css';
 interface TitleContent {
   title: string;
   subtitle: string;
+  author: string;
   meta: string;
 }
 
@@ -150,6 +151,7 @@ const SLIDES: Slide[] = [
     content: {
       title: 'Building a Full Game with AI',
       subtitle: 'A Solo Developer Case Study',
+      author: 'Blixa Markham a.k.a. DataSci4Fun',
       meta: 'AI Usage & Side Projects • Jan 17, 2026',
     },
   },
@@ -571,9 +573,17 @@ export function Presentation() {
           </div>
           <div className="slide-container">
             <div className="export-slides">
-              {SLIDES.map((s) => (
+              {SLIDES.map((s, index) => (
                 <div key={s.id} className="export-slide-wrapper">
+                  <div className="export-header">
+                    <span className="export-header-title">Building a Full Game with AI</span>
+                    <span className="export-header-author">Blixa Markham</span>
+                  </div>
                   <SlideRenderer slide={s} />
+                  <div className="export-footer">
+                    <span className="export-footer-event">AI Usage & Side Projects • Jan 17, 2026</span>
+                    <span className="export-footer-page">Page {index + 1} of {SLIDES.length}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -678,6 +688,7 @@ function SlideRenderer({ slide }: { slide: Slide }) {
         <div className="slide slide-title">
           <h1>{content.title}</h1>
           <p className="subtitle">{content.subtitle}</p>
+          <p className="author">{content.author}</p>
           <span className="meta">{content.meta}</span>
         </div>
       );
