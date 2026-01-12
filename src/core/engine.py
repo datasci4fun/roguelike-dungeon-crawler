@@ -453,6 +453,14 @@ class GameEngine:
         for msg in messages:
             self.add_message(msg, MessageCategory.SYSTEM, MessageImportance.IMPORTANT)
 
+        # Spawn champion trial enemy if triggered
+        if self.ghost_manager.has_pending_trial():
+            trial_messages = self.ghost_manager.spawn_champion_trial(
+                self.dungeon, self.entity_manager
+            )
+            for msg in trial_messages:
+                self.add_message(msg, MessageCategory.COMBAT, MessageImportance.IMPORTANT)
+
         # Track newly triggered ghosts in completion ledger
         if self.completion_ledger:
             post_triggered = {g.ghost_type.name for g in self.ghost_manager.ghosts if g.triggered}

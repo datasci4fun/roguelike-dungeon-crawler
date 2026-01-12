@@ -124,6 +124,18 @@ class CombatManager:
         # Use new player_attack with ability bonuses
         damage, enemy_died, bonus_message = player_attack(player, enemy)
 
+        # Apply Champion's Blessing damage boost (+20%)
+        champion_blessing_msg = ""
+        if hasattr(player, 'champion_blessing') and player.champion_blessing > 0:
+            bonus_damage = int(damage * 0.2)
+            damage += bonus_damage
+            enemy.health -= bonus_damage  # Apply extra damage
+            enemy_died = enemy.health <= 0
+            player.champion_blessing -= 1
+            champion_blessing_msg = f"Champion's Blessing! (+{bonus_damage}) "
+            if player.champion_blessing == 0:
+                champion_blessing_msg += "[Blessing fades] "
+
         # Use enemy name (with "Elite" prefix for elites, boss uses full name)
         if enemy.is_boss:
             enemy_name = f"The {enemy.name}"
@@ -132,9 +144,9 @@ class CombatManager:
         else:
             enemy_name = enemy.name
 
-        # Prepend bonus message (RAGE!, CRITICAL!, etc.)
+        # Prepend bonus message (RAGE!, CRITICAL!, Champion's Blessing, etc.)
         base_message = get_combat_message("You", enemy_name, damage, enemy_died)
-        message = bonus_message + base_message if bonus_message else base_message
+        message = champion_blessing_msg + bonus_message + base_message if bonus_message else champion_blessing_msg + base_message
         self.game.add_message(message)
 
         # Emit combat events (renderer will consume these)
@@ -168,6 +180,14 @@ class CombatManager:
                     self.game.add_message(f"LEVEL UP! You are now level {player.level}!")
                     self.game.add_message(f"HP: {player.max_health}, ATK: {player.attack_damage}")
                     self.game.show_hint("first_level_up")
+
+            # Check for champion trial completion
+            if hasattr(self.game, 'ghost_manager') and self.game.ghost_manager:
+                trial_messages = self.game.ghost_manager.check_trial_completion(
+                    self.game.entity_manager, player
+                )
+                for msg in trial_messages:
+                    self.game.add_message(msg)
 
     def _handle_boss_death(self, boss):
         """Handle boss death: XP, loot drops, and messages."""

@@ -88,16 +88,17 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'crit-02',
     title: 'Ghost Victory Behaviors',
-    description: 'Implement Beacon/Champion/Archivist ghost behaviors that the UI already promises',
+    description: 'All victory ghost behaviors now fully implemented',
     priority: 'critical',
-    status: 'planned',
+    status: 'completed',
     category: ['backend', 'multiplayer'],
     effort: 'medium',
     details: [
-      'Beacon ghosts should guide players (reveal paths)',
-      'Champion ghosts should offer combat trials',
-      'Archivist ghosts should reveal hidden areas',
-      'UI already displays these ghost types',
+      'Beacon: Points toward stairs with directional guidance',
+      'Champion: +3 HP when low health OR combat trial (elite enemy + reward)',
+      'Archivist: Reveals tiles (6 radius in lore zones, 4 elsewhere)',
+      'Champion trial rewards: +5 HP and +20% damage for 3 combats',
+      'Completed 2026-01-12',
     ],
   },
 
