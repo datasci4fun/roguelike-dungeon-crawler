@@ -1,8 +1,71 @@
 # Project State
 
 **Last Updated:** 2026-01-12
-**Branch:** develop
-**Version:** v6.3.1 (Battle Polish) - SHIPPED
+**Branch:** master
+**Version:** v6.4.0 (Frontend Lore Alignment) - SHIPPED
+
+---
+
+## v6.4.0 SHIPPED (2026-01-12) - Frontend Lore Alignment
+
+**Merge Commit:** feature/frontend-lore-alignment → develop → master (PR #19, #20)
+
+### Core Concept
+**Immersive pre-game experience aligned with Skyfall Seed lore, plus AI Usage Case Study presentation.**
+
+Complete redesign of Home, Login, Register, and CharacterCreation pages with atmospheric effects, lore integration, and cinematic polish. New About page showcasing AI-built attribution. New Presentation page for Jan 17 share-out.
+
+### Key Features
+
+#### AtmosphericPage Component
+- Reusable wrapper with layered effects (z-index stacking)
+- Parallax backgrounds (landing, entrance, kingdom, underground)
+- Particle systems (dust, embers, mist)
+- CRT scanline overlay with intensity options
+- Fog and vignette layers
+- Optional Three.js canvas layer
+
+#### PhosphorHeader Component
+- Animated phosphor text reveals
+- Multiple styles (dramatic, emphasis, normal, whisper)
+- Configurable delays and callbacks
+
+#### DungeonPortal3D Component
+- Three.js animated dungeon entrance
+- Flickering torch lights
+- Swirling fog with UV animation
+- Field glow emanating from portal
+
+#### Page Redesigns
+- **Home**: Skyfall Seed lore, floor descriptions, rotating quotes
+- **Login**: "Resume Your Descent" with portal background
+- **Register**: "Begin Your Legend" with kingdom parallax
+- **CharacterCreation**: Race/class lore integration
+
+#### New Pages
+- **About**: "Built by AI" technical showcase (4 AI credits, stats, philosophy)
+- **Features**: Game features overview
+- **Presentation**: 23-slide AI Usage Case Study
+  - Export/print functionality for PDF
+  - Headers (title + author) and footers (event + page numbers)
+  - Title page isolation with page breaks
+  - Author: Blixa Markham a.k.a. DataSci4Fun
+
+### Implementation Files
+
+| File | Purpose |
+|------|---------|
+| `web/src/components/AtmosphericPage/` | Atmospheric wrapper component |
+| `web/src/components/PhosphorHeader/` | Phosphor text reveals |
+| `web/src/components/DungeonPortal3D/` | Three.js portal background |
+| `web/src/data/loreSkyfall.ts` | Lore data (quotes, floors, races, classes) |
+| `web/src/pages/Home.tsx` | Redesigned landing page |
+| `web/src/pages/Login.tsx` | Atmospheric login |
+| `web/src/pages/Register.tsx` | Atmospheric register |
+| `web/src/pages/CharacterCreation.tsx` | Lore-enhanced creation |
+| `web/src/pages/About.tsx` | AI attribution page |
+| `web/src/pages/Features.tsx` | Features overview |
+| `web/src/pages/Presentation.tsx` | Case study presentation |
 
 ---
 

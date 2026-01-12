@@ -2,19 +2,24 @@
 
 Quick handoff document for AI assistants.
 
-**Last Session:** 2026-01-09
-**Version:** v5.3.0
+**Last Session:** 2026-01-12
+**Version:** v6.4.0
 **Branch:** master (clean)
 
 ---
 
 ## What Was Done
 
-- Death cutscene system (5 scenes, 3 fate variants, death cam, overlays)
-- Victory cutscene system (3 scenes, 3 legacy variants)
-- Ghost lore panels tied to cutscene fate/legacy variants
-- File-based cinematic SFX with procedural fallback
-- PR #18 merged, v5.3.0 tagged and released
+- Frontend Lore Alignment feature complete
+- AtmosphericPage, PhosphorHeader, DungeonPortal3D components
+- Redesigned Home, Login, Register, CharacterCreation pages
+- New About page ("Built by AI" showcase)
+- New Features page
+- New Presentation page (23-slide AI Usage Case Study)
+  - Export/print functionality for PDF
+  - Headers/footers with author and page numbers
+  - Author: Blixa Markham a.k.a. DataSci4Fun
+- PR #19 merged to develop, PR #20 merged to master
 
 ---
 
@@ -22,58 +27,61 @@ Quick handoff document for AI assistants.
 
 ```
 Branch: master (clean)
-Tag: v5.3.0
+Version: v6.4.0
 Remote: origin synced
-Local branches: master, develop
 ```
 
 ---
 
-## Testing Checklist (Not Yet Verified)
+## Key New Pages
 
-- [ ] Intro cutscene: Begin button appears only on intro
-- [ ] Death cutscene: full sequence, random fate, ghost lore panel
-- [ ] Victory cutscene: full sequence, random legacy, lore panel
-- [ ] Skip works on both cutscenes (no UI flash)
-- [ ] 3D death camera effect triggers (if 3D mode enabled)
-- [ ] Audio crossfades correctly on game end
+| Route | Purpose |
+|-------|---------|
+| `/` | Redesigned Home with Skyfall Seed lore |
+| `/about` | "Built by AI" technical showcase |
+| `/features` | Game features overview |
+| `/presentation` | AI Usage Case Study (Jan 17 share-out) |
 
 ---
 
 ## Ready to Work On
 
-### Option 1: Victorious Ghost Behavior (GPT's suggestion)
-The UI now sets expectation for different ghost types:
+### Option 1: Victorious Ghost Behavior
+The UI sets expectation for different ghost types:
 - **Beacon**: Guide ghost (reveals paths)
 - **Champion**: Combat trial ghost (challenges player)
 - **Archivist**: Secret-keeper ghost (reveals hidden areas)
 
 Would require backend work to spawn ghosts based on `GhostSummary.victory` + legacy type.
 
-### Option 2: Database Saves (v5.4.0 roadmap)
+### Option 2: Database Saves (v6.5.0 roadmap)
 - Persist game state to PostgreSQL
 - Save on quit (auto-save)
 - Load saved game
 - Multiple save slots per account
 
-### Option 3: Deferred Features
-- Weather effects (rain/dripping)
-- Ambient sounds
-- 3D tile variants
+### Option 3: 3D Asset Pipeline Research
+- CLI-based workflow for AI-generated 3D models
+- Integration with Meshy, Tripo, or Rodin APIs
+- Replace procedural geometry with actual 3D assets
+
+### Option 4: Battle System Polish
+- Additional ability effects
+- More arena templates
+- Boss phase transitions
 
 ---
 
-## Key Locations (Cinematics)
+## Key Locations (Frontend)
 
 | Purpose | Location |
 |---------|----------|
-| Cutscene engine | `web/src/cutscenes/engine/` |
-| Death scenes | `web/src/cutscenes/game_over/scenes/` |
-| Victory scenes | `web/src/cutscenes/victory/scenes/` |
-| Death wrapper | `web/src/components/GameOverCutscene.tsx` |
-| Victory wrapper | `web/src/components/VictoryCutscene.tsx` |
-| Ghost lore panels | `web/src/components/*GhostLore.tsx` |
-| Death camera | `web/src/components/SceneRenderer/FirstPersonRenderer3D.tsx` |
+| Atmospheric wrapper | `web/src/components/AtmosphericPage/` |
+| Phosphor text | `web/src/components/PhosphorHeader/` |
+| 3D portal | `web/src/components/DungeonPortal3D/` |
+| Lore data | `web/src/data/loreSkyfall.ts` |
+| Presentation | `web/src/pages/Presentation.tsx` |
+| About page | `web/src/pages/About.tsx` |
 
 ---
 
@@ -87,7 +95,7 @@ cd web && npm run dev
 python main.py
 
 # Type check
-cd web && yarn tsc --noEmit
+cd web && npm run build
 
 # Backend (Docker)
 docker-compose up -d

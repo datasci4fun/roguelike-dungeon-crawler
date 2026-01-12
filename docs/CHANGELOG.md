@@ -4,6 +4,48 @@ All notable changes to this project.
 
 ---
 
+## [6.4.0] - 2026-01-12 - Frontend Lore Alignment
+
+### Added
+- **AtmosphericPage Component**: Reusable wrapper for immersive pages
+  - Layered z-index stacking (background, fog, particles, content, CRT, vignette)
+  - Parallax backgrounds (landing, entrance, kingdom, underground)
+  - Particle systems (dust, embers, mist)
+  - CRT scanline overlay with intensity options
+- **PhosphorHeader Component**: Animated phosphor text reveals
+  - Multiple styles (dramatic, emphasis, normal, whisper)
+  - Configurable delays and completion callbacks
+- **DungeonPortal3D Component**: Three.js animated dungeon entrance
+  - Flickering torch lights, swirling fog, Field glow
+- **About Page**: "Built by AI" technical showcase
+  - Credits for Claude Opus 4.5, ChatGPT 5.2, Suno v4.5, DALL-E 3
+  - Project statistics (50k+ lines, 80+ components, etc.)
+  - Quality markers and philosophy sections
+- **Features Page**: Game features overview
+- **Presentation Page**: 23-slide AI Usage Case Study for Jan 17 share-out
+  - Export/print functionality with proper PDF pagination
+  - Headers (title + author) and footers (event + page numbers)
+  - Title page isolation with page breaks
+  - Author: Blixa Markham a.k.a. DataSci4Fun
+  - Key concepts: Iterative Divergence Protocol, Contextual Displacement
+
+### Changed
+- **Home Page**: Complete redesign with Skyfall Seed lore
+  - Rotating lore quotes, floor descriptions, Field narrative
+- **Login Page**: "Resume Your Descent" with DungeonPortal3D background
+- **Register Page**: "Begin Your Legend" with kingdom parallax
+- **CharacterCreation Page**: Race/class lore integration from loreSkyfall.ts
+- **Navigation**: Reorganized into Game/Community dropdowns
+
+### Technical
+- `web/src/components/AtmosphericPage/` - Atmospheric wrapper
+- `web/src/components/PhosphorHeader/` - Text reveal component
+- `web/src/components/DungeonPortal3D/` - Three.js portal
+- `web/src/data/loreSkyfall.ts` - Centralized lore data
+- `web/src/pages/Presentation.tsx` - 950+ line presentation system
+
+---
+
 ## [6.3.1] - 2026-01-12 - Battle Polish
 
 ### Added
