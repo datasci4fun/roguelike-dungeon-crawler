@@ -112,7 +112,7 @@ MAGE_ABILITIES: List[AbilityDef] = [
         range=0,
         damage_mult=0.5,
         aoe_radius=2,
-        effect="slow",
+        effect="freeze",
         effect_duration=2,
     ),
 ]
@@ -145,6 +145,35 @@ ROGUE_ABILITIES: List[AbilityDef] = [
     ),
 ]
 
+CLERIC_ABILITIES: List[AbilityDef] = [
+    AbilityDef(
+        action=BattleAction.BASIC_ATTACK,
+        name="Holy Strike",
+        description="Blessed melee attack",
+        range=1,
+        damage_mult=0.9,
+    ),
+    AbilityDef(
+        action=BattleAction.HEAL,
+        name="Heal",
+        description="Restore 10 HP to self",
+        cooldown=3,
+        range=0,
+        damage_mult=0,  # No damage, healing handled specially
+        self_buff=True,
+        effect="heal",  # Special effect handled in battle_manager
+        effect_duration=0,
+    ),
+    AbilityDef(
+        action=BattleAction.SMITE,
+        name="Smite",
+        description="Holy damage, 1.5x vs undead",
+        cooldown=2,
+        range=1,
+        damage_mult=1.2,  # Base damage, bonus vs undead handled in battle_manager
+    ),
+]
+
 # Default abilities for classes without specific kit
 DEFAULT_ABILITIES: List[AbilityDef] = [
     AbilityDef(
@@ -163,6 +192,7 @@ def get_class_abilities(player_class: str) -> List[AbilityDef]:
         'WARRIOR': WARRIOR_ABILITIES,
         'MAGE': MAGE_ABILITIES,
         'ROGUE': ROGUE_ABILITIES,
+        'CLERIC': CLERIC_ABILITIES,
     }
     return class_map.get(player_class.upper(), DEFAULT_ABILITIES)
 
@@ -211,12 +241,15 @@ class StatusEffect:
 
 
 # Status effect templates
+# Maps to core StatusEffectType names for consistency
 STATUS_EFFECTS = {
     'burn': lambda: StatusEffect(name='burn', duration=2, damage_per_tick=3),
     'poison': lambda: StatusEffect(name='poison', duration=3, damage_per_tick=2),
-    'slow': lambda: StatusEffect(name='slow', duration=2, speed_mod=0.5),
+    'freeze': lambda: StatusEffect(name='freeze', duration=2, speed_mod=0.5),
+    'stun': lambda: StatusEffect(name='stun', duration=1, speed_mod=0.0),  # Can't move
     'shield_wall': lambda: StatusEffect(name='shield_wall', duration=2, defense_mod=2.0),
     'hidden': lambda: StatusEffect(name='hidden', duration=2, is_hidden=True),
+    'heal': lambda: StatusEffect(name='heal', duration=0),  # Instant effect, handled specially
 }
 
 

@@ -8,7 +8,7 @@ from .battle_actions import (
     BattleAction, AbilityDef, ActionResult, StatusEffect,
     get_class_abilities, get_valid_move_tiles, get_valid_attack_targets,
     create_status_effect, manhattan_distance, BATTLE_MOVE_RANGE,
-    WARRIOR_ABILITIES, MAGE_ABILITIES, ROGUE_ABILITIES, DEFAULT_ABILITIES,
+    WARRIOR_ABILITIES, MAGE_ABILITIES, ROGUE_ABILITIES, CLERIC_ABILITIES, DEFAULT_ABILITIES,
 )
 from .arena_templates import (
     ArenaTemplate, ArenaBucket, TEMPLATES,
@@ -22,7 +22,7 @@ __all__ = [
     'BattleAction', 'AbilityDef', 'ActionResult', 'StatusEffect',
     'get_class_abilities', 'get_valid_move_tiles', 'get_valid_attack_targets',
     'create_status_effect', 'manhattan_distance', 'BATTLE_MOVE_RANGE',
-    'WARRIOR_ABILITIES', 'MAGE_ABILITIES', 'ROGUE_ABILITIES', 'DEFAULT_ABILITIES',
+    'WARRIOR_ABILITIES', 'MAGE_ABILITIES', 'ROGUE_ABILITIES', 'CLERIC_ABILITIES', 'DEFAULT_ABILITIES',
     'ArenaTemplate', 'ArenaBucket', 'TEMPLATES',
     'pick_template', 'compile_template', 'generate_deterministic_seed',
 ]

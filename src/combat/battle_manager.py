@@ -497,10 +497,18 @@ class BattleManager:
 
         # Calculate damage if ability does damage
         damage = 0
-        if ability.damage_mult > 0:
+        damage_mult = ability.damage_mult
+
+        # Smite bonus vs undead
+        if ability.action == BattleAction.SMITE:
+            if self._is_target_undead(target):
+                damage_mult *= 1.5  # 1.5x bonus vs undead
+                self.engine.add_message("Smite is effective against undead!")
+
+        if damage_mult > 0:
             base_damage = caster.attack
             defense = target.get_effective_defense()
-            damage = max(1, int(base_damage * ability.damage_mult) - defense)
+            damage = max(1, int(base_damage * damage_mult) - defense)
             target.hp -= damage
 
             if self.events:
@@ -537,19 +545,39 @@ class BattleManager:
         self._end_player_turn()
         return True
 
+    def _is_target_undead(self, target: BattleEntity) -> bool:
+        """Check if a battle entity is undead (for Smite bonus)."""
+        # Look up the world entity to check its type
+        enemy = self._get_enemy_by_id(target.entity_id)
+        if enemy and hasattr(enemy, 'enemy_type'):
+            # Check if enemy type name suggests undead
+            type_name = enemy.enemy_type.name if enemy.enemy_type else ''
+            undead_types = {'SKELETON', 'ZOMBIE', 'GHOST', 'WRAITH', 'LICH', 'VAMPIRE'}
+            return type_name.upper() in undead_types
+        return False
+
     def _execute_self_buff(self, caster: BattleEntity, ability: AbilityDef) -> bool:
         """Execute a self-targeting buff ability."""
-        # Apply effect to self
-        if ability.effect and ability.effect_duration > 0:
+        # Handle Heal specially - restore HP
+        if ability.effect == 'heal':
+            heal_amount = 10  # Base heal amount
+            old_hp = caster.hp
+            caster.hp = min(caster.max_hp, caster.hp + heal_amount)
+            actual_heal = caster.hp - old_hp
+            self.engine.add_message(f"Healed for {actual_heal} HP!")
+        # Apply status effect to self
+        elif ability.effect and ability.effect_duration > 0:
             effect = create_status_effect(ability.effect, ability.effect_duration)
             if effect:
                 caster.add_status(effect.to_dict())
+            self.engine.add_message(f"Used {ability.name}!")
+        else:
+            self.engine.add_message(f"Used {ability.name}!")
 
         # Set cooldown
         if ability.cooldown > 0:
             caster.cooldowns[ability.name] = ability.cooldown
 
-        self.engine.add_message(f"Used {ability.name}!")
         self.add_noise('spell')
         self._end_player_turn()
         return True
@@ -777,25 +805,22 @@ class BattleManager:
             del entity.cooldowns[name]
 
     def _check_tile_hazards(self, entity: BattleEntity, x: int, y: int) -> None:
-        """Check for hazards at tile and apply on-step effects."""
+        """Check for hazards at tile and apply on-step effects.
+
+        Uses project-canon hazard glyphs:
+        - '~' = Lava (immediate damage + BURN DOT)
+        - '=' = Ice (FREEZE movement penalty)
+        - '≈' = Deep Water (FREEZE movement penalty)
+        - '!' = Poison Gas (POISON DOT)
+        """
         battle = self.engine.battle
         if battle is None:
             return
 
         tile = battle.arena_tiles[y][x]
 
-        # Water/swamp: slow
+        # Lava (~): immediate damage + burn DOT
         if tile == '~':
-            entity.add_status({
-                'name': 'wet',
-                'duration': 2,
-                'speed_mod': 0.5,
-            })
-            if entity.is_player:
-                self.engine.add_message("You wade through water. (Slowed)")
-
-        # Lava: burn
-        elif tile == 'L':
             damage = 5
             entity.hp -= damage
             entity.add_status({
@@ -813,10 +838,35 @@ class BattleManager:
                     amount=damage
                 )
 
-        # Ice: slide (simplified: no action)
-        elif tile == 'I':
+        # Ice (=): FREEZE movement penalty (slide deferred)
+        elif tile == '=':
+            entity.add_status({
+                'name': 'freeze',
+                'duration': 2,
+                'speed_mod': 0.5,
+            })
             if entity.is_player:
-                self.engine.add_message("You slide on the ice!")
+                self.engine.add_message("The ice freezes your movement! (Slowed)")
+
+        # Deep Water (≈): FREEZE movement penalty
+        elif tile == '≈':
+            entity.add_status({
+                'name': 'freeze',
+                'duration': 2,
+                'speed_mod': 0.5,
+            })
+            if entity.is_player:
+                self.engine.add_message("You wade through deep water. (Slowed)")
+
+        # Poison Gas (!): POISON DOT
+        elif tile == '!':
+            entity.add_status({
+                'name': 'poison',
+                'duration': 3,
+                'damage_per_tick': 2,
+            })
+            if entity.is_player:
+                self.engine.add_message("You inhale poison gas!")
 
     def _handle_entity_death(self, entity: BattleEntity) -> None:
         """Handle entity death in battle."""
@@ -881,10 +931,68 @@ class BattleManager:
         self.engine.state = GameState.DEAD
 
     def _apply_flee_results(self, battle: BattleState) -> None:
-        """Apply flee results - player escapes, enemies remain."""
-        # Sync player HP (may have taken damage before fleeing)
+        """
+        Apply flee results - player escapes, enemies remain.
+
+        Flee semantics (v6.0.4):
+        - Sync player HP (may have taken damage before fleeing)
+        - Push player back from encounter origin so not standing on enemy
+        - Enemies remain in world (not removed)
+        - Track battles_escaped in ledger
+        """
+        # Sync player HP
         if battle.player:
             self.engine.player.health = battle.player.hp
+
+        # Push player back from encounter origin
+        origin_x, origin_y = battle.encounter_origin
+        player = self.engine.player
+
+        # Find a safe tile adjacent to origin (not occupied by enemy)
+        safe_pos = self._find_safe_flee_position(origin_x, origin_y)
+        if safe_pos:
+            player.x, player.y = safe_pos
+        # else: player stays at original position (enemies will be adjacent)
+
+        # Track battles_escaped in ledger (if available)
+        if hasattr(self.engine, 'ledger') and self.engine.ledger:
+            self.engine.ledger.battles_escaped = getattr(
+                self.engine.ledger, 'battles_escaped', 0
+            ) + 1
+
+    def _find_safe_flee_position(self, origin_x: int, origin_y: int) -> Optional[Tuple[int, int]]:
+        """
+        Find a safe position for player to flee to, away from enemies.
+
+        Checks adjacent tiles to origin, preferring tiles away from enemies
+        and ensuring tile is walkable and not occupied.
+        """
+        if not self.engine.dungeon:
+            return None
+
+        # Get adjacent tiles
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        candidates = []
+
+        for dx, dy in directions:
+            nx, ny = origin_x + dx, origin_y + dy
+
+            # Check walkable
+            if not self.engine.dungeon.is_walkable(nx, ny):
+                continue
+
+            # Check not occupied by enemy
+            occupied = False
+            for enemy in self.engine.entity_manager.enemies:
+                if enemy.x == nx and enemy.y == ny:
+                    occupied = True
+                    break
+
+            if not occupied:
+                candidates.append((nx, ny))
+
+        # Return first valid candidate (could prioritize by distance from enemies)
+        return candidates[0] if candidates else None
 
     def _remove_enemy_from_world(self, enemy_id: str) -> None:
         """Remove an enemy from the world after battle defeat."""
