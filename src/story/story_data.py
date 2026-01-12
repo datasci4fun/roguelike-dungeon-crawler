@@ -41,6 +41,15 @@ ENEMY_ENCOUNTER_MESSAGES: Dict[str, str] = {
     'Court Scribe': "A court scribe glides near the shadows, quill scratching without ink. Its records feel heavier than steel.",
     'Animated Tome': "A book snaps open like a mouth. Letters spill out, rearranging into a threat.",
     'Crystal Sentinel': "A crystal sentinel turns with a grinding hymn. Its facets reflect you… and a version that never blinked.",
+    # v6.5 spice enemies (rare floor variants)
+    'Shade': "A shade coalesces from the prison walls. The hatred of a forgotten prisoner given ephemeral form.",
+    'Bile Lurker': "Toxic ooze bubbles up from a drain. The Bile Lurker is the sewers' revenge made manifest.",
+    'Thornling': "Roots twist into a hunched form. The Thornling watches with berry-red eyes, thorns bristling.",
+    'Doppelganger': "Your reflection steps out of a mirror. The Doppelganger wears your face, but its smile is wrong.",
+    'Frost Wisp': "A pale blue light drifts through the frozen air. The Frost Wisp trails ice crystals like tears.",
+    'Ink Phantom': "Words lift off a page and swirl into shape. The Ink Phantom speaks in stolen sentences.",
+    'Ember Sprite': "A giggling spark dances between lava flows. The Ember Sprite's playfulness masks its danger.",
+    'Prism Watcher': "A crystalline eye opens in the cavern wall. The Prism Watcher sees all your possible futures.",
 }
 
 
