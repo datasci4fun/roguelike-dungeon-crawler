@@ -658,11 +658,13 @@ class GameSessionManager:
                 ],
                 "reinforcements": [
                     {
+                        "entity_id": r.entity_id,
+                        "enemy_name": r.enemy_name,
                         "turns_until_arrival": r.turns_until_arrival,
-                        "entry_edge": r.entry_edge,
+                        "is_elite": r.is_elite,
                     }
                     for r in battle.reinforcements
-                    if not r.has_arrived
+                    if r.turns_until_arrival > 0
                 ],
                 "outcome": battle.outcome.name if battle.outcome else None,
             }
