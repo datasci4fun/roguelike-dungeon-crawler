@@ -50,3 +50,8 @@ savegame.pkl
 !.claude/skills/
 nul
 tmpclaude-*-cwd
+
+# 3D Pipeline
+tools/3d-pipeline/TripoSR/.venv/
+tools/3d-pipeline/TripoSR/output/
+tools/3d-pipeline/TripoSR/.git/
