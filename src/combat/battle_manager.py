@@ -692,7 +692,7 @@ class BattleManager:
         battle = self.engine.battle
         player = self.engine.player
 
-        if not player or not hasattr(player, 'inventory'):
+        if not player or not hasattr(player, 'inventory') or player.inventory is None:
             return False
 
         inventory = player.inventory
