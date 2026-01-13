@@ -2,7 +2,7 @@
  * AssetViewer - Dev tool for viewing 3D assets and managing generation queue
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ASSET_QUEUE,
@@ -10,6 +10,7 @@ import {
   getQueuedByPriority,
   type Asset3D,
 } from '../data/assetQueue';
+import { ModelViewer } from '../components/ModelViewer';
 
 type TabId = 'queue' | 'done' | 'all';
 type CategoryFilter = 'all' | Asset3D['category'];
@@ -300,9 +301,9 @@ export function AssetViewer() {
             }}>
               <h2 style={{ margin: '0 0 15px', color: '#fff' }}>{selectedAsset.name}</h2>
 
-              {/* Preview placeholder */}
+              {/* 3D Preview */}
               <div style={{
-                height: '200px',
+                height: '250px',
                 background: '#1a1a2e',
                 borderRadius: '8px',
                 display: 'flex',
@@ -310,9 +311,16 @@ export function AssetViewer() {
                 justifyContent: 'center',
                 marginBottom: '15px',
                 border: '1px solid #333',
+                overflow: 'hidden',
               }}>
                 {selectedAsset.status === 'done' && selectedAsset.modelPath ? (
-                  <span style={{ color: '#69db7c' }}>3D Preview Available</span>
+                  <Suspense fallback={<span style={{ color: '#888' }}>Loading model...</span>}>
+                    <ModelViewer
+                      modelPath={selectedAsset.modelPath}
+                      width={310}
+                      height={250}
+                    />
+                  </Suspense>
                 ) : (
                   <span style={{ color: '#666' }}>No 3D model yet</span>
                 )}

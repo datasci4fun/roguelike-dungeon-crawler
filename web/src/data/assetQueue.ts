@@ -19,6 +19,19 @@ export interface Asset3D {
 
 // Assets we want to generate for the game
 export const ASSET_QUEUE: Asset3D[] = [
+  // COMPLETED - Example model
+  {
+    id: 'robot-golem',
+    name: 'Robot Golem',
+    category: 'enemy',
+    status: 'done',
+    priority: 'high',
+    sourceImage: 'tools/3d-pipeline/TripoSR/examples/robot.png',
+    modelPath: '/assets/models/robot/robot.glb',
+    texturePath: '/assets/models/robot/robot_texture.png',
+    notes: 'Generated from TripoSR example. 122k vertices, 5.8MB GLB.',
+  },
+
   // High Priority - Core Enemies
   {
     id: 'goblin',
