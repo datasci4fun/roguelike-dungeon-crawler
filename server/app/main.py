@@ -26,6 +26,7 @@ from .api.profiler import router as profiler_router, ProfilingMiddleware
 from .api.sessions import router as sessions_router
 from .api.flags import router as flags_router
 from .api.config import router as config_router
+from .api.dependencies import router as dependencies_router
 
 
 @asynccontextmanager
@@ -97,6 +98,7 @@ def create_app() -> FastAPI:
     app.include_router(sessions_router, tags=["dev-tools"])
     app.include_router(flags_router, tags=["dev-tools"])
     app.include_router(config_router, tags=["dev-tools"])
+    app.include_router(dependencies_router, tags=["dev-tools"])
 
     # Add exception handler to capture errors (only in debug mode)
     if settings.debug:
