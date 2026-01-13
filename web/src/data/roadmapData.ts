@@ -862,6 +862,25 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
       'Cache warm-up on server start',
     ],
   },
+  {
+    id: 'med-24',
+    title: 'Database-Backed Data Files',
+    description: 'Move large static data from code files to database for maintainability',
+    priority: 'medium',
+    status: 'planned',
+    category: ['backend', 'infrastructure'],
+    effort: 'large',
+    targetVersion: 'v7.0',
+    details: [
+      'Migrate bestiary creature data to PostgreSQL',
+      'Migrate boss ability definitions to database',
+      'Migrate lore/story text content to database',
+      'Add admin CRUD endpoints for data management',
+      'Seed scripts for development/testing',
+      'Reduces codebase LOC and improves data editing workflow',
+      'Enables future content management UI',
+    ],
+  },
 
   // ============================================================================
   // LOW PRIORITY - UPCOMING
