@@ -1,0 +1,159 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-01-13T00:00:00Z",
+  "config": {
+    "element_cycle_turns": 5,
+    "weakness_damage_multiplier": 1.5,
+    "traps_per_level": { "min": 3, "max": 6 },
+    "secret_rooms_per_level": { "min": 0, "max": 2 },
+    "locked_doors_per_level": { "min": 1, "max": 3 }
+  },
+  "elements": {
+    "cycle_order": ["fire", "ice", "lightning"],
+    "weaknesses": {
+      "fire": "ice",
+      "ice": "fire",
+      "lightning": "dark",
+      "dark": "lightning"
+    },
+    "colors": {
+      "none": 7,
+      "fire": 3,
+      "ice": 8,
+      "lightning": 4,
+      "dark": 6
+    }
+  },
+  "traps": [
+    {
+      "id": "spike",
+      "name": "Spike Trap",
+      "symbol_hidden": ".",
+      "symbol_visible": "^",
+      "damage_min": 5,
+      "damage_max": 10,
+      "cooldown": 3,
+      "effect": null,
+      "detection_dc": 12
+    },
+    {
+      "id": "fire",
+      "name": "Fire Trap",
+      "symbol_hidden": ".",
+      "symbol_visible": "^",
+      "damage_min": 3,
+      "damage_max": 3,
+      "cooldown": 5,
+      "effect": "burn",
+      "detection_dc": 14
+    },
+    {
+      "id": "poison",
+      "name": "Poison Trap",
+      "symbol_hidden": ".",
+      "symbol_visible": "^",
+      "damage_min": 2,
+      "damage_max": 2,
+      "cooldown": 4,
+      "effect": "poison",
+      "detection_dc": 16
+    },
+    {
+      "id": "arrow",
+      "name": "Arrow Trap",
+      "symbol_hidden": ".",
+      "symbol_visible": "^",
+      "damage_min": 8,
+      "damage_max": 8,
+      "cooldown": 2,
+      "effect": null,
+      "detection_dc": 10
+    }
+  ],
+  "hazards": [
+    {
+      "id": "lava",
+      "name": "Lava",
+      "symbol": "~",
+      "damage_per_turn": 5,
+      "effect": "burn",
+      "blocks_movement": false,
+      "color": 2
+    },
+    {
+      "id": "ice",
+      "name": "Ice",
+      "symbol": "=",
+      "damage_per_turn": 0,
+      "effect": null,
+      "blocks_movement": false,
+      "causes_slide": true,
+      "color": 5
+    },
+    {
+      "id": "poison_gas",
+      "name": "Poison Gas",
+      "symbol": "!",
+      "damage_per_turn": 0,
+      "effect": "poison",
+      "blocks_movement": false,
+      "spreads": true,
+      "color": 3
+    },
+    {
+      "id": "deep_water",
+      "name": "Deep Water",
+      "symbol": "\u2248",
+      "damage_per_turn": 0,
+      "effect": null,
+      "blocks_movement": false,
+      "slows_movement": true,
+      "drown_chance": 0.1,
+      "color": 4
+    }
+  ],
+  "status_effects": [
+    {
+      "id": "poison",
+      "name": "Poison",
+      "damage_per_turn": 2,
+      "duration": 5,
+      "max_stacks": 3,
+      "stacking": "intensity",
+      "color": 3,
+      "message": "You feel sick from the poison!"
+    },
+    {
+      "id": "burn",
+      "name": "Burning",
+      "damage_per_turn": 3,
+      "duration": 3,
+      "max_stacks": 1,
+      "stacking": "refresh",
+      "color": 2,
+      "message": "You are burning!"
+    },
+    {
+      "id": "freeze",
+      "name": "Frozen",
+      "damage_per_turn": 0,
+      "duration": 3,
+      "max_stacks": 1,
+      "stacking": "none",
+      "movement_penalty": 0.5,
+      "color": 5,
+      "message": "You are frozen and moving slowly!"
+    },
+    {
+      "id": "stun",
+      "name": "Stunned",
+      "damage_per_turn": 0,
+      "duration": 1,
+      "max_stacks": 1,
+      "stacking": "none",
+      "skip_turn": true,
+      "color": 2,
+      "message": "You are stunned and cannot act!"
+    }
+  ]
+}

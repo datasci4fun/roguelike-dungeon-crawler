@@ -411,6 +411,177 @@ export const spectatorApi = {
     }>('/api/game/active'),
 };
 
+// Game Constants API (cached from PostgreSQL)
+export const gameConstantsApi = {
+  getRaces: () =>
+    request<Array<{
+      race_id: string;
+      name: string;
+      description: string;
+      hp_modifier: number;
+      atk_modifier: number;
+      def_modifier: number;
+      trait: string;
+      trait_name: string;
+      trait_description: string;
+      starts_with_feat: boolean;
+    }>>('/api/game-constants/races'),
+
+  getClasses: () =>
+    request<Array<{
+      class_id: string;
+      name: string;
+      description: string;
+      hp_modifier: number;
+      atk_modifier: number;
+      def_modifier: number;
+      active_abilities: string[] | null;
+      passive_abilities: string[] | null;
+    }>>('/api/game-constants/classes'),
+
+  getEnemies: (floor?: number) => {
+    const params = floor ? `?floor=${floor}` : '';
+    return request<Array<{
+      enemy_id: string;
+      name: string;
+      symbol: string;
+      hp: number;
+      damage: number;
+      xp: number;
+      weight: number;
+      min_level: number;
+      max_level: number;
+      ai_type: string | null;
+      element: string | null;
+      abilities: string[] | null;
+      resistances: Record<string, number> | null;
+    }>>(`/api/game-constants/enemies${params}`);
+  },
+
+  getBosses: () =>
+    request<Array<{
+      boss_id: string;
+      name: string;
+      symbol: string;
+      hp: number;
+      damage: number;
+      xp: number;
+      level: number;
+      theme: string | null;
+      description: string | null;
+      abilities: string[] | null;
+      loot: string[] | null;
+    }>>('/api/game-constants/bosses'),
+
+  getItems: (category?: string, rarity?: string) => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    if (rarity) params.append('rarity', rarity);
+    const queryString = params.toString();
+    return request<Array<{
+      item_id: string;
+      category: string;
+      name: string;
+      symbol: string;
+      description: string;
+      rarity: string;
+      slot: string | null;
+      attack_bonus: number | null;
+      defense_bonus: number | null;
+      stat_bonuses: Record<string, number> | null;
+      block_chance: number | null;
+      heal_amount: number | null;
+      atk_increase: number | null;
+      effect: string | null;
+      effect_value: number | null;
+      damage: number | null;
+      range: number | null;
+      is_ranged: boolean;
+      key_level: number | null;
+    }>>(`/api/game-constants/items${queryString ? `?${queryString}` : ''}`);
+  },
+
+  getThemes: () =>
+    request<Array<{
+      theme_id: string;
+      name: string;
+      level: number;
+      tiles: Record<string, { unicode: string; ascii: string }>;
+      decorations: Record<string, string[]>;
+      terrain_features: string[];
+      torch_count_min: number;
+      torch_count_max: number;
+    }>>('/api/game-constants/themes'),
+
+  getTraps: () =>
+    request<Array<{
+      trap_id: string;
+      name: string;
+      symbol_hidden: string;
+      symbol_visible: string;
+      damage_min: number;
+      damage_max: number;
+      cooldown: number;
+      effect: string | null;
+      detection_dc: number;
+    }>>('/api/game-constants/traps'),
+
+  getHazards: () =>
+    request<Array<{
+      hazard_id: string;
+      name: string;
+      symbol: string;
+      damage_per_turn: number;
+      effect: string | null;
+      blocks_movement: boolean;
+      color: number;
+      causes_slide: boolean;
+      spreads: boolean;
+      slows_movement: boolean;
+      drown_chance: number | null;
+    }>>('/api/game-constants/hazards'),
+
+  getStatusEffects: () =>
+    request<Array<{
+      effect_id: string;
+      name: string;
+      damage_per_turn: number;
+      duration: number;
+      max_stacks: number;
+      stacking: string;
+      color: number;
+      message: string | null;
+      movement_penalty: number | null;
+      skip_turn: boolean;
+    }>>('/api/game-constants/status-effects'),
+
+  getFloorPool: (floor: number) =>
+    request<{
+      floor: number;
+      enemies: Array<{
+        enemy_id: string;
+        weight: number;
+        theme: string | null;
+        lore_aspect: string | null;
+      }>;
+    }>(`/api/game-constants/floor-pools/${floor}`),
+
+  getCacheStatus: () =>
+    request<{
+      enemies: { cached: boolean; count: number };
+      floor_pools: { cached: boolean; count: number };
+      bosses: { cached: boolean; count: number };
+      races: { cached: boolean; count: number };
+      classes: { cached: boolean; count: number };
+      themes: { cached: boolean; count: number };
+      traps: { cached: boolean; count: number };
+      hazards: { cached: boolean; count: number };
+      status_effects: { cached: boolean; count: number };
+      items: { cached: boolean; count: number };
+      redis: { status: string; used_memory?: string; connected_clients?: number; error?: string };
+    }>('/api/game-constants/cache-status'),
+};
+
 // WebSocket URLs
 export const getGameWsUrl = (token: string) => {
   const wsBase = API_BASE_URL.replace('http', 'ws');

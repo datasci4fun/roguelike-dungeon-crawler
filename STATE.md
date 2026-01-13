@@ -1,61 +1,73 @@
 # Project State
 
-**Last Updated:** 2026-01-12
-**Branch:** master
-**Version:** v6.5.1 (Roadmap Complete)
+**Last Updated:** 2026-01-13
+**Branch:** develop
+**Version:** v6.6.0 (Data Persistence Migration)
 
 ---
 
-## Current Status: v6.5.1 - Roadmap Complete
+## Current Status: v6.6.0 - Data Persistence Migration Complete
 
-All implementation roadmap items completed. Only research/exploratory items remain.
+Game constants migrated from static Python/TypeScript files to PostgreSQL with Redis caching.
 
-### Completed Roadmap Summary
+### Data Persistence Migration (Completed)
 
-| Priority | Items | Status |
-|----------|-------|--------|
-| Critical | crit-01, crit-02 | ✅ Complete |
-| High | high-01 through high-06 | ✅ Complete |
-| Medium | med-01 through med-07 | ✅ Complete |
-| Low | low-01 through low-06 | ✅ Complete |
+| Phase | Task | Status |
+|-------|------|--------|
+| 1 | JSON seed files (`data/seeds/`) | ✅ Complete |
+| 2 | SQLAlchemy models for game constants | ✅ Complete |
+| 3 | Database seeder script | ✅ Complete |
+| 4 | Redis caching layer (cache-aside pattern) | ✅ Complete |
+| 5 | REST API endpoints with Pydantic schemas | ✅ Complete |
+| 6 | Frontend API integration | ✅ Complete |
+| 7 | Remove static TS data files | ✅ Partial |
+| 8 | Cache invalidation on writes | ✅ Complete |
 
-### Key Features by Priority
+### New API Endpoints
 
-**Critical:**
-- Ghost victory behaviors (Beacon, Champion, Archivist)
+| Endpoint | Description |
+|----------|-------------|
+| `/api/game-constants/races` | Playable races (5) |
+| `/api/game-constants/classes` | Playable classes (4) |
+| `/api/game-constants/enemies` | Enemy definitions (28) |
+| `/api/game-constants/bosses` | Boss definitions (8) |
+| `/api/game-constants/items` | Item definitions (29) |
+| `/api/game-constants/themes` | Dungeon themes (8) |
+| `/api/game-constants/traps` | Trap types (4) |
+| `/api/game-constants/hazards` | Hazard types (4) |
+| `/api/game-constants/status-effects` | Status effects (4) |
+| `/api/game-constants/floor-pools/{floor}` | Enemy spawn pools (47) |
+| `/api/game-constants/cache-status` | Cache health |
 
-**High:**
-- Database save system (PostgreSQL, multiple slots)
-- Stealth AI (sneak attacks, backstab, noise)
-- Elemental AI (fire/ice/poison behaviors)
-- Field pulse micro-events
-- React error boundaries
+### Seeded Data Summary
 
-**Medium:**
-- Stats dashboard, social features, settings persistence
-- Keyboard navigation, screen reader accessibility
-- Secret ending hooks (SecretFlag, SecretProgress)
-
-**Low:**
-- ICE slide mechanic (Floor 5)
-- Floor Diorama 3D (Home page visualization)
-- Character Preview 3D (creation screen)
-- Daily challenges API (seeded runs, leaderboards, streaks)
-- Achievement system (33 achievements)
-- Spectator mode (WebSocket streaming)
-
-### Remaining: Research Items
-
-| ID | Title | Effort |
-|----|-------|--------|
-| res-01 | 3D Asset Pipeline (AI-generated models) | Epic |
-| res-02 | Mobile Performance Optimization | Large |
-| res-03 | WebGPU Migration | Epic |
-| res-04 | Procedural Music | Large |
+| Table | Records |
+|-------|---------|
+| game_enemies | 28 |
+| game_bosses | 8 |
+| game_races | 5 |
+| game_classes | 4 |
+| game_themes | 8 |
+| game_traps | 4 |
+| game_hazards | 4 |
+| game_status_effects | 4 |
+| game_items | 29 |
+| game_floor_pools | 47 |
+| **Total** | **141** |
 
 ---
 
-## Version History
+## Recent Changes
+
+### v6.6.0 (2026-01-13) - Data Persistence Migration
+- New: JSON seed files in `data/seeds/` for game balance versioning
+- New: SQLAlchemy models for all game constants
+- New: Redis cache layer with 24h TTL for game constants
+- New: `useGameConstants` React hook for frontend data fetching
+- New: Pydantic response schemas for API documentation
+- Fix: Circular import in combat module (battle_actions ↔ battle_boss_abilities)
+- Changed: CharacterCreation.tsx fetches from API instead of static imports
+- Changed: characterData.ts reduced to ability descriptions only
 
 ### v6.5.1 (2026-01-12) - Roadmap Complete
 - PRs #21-24: All priority items implemented
@@ -69,38 +81,6 @@ All implementation roadmap items completed. Only research/exploratory items rema
 - New About page (AI attribution), Presentation page (case study)
 - Skyfall Seed lore integration throughout
 
-### v6.3.1 (2026-01-12) - Battle Polish
-- Smooth entity movement transitions (lerp)
-- Floating damage numbers
-- Enemy bump → battle initiation fix
-- Reinforcement symbol display fix
-
-### v6.3 (2026-01-12) - Three.js Battle Renderer
-- First-person 3D tactical combat
-- Cinematic overview phase
-- Mouse-based tile selection
-- Contained overlay system
-
-### v6.2.1 (2026-01-11) - Kiting Heuristics
-- Ranged AI maintains preferred distance (3-5 tiles)
-- Edge/corner avoidance, retreat lane preservation
-
-### v6.2.0 (2026-01-11) - Tactical Depth
-- Deterministic AI scoring system
-- Hazard-aware pathfinding with costs
-- Boss-specific heuristics (7 bosses)
-
-### v6.1.0 (2026-01-12) - Cinematic Glue
-- Transition orchestrator (ENGAGE, WIN, FLEE, DEFEAT, BOSS_VICTORY)
-- TransitionCurtain with letterbox bars
-- Arena overview pan
-
-### v6.0.0 (2026-01-11) - Tactical Battle Mode
-- 9x7 tactical arenas with biome templates
-- 4 class ability kits
-- Reinforcement spawning system
-- Field pulse integration
-
 ---
 
 ## Architecture Overview
@@ -108,11 +88,34 @@ All implementation roadmap items completed. Only research/exploratory items rema
 ### Backend (Python/FastAPI)
 ```
 server/app/
-├── api/           # REST endpoints
-├── core/          # Config, database, security
-├── models/        # SQLAlchemy models
-├── schemas/       # Pydantic schemas
-└── services/      # Business logic
+├── api/           # REST endpoints (incl. game_constants.py)
+├── core/          # Config, database, security, cache.py
+├── models/        # SQLAlchemy models (incl. game_constants.py)
+├── schemas/       # Pydantic schemas (incl. game_constants.py)
+└── services/      # Business logic (incl. cache_warmer.py)
+```
+
+### Data Layer
+```
+data/seeds/        # JSON seed files (version-tracked)
+├── enemies.json   # 28 enemy definitions
+├── bosses.json    # 8 boss definitions
+├── races.json     # 5 race definitions
+├── classes.json   # 4 class definitions
+├── items.json     # 29 item definitions
+├── themes.json    # 8 dungeon themes
+└── combat.json    # traps, hazards, status effects
+```
+
+### Cache Architecture
+```
+PostgreSQL (source of truth)
+    ↓ (cache-aside pattern)
+Redis (24h TTL for game constants)
+    ↓
+FastAPI (serves cached data)
+    ↓
+React Frontend (useGameConstants hook)
 ```
 
 ### Frontend (React/TypeScript)
@@ -120,9 +123,10 @@ server/app/
 web/src/
 ├── components/    # UI components
 ├── contexts/      # React contexts
-├── hooks/         # Custom hooks
+├── hooks/         # Custom hooks (incl. useGameConstants.ts)
 ├── pages/         # Route pages
-└── data/          # Static data
+├── services/      # API client (gameConstantsApi)
+└── data/          # Static data (reduced - abilities only)
 ```
 
 ### Game Engine (Python)
@@ -161,30 +165,29 @@ src/
 - Woundglass Shard: Reveals path to stairs
 - Oathstone: Choose vow for rewards
 
-### Completion Tracking
-- Floors cleared (8 total)
-- Wardens defeated (8 bosses)
-- Lore discovered (32 entries)
-- Artifacts collected (3 total)
-- Evidence found (16 items)
-
 ---
 
 ## Quick Reference
 
 ### Commands
 ```bash
-# Start all services (backend + frontend)
-docker-compose up -d
+# Start all services (Docker)
+docker compose up -d
+
+# Rebuild backend after code changes
+docker compose build backend && docker compose up -d backend
+
+# Seed database with game constants
+python scripts/seed_database.py --verbose
+
+# Check cache status
+curl http://localhost:8000/api/game-constants/cache-status
 
 # Terminal client
 python main.py
 
 # Type check frontend
-docker exec roguelike_frontend npm run typecheck
-
-# Python tests
-.venv/Scripts/python -m pytest tests/ -v
+cd web && npx tsc --noEmit
 ```
 
 ### Demo Account
@@ -207,6 +210,7 @@ docker exec roguelike_frontend npm run typecheck
 
 ## Documentation
 
+- [DATA_PERSISTENCE_MODEL.md](docs/DATA_PERSISTENCE_MODEL.md) - Cache architecture
 - [FEATURES.md](docs/FEATURES.md) - Complete feature list
 - [GAMEPLAY.md](docs/GAMEPLAY.md) - Controls and mechanics
 - [DEVELOPMENT.md](docs/DEVELOPMENT.md) - Setup and building

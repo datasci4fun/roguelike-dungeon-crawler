@@ -5,7 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .core.database import init_db, close_db, async_session_maker
+from .core.redis import close_redis
+from .core.cache import cache
 from .services.auth_service import AuthService
+from .services.cache_warmer import warm_game_constants_cache
 from .api.auth import router as auth_router
 from .api.game import router as game_router
 from .api.leaderboard import router as leaderboard_router
@@ -33,6 +36,7 @@ from .api.lore import router as lore_router
 from .api.bestiary import router as bestiary_router
 from .api.items import router as items_router
 from .api.gameguide import router as gameguide_router
+from .api.game_constants import router as game_constants_router
 
 
 @asynccontextmanager
@@ -53,8 +57,22 @@ async def lifespan(app: FastAPI):
         await db.commit()
     print("Demo account ready (username: demo, password: DemoPass123)")
 
+    # Warm game constants cache from database
+    print("Warming game constants cache...")
+    try:
+        cache_result = await warm_game_constants_cache(skip_if_populated=True)
+        if cache_result.get("status") == "skipped":
+            print("Cache already populated - skipped warming")
+        else:
+            total = sum(v for k, v in cache_result.items() if isinstance(v, int))
+            print(f"Cache warmed with {total} records")
+    except Exception as e:
+        print(f"Cache warming failed (non-fatal): {e}")
+
     yield
     # Shutdown
+    print("Closing Redis connections...")
+    await close_redis()
     print("Closing database connections...")
     await close_db()
     print("Shutting down...")
@@ -112,6 +130,7 @@ def create_app() -> FastAPI:
     app.include_router(bestiary_router, tags=["content"])
     app.include_router(items_router, tags=["content"])
     app.include_router(gameguide_router, tags=["content"])
+    app.include_router(game_constants_router, tags=["game-constants"])
 
     # Add exception handler to capture errors (only in debug mode)
     if settings.debug:
@@ -149,12 +168,38 @@ async def health_check():
 async def readiness_check():
     """
     Readiness check - verifies all dependencies are available.
-    TODO: Add database and Redis connectivity checks.
     """
+    from .core.database import engine
+    from .core.redis import get_redis
+
+    db_status = "healthy"
+    redis_status = "healthy"
+    errors = []
+
+    # Check database
+    try:
+        from sqlalchemy import text
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = "unhealthy"
+        errors.append(f"database: {str(e)}")
+
+    # Check Redis
+    try:
+        redis = await get_redis()
+        await redis.ping()
+    except Exception as e:
+        redis_status = "unhealthy"
+        errors.append(f"redis: {str(e)}")
+
+    overall_status = "ready" if not errors else "not_ready"
+
     return {
-        "status": "ready",
-        "database": "not_configured",
-        "redis": "not_configured",
+        "status": overall_status,
+        "database": db_status,
+        "redis": redis_status,
+        "errors": errors if errors else None,
     }
 
 

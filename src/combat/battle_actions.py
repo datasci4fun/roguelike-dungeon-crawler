@@ -15,18 +15,6 @@ from typing import List, Optional, Dict, Any, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
     from .battle_types import BattleState, BattleEntity
 
-# Re-export boss abilities for backwards compatibility
-from .battle_boss_abilities import (
-    REGENT_ABILITIES,
-    RAT_KING_ABILITIES,
-    SPIDER_QUEEN_ABILITIES,
-    FROST_GIANT_ABILITIES,
-    ARCANE_KEEPER_ABILITIES,
-    FLAME_LORD_ABILITIES,
-    DRAGON_EMPEROR_ABILITIES,
-    get_boss_abilities,
-)
-
 
 class BattleAction(Enum):
     """All possible battle actions."""
@@ -400,3 +388,17 @@ def get_valid_attack_targets(
             targets.append(target)
 
     return targets
+
+
+# Re-export boss abilities for backwards compatibility
+# NOTE: Import at end of file to avoid circular import
+from .battle_boss_abilities import (  # noqa: E402
+    REGENT_ABILITIES,
+    RAT_KING_ABILITIES,
+    SPIDER_QUEEN_ABILITIES,
+    FROST_GIANT_ABILITIES,
+    ARCANE_KEEPER_ABILITIES,
+    FLAME_LORD_ABILITIES,
+    DRAGON_EMPEROR_ABILITIES,
+    get_boss_abilities,
+)

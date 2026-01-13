@@ -1,0 +1,113 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-01-13T00:00:00Z",
+  "config": {
+    "chase_range": 12
+  },
+  "data": [
+    {
+      "id": "goblin_king",
+      "symbol": "K",
+      "name": "Goblin King",
+      "hp": 50,
+      "damage": 5,
+      "xp": 200,
+      "level": 1,
+      "theme": "stone_dungeon",
+      "abilities": ["summon_goblins", "war_cry"],
+      "description": "A crowned goblin wielding a bloodied mace",
+      "loot": ["iron_sword", "chain_mail"]
+    },
+    {
+      "id": "rat_king",
+      "symbol": "r",
+      "name": "Rat King",
+      "hp": 65,
+      "damage": 9,
+      "xp": 200,
+      "level": 2,
+      "theme": "sewers",
+      "abilities": ["summon_swarm", "plague_bite", "burrow"],
+      "description": "A grotesque fusion of rats bound by diseased flesh",
+      "loot": ["plague_blade", "rat_king_crown"]
+    },
+    {
+      "id": "spider_queen",
+      "symbol": "S",
+      "name": "Spider Queen",
+      "hp": 70,
+      "damage": 10,
+      "xp": 400,
+      "level": 3,
+      "theme": "forest_depths",
+      "abilities": ["web_trap", "poison_bite", "summon_spiders"],
+      "description": "A massive arachnid matriarch dripping with venom",
+      "loot": ["spider_silk_armor", "venom_dagger"]
+    },
+    {
+      "id": "regent",
+      "symbol": "R",
+      "name": "The Regent",
+      "hp": 95,
+      "damage": 13,
+      "xp": 550,
+      "level": 4,
+      "theme": "mirror_valdris",
+      "abilities": ["royal_decree", "summon_guard", "counterfeit_crown"],
+      "description": "A monarch who never was, wearing a crown of stolen memories",
+      "loot": ["royal_scepter", "counterfeit_crown"]
+    },
+    {
+      "id": "frost_giant",
+      "symbol": "F",
+      "name": "Frost Giant",
+      "hp": 80,
+      "damage": 12,
+      "xp": 300,
+      "level": 5,
+      "theme": "ice_cavern",
+      "abilities": ["ice_blast", "freeze_ground"],
+      "description": "A towering giant encased in eternal ice",
+      "loot": ["frost_axe", "ice_shield"]
+    },
+    {
+      "id": "arcane_keeper",
+      "symbol": "A",
+      "name": "Arcane Keeper",
+      "hp": 80,
+      "damage": 14,
+      "xp": 800,
+      "level": 6,
+      "theme": "ancient_library",
+      "abilities": ["arcane_bolt", "teleport"],
+      "description": "A spectral guardian of forbidden knowledge",
+      "loot": ["teleport_scroll", "teleport_scroll", "strength_potion"]
+    },
+    {
+      "id": "flame_lord",
+      "symbol": "\u03a6",
+      "name": "Flame Lord",
+      "hp": 100,
+      "damage": 15,
+      "xp": 500,
+      "level": 7,
+      "theme": "volcanic_depths",
+      "abilities": ["fire_breath", "lava_pool", "inferno"],
+      "description": "A being of pure fire born from the volcanic depths",
+      "loot": ["flame_sword", "fire_resist_ring"]
+    },
+    {
+      "id": "dragon_emperor",
+      "symbol": "E",
+      "name": "Dragon Emperor",
+      "hp": 200,
+      "damage": 20,
+      "xp": 1500,
+      "level": 8,
+      "theme": "crystal_cave",
+      "abilities": ["fire_breath", "tail_sweep", "dragon_fear"],
+      "description": "The ancient dragon lord guarding the ultimate treasure",
+      "loot": ["dragon_slayer", "dragon_scale"]
+    }
+  ]
+}

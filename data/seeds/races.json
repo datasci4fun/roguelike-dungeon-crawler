@@ -1,0 +1,66 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-01-13T00:00:00Z",
+  "data": [
+    {
+      "id": "human",
+      "name": "Human",
+      "description": "Balanced and adaptable",
+      "hp_modifier": 0,
+      "atk_modifier": 0,
+      "def_modifier": 0,
+      "trait": "adaptive",
+      "trait_name": "Adaptive",
+      "trait_description": "+10% XP gain, +1 starting feat",
+      "starts_with_feat": true
+    },
+    {
+      "id": "elf",
+      "name": "Elf",
+      "description": "Agile and perceptive",
+      "hp_modifier": -2,
+      "atk_modifier": 1,
+      "def_modifier": 0,
+      "trait": "keen_sight",
+      "trait_name": "Keen Sight",
+      "trait_description": "+2 vision range",
+      "starts_with_feat": false
+    },
+    {
+      "id": "dwarf",
+      "name": "Dwarf",
+      "description": "Sturdy and resilient",
+      "hp_modifier": 4,
+      "atk_modifier": -1,
+      "def_modifier": 2,
+      "trait": "poison_resist",
+      "trait_name": "Poison Resistance",
+      "trait_description": "50% poison resistance",
+      "starts_with_feat": false
+    },
+    {
+      "id": "halfling",
+      "name": "Halfling",
+      "description": "Lucky and nimble",
+      "hp_modifier": -4,
+      "atk_modifier": 0,
+      "def_modifier": 0,
+      "trait": "lucky",
+      "trait_name": "Lucky",
+      "trait_description": "15% dodge chance",
+      "starts_with_feat": false
+    },
+    {
+      "id": "orc",
+      "name": "Orc",
+      "description": "Powerful but reckless",
+      "hp_modifier": 6,
+      "atk_modifier": 2,
+      "def_modifier": -1,
+      "trait": "rage",
+      "trait_name": "Rage",
+      "trait_description": "+50% damage below 25% HP",
+      "starts_with_feat": false
+    }
+  ]
+}

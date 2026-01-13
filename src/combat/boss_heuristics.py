@@ -11,6 +11,7 @@ Architecture:
 Delegates to:
 - boss_rule_utils.py: Utility functions and BossRule dataclass
 """
+from __future__ import annotations
 from typing import Optional, List, TYPE_CHECKING
 
 from .battle_actions import BattleAction
