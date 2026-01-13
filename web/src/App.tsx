@@ -4,6 +4,7 @@ import { Home, Login, Register, Play, Features, About, PlayScene, SceneDemo, Lea
 import { FirstPersonDemo } from './pages/FirstPersonDemo';
 import { FirstPersonTestPage } from './pages/FirstPersonTestPage';
 import { Debug3DPage } from './pages/Debug3DPage';
+import { AssetViewer } from './pages/AssetViewer';
 import { CharacterCreation } from './pages/CharacterCreation';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <Route path="first-person-demo" element={<FirstPersonDemo />} />
         <Route path="first-person-test" element={<FirstPersonTestPage />} />
         <Route path="debug-3d" element={<Debug3DPage />} />
+        <Route path="asset-viewer" element={<AssetViewer />} />
         <Route path="spectate" element={<Spectate />} />
         <Route path="leaderboard" element={<Leaderboard />} />
         <Route path="ghosts" element={<Ghosts />} />
