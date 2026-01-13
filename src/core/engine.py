@@ -31,8 +31,12 @@ from ..managers import (
 # v6.0: Battle mode
 from ..combat import BattleManager, BattleState
 
+# Import mixins for extracted functionality
+from .engine_environment import EnvironmentMixin
+from .engine_ui_commands import UICommandsMixin
 
-class GameEngine:
+
+class GameEngine(EnvironmentMixin, UICommandsMixin):
     """
     Pure game engine with no rendering dependencies.
 
@@ -482,10 +486,10 @@ class GameEngine:
         Convert a movement command to actual (dx, dy) based on player facing.
 
         WASD/Arrows are interpreted relative to facing direction:
-        - MOVE_UP (W/↑) = move forward (in facing direction)
-        - MOVE_DOWN (S/↓) = move backward (opposite to facing)
-        - MOVE_LEFT (A/←) = strafe left (perpendicular left)
-        - MOVE_RIGHT (D/→) = strafe right (perpendicular right)
+        - MOVE_UP (W/Up) = move forward (in facing direction)
+        - MOVE_DOWN (S/Down) = move backward (opposite to facing)
+        - MOVE_LEFT (A/Left) = strafe left (perpendicular left)
+        - MOVE_RIGHT (D/Right) = strafe right (perpendicular right)
 
         Args:
             cmd_type: The movement command type
@@ -505,10 +509,10 @@ class GameEngine:
             # Backward = opposite of facing
             return (-fx, -fy)
         elif cmd_type == CommandType.MOVE_LEFT:
-            # Strafe left = rotate facing 90° counterclockwise: (fx, fy) → (fy, -fx)
+            # Strafe left = rotate facing 90 deg counterclockwise: (fx, fy) -> (fy, -fx)
             return (fy, -fx)
         elif cmd_type == CommandType.MOVE_RIGHT:
-            # Strafe right = rotate facing 90° clockwise: (fx, fy) → (-fy, fx)
+            # Strafe right = rotate facing 90 deg clockwise: (fx, fy) -> (-fy, fx)
             return (-fy, fx)
 
         return (0, 0)
@@ -517,8 +521,8 @@ class GameEngine:
         """
         Handle turn-in-place command.
 
-        Turn left (counterclockwise): (dx, dy) → (dy, -dx)
-        Turn right (clockwise): (dx, dy) → (-dy, dx)
+        Turn left (counterclockwise): (dx, dy) -> (dy, -dx)
+        Turn right (clockwise): (dx, dy) -> (-dy, dx)
 
         Returns True if successful.
         """
@@ -528,10 +532,10 @@ class GameEngine:
         dx, dy = self.player.facing
 
         if cmd_type == CommandType.TURN_LEFT:
-            # Counterclockwise: (dx, dy) → (dy, -dx)
+            # Counterclockwise: (dx, dy) -> (dy, -dx)
             new_facing = (dy, -dx)
         else:
-            # Clockwise: (dx, dy) → (-dy, dx)
+            # Clockwise: (dx, dy) -> (-dy, dx)
             new_facing = (-dy, dx)
 
         self.player.facing = new_facing
@@ -560,6 +564,8 @@ class GameEngine:
         Searches for hidden traps and secret doors within range.
         Returns True if successful (always costs a turn).
         """
+        from .constants import TileType
+
         if not self.player or not self.dungeon:
             return False
 
@@ -584,7 +590,6 @@ class GameEngine:
             for door in detected_doors:
                 self.add_message("You found a secret door!", importance=MessageImportance.IMPORTANT)
                 # Reveal the secret door on the map - change wall to floor
-                from .constants import TileType
                 self.dungeon.tiles[door.y][door.x] = TileType.FLOOR
                 found_something = True
 
@@ -611,476 +616,6 @@ class GameEngine:
             from ..data import delete_save
             delete_save()
             self.state = GameState.DEAD
-
-    def _process_traps(self):
-        """Process traps at player's current position."""
-        if not self.player:
-            return
-
-        # Get trap at position first to get its name
-        trap = self.trap_manager.get_trap_at(self.player.x, self.player.y)
-        if not trap or not trap.is_active:
-            return
-
-        result = trap.trigger(self.player)
-        if result:
-            if result.get('message'):
-                self.add_message(result['message'])
-
-            # Track damage for death recap
-            if result.get('damage', 0) > 0:
-                trap_name = trap.name if trap and hasattr(trap, 'name') and trap.name else "trap"
-                self.last_attacker_name = f"a {trap_name}"
-                self.last_damage_taken = result['damage']
-
-        # Tick all trap cooldowns
-        self.trap_manager.tick_all()
-
-    def _process_hazards(self) -> bool:
-        """Process hazards at player's current position.
-
-        Returns:
-            True if player is on slow terrain (deep water), False otherwise.
-        """
-        if not self.player:
-            return False
-
-        result = self.hazard_manager.process_entity_at(
-            self.player, self.player.x, self.player.y
-        )
-        if result:
-            if result.get('message'):
-                self.add_message(result['message'])
-
-            # Handle drowning
-            if result.get('drown'):
-                self.last_attacker_name = "deep water"
-                self.last_damage_taken = self.player.health
-                self.player.health = 0
-            elif result.get('damage', 0) > 0:
-                self.last_attacker_name = "environmental hazard"
-                self.last_damage_taken = result['damage']
-
-        # Check if on slow terrain (deep water costs 2 turns)
-        move_cost = self.hazard_manager.get_movement_cost(
-            self.player.x, self.player.y
-        )
-        if move_cost > 1:
-            self.add_message("You wade through deep water...")
-            return True
-        return False
-
-    def _process_ice_slide(self, dx: int, dy: int):
-        """Handle ice slide mechanic when player steps on ice.
-
-        v6.5.1 low-01: When stepping onto ice, player slides in
-        their movement direction until hitting a wall, non-ice tile,
-        or enemy.
-
-        Args:
-            dx, dy: The movement direction that brought player here
-        """
-        if not self.player or not self.dungeon:
-            return
-
-        # Check if standing on ice that causes sliding
-        if not self.hazard_manager.is_ice_at(self.player.x, self.player.y):
-            return
-
-        hazard = self.hazard_manager.get_hazard_at(self.player.x, self.player.y)
-        if not hazard or not hazard.stats.get('causes_slide', False):
-            return
-
-        # No slide if no movement direction
-        if dx == 0 and dy == 0:
-            return
-
-        slide_count = 0
-        max_slides = 20  # Safety limit to prevent infinite loops
-
-        self.add_message("You slide across the ice!")
-
-        while slide_count < max_slides:
-            next_x = self.player.x + dx
-            next_y = self.player.y + dy
-
-            # Check if next tile is walkable
-            if not self.dungeon.is_walkable(next_x, next_y):
-                # Hit a wall - stop sliding
-                self.add_message("You slam into the wall!")
-                break
-
-            # Check for enemy at next position
-            enemy = self.entity_manager.get_enemy_at(next_x, next_y)
-            if enemy:
-                # Collide with enemy - stop sliding, deal minor damage to both
-                self.add_message(f"You crash into the {enemy.name}!")
-                # Small collision damage
-                collision_damage = 2
-                enemy.health -= collision_damage
-                self.player.health -= collision_damage
-                self.last_attacker_name = "ice collision"
-                self.last_damage_taken = collision_damage
-                break
-
-            # Move to next position
-            self.player.x = next_x
-            self.player.y = next_y
-            slide_count += 1
-
-            # Update FOV after each slide step
-            self.dungeon.update_fov(self.player.x, self.player.y)
-
-            # Check if still on ice
-            if not self.hazard_manager.is_ice_at(self.player.x, self.player.y):
-                # Reached non-ice tile - stop sliding
-                self.add_message("You regain your footing.")
-                break
-
-            # Process traps at each slide position
-            self._process_traps()
-
-            # Check for items
-            self.entity_manager.check_item_pickup(self.player)
-
-        if slide_count >= max_slides:
-            # Safety: shouldn't happen with properly designed maps
-            self.add_message("You finally stop sliding.")
-
-    def _process_player_status_effects(self):
-        """Process player's active status effects."""
-        if not self.player:
-            return
-
-        effect_results = self.player.process_status_effects()
-        for result in effect_results:
-            if result.get('message'):
-                self.add_message(result['message'])
-
-            if result.get('damage', 0) > 0:
-                self.last_attacker_name = result.get('source', 'status effect')
-                self.last_damage_taken = result['damage']
-
-    def _process_field_pulse(self):
-        """Process field pulse events on this turn.
-
-        Field pulses are seeded environmental events that temporarily
-        amplify zone behaviors. When a pulse triggers, it shows a
-        narrative message and applies amplification effects.
-
-        Micro-events trigger once per floor during the first pulse,
-        providing narrative moments and safe beneficial effects.
-        """
-        pulse = self.field_pulse_manager.tick()
-
-        if pulse:
-            # Show pulse message
-            message = self.field_pulse_manager.get_pulse_message(pulse)
-            self.add_message(message, MessageCategory.SYSTEM, MessageImportance.IMPORTANT)
-
-            # Emit visual event for frontend
-            self.event_queue.emit(
-                EventType.FIELD_PULSE,
-                intensity=pulse.intensity.name.lower(),
-                amplification=pulse.amplification,
-                duration=pulse.duration,
-            )
-
-            # Find which pulse index this is
-            pulse_index = -1
-            for i, p in enumerate(self.field_pulse_manager.pulses):
-                if p is pulse:
-                    pulse_index = i
-                    break
-
-            # Check for micro-event trigger
-            if self.field_pulse_manager.should_trigger_micro_event(pulse_index):
-                self.field_pulse_manager.trigger_micro_event(self)
-
-        # Update hazard amplification based on current pulse state
-        current_amp = self.field_pulse_manager.get_current_amplification()
-        self.hazard_manager.set_amplification(current_amp)
-
-    def _process_zone_evidence(self):
-        """Check if player stepped on zone evidence and trigger lore discovery.
-
-        Zone evidence tiles (boss trail tells, lore markers, evidence props) are
-        visual indicators placed in rooms. When the player walks onto one, they
-        discover evidence lore specific to that floor.
-        """
-        if not self.dungeon or not self.player:
-            return
-
-        px, py = self.player.x, self.player.y
-
-        # Check if player is on any zone evidence tile
-        evidence_at_pos = None
-        evidence_index = None
-        for i, (ex, ey, char, color, evidence_type) in enumerate(self.dungeon.zone_evidence):
-            if ex == px and ey == py:
-                evidence_at_pos = (ex, ey, char, color, evidence_type)
-                evidence_index = i
-                break
-
-        if not evidence_at_pos:
-            return
-
-        _, _, char, _, evidence_type = evidence_at_pos
-
-        # Always remove evidence when stepped on (one-time interaction)
-        if evidence_index is not None:
-            self.dungeon.zone_evidence.pop(evidence_index)
-
-        # Get evidence-specific lore IDs for current floor
-        from ..story.lore_items import get_evidence_ids_for_floor
-        evidence_lore_ids = get_evidence_ids_for_floor(self.current_level)
-
-        if not evidence_lore_ids:
-            return
-
-        # Find first undiscovered evidence lore for this floor
-        lore_to_discover = None
-        for lore_id in evidence_lore_ids:
-            if not self.story_manager.has_discovered_lore(lore_id):
-                lore_to_discover = lore_id
-                break
-
-        # Discover lore if any undiscovered for this floor
-        if lore_to_discover:
-            if self.story_manager.discover_lore(lore_to_discover):
-                # Get the lore title for the message
-                from ..story.story_data import LORE_ENTRIES
-                lore_entry = LORE_ENTRIES.get(lore_to_discover, {})
-                lore_title = lore_entry.get('title', 'something')
-
-                # Show discovery message based on evidence type
-                if evidence_type == "trail_tell":
-                    self.add_message(
-                        f"You notice signs of passage... (discovered: {lore_title})",
-                        MessageCategory.SYSTEM, MessageImportance.IMPORTANT
-                    )
-                elif evidence_type == "lore_marker":
-                    self.add_message(
-                        f"You examine ancient markings... (discovered: {lore_title})",
-                        MessageCategory.SYSTEM, MessageImportance.IMPORTANT
-                    )
-                else:  # evidence_prop
-                    self.add_message(
-                        f"You find evidence of the past... (discovered: {lore_title})",
-                        MessageCategory.SYSTEM, MessageImportance.IMPORTANT
-                    )
-
-    # =========================================================================
-    # Command Processing - Inventory
-    # =========================================================================
-
-    def process_inventory_command(self, command: Command):
-        """Process a command while in inventory screen."""
-        cmd_type = command.type
-        inventory = self.player.inventory
-
-        if cmd_type == CommandType.CLOSE_SCREEN:
-            self.ui_mode = UIMode.GAME
-
-        elif cmd_type == CommandType.INVENTORY_UP:
-            if len(inventory.items) > 0:
-                self.selected_item_index = (self.selected_item_index - 1) % len(inventory.items)
-
-        elif cmd_type == CommandType.INVENTORY_DOWN:
-            if len(inventory.items) > 0:
-                self.selected_item_index = (self.selected_item_index + 1) % len(inventory.items)
-
-        elif cmd_type == CommandType.INVENTORY_USE:
-            self._use_or_equip_selected_item()
-
-        elif cmd_type == CommandType.INVENTORY_EQUIP:
-            self._equip_selected_item()
-
-        elif cmd_type == CommandType.INVENTORY_DROP:
-            self._drop_selected_item()
-
-        elif cmd_type == CommandType.INVENTORY_READ:
-            self._read_selected_item()
-
-    def _use_or_equip_selected_item(self):
-        """Use or equip the currently selected inventory item."""
-        inventory = self.player.inventory
-        if 0 <= self.selected_item_index < len(inventory.items):
-            item = inventory.get_item(self.selected_item_index)
-            if item and item.is_equippable():
-                message = self.player.equip(item)
-                self.add_message(message)
-                self._adjust_selection_after_removal()
-            elif self.use_item(self.selected_item_index):
-                self._adjust_selection_after_removal()
-
-    def _equip_selected_item(self):
-        """Equip the currently selected inventory item."""
-        inventory = self.player.inventory
-        if 0 <= self.selected_item_index < len(inventory.items):
-            item = inventory.get_item(self.selected_item_index)
-            if item and item.is_equippable():
-                message = self.player.equip(item)
-                self.add_message(message)
-                self._adjust_selection_after_removal()
-            else:
-                self.add_message("Cannot equip this item!")
-
-    def _drop_selected_item(self):
-        """Drop the currently selected inventory item."""
-        from .constants import ItemRarity
-        inventory = self.player.inventory
-        if 0 <= self.selected_item_index < len(inventory.items):
-            item = inventory.get_item(self.selected_item_index)
-            if not item:
-                return
-
-            # Check if item is rare or epic - show confirmation
-            if item.rarity in (ItemRarity.RARE, ItemRarity.EPIC):
-                self._pending_drop_item = item
-                self._pending_drop_index = self.selected_item_index
-                rarity_name = "rare" if item.rarity == ItemRarity.RARE else "epic"
-                self.show_dialog(
-                    "Drop Item",
-                    f"Drop {item.name}? It's {rarity_name}!",
-                    self._handle_drop_confirm
-                )
-            else:
-                # Common/uncommon items drop immediately
-                item = inventory.remove_item(self.selected_item_index)
-                item.x = self.player.x
-                item.y = self.player.y
-                self.entity_manager.items.append(item)
-                self.add_message(f"Dropped {item.name}")
-                self._adjust_selection_after_removal()
-
-    def _read_selected_item(self):
-        """Read the currently selected item if it's a lore item."""
-        inventory = self.player.inventory
-        if 0 <= self.selected_item_index < len(inventory.items):
-            item = inventory.get_item(self.selected_item_index)
-            if isinstance(item, (LoreScroll, LoreBook)):
-                self.reading_title, self.reading_content = item.get_text()
-                self.ui_mode = UIMode.READING
-                self.story_manager.discover_lore(item.lore_id)
-            else:
-                self.add_message("This item cannot be read.")
-
-    def _adjust_selection_after_removal(self):
-        """Adjust selection index after item removal."""
-        inventory = self.player.inventory
-        if self.selected_item_index >= len(inventory.items):
-            self.selected_item_index = max(0, len(inventory.items) - 1)
-
-    # =========================================================================
-    # Command Processing - Other UI Modes
-    # =========================================================================
-
-    def process_character_command(self, command: Command):
-        """Process a command in character screen."""
-        if command.type == CommandType.CLOSE_SCREEN:
-            self.ui_mode = UIMode.GAME
-
-    def process_help_command(self, command: Command):
-        """Process a command in help screen."""
-        if command.type == CommandType.CLOSE_SCREEN:
-            self.ui_mode = UIMode.GAME
-
-    def process_reading_command(self, command: Command):
-        """Process a command in reading screen."""
-        if command.type == CommandType.CLOSE_SCREEN:
-            self.ui_mode = UIMode.GAME
-
-    def process_dialog_command(self, command: Command) -> Optional[bool]:
-        """Process a command in dialog. Returns True/False/None."""
-        if command.type == CommandType.CONFIRM:
-            self.ui_mode = UIMode.GAME
-            if self.dialog_callback:
-                self.dialog_callback(True)
-                self.dialog_callback = None
-            return True
-
-        if command.type == CommandType.CANCEL:
-            self.ui_mode = UIMode.GAME
-            if self.dialog_callback:
-                self.dialog_callback(False)
-                self.dialog_callback = None
-            return False
-
-        return None
-
-    def process_message_log_command(self, command: Command, visible_lines: int = 20):
-        """Process a command in message log screen."""
-        cmd_type = command.type
-
-        if cmd_type == CommandType.CLOSE_SCREEN:
-            self.ui_mode = UIMode.GAME
-
-        elif cmd_type == CommandType.SCROLL_UP:
-            self.message_log.scroll_up()
-
-        elif cmd_type == CommandType.SCROLL_DOWN:
-            self.message_log.scroll_down(visible_lines=visible_lines)
-
-        elif cmd_type == CommandType.PAGE_UP:
-            self.message_log.scroll_up(visible_lines)
-
-        elif cmd_type == CommandType.PAGE_DOWN:
-            self.message_log.scroll_down(visible_lines, visible_lines)
-
-    def process_battle_command(self, command: Command) -> bool:
-        """
-        Process a command during tactical battle mode (v6.0.4).
-
-        Handles movement, abilities, and battle actions.
-
-        Returns:
-            True if command was processed
-        """
-        # Check for ability command (passed via command.data)
-        if command.data and 'ability' in command.data:
-            ability_cmd = command.data['ability']
-            return self.battle_manager.process_battle_command(ability_cmd)
-
-        return self.battle_manager.process_battle_command(command.type.name)
-
-    # =========================================================================
-    # Command Processing - Title/Intro
-    # =========================================================================
-
-    def process_title_command(self, command: Command, has_save: bool) -> Optional[str]:
-        """Process a command on title screen. Returns action string or None."""
-        cmd_type = command.type
-
-        if cmd_type == CommandType.NEW_GAME:
-            return 'new_game'
-        elif cmd_type == CommandType.CONTINUE_GAME and has_save:
-            return 'continue'
-        elif cmd_type == CommandType.OPEN_HELP:
-            return 'help'
-        elif cmd_type == CommandType.QUIT:
-            return 'quit'
-
-        return None
-
-    def process_intro_command(self, command: Command) -> Tuple[int, bool]:
-        """Process a command during intro. Returns (new_page, should_skip)."""
-        cmd_type = command.type
-
-        if cmd_type == CommandType.SKIP:
-            return self.intro_page, True
-
-        if cmd_type == CommandType.MENU_SELECT:
-            if self.intro_page < self.intro_total_pages - 1:
-                self.intro_page += 1
-                return self.intro_page, False
-            else:
-                return self.intro_page, True
-
-        if cmd_type == CommandType.ANY_KEY and self.intro_page >= self.intro_total_pages - 1:
-            return self.intro_page, True
-
-        return self.intro_page, False
 
     # =========================================================================
     # Dialog System
