@@ -5,6 +5,19 @@ from .chat_message import ChatMessage, ChatChannel
 from .user_achievement import UserAchievement
 from .game_save import GameSave
 from .daily_challenge import DailyChallenge, DailyChallengeResult
+from .game_constants import (
+    Enemy,
+    FloorEnemyPool,
+    Boss,
+    Race,
+    PlayerClass,
+    Theme,
+    Trap,
+    Hazard,
+    StatusEffect,
+    Item,
+    GameConstantsMeta,
+)
 
 __all__ = [
     "User",
@@ -15,4 +28,16 @@ __all__ = [
     "GameSave",
     "DailyChallenge",
     "DailyChallengeResult",
+    # Game constants
+    "Enemy",
+    "FloorEnemyPool",
+    "Boss",
+    "Race",
+    "PlayerClass",
+    "Theme",
+    "Trap",
+    "Hazard",
+    "StatusEffect",
+    "Item",
+    "GameConstantsMeta",
 ]
