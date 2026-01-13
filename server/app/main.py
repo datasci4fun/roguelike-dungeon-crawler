@@ -18,6 +18,11 @@ from .api.saves import router as saves_router
 from .api.daily import router as daily_router
 from .api.dbexplorer import router as dbexplorer_router
 from .api.cache import router as cache_router
+from .api.status import router as status_router
+from .api.buildinfo import router as buildinfo_router
+from .api.logs import router as logs_router
+from .api.errors import router as errors_router, capture_error
+from .api.profiler import router as profiler_router, ProfilingMiddleware
 
 
 @asynccontextmanager
@@ -63,6 +68,10 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Performance profiling middleware (debug mode only)
+    if settings.debug:
+        app.add_middleware(ProfilingMiddleware, enabled=True)
+
     # Include routers
     app.include_router(health_router, prefix="/api", tags=["health"])
     app.include_router(auth_router, prefix="/api")
@@ -77,6 +86,24 @@ def create_app() -> FastAPI:
     app.include_router(daily_router, prefix="/api")
     app.include_router(dbexplorer_router, tags=["dev-tools"])
     app.include_router(cache_router, tags=["dev-tools"])
+    app.include_router(status_router, tags=["dev-tools"])
+    app.include_router(buildinfo_router, tags=["dev-tools"])
+    app.include_router(logs_router, tags=["dev-tools"])
+    app.include_router(errors_router, tags=["dev-tools"])
+    app.include_router(profiler_router, tags=["dev-tools"])
+
+    # Add exception handler to capture errors (only in debug mode)
+    if settings.debug:
+        @app.exception_handler(Exception)
+        async def global_exception_handler(request, exc):
+            from fastapi.responses import JSONResponse
+            # Capture error for the error tracker
+            capture_error(exc, request)
+            # Re-raise for normal handling
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error"}
+            )
 
     return app
 
