@@ -3,7 +3,7 @@ Database Explorer API - Dev tool for browsing database contents.
 
 SECURITY: Only available when DEBUG=true. Read-only queries only.
 """
-from typing import Any
+from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +25,7 @@ class ColumnInfo(BaseModel):
     name: str
     type: str
     nullable: bool
-    default: str | None
+    default: Optional[str]
     primary_key: bool
 
 
@@ -157,7 +157,7 @@ async def get_table_data(
     _: None = Depends(require_debug),
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
-    order_by: str | None = None,
+    order_by: Optional[str] = None,
     order_dir: str = Query("asc", pattern="^(asc|desc)$"),
 ):
     """Get paginated data from a table."""
