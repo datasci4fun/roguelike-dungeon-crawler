@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Home, Login, Register, Play, Features, About, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends, Presentation, Roadmap, CodebaseHealth, Changelog, DatabaseExplorer, CacheInspector, AudioJukebox, SystemStatus, ApiPlayground, WebSocketMonitor, BuildInfo, LogViewer, ErrorTracker, PerformanceProfiler, SessionInspector } from './pages';
+import { Home, Login, Register, Play, Features, About, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends, Presentation, Roadmap, CodebaseHealth, Changelog, DatabaseExplorer, CacheInspector, AudioJukebox, SystemStatus, ApiPlayground, WebSocketMonitor, BuildInfo, LogViewer, ErrorTracker, PerformanceProfiler, SessionInspector, FeatureFlags } from './pages';
 import { FirstPersonDemo } from './pages/FirstPersonDemo';
 import { FirstPersonTestPage } from './pages/FirstPersonTestPage';
 import { Debug3DPage } from './pages/Debug3DPage';
@@ -44,6 +44,7 @@ function App() {
         <Route path="error-tracker" element={<ErrorTracker />} />
         <Route path="profiler" element={<PerformanceProfiler />} />
         <Route path="session-inspector" element={<SessionInspector />} />
+        <Route path="feature-flags" element={<FeatureFlags />} />
       </Route>
     </Routes>
   );
