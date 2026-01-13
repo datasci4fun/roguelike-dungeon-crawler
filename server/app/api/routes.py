@@ -64,6 +64,7 @@ FRONTEND_ROUTES = [
     {"path": "/codebase-health", "name": "Codebase Health", "description": "Code statistics"},
     {"path": "/changelog", "name": "Changelog", "description": "Patch notes"},
     {"path": "/lore", "name": "Lore & Story", "description": "World-building and backstory"},
+    {"path": "/bestiary", "name": "Bestiary", "description": "Creature encyclopedia"},
     {"path": "/db-explorer", "name": "DB Explorer", "description": "Database browser", "dev_tool": True},
     {"path": "/cache-inspector", "name": "Cache Inspector", "description": "Cache viewer", "dev_tool": True},
     {"path": "/audio-jukebox", "name": "Audio Jukebox", "description": "Sound testing", "dev_tool": True},

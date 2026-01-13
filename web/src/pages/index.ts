@@ -33,3 +33,4 @@ export { DependencyViewer } from './DependencyViewer';
 export { RouteExplorer } from './RouteExplorer';
 export { MetricsDashboard } from './MetricsDashboard';
 export { LorePage } from './LorePage';
+export { Bestiary } from './Bestiary';

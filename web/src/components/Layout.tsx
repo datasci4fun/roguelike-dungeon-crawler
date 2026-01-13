@@ -77,6 +77,10 @@ export function Layout() {
                     <span className="menu-icon">📜</span>
                     Lore & Story
                   </Link>
+                  <Link to="/bestiary" onClick={closeDropdown}>
+                    <span className="menu-icon">👹</span>
+                    Bestiary
+                  </Link>
                 </div>
               )}
             </div>
