@@ -160,6 +160,10 @@ export function Layout() {
                     <span className="menu-icon">🐛</span>
                     Error Tracker
                   </Link>
+                  <Link to="/profiler" onClick={closeDropdown}>
+                    <span className="menu-icon">⏱️</span>
+                    Profiler
+                  </Link>
                   <Link to="/codebase-health" onClick={closeDropdown}>
                     <span className="menu-icon">🩺</span>
                     Codebase Health

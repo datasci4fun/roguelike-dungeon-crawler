@@ -25,3 +25,4 @@ export { WebSocketMonitor } from './WebSocketMonitor';
 export { BuildInfo } from './BuildInfo';
 export { LogViewer } from './LogViewer';
 export { ErrorTracker } from './ErrorTracker';
+export { PerformanceProfiler } from './PerformanceProfiler';
