@@ -1090,16 +1090,17 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   {
     id: 'res-01',
     title: '3D Asset Pipeline',
-    description: 'CLI workflow for AI-generated 3D models using Meshy, Tripo, or Rodin APIs',
+    description: 'CLI workflow for AI-generated 3D models using TripoSR (open-source)',
     priority: 'research',
-    status: 'planned',
+    status: 'done',
     category: ['3d', 'infrastructure'],
     effort: 'epic',
     details: [
-      'Research available AI 3D generation APIs',
-      'Design CLI workflow for asset generation',
-      'Integration with existing Three.js renderer',
-      'Replace procedural geometry with actual 3D assets',
+      'Researched AI 3D APIs: Meshy, Tripo, Rodin require paid tiers for API',
+      'Selected TripoSR (MIT license, Stability AI) - runs locally on CPU',
+      'Installed at tools/3d-pipeline/TripoSR with venv',
+      'Created generate_asset.py wrapper script for easy usage',
+      'Outputs OBJ + texture, convertible to GLB for Three.js',
     ],
   },
   {
