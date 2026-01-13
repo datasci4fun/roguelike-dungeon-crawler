@@ -1,192 +1,18 @@
-"""Ghost differentiation system for meaningful ghost encounters.
+"""Ghost manager for spawning and behavior.
 
-Death Ghosts (from players who died):
-- Echo: Path loop residue, leads to something meaningful
-- Hollowed: Hostile wandering remnant
-- Silence: Debuff area marking absence
-
-Victory Imprints (from players who won):
-- Beacon: Guidance cue toward progression (low combat + low lore)
-- Champion: One-time combat assist (high kills)
-- Archivist: Knowledge/secret reveal (high lore found)
-
-Victory imprint type is DERIVED from run stats (not random):
-- Low combat + low lore → Beacon
-- High combat → Champion
-- High lore → Archivist
-- Both high → hybrid (primary by higher, secondary flourish)
+This module contains the GhostManager class that handles ghost
+spawning, placement, and per-turn behavior processing.
 """
-from dataclasses import dataclass, field
-from enum import Enum, auto
-from typing import TYPE_CHECKING, Optional, List, Tuple, Set
 import random
+from typing import TYPE_CHECKING, Optional, List, Tuple, Set, Dict
+
+from .types import GhostType, GHOST_ZONE_BIAS, GHOST_LIMITS, victory_legacy_to_ghost_type
+from .ghost import Ghost, GhostPath
 
 if TYPE_CHECKING:
-    from ..world import Dungeon
-    from .entities import Player
-    from ..story.completion import VictoryLegacyResult, VictoryLegacy
-
-
-class GhostType(Enum):
-    """Types of ghost manifestations."""
-    # Death ghosts
-    ECHO = auto()       # Movement residue, path loop
-    HOLLOWED = auto()   # Hostile wandering remnant
-    SILENCE = auto()    # Debuff area
-
-    # Victory imprints
-    BEACON = auto()     # Guidance cue
-    CHAMPION = auto()   # Combat assist
-    ARCHIVIST = auto()  # Knowledge reveal
-
-
-# Zone placements for each ghost type
-GHOST_ZONE_BIAS = {
-    # Echo: near seams and junction zones
-    GhostType.ECHO: [
-        'confluence_chambers', 'guard_corridors', 'parade_corridors',
-        'geometry_wells', 'maintenance_tunnels', 'root_warrens',
-    ],
-    # Hollowed: consumption/danger zones
-    GhostType.HOLLOWED: [
-        'digestion_chambers', 'diseased_pools', 'slag_pits',
-        'forbidden_stacks', 'the_nursery', 'ice_tombs',
-    ],
-    # Silence: lore-heavy/authority zones
-    GhostType.SILENCE: [
-        'oath_chambers', 'record_vaults', 'seal_chambers',
-        'oath_interface', 'throne_hall_ruins',
-    ],
-    # Beacon: transition points
-    GhostType.BEACON: [
-        'intake_hall', 'confluence_chambers', 'boss_approach',
-        'frozen_galleries', 'reading_halls', 'forge_halls', 'crystal_gardens',
-    ],
-    # Champion: combat spike zones
-    GhostType.CHAMPION: [
-        'boss_approach', 'the_nursery', 'colony_heart',
-        'crucible_heart', 'execution_chambers',
-    ],
-    # Archivist: knowledge/authority zones
-    GhostType.ARCHIVIST: [
-        'record_vaults', 'catalog_chambers', 'seal_drifts',
-        'seal_chambers', 'oath_interface', 'indexing_heart',
-    ],
-}
-
-# Per-floor limits
-GHOST_LIMITS = {
-    GhostType.ECHO: 2,
-    GhostType.HOLLOWED: 2,
-    GhostType.SILENCE: 1,
-    GhostType.BEACON: 1,
-    GhostType.CHAMPION: 1,
-    GhostType.ARCHIVIST: 1,
-}
-
-# Map VictoryLegacy to GhostType
-def victory_legacy_to_ghost_type(legacy_name: str) -> GhostType:
-    """Convert VictoryLegacy name to GhostType."""
-    mapping = {
-        'BEACON': GhostType.BEACON,
-        'CHAMPION': GhostType.CHAMPION,
-        'ARCHIVIST': GhostType.ARCHIVIST,
-    }
-    return mapping.get(legacy_name, GhostType.BEACON)
-
-
-# Messages for each ghost type (in-universe, evocative)
-# These trigger once per type per floor to avoid spam
-GHOST_MESSAGES = {
-    GhostType.ECHO: "A faint echo repeats the same steps...",
-    GhostType.HOLLOWED: "A hollowed delver turns toward you.",
-    GhostType.SILENCE: "Something is missing here.",
-    GhostType.BEACON: "A guiding light flickers ahead.",
-    GhostType.CHAMPION: "A champion's imprint stands with you.",
-    GhostType.ARCHIVIST: "Dust rearranges into a warning.",
-}
-
-
-@dataclass
-class GhostPath:
-    """Path data for Echo ghosts."""
-    positions: List[Tuple[int, int]]
-    current_index: int = 0
-    destination_type: str = "lore"  # lore, safe_path, secret
-
-    def get_current_position(self) -> Tuple[int, int]:
-        return self.positions[self.current_index]
-
-    def advance(self):
-        self.current_index = (self.current_index + 1) % len(self.positions)
-
-
-@dataclass
-class Ghost:
-    """A ghost manifestation on the dungeon floor."""
-    ghost_type: GhostType
-    x: int
-    y: int
-    zone_id: str = ""
-
-    # Source info (from ghost recording)
-    username: str = "Unknown"
-    victory: bool = False
-
-    # State
-    encountered: bool = False  # Player has seen this ghost
-    triggered: bool = False    # Effect has activated
-    active: bool = True        # Still present on floor
-
-    # Echo-specific
-    path: Optional[GhostPath] = None
-
-    # Silence-specific
-    radius: int = 2            # Debuff area radius
-
-    # Champion-specific
-    assist_used: bool = False
-    trial_spawned: bool = False       # Combat trial spawned
-    trial_enemy_id: Optional[int] = None  # ID of spawned trial enemy
-    trial_completed: bool = False     # Trial enemy was defeated
-
-    # Secondary flourish (for hybrid legacy)
-    secondary_tag: Optional[str] = None  # "archivist_mark" or "champion_edge"
-    secondary_used: bool = False
-
-    @property
-    def symbol(self) -> str:
-        """Get display symbol for this ghost.
-
-        Glyphs chosen to avoid collisions with:
-        - TileType: ~ (lava), + (door), @ (player), ? (ambiguous)
-        - Enemy symbols: various letters
-        """
-        return {
-            GhostType.ECHO: 'ε',      # Greek epsilon - "echo" resonance
-            GhostType.HOLLOWED: 'H',  # Keep - no conflict
-            GhostType.SILENCE: 'Ø',   # Null/void - perfect for absence
-            GhostType.BEACON: '✧',    # Sparkle variant - guidance light
-            GhostType.CHAMPION: '†',  # Cross/defender - combat assist
-            GhostType.ARCHIVIST: '§', # Section sign - documents/records
-        }.get(self.ghost_type, '?')
-
-    @property
-    def name(self) -> str:
-        """Get display name for this ghost."""
-        base_names = {
-            GhostType.ECHO: "Echo",
-            GhostType.HOLLOWED: f"Hollowed {self.username[:8]}",
-            GhostType.SILENCE: "Silence",
-            GhostType.BEACON: "Beacon",
-            GhostType.CHAMPION: "Champion's Imprint",
-            GhostType.ARCHIVIST: "Archivist's Mark",
-        }
-        return base_names.get(self.ghost_type, "Ghost")
-
-    def get_message(self) -> str:
-        """Get encounter message for this ghost."""
-        return GHOST_MESSAGES.get(self.ghost_type, "You sense a presence...")
+    from ...world import Dungeon
+    from ..entities import Player
+    from ...story.completion import VictoryLegacyResult
 
 
 class GhostManager:
@@ -237,7 +63,7 @@ class GhostManager:
         death_types = [GhostType.ECHO, GhostType.HOLLOWED, GhostType.SILENCE]
 
         # Track spawned counts
-        spawned = {gt: 0 for gt in GhostType}
+        spawned: Dict[GhostType, int] = {gt: 0 for gt in GhostType}
 
         # Process ghost data if available
         if ghost_data:
@@ -531,75 +357,93 @@ class GhostManager:
 
             # Champion: assist when health low, OR offer combat trial
             if ghost.ghost_type == GhostType.CHAMPION:
-                # Priority 1: HP assist when health is critical or near boss
-                should_assist = False
-                if player.health < player.max_health * 0.3:
-                    should_assist = True
-                if ghost.zone_id == 'boss_approach' and distance <= 3:
-                    should_assist = True
-
-                if should_assist and not ghost.assist_used and distance <= 5:
-                    ghost.assist_used = True
-                    ghost.triggered = True
-                    if ghost.ghost_type not in self._messages_shown:
-                        self._messages_shown.add(ghost.ghost_type)
-                        messages.append(ghost.get_message())
-                    # Visual cue + buff
-                    messages.append("A surge of strength flows through you! (+3 HP)")
-                    player.health = min(player.health + 3, player.max_health + 3)
-
-                    # Secondary flourish: archivist_mark reveals nearby tiles
-                    if ghost.secondary_tag == "archivist_mark" and not ghost.secondary_used:
-                        ghost.secondary_used = True
-                        messages.append("An archivist's mark lingers in your wake.")
-                        for dx in range(-3, 4):
-                            for dy in range(-3, 4):
-                                rx, ry = player.x + dx, player.y + dy
-                                if 0 <= rx < dungeon.width and 0 <= ry < dungeon.height:
-                                    dungeon.explored[ry][rx] = True
-
-                # Priority 2: Combat trial when healthy and near ghost
-                elif distance <= 2 and not ghost.trial_spawned and not ghost.triggered:
-                    # Player is healthy enough for a trial
-                    ghost.triggered = True
-                    if ghost.ghost_type not in self._messages_shown:
-                        self._messages_shown.add(ghost.ghost_type)
-                        messages.append(ghost.get_message())
-                    messages.append("The champion offers you a trial of combat...")
-                    messages.append("Defeat the challenger for a reward!")
-                    # Mark trial as ready to spawn (actual spawn handled by game engine)
-                    ghost.trial_spawned = True
-                    self._pending_trial_ghost = ghost
+                messages.extend(self._process_champion(ghost, player, dungeon, distance))
 
             # Archivist: reveal lore/secrets in record zones, otherwise tiles
             if ghost.ghost_type == GhostType.ARCHIVIST:
-                if distance <= 2 and not ghost.triggered:
-                    ghost.triggered = True
-                    if ghost.ghost_type not in self._messages_shown:
-                        self._messages_shown.add(ghost.ghost_type)
-                        messages.append(ghost.get_message())
+                messages.extend(self._process_archivist(ghost, player, dungeon, distance))
 
-                    # In record/lore zones, reveal more specifically
-                    lore_zones = ['record_vaults', 'catalog_chambers', 'seal_chambers',
-                                  'seal_drifts', 'indexing_heart']
-                    if ghost.zone_id in lore_zones:
-                        messages.append("Ancient records shimmer into view...")
-                    else:
-                        messages.append("Hidden knowledge reveals itself...")
+        return messages
 
-                    # Reveal nearby tiles (larger radius in lore zones)
-                    reveal_radius = 6 if ghost.zone_id in lore_zones else 4
-                    for dx in range(-reveal_radius, reveal_radius + 1):
-                        for dy in range(-reveal_radius, reveal_radius + 1):
-                            rx, ry = player.x + dx, player.y + dy
-                            if 0 <= rx < dungeon.width and 0 <= ry < dungeon.height:
-                                dungeon.explored[ry][rx] = True
+    def _process_champion(self, ghost: Ghost, player: 'Player',
+                          dungeon: 'Dungeon', distance: int) -> List[str]:
+        """Process Champion ghost behavior."""
+        messages = []
 
-                    # Secondary flourish: champion_edge grants +2 temp HP
-                    if ghost.secondary_tag == "champion_edge" and not ghost.secondary_used:
-                        ghost.secondary_used = True
-                        messages.append("A champion's edge remains.")
-                        player.health = min(player.health + 2, player.max_health + 2)
+        # Priority 1: HP assist when health is critical or near boss
+        should_assist = False
+        if player.health < player.max_health * 0.3:
+            should_assist = True
+        if ghost.zone_id == 'boss_approach' and distance <= 3:
+            should_assist = True
+
+        if should_assist and not ghost.assist_used and distance <= 5:
+            ghost.assist_used = True
+            ghost.triggered = True
+            if ghost.ghost_type not in self._messages_shown:
+                self._messages_shown.add(ghost.ghost_type)
+                messages.append(ghost.get_message())
+            # Visual cue + buff
+            messages.append("A surge of strength flows through you! (+3 HP)")
+            player.health = min(player.health + 3, player.max_health + 3)
+
+            # Secondary flourish: archivist_mark reveals nearby tiles
+            if ghost.secondary_tag == "archivist_mark" and not ghost.secondary_used:
+                ghost.secondary_used = True
+                messages.append("An archivist's mark lingers in your wake.")
+                for dx in range(-3, 4):
+                    for dy in range(-3, 4):
+                        rx, ry = player.x + dx, player.y + dy
+                        if 0 <= rx < dungeon.width and 0 <= ry < dungeon.height:
+                            dungeon.explored[ry][rx] = True
+
+        # Priority 2: Combat trial when healthy and near ghost
+        elif distance <= 2 and not ghost.trial_spawned and not ghost.triggered:
+            # Player is healthy enough for a trial
+            ghost.triggered = True
+            if ghost.ghost_type not in self._messages_shown:
+                self._messages_shown.add(ghost.ghost_type)
+                messages.append(ghost.get_message())
+            messages.append("The champion offers you a trial of combat...")
+            messages.append("Defeat the challenger for a reward!")
+            # Mark trial as ready to spawn (actual spawn handled by game engine)
+            ghost.trial_spawned = True
+            self._pending_trial_ghost = ghost
+
+        return messages
+
+    def _process_archivist(self, ghost: Ghost, player: 'Player',
+                           dungeon: 'Dungeon', distance: int) -> List[str]:
+        """Process Archivist ghost behavior."""
+        messages = []
+
+        if distance <= 2 and not ghost.triggered:
+            ghost.triggered = True
+            if ghost.ghost_type not in self._messages_shown:
+                self._messages_shown.add(ghost.ghost_type)
+                messages.append(ghost.get_message())
+
+            # In record/lore zones, reveal more specifically
+            lore_zones = ['record_vaults', 'catalog_chambers', 'seal_chambers',
+                          'seal_drifts', 'indexing_heart']
+            if ghost.zone_id in lore_zones:
+                messages.append("Ancient records shimmer into view...")
+            else:
+                messages.append("Hidden knowledge reveals itself...")
+
+            # Reveal nearby tiles (larger radius in lore zones)
+            reveal_radius = 6 if ghost.zone_id in lore_zones else 4
+            for dx in range(-reveal_radius, reveal_radius + 1):
+                for dy in range(-reveal_radius, reveal_radius + 1):
+                    rx, ry = player.x + dx, player.y + dy
+                    if 0 <= rx < dungeon.width and 0 <= ry < dungeon.height:
+                        dungeon.explored[ry][rx] = True
+
+            # Secondary flourish: champion_edge grants +2 temp HP
+            if ghost.secondary_tag == "champion_edge" and not ghost.secondary_used:
+                ghost.secondary_used = True
+                messages.append("A champion's edge remains.")
+                player.health = min(player.health + 2, player.max_health + 2)
 
         return messages
 
@@ -640,8 +484,8 @@ class GhostManager:
         Returns:
             True if any Hollowed were spawned
         """
-        from ..core.constants import EnemyType
-        from .entities import Enemy
+        from ...core.constants import EnemyType
+        from ..entities import Enemy
 
         spawned_any = False
 
@@ -681,8 +525,8 @@ class GhostManager:
         ghost = self._pending_trial_ghost
         self._pending_trial_ghost = None
 
-        from ..core.constants import EnemyType, FLOOR_ENEMY_POOLS
-        from .entities import Enemy
+        from ...core.constants import EnemyType, FLOOR_ENEMY_POOLS
+        from ..entities import Enemy
 
         # Select a challenging enemy type based on floor
         floor_pool = FLOOR_ENEMY_POOLS.get(self.floor, [])
