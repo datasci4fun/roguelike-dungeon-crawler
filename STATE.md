@@ -2,11 +2,11 @@
 
 **Last Updated:** 2026-01-13
 **Branch:** develop
-**Version:** v6.6.0 (Data Persistence Migration)
+**Version:** v6.7.0 (Data Persistence Migration)
 
 ---
 
-## Current Status: v6.6.0 - Data Persistence Migration Complete
+## Current Status: v6.7.0 - Data Persistence Migration Complete
 
 Game constants migrated from static Python/TypeScript files to PostgreSQL with Redis caching.
 
@@ -59,7 +59,7 @@ Game constants migrated from static Python/TypeScript files to PostgreSQL with R
 
 ## Recent Changes
 
-### v6.6.0 (2026-01-13) - Data Persistence Migration
+### v6.7.0 (2026-01-13) - Data Persistence Migration
 - New: JSON seed files in `data/seeds/` for game balance versioning
 - New: SQLAlchemy models for all game constants
 - New: Redis cache layer with 24h TTL for game constants
