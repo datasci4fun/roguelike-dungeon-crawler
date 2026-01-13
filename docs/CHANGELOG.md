@@ -410,7 +410,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [4.0.0] - 2025-12-28 - Expanded Gameplay
+## [4.0.0] - 2025-12-30 - Expanded Gameplay
 
 ### Added
 - **6 New Enemies**: Necromancer, Demon, Assassin, Fire/Ice/Lightning Elementals
@@ -422,7 +422,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [3.5.0] - 2025-12-25 - Friends & Social
+## [3.5.0] - 2025-12-30 - Friends & Social
 
 ### Added
 - **Friends System**: Search, requests, online status
@@ -431,7 +431,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [3.4.0] - 2025-12-22 - Mobile Support
+## [3.4.0] - 2025-12-30 - Mobile Support
 
 ### Added
 - **Touch Controls**: D-pad and action buttons
@@ -440,7 +440,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [3.3.0] - 2025-12-20 - Spectator Mode
+## [3.3.0] - 2025-12-30 - Spectator Mode
 
 ### Added
 - **Live Spectating**: Watch other players' games
@@ -449,7 +449,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [3.2.0] - 2025-12-18 - Boss Monsters
+## [3.2.0] - 2025-12-30 - Boss Monsters
 
 ### Added
 - **5 Bosses**: Goblin King, Cave Troll, Lich Lord, Arcane Keeper, Dragon Emperor
@@ -459,7 +459,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [3.1.0] - 2025-12-15 - Profiles & Achievements
+## [3.1.0] - 2025-12-30 - Profiles & Achievements
 
 ### Added
 - **Player Profiles**: Stats, recent games, showcase
@@ -468,7 +468,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [3.0.0] - 2025-12-10 - Multiplayer & Web
+## [3.0.0] - 2025-12-30 - Multiplayer & Web
 
 ### Added
 - **FastAPI Backend**: REST + WebSocket API
@@ -480,7 +480,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [2.2.1] - 2025-12-08
+## [2.2.1] - 2025-12-30
 
 ### Fixed
 - Lore items display content when read
@@ -489,7 +489,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [2.2.0] - 2025-12-05 - UX & Story
+## [2.2.0] - 2025-12-30 - UX & Story
 
 ### Added
 - **Title Screen**: ASCII art menu
@@ -501,7 +501,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [2.1.0] - 2025-12-01 - Equipment & UI
+## [2.1.0] - 2025-12-30 - Equipment & UI
 
 ### Added
 - **Equipment System**: Weapons and armor with rarity
@@ -514,7 +514,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [2.0.0] - 2025-11-25 - Visual Variety
+## [2.0.0] - 2025-12-30 - Visual Variety
 
 ### Added
 - **6 Enemy Types**: Goblin, Skeleton, Orc, Wraith, Troll, Dragon
@@ -525,7 +525,7 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [1.2.0] - 2025-11-15
+## [1.2.0] - 2025-12-30
 
 ### Added
 - Elite enemies with boosted stats
@@ -534,14 +534,14 @@ manager = BattleManager(floor_level=3, biome='FOREST', zone_id='canopy_halls', s
 
 ---
 
-## [1.1.0] - 2025-11-10
+## [1.1.0] - 2025-12-30
 
 ### Added
 - XP and leveling system
 
 ---
 
-## [1.0.0] - 2025-11-01 - Initial Release
+## [1.0.0] - 2025-12-30 - Initial Release
 
 ### Added
 - Procedural dungeon generation (BSP)
