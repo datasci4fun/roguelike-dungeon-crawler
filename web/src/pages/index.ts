@@ -19,3 +19,4 @@ export { Changelog } from './Changelog';
 export { DatabaseExplorer } from './DatabaseExplorer';
 export { CacheInspector } from './CacheInspector';
 export { AudioJukebox } from './AudioJukebox';
+export { SystemStatus } from './SystemStatus';
