@@ -14,3 +14,7 @@ export { PlayScene } from './PlayScene';
 export { SceneDemo } from './SceneDemo';
 export { Presentation } from './Presentation';
 export { Roadmap } from './Roadmap';
+export { CodebaseHealth } from './CodebaseHealth';
+export { Changelog } from './Changelog';
+export { DatabaseExplorer } from './DatabaseExplorer';
+export { CacheInspector } from './CacheInspector';

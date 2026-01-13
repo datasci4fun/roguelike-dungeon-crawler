@@ -88,11 +88,12 @@ function groupReinforcements(reinforcements: BattleReinforcement[]) {
 type OverviewPhase = 'zoom_out' | 'pan_enemies' | 'pan_player' | 'settle' | 'done';
 
 // v6.1: Phase durations (ms) - base timings, scaled by arena size
-const OVERVIEW_BASE_TIMINGS = {
+const OVERVIEW_BASE_TIMINGS: Record<OverviewPhase, number> = {
   zoom_out: 250,
   pan_enemies: 450,
   pan_player: 450,
   settle: 350,
+  done: 0,
 };
 
 // Arena size -> timing multiplier (larger arenas get slightly longer overview)

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:health": "python ../scripts/generate_codebase_health.py"
   },
   "dependencies": {
     "@types/howler": "^2.2.12",

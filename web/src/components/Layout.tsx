@@ -77,6 +77,22 @@ export function Layout() {
                     <span className="menu-icon">🗺️</span>
                     Roadmap
                   </Link>
+                  <Link to="/codebase-health" onClick={closeDropdown}>
+                    <span className="menu-icon">🩺</span>
+                    Codebase Health
+                  </Link>
+                  <Link to="/changelog" onClick={closeDropdown}>
+                    <span className="menu-icon">📋</span>
+                    Patch Notes
+                  </Link>
+                  <Link to="/db-explorer" onClick={closeDropdown}>
+                    <span className="menu-icon">🗄️</span>
+                    DB Explorer
+                  </Link>
+                  <Link to="/cache-inspector" onClick={closeDropdown}>
+                    <span className="menu-icon">⚡</span>
+                    Cache Inspector
+                  </Link>
                 </div>
               )}
             </div>

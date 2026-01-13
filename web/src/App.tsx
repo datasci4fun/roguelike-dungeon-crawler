@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Home, Login, Register, Play, Features, About, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends, Presentation, Roadmap } from './pages';
+import { Home, Login, Register, Play, Features, About, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends, Presentation, Roadmap, CodebaseHealth, Changelog, DatabaseExplorer, CacheInspector } from './pages';
 import { FirstPersonDemo } from './pages/FirstPersonDemo';
 import { FirstPersonTestPage } from './pages/FirstPersonTestPage';
 import { Debug3DPage } from './pages/Debug3DPage';
@@ -31,6 +31,10 @@ function App() {
         <Route path="friends" element={<Friends />} />
         <Route path="presentation" element={<Presentation />} />
         <Route path="roadmap" element={<Roadmap />} />
+        <Route path="codebase-health" element={<CodebaseHealth />} />
+        <Route path="changelog" element={<Changelog />} />
+        <Route path="db-explorer" element={<DatabaseExplorer />} />
+        <Route path="cache-inspector" element={<CacheInspector />} />
       </Route>
     </Routes>
   );

@@ -20,7 +20,6 @@ import {
   STATUS_CONFIG,
   CATEGORY_CONFIG,
   EFFORT_CONFIG,
-  getCompletionStats,
   getPriorityStats,
   type RoadmapItem,
   type Priority,

@@ -19,7 +19,6 @@ import { GameOver } from '../components/GameOver';
 import { GameOverCutscene, type DeathFateId } from '../components/GameOverCutscene';
 import { VictoryCutscene, type VictoryLegacyId } from '../components/VictoryCutscene';
 import { LoreCodex } from '../components/LoreCodex';
-import { BattleOverlay } from '../components/BattleOverlay';
 import { BattleRenderer3D } from '../components/BattleRenderer3D';
 import { BattleHUD, type SelectedAction, type TileCoord } from '../components/BattleHUD';
 import { TransitionCurtain } from '../components/TransitionCurtain';

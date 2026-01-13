@@ -1,12 +1,14 @@
 /**
  * CodexReader - Reading pane that delegates to category-specific presentations
  */
-import type { LoreEntry, TransitionState, CreatureEntry, LocationEntry } from '../types';
+import type { LoreEntry, TransitionState } from '../types';
 import { isCreatureEntry, isLocationEntry } from '../types';
 import { ScrollPresentation } from './ScrollPresentation';
 import { BookPresentation } from './BookPresentation';
 import { CreaturePresentation } from './CreaturePresentation';
 import { LocationPresentation } from './LocationPresentation';
+
+type BasePresentationComponent = typeof ScrollPresentation | typeof BookPresentation;
 
 interface CodexReaderProps {
   entry: LoreEntry | null;
@@ -25,29 +27,14 @@ function EmptyState() {
   );
 }
 
-function getPresentation(entry: LoreEntry) {
-  // Check for extended entry types first
-  if (isCreatureEntry(entry)) {
-    return CreaturePresentation;
-  }
-  if (isLocationEntry(entry)) {
-    return LocationPresentation;
-  }
-
-  // Fall back to item_type based presentation
+/**
+ * Get presentation component for base LoreEntry types (not creature or location)
+ */
+function getBasePresentation(entry: LoreEntry): BasePresentationComponent {
   switch (entry.item_type) {
-    case 'bestiary':
-      // Shouldn't reach here due to type guard, but handle gracefully
-      return ScrollPresentation;
-    case 'location':
-      // Shouldn't reach here due to type guard, but handle gracefully
-      return ScrollPresentation;
     case 'book':
     case 'chronicle':
       return BookPresentation;
-    case 'scroll':
-    case 'character':
-    case 'artifact':
     default:
       return ScrollPresentation;
   }
@@ -61,8 +48,6 @@ export function CodexReader({ entry, transitionState }: CodexReaderProps) {
       </div>
     );
   }
-
-  const Presentation = getPresentation(entry);
 
   // Type narrowing for specialized presentations
   if (isCreatureEntry(entry)) {
@@ -81,6 +66,8 @@ export function CodexReader({ entry, transitionState }: CodexReaderProps) {
     );
   }
 
+  // Base entry types use scroll or book presentation
+  const Presentation = getBasePresentation(entry);
   return (
     <div className={`codex-reader transition-${transitionState}`}>
       <Presentation entry={entry} />

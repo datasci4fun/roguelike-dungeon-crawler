@@ -63,6 +63,21 @@ services:
       - ./src:/app/game_src  # Mount game engine for import
     restart: unless-stopped
 
+  # React Frontend (Vite dev server with HMR)
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: roguelike_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./web:/app
+      - /app/node_modules  # Preserve container's node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true  # Fallback polling flag
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
