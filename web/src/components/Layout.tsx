@@ -176,6 +176,10 @@ export function Layout() {
                     <span className="menu-icon">⚙️</span>
                     Env Config
                   </Link>
+                  <Link to="/dependencies" onClick={closeDropdown}>
+                    <span className="menu-icon">📦</span>
+                    Dependencies
+                  </Link>
                   <Link to="/codebase-health" onClick={closeDropdown}>
                     <span className="menu-icon">🩺</span>
                     Codebase Health
