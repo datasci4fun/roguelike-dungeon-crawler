@@ -93,6 +93,10 @@ export function Layout() {
                     <span className="menu-icon">⚡</span>
                     Cache Inspector
                   </Link>
+                  <Link to="/audio-jukebox" onClick={closeDropdown}>
+                    <span className="menu-icon">🎵</span>
+                    Audio Jukebox
+                  </Link>
                 </div>
               )}
             </div>
