@@ -227,6 +227,11 @@
   color: var(--roadmap-status-deferred);
 }
 
+.filter-chip.status-archived.active {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
 .clear-filters-btn {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
@@ -775,13 +780,13 @@
   box-shadow: 0 0 0 1px var(--sf-accent);
 }
 
-/* Removed Status Style */
+/* Archived Status Style */
 .roadmap-card.modified .card-title {
   position: relative;
 }
 
-.status-removed .card-title,
-.status-selector-btn.status-removed {
+.status-archived .card-title,
+.status-selector-btn.status-archived {
   text-decoration: line-through;
   opacity: 0.6;
 }

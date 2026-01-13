@@ -149,17 +149,21 @@ export function Roadmap() {
 
     const changes: {
       statusChanges: { id: string; title: string; from: string; to: string }[];
-      removals: { id: string; title: string }[];
+      rejected: { id: string; title: string; reason: string }[];
     } = {
       statusChanges: [],
-      removals: [],
+      rejected: [],
     };
 
     for (const [itemId, newStatus] of Object.entries(statusOverrides)) {
       const item = ROADMAP_ITEMS.find(i => i.id === itemId);
       if (item) {
-        if (newStatus === 'removed') {
-          changes.removals.push({ id: itemId, title: item.title });
+        if (newStatus === 'archived') {
+          changes.rejected.push({
+            id: itemId,
+            title: item.title,
+            reason: 'User marked as "Don\'t Want" - do not suggest in future'
+          });
         } else {
           changes.statusChanges.push({
             id: itemId,
@@ -211,8 +215,8 @@ export function Roadmap() {
     return ROADMAP_ITEMS.filter((item) => {
       const effectiveStatus = getEffectiveStatus(item);
 
-      // Hide removed items unless in edit mode
-      if (effectiveStatus === 'removed' && !editMode) {
+      // Hide archived items unless in edit mode
+      if (effectiveStatus === 'archived' && !editMode) {
         return false;
       }
 
