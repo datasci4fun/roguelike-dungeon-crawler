@@ -309,7 +309,7 @@
   background: var(--sf-bg-dark);
   border: 1px solid var(--sf-border-subtle);
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
   transition: border-color 0.2s;
 }
 
@@ -698,6 +698,11 @@
 /* Status Selector Dropdown */
 .status-selector {
   position: relative;
+  z-index: 10;
+}
+
+.roadmap-card:hover .status-selector {
+  z-index: 9999;
 }
 
 .status-selector-btn {
@@ -727,13 +732,13 @@
   position: absolute;
   top: 100%;
   left: 0;
-  background: var(--sf-bg-dark);
+  background: #1a1a2e;
   border: 1px solid var(--sf-border-subtle);
   border-radius: 4px;
   padding: 0.25rem;
-  z-index: 100;
+  z-index: 9999;
   min-width: 140px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
 }
 
 .status-option {
