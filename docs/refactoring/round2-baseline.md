@@ -37,5 +37,23 @@ Target: Reduce to ~50 by splitting high-priority core files
 
 | Date | File | Before LOC | After LOC | Changes Made |
 |------|------|------------|-----------|--------------|
-| 2026-01-13 | battle_manager.py | 1219 | 517 + 1306 (5 files) | Split using composition: reinforcements.py (398), battle_results.py (429), enemy_turns.py (318), round_processing.py (161) |
+| 2026-01-13 | battle_manager.py | 1219 | 517 | Split using composition: reinforcements.py (398), battle_results.py (429), enemy_turns.py (318), round_processing.py (161) |
+| 2026-01-13 | bestiary.py | 1082 | 148 | Split into: bestiary_models.py (51), bestiary_data.py (979) |
+| 2026-01-13 | dungeon.py | 1564 | 899 | Extracted: zone_evidence.py (181), feature_generation.py (547) |
+| 2026-01-13 | abilities.py | 1142 | 47 | Split into: ability_definitions.py (262), ability_handlers.py (616) |
+
+## Round 2 Summary
+
+**Files Refactored:** 4
+**Main File LOC Reduction:** 5,007 → 1,611 (68% reduction)
+**New Focused Modules Created:** 9
+
+### LOC Changes by File
+| Original File | Before | After | Reduction |
+|---------------|--------|-------|-----------|
+| battle_manager.py | 1,219 | 517 | 58% |
+| bestiary.py | 1,082 | 148 | 86% |
+| dungeon.py | 1,564 | 899 | 42% |
+| abilities.py | 1,142 | 47 | 96% |
+| **Total** | **5,007** | **1,611** | **68%** |
 
