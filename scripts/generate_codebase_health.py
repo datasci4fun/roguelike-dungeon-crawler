@@ -65,6 +65,7 @@ class RefactorItem:
     affected_files: List[str] = field(default_factory=list)
     details: List[str] = field(default_factory=list)
     automated_reason: str = ''
+    technique: str = ''  # Specific refactoring approach
 
 
 def should_exclude(path: Path) -> bool:
@@ -260,6 +261,253 @@ def get_size_category(loc: int) -> str:
     return 'xlarge'
 
 
+@dataclass
+class FileAnalysis:
+    """Analysis of a file's internal structure."""
+    classes: List[str] = field(default_factory=list)
+    functions: List[str] = field(default_factory=list)
+    components: List[str] = field(default_factory=list)
+    hooks: List[str] = field(default_factory=list)
+    interfaces: List[str] = field(default_factory=list)
+    large_functions: List[Tuple[str, int]] = field(default_factory=list)  # (name, line_count)
+    decorators: List[str] = field(default_factory=list)
+    css_sections: List[str] = field(default_factory=list)
+
+
+def analyze_python_file(file_path: Path) -> FileAnalysis:
+    """Analyze a Python file to extract structure information."""
+    analysis = FileAnalysis()
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+            lines = content.split('\n')
+    except Exception:
+        return analysis
+
+    # Find classes
+    class_pattern = re.compile(r'^class\s+(\w+)')
+    for line in lines:
+        match = class_pattern.match(line)
+        if match:
+            analysis.classes.append(match.group(1))
+
+    # Find top-level functions and their sizes
+    func_pattern = re.compile(r'^def\s+(\w+)\s*\(')
+    current_func = None
+    func_start = 0
+    for i, line in enumerate(lines):
+        match = func_pattern.match(line)
+        if match:
+            # Close previous function
+            if current_func:
+                func_lines = i - func_start
+                analysis.functions.append(current_func)
+                if func_lines > 50:
+                    analysis.large_functions.append((current_func, func_lines))
+            current_func = match.group(1)
+            func_start = i
+    # Don't forget the last function
+    if current_func:
+        func_lines = len(lines) - func_start
+        analysis.functions.append(current_func)
+        if func_lines > 50:
+            analysis.large_functions.append((current_func, func_lines))
+
+    # Find decorators (for API routes, etc.)
+    decorator_pattern = re.compile(r'^@(\w+)')
+    for line in lines:
+        match = decorator_pattern.match(line.strip())
+        if match:
+            dec = match.group(1)
+            if dec not in analysis.decorators:
+                analysis.decorators.append(dec)
+
+    return analysis
+
+
+def analyze_typescript_file(file_path: Path) -> FileAnalysis:
+    """Analyze a TypeScript/React file to extract structure information."""
+    analysis = FileAnalysis()
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+            lines = content.split('\n')
+    except Exception:
+        return analysis
+
+    # Find React components (function components and arrow functions)
+    # Pattern: export function ComponentName or const ComponentName =
+    func_component = re.compile(r'(?:export\s+)?function\s+([A-Z]\w+)')
+    arrow_component = re.compile(r'(?:export\s+)?const\s+([A-Z]\w+)\s*[=:]\s*(?:\([^)]*\)|[^=])*=>')
+
+    for line in lines:
+        match = func_component.search(line)
+        if match:
+            name = match.group(1)
+            if not name.startswith('use'):
+                analysis.components.append(name)
+        match = arrow_component.search(line)
+        if match:
+            name = match.group(1)
+            if not name.startswith('use'):
+                analysis.components.append(name)
+
+    # Find hooks (functions starting with 'use')
+    hook_pattern = re.compile(r'(?:export\s+)?(?:function|const)\s+(use\w+)')
+    for line in lines:
+        match = hook_pattern.search(line)
+        if match:
+            analysis.hooks.append(match.group(1))
+
+    # Find interfaces and types
+    interface_pattern = re.compile(r'(?:export\s+)?(?:interface|type)\s+(\w+)')
+    for line in lines:
+        match = interface_pattern.search(line)
+        if match:
+            analysis.interfaces.append(match.group(1))
+
+    # Find large functions (simplified - count lines between function start and next function/end)
+    func_pattern = re.compile(r'(?:function|const)\s+(\w+)\s*(?:=|:|\()')
+    current_func = None
+    func_start = 0
+    brace_count = 0
+
+    for i, line in enumerate(lines):
+        match = func_pattern.search(line)
+        if match and brace_count == 0:
+            if current_func:
+                func_lines = i - func_start
+                if func_lines > 80:
+                    analysis.large_functions.append((current_func, func_lines))
+            current_func = match.group(1)
+            func_start = i
+
+    return analysis
+
+
+def analyze_css_file(file_path: Path) -> FileAnalysis:
+    """Analyze a CSS file to extract major sections."""
+    analysis = FileAnalysis()
+    try:
+        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+            content = f.read()
+    except Exception:
+        return analysis
+
+    # Find top-level class selectors to identify sections
+    selector_pattern = re.compile(r'^\.([a-zA-Z][\w-]*)\s*\{', re.MULTILINE)
+    selectors = selector_pattern.findall(content)
+
+    # Group by prefix (e.g., .battle-*, .hud-*, .menu-*)
+    prefixes = defaultdict(int)
+    for sel in selectors:
+        parts = sel.split('-')
+        if len(parts) > 1:
+            prefixes[parts[0]] += 1
+        else:
+            prefixes[sel] += 1
+
+    # Get the top section prefixes
+    sorted_prefixes = sorted(prefixes.items(), key=lambda x: -x[1])
+    analysis.css_sections = [p[0] for p in sorted_prefixes[:5] if p[1] >= 3]
+
+    return analysis
+
+
+def generate_technique(file_path: str, analysis: FileAnalysis, file_type: str, loc: int) -> str:
+    """Generate a specific refactoring technique based on file analysis."""
+    path = Path(file_path)
+    filename = path.stem
+    ext = path.suffix
+
+    # Python files
+    if ext == '.py':
+        techniques = []
+
+        # If has multiple large classes, suggest splitting by class
+        if len(analysis.classes) >= 3:
+            class_list = ', '.join(f'`{c}`' for c in analysis.classes[:4])
+            techniques.append(f"Extract classes into separate modules: {class_list}")
+        elif len(analysis.classes) == 2:
+            techniques.append(f"Split into `{analysis.classes[0].lower()}.py` and `{analysis.classes[1].lower()}.py`")
+
+        # If has many functions, group by responsibility
+        if len(analysis.functions) > 15:
+            # Try to identify groupings by prefix
+            prefixes = defaultdict(list)
+            for func in analysis.functions:
+                parts = func.split('_')
+                if len(parts) > 1 and parts[0] not in ('get', 'set', 'is', 'has', 'do', 'on'):
+                    prefixes[parts[0]].append(func)
+
+            if prefixes:
+                groups = sorted(prefixes.items(), key=lambda x: -len(x[1]))[:3]
+                if groups and len(groups[0][1]) >= 3:
+                    group_names = [f"`{g[0]}_*.py`" for g in groups if len(g[1]) >= 2]
+                    if group_names:
+                        techniques.append(f"Group related functions into: {', '.join(group_names)}")
+
+        # Large functions suggest extraction
+        if analysis.large_functions:
+            large = analysis.large_functions[:3]
+            func_names = ', '.join(f'`{f[0]}` ({f[1]} lines)' for f in large)
+            techniques.append(f"Break down large functions: {func_names}")
+
+        # API routes can be split by decorator groups
+        if 'router' in analysis.decorators or 'app' in analysis.decorators:
+            techniques.append("Split API routes into domain-specific router modules")
+
+        if techniques:
+            return ' | '.join(techniques)
+        return "Identify logical domains and extract into focused modules"
+
+    # TypeScript/React files
+    elif ext in ('.tsx', '.ts'):
+        techniques = []
+
+        # Multiple components suggest splitting
+        if len(analysis.components) >= 2:
+            comp_list = ', '.join(f'`{c}`' for c in analysis.components[:4])
+            techniques.append(f"Extract components to separate files: {comp_list}")
+
+        # Hooks should be in their own files
+        if analysis.hooks:
+            hook_list = ', '.join(f'`{h}`' for h in analysis.hooks[:3])
+            techniques.append(f"Move hooks to `hooks/` directory: {hook_list}")
+
+        # Many interfaces suggest a types file
+        if len(analysis.interfaces) >= 5:
+            techniques.append(f"Extract {len(analysis.interfaces)} interfaces to `types.ts`")
+
+        # Large functions in components
+        if analysis.large_functions:
+            large = analysis.large_functions[:2]
+            if large:
+                func_names = ', '.join(f'`{f[0]}`' for f in large)
+                techniques.append(f"Extract logic from large functions: {func_names}")
+
+        # Component-specific suggestions
+        if 'Renderer' in filename or '3D' in filename:
+            techniques.append("Separate rendering logic, scene setup, and animation into dedicated modules")
+        elif 'Form' in filename:
+            techniques.append("Extract form validation and submission logic to custom hooks")
+        elif 'List' in filename or 'Table' in filename:
+            techniques.append("Extract row/item components and pagination logic")
+
+        if techniques:
+            return ' | '.join(techniques)
+        return "Apply container/presenter pattern and extract reusable UI pieces"
+
+    # CSS files
+    elif ext in ('.css', '.scss'):
+        if analysis.css_sections:
+            sections = ', '.join(f'`{s}-*.css`' for s in analysis.css_sections[:3])
+            return f"Split by component prefix into: {sections}"
+        return "Split into component-scoped CSS modules"
+
+    return "Analyze file structure and extract cohesive modules"
+
+
 def scan_repository() -> List[FileStats]:
     """Scan all files in the repository."""
     files: List[FileStats] = []
@@ -310,9 +558,40 @@ def generate_refactor_suggestions(files: List[FileStats]) -> List[RefactorItem]:
         if f.area in ('docs', 'config', 'scripts'):
             continue
 
+        # Analyze file for specific recommendations
+        file_path = REPO_ROOT / f.path
+        ext = Path(f.path).suffix.lower()
+
+        if ext == '.py':
+            analysis = analyze_python_file(file_path)
+        elif ext in ('.ts', '.tsx'):
+            analysis = analyze_typescript_file(file_path)
+        elif ext in ('.css', '.scss'):
+            analysis = analyze_css_file(file_path)
+        else:
+            analysis = FileAnalysis()
+
+        # Generate specific technique
+        technique = generate_technique(f.path, analysis, f.file_type, f.loc)
+
         # Large files (>500 LOC)
         if f.loc > 500:
             ref_id += 1
+            # Build specific details based on analysis
+            details = [f'Current size: {f.loc} lines']
+            if analysis.classes:
+                details.append(f'Contains {len(analysis.classes)} classes: {", ".join(analysis.classes[:5])}')
+            if analysis.functions and len(analysis.functions) > 10:
+                details.append(f'Contains {len(analysis.functions)} functions')
+            if analysis.components:
+                details.append(f'Contains {len(analysis.components)} components: {", ".join(analysis.components[:5])}')
+            if analysis.hooks:
+                details.append(f'Contains {len(analysis.hooks)} hooks: {", ".join(analysis.hooks[:5])}')
+            if analysis.large_functions:
+                large_names = [f'{name} ({lines}L)' for name, lines in analysis.large_functions[:3]]
+                details.append(f'Large functions: {", ".join(large_names)}')
+            details.append('Update imports in dependent files after splitting')
+
             suggestions.append(RefactorItem(
                 id=f'ref-{ref_id:03d}',
                 title=f'Split large file: {Path(f.path).name}',
@@ -321,18 +600,23 @@ def generate_refactor_suggestions(files: List[FileStats]) -> List[RefactorItem]:
                 category=['split-file'],
                 effort='large' if f.loc > 800 else 'medium',
                 affected_files=[f.path],
-                details=[
-                    f'Current size: {f.loc} lines',
-                    'Identify logical groupings of functions/classes',
-                    'Extract into separate modules with clear responsibilities',
-                    'Update imports in dependent files'
-                ],
-                automated_reason=f'LOC > 500 ({f.loc} lines)'
+                details=details,
+                automated_reason=f'LOC > 500 ({f.loc} lines)',
+                technique=technique
             ))
 
         # Large React components (>300 LOC)
         elif f.file_type == 'component' and f.loc > 300:
             ref_id += 1
+            details = [f'Current size: {f.loc} lines']
+            if analysis.components:
+                details.append(f'Sub-components found: {", ".join(analysis.components[:5])}')
+            if analysis.hooks:
+                details.append(f'Hooks used: {", ".join(analysis.hooks[:5])}')
+            if analysis.interfaces:
+                details.append(f'Types defined: {len(analysis.interfaces)}')
+            details.append('Consider custom hooks for complex stateful logic')
+
             suggestions.append(RefactorItem(
                 id=f'ref-{ref_id:03d}',
                 title=f'Extract sub-components: {Path(f.path).name}',
@@ -341,18 +625,21 @@ def generate_refactor_suggestions(files: List[FileStats]) -> List[RefactorItem]:
                 category=['extract-component'],
                 effort='medium',
                 affected_files=[f.path],
-                details=[
-                    f'Current size: {f.loc} lines',
-                    'Identify repeated UI patterns',
-                    'Extract presentation components',
-                    'Consider custom hooks for complex logic'
-                ],
-                automated_reason=f'Component LOC > 300 ({f.loc} lines)'
+                details=details,
+                automated_reason=f'Component LOC > 300 ({f.loc} lines)',
+                technique=technique
             ))
 
         # Large pages (>400 LOC)
         elif f.file_type == 'page' and f.loc > 400:
             ref_id += 1
+            details = [f'Current size: {f.loc} lines']
+            if analysis.components:
+                details.append(f'Inline components: {", ".join(analysis.components[:5])}')
+            if analysis.hooks:
+                details.append(f'Hooks: {", ".join(analysis.hooks[:5])}')
+            details.append('Consider container/presenter pattern')
+
             suggestions.append(RefactorItem(
                 id=f'ref-{ref_id:03d}',
                 title=f'Simplify page: {Path(f.path).name}',
@@ -361,18 +648,22 @@ def generate_refactor_suggestions(files: List[FileStats]) -> List[RefactorItem]:
                 category=['extract-component', 'reduce-complexity'],
                 effort='medium',
                 affected_files=[f.path],
-                details=[
-                    f'Current size: {f.loc} lines',
-                    'Extract page sections into components',
-                    'Move data fetching to custom hooks',
-                    'Consider container/presenter pattern'
-                ],
-                automated_reason=f'Page LOC > 400 ({f.loc} lines)'
+                details=details,
+                automated_reason=f'Page LOC > 400 ({f.loc} lines)',
+                technique=technique
             ))
 
         # Large CSS files (>800 LOC)
         elif f.file_type == 'style' and f.loc > 800:
             ref_id += 1
+            details = [f'Current size: {f.loc} lines']
+            if analysis.css_sections:
+                details.append(f'Major sections: {", ".join(analysis.css_sections[:5])}')
+            details.extend([
+                'Consider CSS modules or styled-components',
+                'Group styles by component'
+            ])
+
             suggestions.append(RefactorItem(
                 id=f'ref-{ref_id:03d}',
                 title=f'Split stylesheet: {Path(f.path).name}',
@@ -381,18 +672,18 @@ def generate_refactor_suggestions(files: List[FileStats]) -> List[RefactorItem]:
                 category=['split-file'],
                 effort='small',
                 affected_files=[f.path],
-                details=[
-                    f'Current size: {f.loc} lines',
-                    'Consider CSS modules or styled-components',
-                    'Group styles by component',
-                    'Extract common utilities to shared file'
-                ],
-                automated_reason=f'CSS LOC > 800 ({f.loc} lines)'
+                details=details,
+                automated_reason=f'CSS LOC > 800 ({f.loc} lines)',
+                technique=technique
             ))
 
         # Deep nesting (>5 levels)
         if f.nesting_depth > 5:
             ref_id += 1
+            # For deep nesting, suggest a more appropriate location
+            path_parts = Path(f.path).parts
+            suggested_location = '/'.join(path_parts[:3]) if len(path_parts) > 3 else f.path
+
             suggestions.append(RefactorItem(
                 id=f'ref-{ref_id:03d}',
                 title=f'Flatten structure: {f.path}',
@@ -403,11 +694,11 @@ def generate_refactor_suggestions(files: List[FileStats]) -> List[RefactorItem]:
                 affected_files=[f.path],
                 details=[
                     f'Current nesting depth: {f.nesting_depth}',
-                    'Consider flatter directory structure',
-                    'Move to more appropriate location',
-                    'Update import paths'
+                    f'Consider moving to: {suggested_location}/',
+                    'Update import paths in dependent files'
                 ],
-                automated_reason=f'Nesting depth > 5 ({f.nesting_depth} levels)'
+                automated_reason=f'Nesting depth > 5 ({f.nesting_depth} levels)',
+                technique=f'Move to shallower location like `{suggested_location}/`'
             ))
 
     return suggestions
@@ -477,6 +768,8 @@ def generate_typescript(files: List[FileStats], refactors: List[RefactorItem]) -
         # Escape single quotes in title and description
         escaped_title = r.title.replace("'", "\\'")
         escaped_desc = r.description.replace("'", "\\'")
+        # Escape technique field
+        escaped_technique = r.technique.replace("'", "\\'").replace('\n', ' ')
         refactor_lines.append(f"""  {{
     id: '{r.id}',
     title: '{escaped_title}',
@@ -487,7 +780,8 @@ def generate_typescript(files: List[FileStats], refactors: List[RefactorItem]) -
     effort: '{r.effort}',
     affectedFiles: [{affected}],
     details: [{details}],
-    automatedReason: '{r.automated_reason}'
+    automatedReason: '{r.automated_reason}',
+    technique: '{escaped_technique}'
   }}""")
 
     # Pre-compute joined strings for the template
@@ -560,6 +854,7 @@ export interface RefactorItem {{
   affectedFiles: string[];
   details: string[];
   automatedReason: string;
+  technique: string;
 }}
 
 // =============================================================================

@@ -789,6 +789,16 @@ export function CodebaseHealth() {
                                     {item.automatedReason}
                                   </div>
                                 )}
+                                {item.technique && (
+                                  <div className="technique-recommendation">
+                                    <span className="technique-label">Recommended Approach:</span>
+                                    <div className="technique-content">
+                                      {item.technique.split('`').map((part, i) =>
+                                        i % 2 === 0 ? part : <code key={i}>{part}</code>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
