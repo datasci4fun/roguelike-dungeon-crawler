@@ -65,6 +65,29 @@ export function Layout() {
                     <span className="menu-icon">✦</span>
                     Features
                   </Link>
+                  <Link to="/roadmap" onClick={closeDropdown}>
+                    <span className="menu-icon">🗺️</span>
+                    Roadmap
+                  </Link>
+                  <Link to="/changelog" onClick={closeDropdown}>
+                    <span className="menu-icon">📋</span>
+                    Patch Notes
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* About Dropdown */}
+            <div className="nav-dropdown">
+              <button
+                className={`nav-dropdown-trigger ${openDropdown === 'about' ? 'active' : ''}`}
+                onClick={() => toggleDropdown('about')}
+              >
+                About
+                <span className="dropdown-arrow">▾</span>
+              </button>
+              {openDropdown === 'about' && (
+                <div className="nav-dropdown-menu">
                   <Link to="/about" onClick={closeDropdown}>
                     <span className="menu-icon">🤖</span>
                     Built by AI
@@ -72,46 +95,6 @@ export function Layout() {
                   <Link to="/presentation" onClick={closeDropdown}>
                     <span className="menu-icon">📊</span>
                     Case Study
-                  </Link>
-                  <Link to="/roadmap" onClick={closeDropdown}>
-                    <span className="menu-icon">🗺️</span>
-                    Roadmap
-                  </Link>
-                  <Link to="/codebase-health" onClick={closeDropdown}>
-                    <span className="menu-icon">🩺</span>
-                    Codebase Health
-                  </Link>
-                  <Link to="/changelog" onClick={closeDropdown}>
-                    <span className="menu-icon">📋</span>
-                    Patch Notes
-                  </Link>
-                  <Link to="/db-explorer" onClick={closeDropdown}>
-                    <span className="menu-icon">🗄️</span>
-                    DB Explorer
-                  </Link>
-                  <Link to="/cache-inspector" onClick={closeDropdown}>
-                    <span className="menu-icon">⚡</span>
-                    Cache Inspector
-                  </Link>
-                  <Link to="/audio-jukebox" onClick={closeDropdown}>
-                    <span className="menu-icon">🎵</span>
-                    Audio Jukebox
-                  </Link>
-                  <Link to="/system-status" onClick={closeDropdown}>
-                    <span className="menu-icon">📡</span>
-                    System Status
-                  </Link>
-                  <Link to="/api-playground" onClick={closeDropdown}>
-                    <span className="menu-icon">🧪</span>
-                    API Playground
-                  </Link>
-                  <Link to="/ws-monitor" onClick={closeDropdown}>
-                    <span className="menu-icon">🔌</span>
-                    WS Monitor
-                  </Link>
-                  <Link to="/build-info" onClick={closeDropdown}>
-                    <span className="menu-icon">🏗️</span>
-                    Build Info
                   </Link>
                 </div>
               )}
@@ -146,6 +129,55 @@ export function Layout() {
                       Friends
                     </Link>
                   )}
+                </div>
+              )}
+            </div>
+
+            {/* Dev Tools Dropdown */}
+            <div className="nav-dropdown">
+              <button
+                className={`nav-dropdown-trigger ${openDropdown === 'devtools' ? 'active' : ''}`}
+                onClick={() => toggleDropdown('devtools')}
+              >
+                Dev Tools
+                <span className="dropdown-arrow">▾</span>
+              </button>
+              {openDropdown === 'devtools' && (
+                <div className="nav-dropdown-menu">
+                  <Link to="/system-status" onClick={closeDropdown}>
+                    <span className="menu-icon">📡</span>
+                    System Status
+                  </Link>
+                  <Link to="/build-info" onClick={closeDropdown}>
+                    <span className="menu-icon">🏗️</span>
+                    Build Info
+                  </Link>
+                  <Link to="/codebase-health" onClick={closeDropdown}>
+                    <span className="menu-icon">🩺</span>
+                    Codebase Health
+                  </Link>
+                  <div className="menu-divider" />
+                  <Link to="/db-explorer" onClick={closeDropdown}>
+                    <span className="menu-icon">🗄️</span>
+                    DB Explorer
+                  </Link>
+                  <Link to="/cache-inspector" onClick={closeDropdown}>
+                    <span className="menu-icon">⚡</span>
+                    Cache Inspector
+                  </Link>
+                  <Link to="/api-playground" onClick={closeDropdown}>
+                    <span className="menu-icon">🧪</span>
+                    API Playground
+                  </Link>
+                  <Link to="/ws-monitor" onClick={closeDropdown}>
+                    <span className="menu-icon">🔌</span>
+                    WS Monitor
+                  </Link>
+                  <div className="menu-divider" />
+                  <Link to="/audio-jukebox" onClick={closeDropdown}>
+                    <span className="menu-icon">🎵</span>
+                    Audio Jukebox
+                  </Link>
                 </div>
               )}
             </div>
