@@ -78,6 +78,7 @@ FRONTEND_ROUTES = [
     {"path": "/env-config", "name": "Env Config", "description": "Configuration viewer", "dev_tool": True},
     {"path": "/dependencies", "name": "Dependencies", "description": "Package dependencies", "dev_tool": True},
     {"path": "/routes", "name": "Route Explorer", "description": "API routes viewer", "dev_tool": True},
+    {"path": "/metrics", "name": "Metrics Dashboard", "description": "Performance metrics", "dev_tool": True},
 ]
 
 

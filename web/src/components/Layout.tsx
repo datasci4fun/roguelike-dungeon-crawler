@@ -184,6 +184,10 @@ export function Layout() {
                     <span className="menu-icon">🔀</span>
                     Route Explorer
                   </Link>
+                  <Link to="/metrics" onClick={closeDropdown}>
+                    <span className="menu-icon">📈</span>
+                    Metrics
+                  </Link>
                   <Link to="/codebase-health" onClick={closeDropdown}>
                     <span className="menu-icon">🩺</span>
                     Codebase Health
