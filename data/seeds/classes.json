@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-01-13T00:00:00Z",
+  "config": {
+    "base_player_hp": 20,
+    "base_attack_damage": 3,
+    "xp_per_kill": 15,
+    "xp_base_requirement": 30,
+    "max_player_level": 10,
+    "hp_gain_per_level": 10,
+    "atk_gain_per_level": 1
+  },
+  "data": [
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "description": "Master of melee combat",
+      "hp_modifier": 5,
+      "atk_modifier": 1,
+      "def_modifier": 1,
+      "active_abilities": ["power_strike", "shield_wall"],
+      "passive_abilities": ["combat_mastery"]
+    },
+    {
+      "id": "mage",
+      "name": "Mage",
+      "description": "Wielder of arcane power",
+      "hp_modifier": -3,
+      "atk_modifier": -1,
+      "def_modifier": 0,
+      "active_abilities": ["fireball", "frost_nova"],
+      "passive_abilities": ["mana_shield"]
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "description": "Silent and deadly",
+      "hp_modifier": 0,
+      "atk_modifier": 2,
+      "def_modifier": -1,
+      "active_abilities": ["backstab", "smoke_bomb"],
+      "passive_abilities": ["critical_strike"]
+    },
+    {
+      "id": "cleric",
+      "name": "Cleric",
+      "description": "Divine light in darkness",
+      "hp_modifier": 2,
+      "atk_modifier": 0,
+      "def_modifier": 1,
+      "active_abilities": ["heal", "smite"],
+      "passive_abilities": ["divine_protection"]
+    }
+  ]
+}

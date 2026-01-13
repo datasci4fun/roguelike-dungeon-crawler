@@ -1,0 +1,313 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-01-13T00:00:00Z",
+  "spawn_lists": {
+    "equipment": ["weapon_dagger", "weapon_sword", "weapon_axe", "armor_leather", "armor_chain", "armor_plate"],
+    "consumables": ["health_potion", "strength_potion", "scroll_teleport"],
+    "shields": ["shield_wooden", "shield_iron", "shield_tower"],
+    "rings": ["ring_strength", "ring_defense", "ring_speed"],
+    "amulets": ["amulet_health", "amulet_resistance", "amulet_vision"],
+    "ranged_weapons": ["weapon_shortbow", "weapon_longbow", "weapon_crossbow"],
+    "throwables": ["throwing_knife", "bomb", "poison_vial"],
+    "keys": ["key_bronze", "key_silver", "key_gold"]
+  },
+  "data": [
+    {
+      "id": "health_potion",
+      "category": "consumable",
+      "name": "Health Potion",
+      "symbol": "!",
+      "description": "Restores 10 HP",
+      "rarity": "common",
+      "heal_amount": 10
+    },
+    {
+      "id": "strength_potion",
+      "category": "consumable",
+      "name": "Strength Potion",
+      "symbol": "!",
+      "description": "Increases ATK by 1",
+      "rarity": "uncommon",
+      "atk_increase": 1
+    },
+    {
+      "id": "scroll_teleport",
+      "category": "consumable",
+      "name": "Scroll of Teleport",
+      "symbol": "?",
+      "description": "Teleports to random location",
+      "rarity": "uncommon"
+    },
+    {
+      "id": "weapon_dagger",
+      "category": "weapon",
+      "slot": "weapon",
+      "name": "Dagger",
+      "symbol": "/",
+      "description": "+1 ATK",
+      "rarity": "common",
+      "attack_bonus": 1
+    },
+    {
+      "id": "weapon_sword",
+      "category": "weapon",
+      "slot": "weapon",
+      "name": "Iron Sword",
+      "symbol": "/",
+      "description": "+3 ATK",
+      "rarity": "uncommon",
+      "attack_bonus": 3
+    },
+    {
+      "id": "weapon_axe",
+      "category": "weapon",
+      "slot": "weapon",
+      "name": "Battle Axe",
+      "symbol": "/",
+      "description": "+5 ATK",
+      "rarity": "rare",
+      "attack_bonus": 5
+    },
+    {
+      "id": "weapon_dragon_slayer",
+      "category": "weapon",
+      "slot": "weapon",
+      "name": "Dragon Slayer",
+      "symbol": "/",
+      "description": "+8 ATK, Legendary",
+      "rarity": "legendary",
+      "attack_bonus": 8
+    },
+    {
+      "id": "armor_leather",
+      "category": "armor",
+      "slot": "armor",
+      "name": "Leather Armor",
+      "symbol": "[",
+      "description": "+1 DEF",
+      "rarity": "common",
+      "defense_bonus": 1
+    },
+    {
+      "id": "armor_chain",
+      "category": "armor",
+      "slot": "armor",
+      "name": "Chain Mail",
+      "symbol": "[",
+      "description": "+3 DEF",
+      "rarity": "uncommon",
+      "defense_bonus": 3
+    },
+    {
+      "id": "armor_plate",
+      "category": "armor",
+      "slot": "armor",
+      "name": "Plate Armor",
+      "symbol": "[",
+      "description": "+5 DEF",
+      "rarity": "rare",
+      "defense_bonus": 5
+    },
+    {
+      "id": "armor_dragon_scale",
+      "category": "armor",
+      "slot": "armor",
+      "name": "Dragon Scale Armor",
+      "symbol": "[",
+      "description": "+8 DEF, Legendary",
+      "rarity": "legendary",
+      "defense_bonus": 8
+    },
+    {
+      "id": "shield_wooden",
+      "category": "shield",
+      "slot": "off_hand",
+      "name": "Wooden Shield",
+      "symbol": ")",
+      "description": "+1 DEF, 10% block",
+      "rarity": "common",
+      "defense_bonus": 1,
+      "block_chance": 0.10
+    },
+    {
+      "id": "shield_iron",
+      "category": "shield",
+      "slot": "off_hand",
+      "name": "Iron Shield",
+      "symbol": ")",
+      "description": "+2 DEF, 15% block",
+      "rarity": "uncommon",
+      "defense_bonus": 2,
+      "block_chance": 0.15
+    },
+    {
+      "id": "shield_tower",
+      "category": "shield",
+      "slot": "off_hand",
+      "name": "Tower Shield",
+      "symbol": ")",
+      "description": "+4 DEF, 25% block",
+      "rarity": "rare",
+      "defense_bonus": 4,
+      "block_chance": 0.25
+    },
+    {
+      "id": "ring_strength",
+      "category": "ring",
+      "slot": "ring",
+      "name": "Ring of Strength",
+      "symbol": "o",
+      "description": "+2 ATK",
+      "rarity": "uncommon",
+      "stat_bonuses": { "attack": 2 }
+    },
+    {
+      "id": "ring_defense",
+      "category": "ring",
+      "slot": "ring",
+      "name": "Ring of Defense",
+      "symbol": "o",
+      "description": "+2 DEF",
+      "rarity": "uncommon",
+      "stat_bonuses": { "defense": 2 }
+    },
+    {
+      "id": "ring_speed",
+      "category": "ring",
+      "slot": "ring",
+      "name": "Ring of Speed",
+      "symbol": "o",
+      "description": "+1 Move Speed",
+      "rarity": "rare",
+      "stat_bonuses": { "speed": 1 }
+    },
+    {
+      "id": "amulet_health",
+      "category": "amulet",
+      "slot": "amulet",
+      "name": "Amulet of Health",
+      "symbol": "&",
+      "description": "+10 Max HP",
+      "rarity": "uncommon",
+      "effect": "max_health",
+      "effect_value": 10
+    },
+    {
+      "id": "amulet_resistance",
+      "category": "amulet",
+      "slot": "amulet",
+      "name": "Amulet of Resistance",
+      "symbol": "&",
+      "description": "25% status resist",
+      "rarity": "rare",
+      "effect": "resistance",
+      "effect_value": 25
+    },
+    {
+      "id": "amulet_vision",
+      "category": "amulet",
+      "slot": "amulet",
+      "name": "Amulet of Vision",
+      "symbol": "&",
+      "description": "+2 Vision Range",
+      "rarity": "uncommon",
+      "effect": "vision",
+      "effect_value": 2
+    },
+    {
+      "id": "weapon_shortbow",
+      "category": "ranged_weapon",
+      "slot": "weapon",
+      "name": "Shortbow",
+      "symbol": "}",
+      "description": "3 DMG, Range 4",
+      "rarity": "common",
+      "damage": 3,
+      "range": 4,
+      "is_ranged": true
+    },
+    {
+      "id": "weapon_longbow",
+      "category": "ranged_weapon",
+      "slot": "weapon",
+      "name": "Longbow",
+      "symbol": "}",
+      "description": "5 DMG, Range 6",
+      "rarity": "uncommon",
+      "damage": 5,
+      "range": 6,
+      "is_ranged": true
+    },
+    {
+      "id": "weapon_crossbow",
+      "category": "ranged_weapon",
+      "slot": "weapon",
+      "name": "Crossbow",
+      "symbol": "}",
+      "description": "7 DMG, Range 5",
+      "rarity": "rare",
+      "damage": 7,
+      "range": 5,
+      "is_ranged": true
+    },
+    {
+      "id": "throwing_knife",
+      "category": "throwable",
+      "name": "Throwing Knife",
+      "symbol": "*",
+      "description": "5 DMG, Range 4",
+      "rarity": "common",
+      "damage": 5,
+      "range": 4
+    },
+    {
+      "id": "bomb",
+      "category": "throwable",
+      "name": "Bomb",
+      "symbol": "*",
+      "description": "10 DMG AOE, Range 3",
+      "rarity": "uncommon",
+      "damage": 10,
+      "range": 3,
+      "effect": "stun"
+    },
+    {
+      "id": "poison_vial",
+      "category": "throwable",
+      "name": "Poison Vial",
+      "symbol": "*",
+      "description": "3 DMG + Poison, Range 4",
+      "rarity": "uncommon",
+      "damage": 3,
+      "range": 4,
+      "effect": "poison"
+    },
+    {
+      "id": "key_bronze",
+      "category": "key",
+      "name": "Bronze Key",
+      "symbol": "k",
+      "description": "Opens bronze doors",
+      "rarity": "common",
+      "key_level": 1
+    },
+    {
+      "id": "key_silver",
+      "category": "key",
+      "name": "Silver Key",
+      "symbol": "k",
+      "description": "Opens silver doors",
+      "rarity": "uncommon",
+      "key_level": 2
+    },
+    {
+      "id": "key_gold",
+      "category": "key",
+      "name": "Gold Key",
+      "symbol": "k",
+      "description": "Opens gold doors",
+      "rarity": "rare",
+      "key_level": 3
+    }
+  ]
+}
