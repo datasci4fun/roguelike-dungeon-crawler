@@ -1,0 +1,393 @@
+/**
+ * Item Compendium Page Styles
+ */
+
+.item-compendium-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+  color: #e0e0e0;
+  padding: 2rem;
+}
+
+/* Loading State */
+.compendium-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
+}
+
+.compendium-loading .loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(251, 191, 36, 0.2);
+  border-top-color: #fbbf24;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Header */
+.compendium-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.header-content h1 {
+  font-size: 2.5rem;
+  color: #fbbf24;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+}
+
+.header-subtitle {
+  color: #9ca3af;
+  margin: 0.5rem 0 0 0;
+  font-style: italic;
+}
+
+.header-search .search-input {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #e0e0e0;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  width: 250px;
+  font-size: 0.9rem;
+}
+
+.header-search .search-input:focus {
+  outline: none;
+  border-color: #fbbf24;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+}
+
+/* Category Filter */
+.category-filter {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.category-btn.active {
+  background: var(--cat-color, #fbbf24);
+  color: #000;
+  border-color: var(--cat-color, #fbbf24);
+}
+
+.cat-icon {
+  font-size: 1rem;
+}
+
+/* Main Content */
+.compendium-content {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 2rem;
+  min-height: 70vh;
+}
+
+/* Item List */
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 75vh;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.item-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.item-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.item-list::-webkit-scrollbar-thumb {
+  background: rgba(251, 191, 36, 0.5);
+  border-radius: 3px;
+}
+
+.no-items {
+  text-align: center;
+  padding: 2rem;
+  color: #6b7280;
+}
+
+/* Item Card */
+.item-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 3px solid var(--item-color, #9ca3af);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.item-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px);
+}
+
+.item-card.selected {
+  background: rgba(251, 191, 36, 0.1);
+  border-color: var(--item-color, #fbbf24);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
+}
+
+.item-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.item-symbol {
+  font-family: monospace;
+  font-size: 1.5rem;
+  font-weight: bold;
+  width: 32px;
+  text-align: center;
+}
+
+.item-info {
+  flex: 1;
+}
+
+.item-info h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #e0e0e0;
+}
+
+.rarity-badge {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.item-card-effect {
+  margin-top: 0.5rem;
+  padding-left: 2.5rem;
+}
+
+.effect-text {
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+/* Item Detail */
+.item-detail {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.no-item-selected {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 400px;
+  color: #6b7280;
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.placeholder-hint {
+  font-size: 0.9rem;
+  max-width: 300px;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+/* Item Article */
+.item-article {
+  padding: 2rem;
+}
+
+.article-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.category-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #fff;
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.item-symbol-large {
+  font-family: monospace;
+  font-size: 4rem;
+  font-weight: bold;
+  text-shadow: 0 0 20px currentColor;
+}
+
+.header-main h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #e0e0e0;
+}
+
+.item-effect-large {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.1rem;
+  color: #22d3ee;
+}
+
+/* Sections */
+.item-article section {
+  margin-bottom: 1.5rem;
+}
+
+.item-article h2 {
+  font-size: 1rem;
+  color: #fbbf24;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 0.75rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.description-section p {
+  color: #c0c0c0;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.stat-item {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #22d3ee;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
+
+/* Found Section */
+.found-text {
+  color: #9ca3af;
+  margin: 0;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+  border-left: 3px solid #22c55e;
+}
+
+/* Lore Section */
+.lore-text {
+  margin: 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 3px solid #a855f7;
+  border-radius: 0 6px 6px 0;
+  color: #c0c0c0;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* Rarity Border Classes */
+.rarity-border-legendary {
+  border-left-color: #fbbf24 !important;
+}
+
+.rarity-border-rare {
+  border-left-color: #3b82f6 !important;
+}
+
+.rarity-border-uncommon {
+  border-left-color: #22d3ee !important;
+}
+
+.rarity-border-common {
+  border-left-color: #9ca3af !important;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .compendium-content {
+    grid-template-columns: 1fr;
+  }
+
+  .item-list {
+    max-height: 40vh;
+  }
+
+  .compendium-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .header-search .search-input {
+    width: 100%;
+  }
+}
