@@ -669,77 +669,92 @@ ARTIFACT_LORE = [
     LoreEntry(
         id="artifact_intro",
         title="Sky-Touched Artifacts",
-        subtitle="Interfaces With the Field",
+        subtitle="Items Touched by the Field",
         category="artifacts",
         content="""Despite the danger, people keep descending. Why?
 
-Because artifacts escape. Weapons with impossible metallurgy. Armor that remembers being worn by people who never existed. Scrolls written in languages that become readable the longer you study them.
+Because artifacts escape. Weapons with impossible metallurgy. Armor that remembers being worn by people who never existed. Potions that heal wounds that should be fatal.
 
-These sky-touched relics are proof that something real exists below—something that can be retrieved. The tragedy is that no retriever returns with a coherent account of where they found it, or how. The Field takes the context and leaves only the object.
+These sky-touched relics are proof that something real exists below—something that can be retrieved. Items that have passed through the Field retain properties that contradict surface physics. They work. No one knows why.
 
-The artifacts are not treasures. They are interfaces. They do not merely grant power—they increase the Field's vocabulary."""
+The tragedy is that no retriever returns with a coherent account of where they found it, or how. The Field takes the context and leaves only the object."""
     ),
     LoreEntry(
-        id="duplicate_seal",
-        title="The Duplicate Seal",
-        subtitle="A Stamp That Creates Two Truths",
+        id="dragon_slayer",
+        title="Dragon Slayer",
+        subtitle="Legendary Weapon — +8 ATK",
         category="artifacts",
-        content="""A royal stamp that creates a second impression during storms—one on the document, one somewhere else. Both authentic.
+        content="""The most powerful weapon to emerge from the dungeon depths. Forged in fires that burned before the kingdom had a name.
 
-COST: Each use teaches the Field a new signature; the next decree it writes will sound more convincing than the last.
+Those who wield the Dragon Slayer speak of a weight that feels right—as if the sword remembers being held by hands that no longer exist. The blade never dulls. The edge never chips. Metallurgists who examine it find alloys that should not bond.
 
-This artifact was recovered from Mirror Valdris, where it had been used to authenticate contradictory succession claims. The Field learned from it. Now there are two thrones, and both have always been the only throne."""
+Only found in the deepest reaches, often guarded by the Dragon Emperor itself. The few who claim this weapon rarely remember the battle that won it."""
     ),
     LoreEntry(
-        id="woundglass_shard",
-        title="Woundglass Shard",
-        subtitle="A Mirror to Rooms That Shouldn't Exist",
+        id="dragon_scale_armor",
+        title="Dragon Scale Armor",
+        subtitle="Legendary Armor — +8 DEF",
         category="artifacts",
-        content="""A mirror fragment that shows rooms that don't exist in its reflection—until you enter them.
+        content="""Armor crafted from scales that should not exist—taken from creatures the Field has edited into being.
 
-COST: Each time you step into what it shows, something real elsewhere is "made room" for.
+Each scale shifts color in torchlight, reflecting hues that have no names. The armor is lighter than leather but harder than steel. Those who wear it report feeling watched, as if the original owner still remembers wearing it.
 
-Delvers prize the Woundglass for finding hidden treasures and secret passages. They rarely notice what disappears to make space for the new rooms. A childhood memory. A friend's name. The route back home."""
+The scales regenerate damage overnight. Small tears seal themselves. Scratches fill in. The armor remembers being whole."""
     ),
     LoreEntry(
-        id="oathstone",
-        title="Oathstone",
-        subtitle="A Stone That Remembers Promises",
+        id="rings_amulets",
+        title="Rings and Amulets",
+        subtitle="Accessories of Power",
         category="artifacts",
-        content="""A smooth rock that records spoken promises. Breaking an oath recorded on it erases the oathbreaker from one person's memory.
+        content="""Smaller artifacts are more common—and more dangerous for their subtlety.
 
-COST: The stone is hungry for vows; each promise taken makes the next break erase you from more than one mind.
+RINGS:
+- Ring of Strength (+2 ATK): Grants power that feels borrowed
+- Ring of Defense (+2 DEF): Hardens skin in ways that should not heal
+- Ring of Speed (+1 Movement): Time moves differently for the wearer
 
-Some delvers use the Oathstone to bind themselves to vows—Abstinence (no potions), Progress (never revisit rooms), Confrontation (defeat the boss without fleeing). The rewards for keeping vows are real. The price of breaking them is equally real.
+AMULETS:
+- Amulet of Health (+10 Max HP): The body forgets its limits
+- Amulet of Resistance (25% status resist): Pain becomes optional
+- Amulet of Vision (+2 Vision Range): See what should remain hidden
 
-VOW TYPES:
-- Vow of Abstinence: No healing potions on this floor
-- Vow of Progress: Never backtrack through cleared rooms
-- Vow of Confrontation: Face the boss without retreating"""
+Each accessory is a small bargain with the Field. The power is real. The cost is paid in memories you won't miss—until you need them."""
     ),
     LoreEntry(
-        id="crown_splinter",
-        title="Crown-Splinter",
-        subtitle="A Fragment That Fractures Memory",
+        id="consumables",
+        title="Potions and Scrolls",
+        subtitle="Single-Use Interfaces",
         category="artifacts",
-        content="""A fragment of regalia that causes viewers to remember two versions of the same event, equally vivid.
+        content="""The most common sky-touched items are consumables—potions, scrolls, and throwables that channel the Field's power for a single moment.
 
-COST: The longer you hold it, the harder it becomes to prove which version hurt you.
+POTIONS:
+- Health Potion: Restores 10 HP instantly. The wounds close, but do they remember being wounds?
+- Strength Potion: Permanently increases ATK by 1. The muscles grow. Were they always that shape?
 
-Delvers who carry the Crown-Splinter too long begin to doubt their own histories. Did they enter the dungeon to save someone, or to escape someone? Both memories feel equally true. The Field does not care which one you choose. It has already learned both."""
+SCROLLS:
+- Scroll of Teleport: Relocates you to a random location. Both places remember you arriving.
+
+THROWABLES:
+- Throwing Knife: 5 damage at range 4
+- Bomb: 10 damage AOE + stun
+- Poison Vial: 3 damage + poison effect
+
+Each use teaches the Field something about you. What you value. What you fear. What you're willing to lose."""
     ),
     LoreEntry(
-        id="ledger_unborn",
-        title="Ledger of the Unborn",
-        subtitle="A Book That Writes People Into Existence",
+        id="keys",
+        title="The Keys",
+        subtitle="Access to Sealed Chambers",
         category="artifacts",
-        content="""A book that adds names to genealogies. The people appear within weeks, insisting they've always existed.
+        content="""Three types of keys exist in the dungeon, each unlocking doors of increasing value:
 
-COST: A new name pushes an old one out; someone living becomes harder to remember each time the ink dries.
+- Bronze Key: Opens bronze doors. Common, but essential.
+- Silver Key: Opens silver doors. Uncommon, guarding better treasures.
+- Gold Key: Opens gold doors. Rare, protecting the most valuable caches.
 
-The most dangerous artifact to escape the dungeon. Each name added to the Ledger creates a person—complete with memories, relationships, and claims to property and title. Each name also erases someone, though no one remembers who.
+The keys are not made of the metals they resemble. They are made of permission—solidified authority granted by something that predates the locks. The doors recognize them not by shape, but by right.
 
-The Field has been using this artifact for generations. How many people in Valdris were once someone else?"""
+Some delvers report that keys vanish from their inventory after use. Others insist the same key worked twice. The Field does not explain its economy."""
     ),
 ]
 

@@ -117,7 +117,7 @@ export function LorePage() {
       {/* Header */}
       <header className="lore-header">
         <div className="header-content">
-          <h1>The Sunken Citadel</h1>
+          <h1>The World of Valdris</h1>
           <p className="header-subtitle">Lore & World History</p>
         </div>
         <div className="header-search">
@@ -247,7 +247,7 @@ export function LorePage() {
                   <div className="placeholder-icon">📜</div>
                   <p>Select an entry to read</p>
                   <p className="placeholder-hint">
-                    Choose from the categories on the left to explore the lore of the Sunken Citadel
+                    Choose from the categories on the left to explore the lore of Valdris
                   </p>
                 </div>
               )}

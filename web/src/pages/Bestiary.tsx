@@ -169,7 +169,7 @@ export function Bestiary() {
       <header className="bestiary-header">
         <div className="header-content">
           <h1>Bestiary</h1>
-          <p className="header-subtitle">Creatures of the Sunken Citadel</p>
+          <p className="header-subtitle">Creatures of Valdris</p>
         </div>
         <div className="header-search">
           <input
