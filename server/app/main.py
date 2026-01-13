@@ -21,6 +21,7 @@ from .api.cache import router as cache_router
 from .api.status import router as status_router
 from .api.buildinfo import router as buildinfo_router
 from .api.logs import router as logs_router
+from .api.errors import router as errors_router, capture_error
 
 
 @asynccontextmanager
@@ -83,6 +84,20 @@ def create_app() -> FastAPI:
     app.include_router(status_router, tags=["dev-tools"])
     app.include_router(buildinfo_router, tags=["dev-tools"])
     app.include_router(logs_router, tags=["dev-tools"])
+    app.include_router(errors_router, tags=["dev-tools"])
+
+    # Add exception handler to capture errors (only in debug mode)
+    if settings.debug:
+        @app.exception_handler(Exception)
+        async def global_exception_handler(request, exc):
+            from fastapi.responses import JSONResponse
+            # Capture error for the error tracker
+            capture_error(exc, request)
+            # Re-raise for normal handling
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error"}
+            )
 
     return app
 
