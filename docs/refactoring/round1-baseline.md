@@ -33,4 +33,5 @@ Total recommendations: 61
 | Date | File | Before LOC | After LOC | Changes Made |
 |------|------|------------|-----------|--------------|
 | 2026-01-13 | ghosts.py | 557 | 596 (4 files) | Split into package: types.py (58), ghost.py (54), manager.py (460), __init__.py (24) |
+| 2026-01-13 | entities.py | 655 | 668 (5 files) | Split into package: base.py (39), player.py (433), enemy.py (188), __init__.py (8), shim (2) |
 
