@@ -14,7 +14,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import './GameGuide.css';
 
-const API_BASE = 'http://localhost:8000/api/guide';
+const API_BASE = 'http://localhost:8000/api/guide/';
 
 // Types
 interface Race {
