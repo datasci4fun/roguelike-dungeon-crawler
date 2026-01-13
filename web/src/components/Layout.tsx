@@ -180,6 +180,10 @@ export function Layout() {
                     <span className="menu-icon">📦</span>
                     Dependencies
                   </Link>
+                  <Link to="/routes" onClick={closeDropdown}>
+                    <span className="menu-icon">🔀</span>
+                    Route Explorer
+                  </Link>
                   <Link to="/codebase-health" onClick={closeDropdown}>
                     <span className="menu-icon">🩺</span>
                     Codebase Health

@@ -30,3 +30,4 @@ export { SessionInspector } from './SessionInspector';
 export { FeatureFlags } from './FeatureFlags';
 export { EnvConfig } from './EnvConfig';
 export { DependencyViewer } from './DependencyViewer';
+export { RouteExplorer } from './RouteExplorer';
