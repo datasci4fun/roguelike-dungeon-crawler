@@ -4,6 +4,62 @@ All notable changes to this project.
 
 ---
 
+## [6.6.0] - 2026-01-13 - Data Persistence Migration
+
+### Added
+- **JSON Seed Files**: Game balance data in version-controlled JSON (`data/seeds/`)
+  - `enemies.json` (28 enemies), `bosses.json` (8 bosses)
+  - `races.json` (5 races), `classes.json` (4 classes)
+  - `items.json` (29 items), `themes.json` (8 dungeon themes)
+  - `combat.json` (traps, hazards, status effects)
+  - `floor_pools.json` (47 floor spawn pools)
+- **SQLAlchemy Models**: Database tables for all game constants
+  - `game_enemies`, `game_bosses`, `game_races`, `game_classes`
+  - `game_items`, `game_themes`, `game_traps`, `game_hazards`
+  - `game_status_effects`, `game_floor_pools`
+- **Redis Caching Layer**: Cache-aside pattern with 24h TTL
+  - `cache_warmer.py` service for startup cache population
+  - Cache invalidation on write operations
+- **REST API Endpoints**: 11 new endpoints under `/api/game-constants/`
+  - `/races`, `/classes`, `/enemies`, `/bosses`, `/items`
+  - `/themes`, `/traps`, `/hazards`, `/status-effects`
+  - `/floor-pools/{floor}`, `/cache-status`
+- **Pydantic Response Schemas**: Full API documentation with typed responses
+- **useGameConstants Hook**: React hook for frontend data fetching with 5min cache
+- **Database Seeder Script**: `scripts/seed_database.py` populates 141 records
+
+### Changed
+- `CharacterCreation.tsx` fetches races/classes from API instead of static imports
+- `characterData.ts` reduced to ability descriptions only (removed RACES, CLASSES)
+
+### Fixed
+- Circular import in combat module (`battle_actions` ↔ `battle_boss_abilities`)
+  - Moved boss ability imports to end of `battle_actions.py`
+  - Added `from __future__ import annotations` to `boss_heuristics.py`
+
+### Technical
+- `server/app/api/game_constants.py`: FastAPI router with cached endpoints
+- `server/app/models/game_constants.py`: SQLAlchemy models for all constant types
+- `server/app/schemas/game_constants.py`: Pydantic response schemas
+- `server/app/core/cache.py`: Redis cache utility functions
+- `web/src/hooks/useGameConstants.ts`: React hook with in-memory caching
+- `web/src/services/api.ts`: Added `gameConstantsApi` client
+
+---
+
+## [6.5.1] - 2026-01-12 - Roadmap Complete
+
+### Added
+- **FloorDiorama3D Component**: 3D floor preview visualization
+- **CharacterPreview3D Component**: Character model preview in creation
+- **Daily Challenge Backend**: Models, service, and API for daily runs
+- **Ice Slide Mechanic**: Momentum-based movement on ice tiles
+
+### Technical
+- PRs #21-24 merged completing all priority roadmap items
+
+---
+
 ## [6.4.0] - 2026-01-12 - Frontend Lore Alignment
 
 ### Added
