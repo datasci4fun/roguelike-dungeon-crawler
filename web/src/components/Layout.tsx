@@ -109,6 +109,10 @@ export function Layout() {
                     <span className="menu-icon">🔌</span>
                     WS Monitor
                   </Link>
+                  <Link to="/build-info" onClick={closeDropdown}>
+                    <span className="menu-icon">🏗️</span>
+                    Build Info
+                  </Link>
                 </div>
               )}
             </div>

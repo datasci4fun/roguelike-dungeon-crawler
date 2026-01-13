@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Home, Login, Register, Play, Features, About, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends, Presentation, Roadmap, CodebaseHealth, Changelog, DatabaseExplorer, CacheInspector, AudioJukebox, SystemStatus, ApiPlayground, WebSocketMonitor } from './pages';
+import { Home, Login, Register, Play, Features, About, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends, Presentation, Roadmap, CodebaseHealth, Changelog, DatabaseExplorer, CacheInspector, AudioJukebox, SystemStatus, ApiPlayground, WebSocketMonitor, BuildInfo } from './pages';
 import { FirstPersonDemo } from './pages/FirstPersonDemo';
 import { FirstPersonTestPage } from './pages/FirstPersonTestPage';
 import { Debug3DPage } from './pages/Debug3DPage';
@@ -39,6 +39,7 @@ function App() {
         <Route path="system-status" element={<SystemStatus />} />
         <Route path="api-playground" element={<ApiPlayground />} />
         <Route path="ws-monitor" element={<WebSocketMonitor />} />
+        <Route path="build-info" element={<BuildInfo />} />
       </Route>
     </Routes>
   );

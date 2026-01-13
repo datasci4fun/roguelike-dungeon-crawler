@@ -1,0 +1,455 @@
+/**
+ * Build Info Styles - Developer/Terminal theme
+ */
+
+.build-info {
+  min-height: 100vh;
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Loading & Error States */
+.build-loading,
+.build-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 3px solid #21262d;
+  border-top-color: #58a6ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.build-error {
+  color: #f85149;
+}
+
+.error-icon {
+  font-size: 3rem;
+}
+
+.retry-btn {
+  padding: 0.5rem 1rem;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.retry-btn:hover {
+  background: #30363d;
+}
+
+/* Header */
+.build-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.build-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.header-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 0.25rem 0.5rem;
+  background: #a855f722;
+  color: #a855f7;
+  border-radius: 4px;
+}
+
+.app-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+}
+
+.app-name {
+  font-weight: 600;
+}
+
+.app-version {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: #58a6ff;
+}
+
+/* Body */
+.build-body {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Sections */
+.info-section {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background: #0d1117;
+  border-bottom: 1px solid #30363d;
+}
+
+.section-icon {
+  font-size: 1.1rem;
+}
+
+.dirty-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  background: #f9731633;
+  color: #f97316;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.env-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  margin-left: auto;
+}
+
+.env-development {
+  background: #eab30822;
+  color: #eab308;
+}
+
+.env-production {
+  background: #22c55e22;
+  color: #22c55e;
+}
+
+.package-count {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  background: #30363d;
+  border-radius: 10px;
+  margin-left: auto;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Info Grid */
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0;
+}
+
+.info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #21262d;
+}
+
+.info-row:nth-child(odd) {
+  border-right: 1px solid #21262d;
+}
+
+.info-row.full-width {
+  grid-column: 1 / -1;
+  border-right: none;
+}
+
+.info-row:last-child,
+.info-row:nth-last-child(2):nth-child(odd) {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #8b949e;
+}
+
+.info-value {
+  font-size: 0.9rem;
+  color: #e6edf3;
+  word-break: break-word;
+}
+
+.info-value.mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+}
+
+.info-value-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Git specific */
+.branch-value {
+  color: #a855f7;
+  font-weight: 600;
+}
+
+.commit-hash {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  background: #30363d;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.commit-hash:hover {
+  background: #484f58;
+}
+
+.copied-badge {
+  font-size: 0.7rem;
+  color: #22c55e;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.commit-message {
+  font-style: italic;
+  color: #8b949e;
+}
+
+.author-email {
+  color: #8b949e;
+  font-size: 0.85rem;
+}
+
+.tags-list {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tag-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  background: #22c55e22;
+  color: #22c55e;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Path values */
+.path-value {
+  font-size: 0.8rem;
+  background: #0d1117;
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+/* Boolean values */
+.bool-true {
+  color: #22c55e;
+}
+
+.bool-false {
+  color: #8b949e;
+}
+
+/* Python version */
+.python-version {
+  color: #3b82f6;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* Packages Section */
+.packages-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #21262d;
+}
+
+.package-filter {
+  flex: 1;
+  max-width: 300px;
+  padding: 0.5rem 0.75rem;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-size: 0.85rem;
+}
+
+.package-filter:focus {
+  outline: none;
+  border-color: #58a6ff;
+}
+
+.filter-count {
+  font-size: 0.8rem;
+  color: #8b949e;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.packages-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.5rem;
+}
+
+.package-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.package-item:hover {
+  background: #21262d;
+}
+
+.package-name {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85rem;
+}
+
+.package-version {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.packages-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+/* Build Timestamp */
+.build-timestamp {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.timestamp-label {
+  color: #8b949e;
+}
+
+.timestamp-value {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: #e6edf3;
+}
+
+.refresh-btn {
+  margin-left: auto;
+  padding: 0.4rem 0.75rem;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.refresh-btn:hover {
+  background: #30363d;
+  border-color: #58a6ff;
+}
+
+/* Scrollbar */
+.packages-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.packages-list::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+.packages-list::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 4px;
+}
+
+.packages-list::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .info-row:nth-child(odd) {
+    border-right: none;
+  }
+
+  .build-timestamp {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .refresh-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+}

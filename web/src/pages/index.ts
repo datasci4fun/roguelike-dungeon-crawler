@@ -22,3 +22,4 @@ export { AudioJukebox } from './AudioJukebox';
 export { SystemStatus } from './SystemStatus';
 export { ApiPlayground } from './ApiPlayground';
 export { WebSocketMonitor } from './WebSocketMonitor';
+export { BuildInfo } from './BuildInfo';
