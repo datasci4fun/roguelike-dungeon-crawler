@@ -19,6 +19,14 @@ From repo root:
 - Syntax/type sanity: `.\.venv\Scripts\python -m py_compile src\*.py`
 - Smoke run: `.\.venv\Scripts\python main.py` (move, fight, pick up item, descend stairs, quit)
 
+## Diagnostics & observability
+See **[DIAGNOSTICS.md](DIAGNOSTICS.md)** for the full diagnostic toolkit:
+- 14 web dev tools (System Status, Metrics, Profiler, Error Tracker, Log Viewer, etc.)
+- Backend API endpoints for monitoring
+- Claude skills: `/dev-environment`, `/game-integrity`, `/ci-healthcheck`
+- In-game debug hotkeys (F1-F7) and frontend debug keys (F8-F10)
+- Diagnostic flowcharts for common issues
+
 ## Environment constraints
 - curses on Windows via `windows-curses` (requirements.txt already includes it).
 - Prefer Windows Terminal. If rendering issues appear, assume terminal size and color support first.

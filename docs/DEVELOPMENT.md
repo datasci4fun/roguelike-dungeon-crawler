@@ -47,7 +47,7 @@ python -m py_compile src/*.py src/**/*.py
 ```bash
 docker-compose up -d
 ```
-This starts PostgreSQL, Redis, and FastAPI server.
+This starts PostgreSQL, Redis, FastAPI backend, and Vite frontend.
 
 ### Option 2: Local Development
 ```bash
@@ -69,36 +69,35 @@ alembic upgrade head
 
 ## Web Frontend
 
-### Setup
-```bash
-cd web
-npm install
-```
+The frontend runs as a Docker container (`roguelike_frontend`) with hot module reloading.
 
-### Development Server
+### Start with Docker (Recommended)
 ```bash
-npm run dev
+docker-compose up -d
 ```
 Access at http://localhost:5173
 
-### Production Build
+### Local Development (without Docker)
 ```bash
-npm run build
+cd web
+npm install
+npm run dev
 ```
 
 ### Type Check
 ```bash
-npm run typecheck
-# or
-npx tsc --noEmit
+# Inside container
+docker exec roguelike_frontend npm run typecheck
+
+# Or locally
+cd web && npx tsc --noEmit
 ```
 
-### Mobile Testing
+### Production Build
 ```bash
-# Expose on network
-npm run dev -- --host
+cd web
+npm run build
 ```
-Open the Network URL on your mobile device.
 
 ---
 
@@ -151,22 +150,7 @@ alembic upgrade head
 alembic revision --autogenerate -m "description"
 ```
 
-### Frontend
-```bash
-# Development
-npm run dev
-
-# Build
-npm run build
-
-# Preview build
-npm run preview
-
-# Type check
-npx tsc --noEmit
-```
-
-### Docker
+### Docker (includes frontend)
 ```bash
 # Start all services
 docker-compose up -d

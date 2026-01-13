@@ -1,14 +1,15 @@
 ---
 name: dev-environment
-description: Checks Docker containers and frontend dev server status, boots up any services that aren't running for the roguelike project.
+description: Checks all Docker containers (postgres, redis, backend, frontend) and boots up any services that aren't running for the roguelike project.
 ---
 
 ## Purpose
 
 This Skill prepares the full development environment with a single command. It checks and starts:
 
-1. **Docker services** (PostgreSQL, Redis, FastAPI backend)
-2. **Frontend dev server** (Vite/React)
+1. **Docker services** (PostgreSQL, Redis, FastAPI backend, Vite frontend)
+
+All four services are containerized and managed via docker-compose.
 
 Examples of trigger phrases:
 - "start dev environment"
@@ -25,7 +26,6 @@ Before running this Skill:
 
 1. Confirm Docker Desktop (or Docker daemon) is running
 2. Confirm the working directory contains `docker-compose.yml`
-3. Confirm `web/` directory exists with `package.json`
 
 ---
 
@@ -54,6 +54,7 @@ Identify project containers by name:
 - `roguelike_postgres`
 - `roguelike_redis`
 - `roguelike_backend`
+- `roguelike_frontend`
 
 Summarize which are running and which are missing.
 
@@ -80,46 +81,19 @@ Report:
 
 ---
 
-### Step 4: Check Frontend Dev Server
-
-Check if something is already listening on port 5173 (Vite default):
-
-**Windows:**
-```
-netstat -ano | findstr :5173
-```
-
-**Unix/Mac:**
-```
-lsof -i :5173
-```
-
-If port 5173 is in use, assume frontend is already running.
-
----
-
-### Step 5: Start Frontend Dev Server (if needed)
-
-If frontend is not running:
-
-Navigate to `web/` directory and start the dev server in the background:
-
-```
-cd web && npm run dev
-```
-
-**Important:** Run this as a background process so it doesn't block. Use the `run_in_background` parameter.
-
-Wait a few seconds, then verify by checking port 5173 again.
-
----
-
-### Step 6: Final Verification
+### Step 4: Final Verification
 
 Run final checks:
 
-1. `docker-compose ps` - verify all 3 services are up
-2. Check port 5173 - verify frontend is accessible
+```
+docker-compose ps
+```
+
+Verify all 4 services are up:
+- `roguelike_postgres` (healthy)
+- `roguelike_redis` (healthy)
+- `roguelike_backend` (running)
+- `roguelike_frontend` (running)
 
 ---
 
@@ -154,12 +128,12 @@ If ports 5432, 6379, 8000, or 5173 are in use by other processes:
 - Report which port has a conflict
 - Ask user if they want to stop the conflicting process
 
-### Missing dependencies
-If `web/node_modules` doesn't exist:
+### Frontend build issues
+If the frontend container fails to start, it may need to rebuild:
 ```
-cd web && npm install
+docker-compose build frontend
+docker-compose up -d frontend
 ```
-Then proceed with `npm run dev`.
 
 ---
 
@@ -172,25 +146,22 @@ Then proceed with `npm run dev`.
 | roguelike_postgres | postgres:16-alpine | 5432 | Database |
 | roguelike_redis | redis:7-alpine | 6379 | Cache/PubSub |
 | roguelike_backend | ./server | 8000 | FastAPI API |
-
-### Frontend (not containerized)
-
-| Directory | Command | Port | Purpose |
-|-----------|---------|------|---------|
-| web/ | npm run dev | 5173 | Vite React app |
+| roguelike_frontend | ./web | 5173 | Vite React app (with HMR) |
 
 ---
 
 ## Shutdown Instructions
 
-To stop all services later:
+To stop all services:
 
 ```bash
-# Stop Docker services
 docker-compose down
+```
 
-# Frontend will need to be stopped manually (Ctrl+C in its terminal)
-# Or find and kill the process on port 5173
+To stop and remove volumes (full reset):
+
+```bash
+docker-compose down -v
 ```
 
 ---

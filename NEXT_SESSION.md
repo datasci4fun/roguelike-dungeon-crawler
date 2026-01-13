@@ -88,17 +88,14 @@ Would require backend work to spawn ghosts based on `GhostSummary.victory` + leg
 ## Quick Commands
 
 ```bash
-# Run web frontend
-cd web && npm run dev
+# Start all services (backend + frontend)
+docker-compose up -d
 
 # Run terminal client
 python main.py
 
-# Type check
-cd web && npm run build
-
-# Backend (Docker)
-docker-compose up -d
+# Type check frontend
+docker exec roguelike_frontend npm run typecheck
 ```
 
 ---

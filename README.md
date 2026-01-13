@@ -8,11 +8,8 @@ A browser-based roguelike with procedural dungeons, first-person 3D exploration,
 
 ### Web Frontend (Recommended)
 ```bash
-# Start backend (requires Docker)
+# Start all services (backend + frontend)
 docker-compose up -d
-
-# Start frontend
-cd web && npm install && npm run dev
 ```
 Open http://localhost:5173 | Demo login: `demo` / `DemoPass123`
 
