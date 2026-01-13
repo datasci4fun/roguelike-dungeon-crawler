@@ -43,6 +43,7 @@ export interface RaceDefinition {
   trait: string;
   trait_name: string;
   trait_description: string;
+  starts_with_feat?: boolean;
 }
 
 export interface ClassDefinition {

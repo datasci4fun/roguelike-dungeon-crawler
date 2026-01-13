@@ -18,15 +18,12 @@ import { PhosphorHeader } from '../components/PhosphorHeader';
 import { CharacterPreview3D } from '../components/CharacterPreview3D';
 import { RACE_LORE, CLASS_LORE, CHARACTER_CREATION } from '../data/loreSkyfall';
 import type { RaceId, ClassId } from '../hooks/useGameSocket';
-import { RACES, CLASSES, ABILITY_DESCRIPTIONS, calculateStats } from '../data/characterData';
+import { ABILITY_DESCRIPTIONS, BASE_STATS } from '../data/characterData';
+import { useGameConstants } from '../hooks/useGameConstants';
 import './CharacterCreation.css';
 
-// Get arrays of IDs for index-based navigation
-const RACE_IDS = Object.keys(RACES) as RaceId[];
-const CLASS_IDS = Object.keys(CLASSES) as ClassId[];
-
 export function CharacterCreation() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [selectedRace, setSelectedRace] = useState<RaceId>('HUMAN');
@@ -37,13 +34,40 @@ export function CharacterCreation() {
   const { status, gameState, newGame } = useGame();
   const { crossfadeTo, isUnlocked } = useAudioManager();
 
+  // Fetch races and classes from API
+  const {
+    races: RACES,
+    classes: CLASSES,
+    racesArray,
+    classesArray,
+    isLoading: constantsLoading,
+    error: constantsError,
+  } = useGameConstants();
+
+  // Derive arrays for navigation
+  const RACE_IDS = racesArray.map(r => r.id);
+  const CLASS_IDS = classesArray.map(c => c.id);
+
+  // Calculate stats helper (uses API data)
+  const calculateStats = useCallback((raceId: RaceId, classId: ClassId) => {
+    if (!RACES || !CLASSES) return { hp: BASE_STATS.hp, atk: BASE_STATS.atk, def: BASE_STATS.def };
+    const race = RACES[raceId];
+    const playerClass = CLASSES[classId];
+    if (!race || !playerClass) return { hp: BASE_STATS.hp, atk: BASE_STATS.atk, def: BASE_STATS.def };
+    return {
+      hp: BASE_STATS.hp + race.hp_modifier + playerClass.hp_modifier,
+      atk: BASE_STATS.atk + race.atk_modifier + playerClass.atk_modifier,
+      def: Math.max(0, BASE_STATS.def + race.def_modifier + playerClass.def_modifier),
+    };
+  }, [RACES, CLASSES]);
+
   // Keyboard navigation for race selection (2-column grid)
   const raceNav = useKeyboardNavigation({
     itemCount: RACE_IDS.length,
     columns: 2,
     selectedIndex: RACE_IDS.indexOf(selectedRace),
     onSelect: (index) => setSelectedRace(RACE_IDS[index]),
-    enabled: !showIntro && !isStarting,
+    enabled: !showIntro && !isStarting && !constantsLoading,
   });
 
   // Keyboard navigation for class selection (2-column grid)
@@ -52,7 +76,7 @@ export function CharacterCreation() {
     columns: 2,
     selectedIndex: CLASS_IDS.indexOf(selectedClass),
     onSelect: (index) => setSelectedClass(CLASS_IDS[index]),
-    enabled: !showIntro && !isStarting,
+    enabled: !showIntro && !isStarting && !constantsLoading,
   });
 
   // Handle music change from intro
@@ -64,10 +88,10 @@ export function CharacterCreation() {
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   // Navigate to play once game is actually running
   useEffect(() => {
@@ -90,8 +114,11 @@ export function CharacterCreation() {
   }, [selectedRace, selectedClass, newGame]);
 
   const stats = calculateStats(selectedRace, selectedClass);
-  const race = RACES[selectedRace];
-  const playerClass = CLASSES[selectedClass];
+  const race = RACES?.[selectedRace];
+  const playerClass = CLASSES?.[selectedClass];
+
+  // Combined loading state
+  const isLoading = authLoading || constantsLoading;
 
   if (isLoading) {
     return (
@@ -103,6 +130,30 @@ export function CharacterCreation() {
 
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Handle API error
+  if (constantsError) {
+    return (
+      <AtmosphericPage backgroundType="underground">
+        <div className="character-creation-loading">
+          <div className="loading error">
+            Failed to load game data: {constantsError}
+            <br />
+            <button onClick={() => window.location.reload()}>Retry</button>
+          </div>
+        </div>
+      </AtmosphericPage>
+    );
+  }
+
+  // Ensure data is loaded
+  if (!race || !playerClass) {
+    return (
+      <div className="character-creation-loading">
+        <div className="loading">Initializing...</div>
+      </div>
+    );
   }
 
   return (
@@ -131,16 +182,15 @@ export function CharacterCreation() {
               {...raceNav.containerProps}
               aria-labelledby="race-selection-label"
             >
-              {RACE_IDS.map((raceId, index) => {
-                const r = RACES[raceId];
-                const lore = RACE_LORE[raceId];
+              {racesArray.map((r, index) => {
+                const lore = RACE_LORE[r.id];
                 const itemProps = raceNav.getItemProps(index);
                 return (
                   <button
-                    key={raceId}
+                    key={r.id}
                     {...itemProps}
-                    className={`option-card ${selectedRace === raceId ? 'selected' : ''}`}
-                    onClick={() => setSelectedRace(raceId)}
+                    className={`option-card ${selectedRace === r.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedRace(r.id)}
                   >
                     <div className="option-name">{r.name}</div>
                     <div className="option-desc">{r.description}</div>
@@ -173,16 +223,15 @@ export function CharacterCreation() {
               {...classNav.containerProps}
               aria-labelledby="class-selection-label"
             >
-              {CLASS_IDS.map((classId, index) => {
-                const c = CLASSES[classId];
-                const lore = CLASS_LORE[classId];
+              {classesArray.map((c, index) => {
+                const lore = CLASS_LORE[c.id];
                 const itemProps = classNav.getItemProps(index);
                 return (
                   <button
-                    key={classId}
+                    key={c.id}
                     {...itemProps}
-                    className={`option-card ${selectedClass === classId ? 'selected' : ''}`}
-                    onClick={() => setSelectedClass(classId)}
+                    className={`option-card ${selectedClass === c.id ? 'selected' : ''}`}
+                    onClick={() => setSelectedClass(c.id)}
                   >
                     <div className="option-name">{c.name}</div>
                     <div className="option-desc">{c.description}</div>
