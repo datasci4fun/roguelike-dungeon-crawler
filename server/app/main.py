@@ -30,6 +30,7 @@ from .api.dependencies import router as dependencies_router
 from .api.routes import router as routes_router
 from .api.metrics import router as metrics_router, MetricsMiddleware
 from .api.lore import router as lore_router
+from .api.bestiary import router as bestiary_router
 
 
 @asynccontextmanager
@@ -106,6 +107,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_router, tags=["dev-tools"])
     app.include_router(metrics_router, tags=["dev-tools"])
     app.include_router(lore_router, tags=["content"])
+    app.include_router(bestiary_router, tags=["content"])
 
     # Add exception handler to capture errors (only in debug mode)
     if settings.debug:
