@@ -152,6 +152,10 @@ export function Layout() {
                     <span className="menu-icon">🏗️</span>
                     Build Info
                   </Link>
+                  <Link to="/log-viewer" onClick={closeDropdown}>
+                    <span className="menu-icon">📜</span>
+                    Log Viewer
+                  </Link>
                   <Link to="/codebase-health" onClick={closeDropdown}>
                     <span className="menu-icon">🩺</span>
                     Codebase Health
