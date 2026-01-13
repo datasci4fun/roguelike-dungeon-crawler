@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import List, Optional, Callable, TYPE_CHECKING
 
+from ..core.messages import MessageImportance
+
 if TYPE_CHECKING:
     from ..core.engine import GameEngine
 
@@ -213,7 +215,7 @@ def apply_micro_event_effect(event: MicroEvent, engine: 'GameEngine') -> bool:
         heal_amount = min(event.effect_value, player.max_hp - player.hp)
         if heal_amount > 0:
             player.hp += heal_amount
-            engine.add_message(f"You recover {heal_amount} HP from the Field's blessing.", important=True)
+            engine.add_message(f"You recover {heal_amount} HP from the Field's blessing.", importance=MessageImportance.IMPORTANT)
         return True
 
     elif event.effect == MicroEventEffect.BOOST_VISION:
@@ -225,7 +227,7 @@ def apply_micro_event_effect(event: MicroEvent, engine: 'GameEngine') -> bool:
 
     elif event.effect == MicroEventEffect.LORE_HINT:
         # Add a hint message about nearby lore
-        engine.add_message("You sense ancient knowledge nearby...", important=True)
+        engine.add_message("You sense ancient knowledge nearby...", importance=MessageImportance.IMPORTANT)
         return True
 
     elif event.effect == MicroEventEffect.CALM_ENEMIES:
@@ -241,7 +243,7 @@ def apply_micro_event_effect(event: MicroEvent, engine: 'GameEngine') -> bool:
                 enemy.stunned_turns = getattr(enemy, 'stunned_turns', 0) + event.effect_value
                 calmed += 1
         if calmed > 0:
-            engine.add_message(f"The Field's pulse stuns {calmed} nearby enemies!", important=True)
+            engine.add_message(f"The Field's pulse stuns {calmed} nearby enemies!", importance=MessageImportance.IMPORTANT)
         return True
 
     elif event.effect == MicroEventEffect.GLOW_ITEMS:
@@ -255,7 +257,7 @@ def apply_micro_event_effect(event: MicroEvent, engine: 'GameEngine') -> bool:
                 item.field_highlight_turns = 10
                 items_highlighted += 1
         if items_highlighted > 0:
-            engine.add_message(f"The Field reveals {items_highlighted} items nearby!", important=True)
+            engine.add_message(f"The Field reveals {items_highlighted} items nearby!", importance=MessageImportance.IMPORTANT)
         return True
 
     return False

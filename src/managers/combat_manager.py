@@ -6,6 +6,7 @@ from ..entities import attack, get_combat_message, player_attack, enemy_attack_p
 from ..entities.ai_behaviors import get_ai_action, tick_enemy_cooldowns
 from ..core.constants import GameState, ELITE_XP_MULTIPLIER, BOSS_LOOT, AIBehavior
 from ..core.events import EventType, EventQueue
+from ..core.messages import MessageImportance
 from ..items import ItemType, create_item
 
 if TYPE_CHECKING:
@@ -124,7 +125,7 @@ class CombatManager:
                 # Player senses the invisible enemy
                 self.game.add_message(
                     "You sense a presence lurking in the shadows nearby...",
-                    important=True
+                    importance=MessageImportance.IMPORTANT
                 )
                 # Only alert once per move (don't spam if multiple stealthed enemies)
                 return
@@ -155,7 +156,7 @@ class CombatManager:
             enemy.is_invisible = False
             self.game.add_message(
                 f"The light reveals {enemy.name} lurking nearby!",
-                important=True
+                importance=MessageImportance.IMPORTANT
             )
         elif not is_lit and not is_invisible:
             # Darkness conceals the enemy (if not adjacent to player)
@@ -338,7 +339,7 @@ class CombatManager:
             # Tick element cycling for elemental enemies
             cycled, new_element, cycle_message = enemy.tick_element_cycle()
             if cycled and cycle_message:
-                self.game.add_message(cycle_message, important=True)
+                self.game.add_message(cycle_message, importance=MessageImportance.IMPORTANT)
 
             # Shadow concealment for stealth enemies
             self._process_shadow_concealment(enemy)
