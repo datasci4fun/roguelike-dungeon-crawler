@@ -60,14 +60,6 @@ const STATUS_COLORS: Record<string, string> = {
   unknown: '#6b7280',
 };
 
-// Status icons
-const STATUS_ICONS: Record<string, string> = {
-  healthy: '●',
-  degraded: '◐',
-  unhealthy: '○',
-  unknown: '?',
-};
-
 export function SystemStatus() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);

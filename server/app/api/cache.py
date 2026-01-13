@@ -3,7 +3,7 @@ Cache Inspector API - Dev tool for browsing Redis cache.
 
 SECURITY: Only available when DEBUG=true.
 """
-from typing import Any
+from typing import Any, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
@@ -18,7 +18,7 @@ class KeyInfo(BaseModel):
     key: str
     type: str
     ttl: int  # -1 = no expiry, -2 = key doesn't exist
-    memory_bytes: int | None = None
+    memory_bytes: Optional[int] = None
 
 
 class KeyValue(BaseModel):

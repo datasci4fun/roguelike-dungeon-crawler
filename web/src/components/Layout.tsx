@@ -73,6 +73,22 @@ export function Layout() {
                     <span className="menu-icon">📋</span>
                     Patch Notes
                   </Link>
+                  <Link to="/lore" onClick={closeDropdown}>
+                    <span className="menu-icon">📜</span>
+                    Lore & Story
+                  </Link>
+                  <Link to="/bestiary" onClick={closeDropdown}>
+                    <span className="menu-icon">👹</span>
+                    Bestiary
+                  </Link>
+                  <Link to="/items" onClick={closeDropdown}>
+                    <span className="menu-icon">⚔️</span>
+                    Item Compendium
+                  </Link>
+                  <Link to="/guide" onClick={closeDropdown}>
+                    <span className="menu-icon">📖</span>
+                    Adventurer's Guide
+                  </Link>
                 </div>
               )}
             </div>
@@ -163,6 +179,30 @@ export function Layout() {
                   <Link to="/profiler" onClick={closeDropdown}>
                     <span className="menu-icon">⏱️</span>
                     Profiler
+                  </Link>
+                  <Link to="/session-inspector" onClick={closeDropdown}>
+                    <span className="menu-icon">👤</span>
+                    Sessions
+                  </Link>
+                  <Link to="/feature-flags" onClick={closeDropdown}>
+                    <span className="menu-icon">🚩</span>
+                    Feature Flags
+                  </Link>
+                  <Link to="/env-config" onClick={closeDropdown}>
+                    <span className="menu-icon">⚙️</span>
+                    Env Config
+                  </Link>
+                  <Link to="/dependencies" onClick={closeDropdown}>
+                    <span className="menu-icon">📦</span>
+                    Dependencies
+                  </Link>
+                  <Link to="/routes" onClick={closeDropdown}>
+                    <span className="menu-icon">🔀</span>
+                    Route Explorer
+                  </Link>
+                  <Link to="/metrics" onClick={closeDropdown}>
+                    <span className="menu-icon">📈</span>
+                    Metrics
                   </Link>
                   <Link to="/codebase-health" onClick={closeDropdown}>
                     <span className="menu-icon">🩺</span>

@@ -1,0 +1,452 @@
+/**
+ * Game Guide Page Styles
+ * Comprehensive reference for races, classes, traps, hazards, effects, biomes
+ */
+
+.game-guide-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
+  color: #e0e0e0;
+  padding: 2rem;
+}
+
+/* Loading State */
+.guide-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
+}
+
+.guide-loading .loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(251, 191, 36, 0.2);
+  border-top-color: #fbbf24;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Header */
+.guide-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.guide-header h1 {
+  font-size: 2.5rem;
+  color: #fbbf24;
+  margin: 0;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
+}
+
+.guide-header p {
+  color: #9ca3af;
+  margin: 0.5rem 0 0 0;
+  font-style: italic;
+}
+
+/* Section Navigation */
+.section-nav {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.section-btn {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.section-btn.active {
+  background: rgba(251, 191, 36, 0.2);
+  border-color: #fbbf24;
+  color: #fbbf24;
+}
+
+.section-icon {
+  font-size: 1.1rem;
+}
+
+/* Section Container */
+.guide-section {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.guide-section h2 {
+  font-size: 1.5rem;
+  color: #fbbf24;
+  margin: 0 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-description {
+  color: #9ca3af;
+  margin: 0 0 1.5rem 0;
+  font-style: italic;
+}
+
+/* Card Grid */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+/* Generic Card */
+.guide-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: all 0.2s;
+}
+
+.guide-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.card-icon {
+  font-size: 1.75rem;
+  width: 40px;
+  text-align: center;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #e0e0e0;
+}
+
+.card-subtitle {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.card-description {
+  color: #c0c0c0;
+  font-size: 0.9rem;
+  margin: 0 0 1rem 0;
+  line-height: 1.5;
+}
+
+/* Stats Display */
+.stat-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.stat-badge {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+.stat-positive {
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.stat-negative {
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.stat-neutral {
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+.stat-info {
+  color: #22d3ee;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
+
+/* Trait/Ability Display */
+.trait-box {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.trait-name {
+  color: #a855f7;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.trait-desc {
+  color: #c0c0c0;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+/* Ability List */
+.ability-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.ability-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.ability-label {
+  color: #9ca3af;
+  font-size: 0.8rem;
+  width: 60px;
+}
+
+.ability-tag {
+  background: rgba(34, 211, 238, 0.15);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  color: #22d3ee;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.ability-tag.passive {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+
+/* Biome Cards */
+.biome-card {
+  border-left: 4px solid var(--biome-color, #fbbf24);
+}
+
+.biome-floor {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.biome-meta {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.biome-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.biome-meta-label {
+  color: #9ca3af;
+}
+
+.biome-meta-value {
+  color: #e0e0e0;
+}
+
+.field-aspect {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #a855f7;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+/* Hazard/Trap specific */
+.danger-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.danger-symbol {
+  font-family: monospace;
+  font-size: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  color: #ef4444;
+}
+
+.damage-badge {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.effect-badge {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #a855f7;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.special-text {
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0 0;
+  font-style: italic;
+}
+
+/* Status Effect Cards */
+.status-card {
+  border-left: 4px solid var(--status-color, #a855f7);
+}
+
+.stacking-info {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.stacking-badge {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+.status-message {
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 3px solid var(--status-color, #a855f7);
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+  font-style: italic;
+  color: #c0c0c0;
+  font-size: 0.85rem;
+}
+
+/* Element Cards */
+.element-card {
+  border-left: 4px solid var(--element-color, #fbbf24);
+}
+
+.element-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  background: var(--element-color, #fbbf24);
+  color: #000;
+}
+
+.weakness-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 6px;
+}
+
+.weakness-label {
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.weakness-value {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.multiplier-badge {
+  margin-left: auto;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #22c55e;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .game-guide-page {
+    padding: 1rem;
+  }
+
+  .guide-section {
+    padding: 1rem;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-nav {
+    gap: 0.25rem;
+  }
+
+  .section-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+  }
+}
