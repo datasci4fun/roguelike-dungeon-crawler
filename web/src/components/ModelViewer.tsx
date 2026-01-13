@@ -75,6 +75,24 @@ export function ModelViewer({
       (gltf) => {
         const model = gltf.scene;
 
+        // Ensure materials are visible
+        model.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            // Enable vertex colors if present
+            if (child.geometry.attributes.color) {
+              child.material = new THREE.MeshStandardMaterial({
+                vertexColors: true,
+                metalness: 0.1,
+                roughness: 0.8,
+              });
+            }
+            // Ensure double-sided rendering
+            if (child.material) {
+              (child.material as THREE.Material).side = THREE.DoubleSide;
+            }
+          }
+        });
+
         // Center and scale model
         const box = new THREE.Box3().setFromObject(model);
         const center = box.getCenter(new THREE.Vector3());
@@ -85,9 +103,12 @@ export function ModelViewer({
         model.scale.setScalar(scale);
         model.position.sub(center.multiplyScalar(scale));
 
+        console.log('Model loaded:', modelPath, 'Scale:', scale);
         scene.add(model);
       },
-      undefined,
+      (progress) => {
+        console.log('Loading progress:', (progress.loaded / progress.total * 100).toFixed(1) + '%');
+      },
       (error) => {
         console.error('Error loading model:', error);
       }
