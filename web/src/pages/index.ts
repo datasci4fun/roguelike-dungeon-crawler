@@ -35,3 +35,4 @@ export { MetricsDashboard } from './MetricsDashboard';
 export { LorePage } from './LorePage';
 export { Bestiary } from './Bestiary';
 export { ItemCompendium } from './ItemCompendium';
+export { GameGuide } from './GameGuide';
