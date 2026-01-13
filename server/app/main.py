@@ -28,6 +28,7 @@ from .api.flags import router as flags_router
 from .api.config import router as config_router
 from .api.dependencies import router as dependencies_router
 from .api.routes import router as routes_router
+from .api.metrics import router as metrics_router, MetricsMiddleware
 
 
 @asynccontextmanager
@@ -76,6 +77,7 @@ def create_app() -> FastAPI:
     # Performance profiling middleware (debug mode only)
     if settings.debug:
         app.add_middleware(ProfilingMiddleware, enabled=True)
+        app.add_middleware(MetricsMiddleware)
 
     # Include routers
     app.include_router(health_router, prefix="/api", tags=["health"])
@@ -101,6 +103,7 @@ def create_app() -> FastAPI:
     app.include_router(config_router, tags=["dev-tools"])
     app.include_router(dependencies_router, tags=["dev-tools"])
     app.include_router(routes_router, tags=["dev-tools"])
+    app.include_router(metrics_router, tags=["dev-tools"])
 
     # Add exception handler to capture errors (only in debug mode)
     if settings.debug:
