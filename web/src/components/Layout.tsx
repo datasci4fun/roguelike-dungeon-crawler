@@ -105,6 +105,10 @@ export function Layout() {
                     <span className="menu-icon">🧪</span>
                     API Playground
                   </Link>
+                  <Link to="/ws-monitor" onClick={closeDropdown}>
+                    <span className="menu-icon">🔌</span>
+                    WS Monitor
+                  </Link>
                 </div>
               )}
             </div>
