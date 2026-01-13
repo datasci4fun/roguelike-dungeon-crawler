@@ -27,3 +27,4 @@ export { LogViewer } from './LogViewer';
 export { ErrorTracker } from './ErrorTracker';
 export { PerformanceProfiler } from './PerformanceProfiler';
 export { SessionInspector } from './SessionInspector';
+export { FeatureFlags } from './FeatureFlags';
