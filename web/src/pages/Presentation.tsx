@@ -377,6 +377,18 @@ const SLIDES: Slide[] = [
     },
   },
   {
+    id: 'self-improving',
+    type: 'story',
+    content: {
+      section: '6. Key Insight',
+      type: 'success',
+      title: 'Self-Improving Analysis Loop',
+      story: 'AI can bootstrap its own tools to production quality through recursive self-critique. Have AI generate code analysis recommendations, then ask it to analyze its own output for flaws — wrong information, missing context, false positives. It identifies issues, fixes the detection logic, regenerates, and repeats. Each iteration catches progressively subtler issues until quality plateaus.',
+      why: 'Built a codebase health scanner that initially produced generic recommendations. Through 4 iterations of self-analysis, it learned to: detect Python Enums vs classes, recognize inheritance patterns, identify base+subclass relationships, count imports for impact assessment, and generate context-aware refactoring techniques. The final tool exceeded what manual development would achieve.',
+      lesson: 'Traditional static analysis tools improve slowly through user bug reports. This pattern enables immediate feedback, comprehensive coverage, and rapid iteration — all in one session. The AI is both the tool and its own QA engineer. The ceiling isn\'t the initial implementation; it\'s how many iterations you run.',
+    },
+  },
+  {
     id: 'recommendation-1',
     type: 'recommendation',
     content: {
@@ -394,6 +406,10 @@ const SLIDES: Slide[] = [
         {
           tip: 'Orchestrate multiple AIs by strength',
           detail: 'Claude for architecture/code, ChatGPT for creative writing, Suno for music, DALL-E for visuals. Leverage each model\'s training biases as specializations.',
+        },
+        {
+          tip: 'Use Self-Improving Loops',
+          detail: 'Have AI critique its own output, fix the underlying logic, and regenerate. Recursive self-analysis produces tools that exceed manual development quality.',
         },
       ],
     },
