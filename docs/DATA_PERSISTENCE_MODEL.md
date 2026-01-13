@@ -278,14 +278,14 @@ This document outlines the current and proposed data persistence architecture fo
 
 | Phase | Task | Effort | Status |
 |-------|------|--------|--------|
-| **1** | Create JSON seed files from Python constants | Medium | Not Started |
-| **2** | Create DB models for game constants | Small | Not Started |
-| **3** | Create seed loader script | Small | Not Started |
-| **4** | Add Redis caching layer to existing endpoints | Medium | Not Started |
-| **5** | Create API endpoints for game constants | Medium | Not Started |
-| **6** | Update frontend to fetch from API | Large | Not Started |
-| **7** | Remove static TS data files | Small | Not Started |
-| **8** | Add cache invalidation on writes | Small | Not Started |
+| **1** | Create JSON seed files from Python constants | Medium | ✅ Complete |
+| **2** | Create DB models for game constants | Small | ✅ Complete |
+| **3** | Create seed loader script | Small | ✅ Complete |
+| **4** | Add Redis caching layer to existing endpoints | Medium | ✅ Complete |
+| **5** | Create API endpoints for game constants | Medium | ✅ Complete |
+| **6** | Update frontend to fetch from API | Large | ✅ Complete |
+| **7** | Remove static TS data files | Small | ✅ Partial (abilities remain) |
+| **8** | Add cache invalidation on writes | Small | ✅ Complete (seed script) |
 
 ---
 
