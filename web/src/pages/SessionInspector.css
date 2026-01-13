@@ -1,0 +1,551 @@
+/**
+ * Session Inspector Styles - User/Security theme
+ */
+
+.session-inspector {
+  min-height: 100vh;
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Loading State */
+.session-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1rem;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #21262d;
+  border-top-color: #a855f7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Header */
+.session-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+.session-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.session-header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.header-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  background: #a855f722;
+  color: #a855f7;
+  border-radius: 12px;
+}
+
+.header-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.test-btn {
+  padding: 0.5rem 1rem;
+  background: #21262d;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  color: #e6edf3;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.test-btn:hover {
+  background: #30363d;
+}
+
+.clear-btn {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid #f8514955;
+  border-radius: 6px;
+  color: #f85149;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.clear-btn:hover {
+  background: #f8514922;
+}
+
+/* Stats Row */
+.stats-row {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+  overflow-x: auto;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 100px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #e6edf3;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 0.25rem;
+}
+
+/* Device Breakdown */
+.stat-card.device-breakdown {
+  min-width: 140px;
+}
+
+.device-items {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.device-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.device-icon {
+  font-size: 1.25rem;
+}
+
+.device-count {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e6edf3;
+}
+
+/* View Toggle */
+.view-toggle {
+  display: flex;
+  gap: 0;
+  padding: 0 1.5rem;
+  background: #161b22;
+  border-bottom: 1px solid #21262d;
+}
+
+.view-toggle button {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #8b949e;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.view-toggle button:hover {
+  color: #e6edf3;
+}
+
+.view-toggle button.active {
+  color: #a855f7;
+  border-bottom-color: #a855f7;
+}
+
+/* No Data */
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  color: #6b7280;
+}
+
+.no-data-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.no-data .hint {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+/* Sessions List */
+.sessions-list {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.session-card {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.15s;
+}
+
+.session-card:hover {
+  border-color: #484f58;
+}
+
+.session-card.expanded {
+  border-color: #a855f7;
+}
+
+.session-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.session-header-row:hover {
+  background: #21262d;
+}
+
+.session-main {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.session-main .device-icon {
+  font-size: 1.5rem;
+}
+
+.session-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.session-username {
+  font-weight: 600;
+  color: #e6edf3;
+}
+
+.session-meta {
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.session-stats {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.session-requests,
+.session-duration,
+.session-time {
+  font-size: 0.85rem;
+  color: #8b949e;
+}
+
+.session-requests {
+  background: #21262d;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.expand-icon {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+/* Session Details */
+.session-details {
+  border-top: 1px solid #21262d;
+  padding: 1rem;
+  background: #0d1117;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  background: #161b22;
+  border: 1px solid #21262d;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.detail-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.25rem;
+}
+
+.detail-value {
+  font-size: 0.85rem;
+  color: #e6edf3;
+  word-break: break-all;
+}
+
+.detail-value.small {
+  font-size: 0.75rem;
+}
+
+code.detail-value {
+  font-family: 'JetBrains Mono', monospace;
+  background: #21262d;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background: #22c55e22;
+  color: #22c55e;
+}
+
+.status-expired {
+  background: #d2992222;
+  color: #d29922;
+}
+
+.status-revoked {
+  background: #f8514922;
+  color: #f85149;
+}
+
+.session-actions {
+  padding-top: 0.75rem;
+  border-top: 1px solid #21262d;
+}
+
+.revoke-btn {
+  padding: 0.5rem 1rem;
+  background: #f8514922;
+  border: 1px solid #f8514955;
+  border-radius: 6px;
+  color: #f85149;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.revoke-btn:hover {
+  background: #f8514933;
+}
+
+/* Users Table */
+.users-list {
+  padding: 1.5rem;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.users-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  background: #161b22;
+  color: #8b949e;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #21262d;
+}
+
+.users-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #21262d;
+}
+
+.users-table tr:hover {
+  background: #161b22;
+}
+
+.col-user {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #e6edf3;
+}
+
+.user-username {
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.sessions-count {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  background: #21262d;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+
+.sessions-count.has-sessions {
+  background: #a855f722;
+  color: #a855f7;
+}
+
+.col-date {
+  color: #8b949e;
+  font-size: 0.85rem;
+}
+
+/* Activity Timeline */
+.activity-list {
+  padding: 1.5rem;
+}
+
+.activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.activity-item {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #21262d;
+}
+
+.activity-dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-top: 0.35rem;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.activity-event {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.activity-user {
+  font-weight: 600;
+  color: #e6edf3;
+}
+
+.activity-time {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-left: auto;
+}
+
+.activity-details {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.activity-ip {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .stats-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .session-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .session-stats {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .users-table {
+    font-size: 0.8rem;
+  }
+
+  .users-table th,
+  .users-table td {
+    padding: 0.5rem;
+  }
+}
