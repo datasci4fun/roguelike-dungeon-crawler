@@ -3,6 +3,7 @@
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { getGameWsUrl } from '../services/api';
+import type { BattleState, TransitionState } from '../types';
 
 export type GameState = 'PLAYING' | 'DEAD' | 'VICTORY' | 'TITLE' | 'INTRO';
 export type UIMode = 'GAME' | 'INVENTORY' | 'CHARACTER' | 'HELP' | 'MESSAGE_LOG' | 'DIALOG' | 'READING';
@@ -169,6 +170,14 @@ export interface InventoryItem {
 export interface GameEvent {
   type: string;
   data: Record<string, unknown>;
+  // Event-specific fields (populated based on type)
+  source?: string;
+  target?: string;
+  amount?: number;
+  level?: number;
+  item?: string;
+  ability?: string;
+  status?: string;
 }
 
 export interface FirstPersonTile {
@@ -286,6 +295,8 @@ export interface FullGameState {
       height: number;
     }>;
   };
+  battle?: BattleState;
+  transition?: TransitionState;
 }
 
 export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';

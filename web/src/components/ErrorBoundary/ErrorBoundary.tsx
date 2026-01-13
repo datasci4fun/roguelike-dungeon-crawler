@@ -5,7 +5,7 @@
  * component tree, log those errors, and display a fallback UI instead
  * of crashing the whole application.
  */
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   /** Child components to wrap */
@@ -107,7 +107,7 @@ function DefaultErrorFallback({
   name,
   showRecovery = true,
   onRecovery,
-}: DefaultErrorFallbackProps): JSX.Element {
+}: DefaultErrorFallbackProps) {
   const isDev = import.meta.env.DEV;
 
   return (

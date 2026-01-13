@@ -4,11 +4,11 @@
  * v6.5.1 med-06: Announces important game events to screen reader users
  */
 import { useEffect, useRef, useState } from 'react';
-import type { GameState, GameEvent } from '../hooks/useGameSocket';
+import type { FullGameState, GameEvent } from '../hooks/useGameSocket';
 import './GameAnnouncer.css';
 
 interface GameAnnouncerProps {
-  gameState: GameState | null;
+  gameState: FullGameState | null;
   events?: GameEvent[];
 }
 
@@ -95,7 +95,7 @@ export function GameAnnouncer({ gameState, events = [] }: GameAnnouncerProps) {
 
     // Battle state
     if (gameState.battle) {
-      if (gameState.battle.is_player_turn) {
+      if (gameState.battle.phase === 'PLAYER_TURN') {
         newAnnouncements.push('Your turn. Choose an action.');
       }
     }
@@ -113,7 +113,7 @@ export function GameAnnouncer({ gameState, events = [] }: GameAnnouncerProps) {
     gameState?.dungeon?.level,
     gameState?.player?.health,
     gameState?.game_state,
-    gameState?.battle?.is_player_turn,
+    gameState?.battle?.phase,
     gameState?.new_lore,
   ]);
 

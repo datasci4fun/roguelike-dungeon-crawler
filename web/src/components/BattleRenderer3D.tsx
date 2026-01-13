@@ -513,7 +513,6 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       damageNumbersRef.current = activeDamage;
 
       // v6.5 Battle Polish: Animate hit particles
-      const PARTICLE_DURATION = 600; // ms
       const activeParticles: HitParticle[] = [];
       for (const particle of hitParticlesRef.current) {
         const elapsed = now - particle.startTime;

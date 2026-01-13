@@ -311,7 +311,7 @@ function drawLibraryBiome(ctx: CanvasRenderingContext2D, width: number, height: 
   ctx.fill();
 }
 
-function drawCrystalBiome(ctx: CanvasRenderingContext2D, width: number, height: number, colors: typeof BIOME_COLORS.crystal, time: number) {
+function drawCrystalBiome(ctx: CanvasRenderingContext2D, width: number, height: number, _colors: typeof BIOME_COLORS.crystal, time: number) {
   // Crystals
   for (let i = 0; i < 6; i++) {
     const x = width * (0.1 + i * 0.15);

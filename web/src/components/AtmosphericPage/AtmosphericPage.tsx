@@ -9,7 +9,7 @@
  * - Optional Three.js canvas layer
  */
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   SceneBackground,
   ParticlesLayer,

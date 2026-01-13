@@ -6,7 +6,7 @@
  * - PhosphorHeader with lore title
  * - Race/class lore from Skyfall Seed canon
  */
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useGame } from '../contexts/GameContext';
