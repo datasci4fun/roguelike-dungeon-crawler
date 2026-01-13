@@ -18,9 +18,23 @@
 }
 
 .changelog-stats {
-  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
   font-size: 0.9rem;
   color: rgba(255, 255, 255, 0.6);
+}
+
+.changelog-stats .stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
 }
 
 .changelog-stats .stat-value {
@@ -29,8 +43,7 @@
 }
 
 .changelog-stats .stat-sep {
-  margin: 0 0.75rem;
-  opacity: 0.4;
+  display: none;
 }
 
 /* Controls */
