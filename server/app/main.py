@@ -19,6 +19,7 @@ from .api.daily import router as daily_router
 from .api.dbexplorer import router as dbexplorer_router
 from .api.cache import router as cache_router
 from .api.status import router as status_router
+from .api.buildinfo import router as buildinfo_router
 
 
 @asynccontextmanager
@@ -79,6 +80,7 @@ def create_app() -> FastAPI:
     app.include_router(dbexplorer_router, tags=["dev-tools"])
     app.include_router(cache_router, tags=["dev-tools"])
     app.include_router(status_router, tags=["dev-tools"])
+    app.include_router(buildinfo_router, tags=["dev-tools"])
 
     return app
 
