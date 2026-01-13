@@ -85,6 +85,10 @@ export function Layout() {
                     <span className="menu-icon">📋</span>
                     Patch Notes
                   </Link>
+                  <Link to="/db-explorer" onClick={closeDropdown}>
+                    <span className="menu-icon">🗄️</span>
+                    DB Explorer
+                  </Link>
                 </div>
               )}
             </div>

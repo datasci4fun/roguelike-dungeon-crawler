@@ -16,6 +16,7 @@ from .api.profile import router as profile_router
 from .api.friends import router as friends_router
 from .api.saves import router as saves_router
 from .api.daily import router as daily_router
+from .api.dbexplorer import router as dbexplorer_router
 
 
 @asynccontextmanager
@@ -73,6 +74,7 @@ def create_app() -> FastAPI:
     app.include_router(friends_router)
     app.include_router(saves_router)
     app.include_router(daily_router, prefix="/api")
+    app.include_router(dbexplorer_router, tags=["dev-tools"])
 
     return app
 
