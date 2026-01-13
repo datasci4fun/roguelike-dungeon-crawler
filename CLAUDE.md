@@ -19,6 +19,13 @@ From repo root:
 - Syntax/type sanity: `.\.venv\Scripts\python -m py_compile src\*.py`
 - Smoke run: `.\.venv\Scripts\python main.py` (move, fight, pick up item, descend stairs, quit)
 
+## Codebase health data
+Regenerate after refactoring to update the web dashboard:
+```
+.venv/Scripts/python.exe scripts/generate_codebase_health.py
+```
+**Note:** Use forward slashes in the path (Windows bash quirk). Output goes to `web/src/data/codebaseHealthData.ts`.
+
 ## Diagnostics & observability
 See **[DIAGNOSTICS.md](DIAGNOSTICS.md)** for the full diagnostic toolkit:
 - 14 web dev tools (System Status, Metrics, Profiler, Error Tracker, Log Viewer, etc.)

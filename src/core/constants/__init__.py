@@ -1,0 +1,115 @@
+"""Constants package - game configuration organized by domain.
+
+This package contains:
+- enums.py: All game enums (16 total)
+- enemy_data.py: Enemy stats, floor pools, elite config
+- boss_data.py: Boss stats, level mapping, loot tables
+- player_data.py: Race/class stats, XP/leveling config
+- world_data.py: Dungeon themes, tiles, decorations, terrain
+- combat_data.py: Elements, traps, hazards, status effects
+- ui_config.py: UI constants, box drawing, colors
+"""
+
+# Enums
+from .enums import (
+    TileType, GameState, UIMode, DungeonTheme, RoomType,
+    EnemyType, BossType, ItemRarity, EquipmentSlot,
+    AIBehavior, StatusEffectType, TrapType, HazardType,
+    ElementType, Race, PlayerClass,
+)
+
+# Enemy data
+from .enemy_data import (
+    ELITE_SPAWN_RATE, ELITE_HP_MULTIPLIER, ELITE_DAMAGE_MULTIPLIER,
+    ELITE_XP_MULTIPLIER, ELITE_SYMBOL,
+    ENEMY_STATS, FLOOR_ENEMY_POOLS,
+)
+
+# Boss data
+from .boss_data import (
+    BOSS_STATS, LEVEL_BOSS_MAP, BOSS_LOOT, BOSS_CHASE_RANGE,
+)
+
+# Player data
+from .player_data import (
+    RACE_STATS, CLASS_STATS,
+    PLAYER_MAX_HEALTH, PLAYER_ATTACK_DAMAGE,
+    ENEMY_MAX_HEALTH, ENEMY_ATTACK_DAMAGE, ENEMY_CHASE_RANGE,
+    XP_PER_KILL, XP_BASE_REQUIREMENT, MAX_PLAYER_LEVEL,
+    HP_GAIN_PER_LEVEL, ATK_GAIN_PER_LEVEL,
+)
+
+# World data
+from .world_data import (
+    DUNGEON_WIDTH, DUNGEON_HEIGHT, MIN_ROOM_SIZE, MAX_ROOM_SIZE,
+    MAX_BSP_DEPTH, MAX_DUNGEON_LEVELS,
+    PLAYER_SYMBOL, ENEMY_SYMBOL,
+    THEME_TILES, THEME_TILES_ASCII, LEVEL_THEMES,
+    THEME_DECORATIONS, THEME_DECORATIONS_ASCII,
+    TERRAIN_WATER, TERRAIN_WATER_ASCII, TERRAIN_BLOOD, TERRAIN_BLOOD_ASCII,
+    TERRAIN_GRASS, TERRAIN_MOSS, TERRAIN_LAVA, TERRAIN_ICE,
+    THEME_TERRAIN, THEME_TORCH_COUNTS,
+    TORCH_DEFAULT_RADIUS, TORCH_DEFAULT_INTENSITY,
+)
+
+# Combat data
+from .combat_data import (
+    ELEMENT_CYCLE_TURNS, ELEMENT_CYCLE_ORDER,
+    ELEMENT_WEAKNESSES, WEAKNESS_DAMAGE_MULTIPLIER, ELEMENT_COLORS,
+    TRAP_STATS, HAZARD_STATS, STATUS_EFFECT_STATS,
+    TRAPS_PER_LEVEL, SECRET_ROOMS_PER_LEVEL, LOCKED_DOORS_PER_LEVEL,
+)
+
+# UI config
+from .ui_config import (
+    FOV_RADIUS, FOV_LIGHT_WALLS, AUTO_SAVE_INTERVAL,
+    MESSAGE_LOG_SIZE, MESSAGE_AREA_HEIGHT, SHORTCUT_BAR_HEIGHT,
+    STATS_PANEL_WIDTH, BAR_WIDTH,
+    BOX_TL, BOX_TR, BOX_BL, BOX_BR, BOX_H, BOX_V, BOX_LEFT, BOX_RIGHT,
+    BOX_TL_ASCII, BOX_TR_ASCII, BOX_BL_ASCII, BOX_BR_ASCII,
+    BOX_H_ASCII, BOX_V_ASCII, BOX_LEFT_ASCII, BOX_RIGHT_ASCII,
+    ITEM_RARITY_COLORS,
+)
+
+__all__ = [
+    # Enums
+    'TileType', 'GameState', 'UIMode', 'DungeonTheme', 'RoomType',
+    'EnemyType', 'BossType', 'ItemRarity', 'EquipmentSlot',
+    'AIBehavior', 'StatusEffectType', 'TrapType', 'HazardType',
+    'ElementType', 'Race', 'PlayerClass',
+    # Enemy data
+    'ELITE_SPAWN_RATE', 'ELITE_HP_MULTIPLIER', 'ELITE_DAMAGE_MULTIPLIER',
+    'ELITE_XP_MULTIPLIER', 'ELITE_SYMBOL',
+    'ENEMY_STATS', 'FLOOR_ENEMY_POOLS',
+    # Boss data
+    'BOSS_STATS', 'LEVEL_BOSS_MAP', 'BOSS_LOOT', 'BOSS_CHASE_RANGE',
+    # Player data
+    'RACE_STATS', 'CLASS_STATS',
+    'PLAYER_MAX_HEALTH', 'PLAYER_ATTACK_DAMAGE',
+    'ENEMY_MAX_HEALTH', 'ENEMY_ATTACK_DAMAGE', 'ENEMY_CHASE_RANGE',
+    'XP_PER_KILL', 'XP_BASE_REQUIREMENT', 'MAX_PLAYER_LEVEL',
+    'HP_GAIN_PER_LEVEL', 'ATK_GAIN_PER_LEVEL',
+    # World data
+    'DUNGEON_WIDTH', 'DUNGEON_HEIGHT', 'MIN_ROOM_SIZE', 'MAX_ROOM_SIZE',
+    'MAX_BSP_DEPTH', 'MAX_DUNGEON_LEVELS',
+    'PLAYER_SYMBOL', 'ENEMY_SYMBOL',
+    'THEME_TILES', 'THEME_TILES_ASCII', 'LEVEL_THEMES',
+    'THEME_DECORATIONS', 'THEME_DECORATIONS_ASCII',
+    'TERRAIN_WATER', 'TERRAIN_WATER_ASCII', 'TERRAIN_BLOOD', 'TERRAIN_BLOOD_ASCII',
+    'TERRAIN_GRASS', 'TERRAIN_MOSS', 'TERRAIN_LAVA', 'TERRAIN_ICE',
+    'THEME_TERRAIN', 'THEME_TORCH_COUNTS',
+    'TORCH_DEFAULT_RADIUS', 'TORCH_DEFAULT_INTENSITY',
+    # Combat data
+    'ELEMENT_CYCLE_TURNS', 'ELEMENT_CYCLE_ORDER',
+    'ELEMENT_WEAKNESSES', 'WEAKNESS_DAMAGE_MULTIPLIER', 'ELEMENT_COLORS',
+    'TRAP_STATS', 'HAZARD_STATS', 'STATUS_EFFECT_STATS',
+    'TRAPS_PER_LEVEL', 'SECRET_ROOMS_PER_LEVEL', 'LOCKED_DOORS_PER_LEVEL',
+    # UI config
+    'FOV_RADIUS', 'FOV_LIGHT_WALLS', 'AUTO_SAVE_INTERVAL',
+    'MESSAGE_LOG_SIZE', 'MESSAGE_AREA_HEIGHT', 'SHORTCUT_BAR_HEIGHT',
+    'STATS_PANEL_WIDTH', 'BAR_WIDTH',
+    'BOX_TL', 'BOX_TR', 'BOX_BL', 'BOX_BR', 'BOX_H', 'BOX_V', 'BOX_LEFT', 'BOX_RIGHT',
+    'BOX_TL_ASCII', 'BOX_TR_ASCII', 'BOX_BL_ASCII', 'BOX_BR_ASCII',
+    'BOX_H_ASCII', 'BOX_V_ASCII', 'BOX_LEFT_ASCII', 'BOX_RIGHT_ASCII',
+    'ITEM_RARITY_COLORS',
+]
