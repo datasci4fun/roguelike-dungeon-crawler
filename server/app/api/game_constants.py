@@ -8,7 +8,7 @@ falling back to PostgreSQL on cache miss.
 This replaces static TypeScript data files in the frontend, allowing
 game balance changes without frontend redeployment.
 """
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +28,21 @@ from ..models.game_constants import (
     Item,
     GameConstantsMeta,
 )
+from ..schemas.game_constants import (
+    EnemyResponse,
+    FloorPoolResponse,
+    BossResponse,
+    RaceResponse,
+    ClassResponse,
+    ThemeResponse,
+    TrapResponse,
+    HazardResponse,
+    StatusEffectResponse,
+    ItemResponse,
+    CacheStatusResponse,
+    MetadataResponse,
+    InvalidateCacheResponse,
+)
 from ..services.cache_warmer import (
     model_to_dict,
     get_cache_status,
@@ -41,7 +56,7 @@ router = APIRouter(prefix="/api/game-constants", tags=["game-constants"])
 # Enemies
 # =============================================================================
 
-@router.get("/enemies")
+@router.get("/enemies", response_model=List[EnemyResponse])
 async def get_enemies(
     db: AsyncSession = Depends(get_db),
     floor: Optional[int] = Query(None, ge=1, le=8, description="Filter by floor availability"),
@@ -73,7 +88,7 @@ async def get_enemies(
     return enemy_list
 
 
-@router.get("/enemies/{enemy_id}")
+@router.get("/enemies/{enemy_id}", response_model=EnemyResponse)
 async def get_enemy(
     enemy_id: str,
     db: AsyncSession = Depends(get_db),
@@ -97,7 +112,7 @@ async def get_enemy(
     return model_to_dict(enemy)
 
 
-@router.get("/floor-pools/{floor}")
+@router.get("/floor-pools/{floor}", response_model=FloorPoolResponse)
 async def get_floor_pool(
     floor: int,
     db: AsyncSession = Depends(get_db),
@@ -137,7 +152,7 @@ async def get_floor_pool(
 # Bosses
 # =============================================================================
 
-@router.get("/bosses")
+@router.get("/bosses", response_model=List[BossResponse])
 async def get_bosses(
     db: AsyncSession = Depends(get_db),
 ):
@@ -155,7 +170,7 @@ async def get_bosses(
     return boss_list
 
 
-@router.get("/bosses/{boss_id}")
+@router.get("/bosses/{boss_id}", response_model=BossResponse)
 async def get_boss(
     boss_id: str,
     db: AsyncSession = Depends(get_db),
@@ -181,7 +196,7 @@ async def get_boss(
 # Races & Classes
 # =============================================================================
 
-@router.get("/races")
+@router.get("/races", response_model=List[RaceResponse])
 async def get_races(db: AsyncSession = Depends(get_db)):
     """Get all playable race definitions."""
     cached = await cache.get_game_constants("races")
@@ -197,7 +212,7 @@ async def get_races(db: AsyncSession = Depends(get_db)):
     return race_list
 
 
-@router.get("/classes")
+@router.get("/classes", response_model=List[ClassResponse])
 async def get_classes(db: AsyncSession = Depends(get_db)):
     """Get all playable class definitions."""
     cached = await cache.get_game_constants("classes")
@@ -217,7 +232,7 @@ async def get_classes(db: AsyncSession = Depends(get_db)):
 # Themes
 # =============================================================================
 
-@router.get("/themes")
+@router.get("/themes", response_model=List[ThemeResponse])
 async def get_themes(db: AsyncSession = Depends(get_db)):
     """Get all dungeon theme definitions."""
     cached = await cache.get_game_constants("themes")
@@ -233,7 +248,7 @@ async def get_themes(db: AsyncSession = Depends(get_db)):
     return theme_list
 
 
-@router.get("/themes/{theme_id}")
+@router.get("/themes/{theme_id}", response_model=ThemeResponse)
 async def get_theme(
     theme_id: str,
     db: AsyncSession = Depends(get_db),
@@ -259,7 +274,7 @@ async def get_theme(
 # Combat (Traps, Hazards, Status Effects)
 # =============================================================================
 
-@router.get("/traps")
+@router.get("/traps", response_model=List[TrapResponse])
 async def get_traps(db: AsyncSession = Depends(get_db)):
     """Get all trap definitions."""
     cached = await cache.get_game_constants("traps")
@@ -275,7 +290,7 @@ async def get_traps(db: AsyncSession = Depends(get_db)):
     return trap_list
 
 
-@router.get("/hazards")
+@router.get("/hazards", response_model=List[HazardResponse])
 async def get_hazards(db: AsyncSession = Depends(get_db)):
     """Get all environmental hazard definitions."""
     cached = await cache.get_game_constants("hazards")
@@ -291,7 +306,7 @@ async def get_hazards(db: AsyncSession = Depends(get_db)):
     return hazard_list
 
 
-@router.get("/status-effects")
+@router.get("/status-effects", response_model=List[StatusEffectResponse])
 async def get_status_effects(db: AsyncSession = Depends(get_db)):
     """Get all status effect definitions."""
     cached = await cache.get_game_constants("status_effects")
@@ -311,7 +326,7 @@ async def get_status_effects(db: AsyncSession = Depends(get_db)):
 # Items
 # =============================================================================
 
-@router.get("/items")
+@router.get("/items", response_model=List[ItemResponse])
 async def get_items(
     db: AsyncSession = Depends(get_db),
     category: Optional[str] = Query(None, description="Filter by category"),
@@ -346,7 +361,7 @@ async def get_items(
     return item_list
 
 
-@router.get("/items/{item_id}")
+@router.get("/items/{item_id}", response_model=ItemResponse)
 async def get_item(
     item_id: str,
     db: AsyncSession = Depends(get_db),
@@ -372,7 +387,7 @@ async def get_item(
 # Cache Management
 # =============================================================================
 
-@router.get("/cache-status")
+@router.get("/cache-status", response_model=CacheStatusResponse)
 async def cache_status():
     """Get cache status for all game constants."""
     return await get_cache_status()
@@ -395,7 +410,7 @@ async def invalidate_cache(
     return result
 
 
-@router.get("/metadata")
+@router.get("/metadata", response_model=List[MetadataResponse])
 async def get_metadata(db: AsyncSession = Depends(get_db)):
     """Get seed metadata (versions, sync timestamps, record counts)."""
     result = await db.execute(select(GameConstantsMeta))
