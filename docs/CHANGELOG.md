@@ -4,7 +4,7 @@ All notable changes to this project.
 
 ---
 
-## [6.6.0] - 2026-01-13 - Data Persistence Migration
+## [6.7.0] - 2026-01-13 - Data Persistence Migration
 
 ### Added
 - **JSON Seed Files**: Game balance data in version-controlled JSON (`data/seeds/`)
