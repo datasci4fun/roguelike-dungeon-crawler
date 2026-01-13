@@ -208,6 +208,10 @@ export function Layout() {
                     <span className="menu-icon">🩺</span>
                     Codebase Health
                   </Link>
+                  <Link to="/asset-viewer" onClick={closeDropdown}>
+                    <span className="menu-icon">🎨</span>
+                    Asset Viewer
+                  </Link>
                   <div className="menu-divider" />
                   <Link to="/db-explorer" onClick={closeDropdown}>
                     <span className="menu-icon">🗄️</span>
