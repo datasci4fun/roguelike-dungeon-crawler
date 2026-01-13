@@ -1,0 +1,146 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-01-13T00:00:00Z",
+  "config": {
+    "dungeon_width": 80,
+    "dungeon_height": 40,
+    "min_room_size": 4,
+    "max_room_size": 10,
+    "max_bsp_depth": 4,
+    "max_dungeon_levels": 8,
+    "player_symbol": "@",
+    "enemy_symbol": "E",
+    "torch_default_radius": 5,
+    "torch_default_intensity": 1.0
+  },
+  "terrain": {
+    "water": { "unicode": "\u2248", "ascii": "~" },
+    "blood": { "unicode": "\ua554", "ascii": "%" },
+    "grass": { "unicode": "\"", "ascii": "\"" },
+    "moss": { "unicode": ":", "ascii": ":" },
+    "lava": { "unicode": "~", "ascii": "~" },
+    "ice": { "unicode": "=", "ascii": "=" }
+  },
+  "data": [
+    {
+      "id": "stone",
+      "name": "Stone Dungeon",
+      "level": 1,
+      "tiles": {
+        "wall": { "unicode": "#", "ascii": "#" },
+        "floor": { "unicode": ".", "ascii": "." }
+      },
+      "decorations": {
+        "unicode": ["\u0398", "\u266a"],
+        "ascii": ["O", "^"]
+      },
+      "terrain_features": [],
+      "torch_count": { "min": 6, "max": 10 }
+    },
+    {
+      "id": "sewer",
+      "name": "Sewers of Valdris",
+      "level": 2,
+      "tiles": {
+        "wall": { "unicode": "\u2593", "ascii": "#" },
+        "floor": { "unicode": ".", "ascii": "." }
+      },
+      "decorations": {
+        "unicode": ["\u25cb", "="],
+        "ascii": ["o", "="]
+      },
+      "terrain_features": ["water"],
+      "torch_count": { "min": 2, "max": 4 }
+    },
+    {
+      "id": "forest",
+      "name": "Forest Depths",
+      "level": 3,
+      "tiles": {
+        "wall": { "unicode": "\u2663", "ascii": "#" },
+        "floor": { "unicode": "\"", "ascii": "\"" }
+      },
+      "decorations": {
+        "unicode": ["\u2660", "\u00a5"],
+        "ascii": ["T", "m"]
+      },
+      "terrain_features": ["water", "grass"],
+      "torch_count": { "min": 3, "max": 5 }
+    },
+    {
+      "id": "crypt",
+      "name": "Mirror Valdris",
+      "level": 4,
+      "tiles": {
+        "wall": { "unicode": "\u2588", "ascii": "#" },
+        "floor": { "unicode": ",", "ascii": "," }
+      },
+      "decorations": {
+        "unicode": ["\u2020", "\u03a9"],
+        "ascii": ["+", "O"]
+      },
+      "terrain_features": [],
+      "torch_count": { "min": 4, "max": 6 }
+    },
+    {
+      "id": "ice",
+      "name": "Ice Cavern",
+      "level": 5,
+      "tiles": {
+        "wall": { "unicode": "\u2593", "ascii": "#" },
+        "floor": { "unicode": "\u00b7", "ascii": "." }
+      },
+      "decorations": {
+        "unicode": ["\u2744", "\u25c7"],
+        "ascii": ["*", "<"]
+      },
+      "terrain_features": ["ice"],
+      "torch_count": { "min": 2, "max": 4 }
+    },
+    {
+      "id": "library",
+      "name": "Ancient Library",
+      "level": 6,
+      "tiles": {
+        "wall": { "unicode": "\u2551", "ascii": "|" },
+        "floor": { "unicode": "_", "ascii": "_" }
+      },
+      "decorations": {
+        "unicode": ["\u2564", "\u2551"],
+        "ascii": ["=", "|"]
+      },
+      "terrain_features": [],
+      "torch_count": { "min": 8, "max": 12 }
+    },
+    {
+      "id": "volcanic",
+      "name": "Volcanic Depths",
+      "level": 7,
+      "tiles": {
+        "wall": { "unicode": "\u2592", "ascii": "#" },
+        "floor": { "unicode": ",", "ascii": "," }
+      },
+      "decorations": {
+        "unicode": ["\u2206", "\u2261"],
+        "ascii": ["^", "="]
+      },
+      "terrain_features": ["lava"],
+      "torch_count": { "min": 4, "max": 6 }
+    },
+    {
+      "id": "crystal",
+      "name": "Crystal Cave",
+      "level": 8,
+      "tiles": {
+        "wall": { "unicode": "\u25ca", "ascii": "#" },
+        "floor": { "unicode": "\u00b7", "ascii": "." }
+      },
+      "decorations": {
+        "unicode": ["\u25c7", "\u2726"],
+        "ascii": ["<", "*"]
+      },
+      "terrain_features": [],
+      "torch_count": { "min": 8, "max": 12 }
+    }
+  ]
+}

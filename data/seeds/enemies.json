@@ -1,0 +1,487 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-01-13T00:00:00Z",
+  "config": {
+    "elite_spawn_rate": 0.2,
+    "elite_hp_multiplier": 2,
+    "elite_damage_multiplier": 2,
+    "elite_xp_multiplier": 2,
+    "elite_symbol": "E"
+  },
+  "data": [
+    {
+      "id": "goblin",
+      "symbol": "g",
+      "name": "Goblin",
+      "hp": 6,
+      "damage": 1,
+      "xp": 10,
+      "weight": 40,
+      "min_level": 1,
+      "max_level": 3
+    },
+    {
+      "id": "skeleton",
+      "symbol": "s",
+      "name": "Skeleton",
+      "hp": 8,
+      "damage": 2,
+      "xp": 15,
+      "weight": 30,
+      "min_level": 1,
+      "max_level": 6
+    },
+    {
+      "id": "orc",
+      "symbol": "o",
+      "name": "Orc",
+      "hp": 12,
+      "damage": 3,
+      "xp": 20,
+      "weight": 15,
+      "min_level": 2,
+      "max_level": 5
+    },
+    {
+      "id": "wraith",
+      "symbol": "W",
+      "name": "Wraith",
+      "hp": 10,
+      "damage": 4,
+      "xp": 25,
+      "weight": 8,
+      "min_level": 3,
+      "max_level": 8
+    },
+    {
+      "id": "troll",
+      "symbol": "T",
+      "name": "Troll",
+      "hp": 20,
+      "damage": 5,
+      "xp": 35,
+      "weight": 5,
+      "min_level": 5,
+      "max_level": 8
+    },
+    {
+      "id": "dragon",
+      "symbol": "D",
+      "name": "Dragon",
+      "hp": 50,
+      "damage": 10,
+      "xp": 100,
+      "weight": 2,
+      "min_level": 8,
+      "max_level": 8
+    },
+    {
+      "id": "necromancer",
+      "symbol": "N",
+      "name": "Necromancer",
+      "hp": 25,
+      "damage": 8,
+      "xp": 40,
+      "weight": 10,
+      "min_level": 3,
+      "max_level": 8,
+      "ai_type": "ranged_kite",
+      "element": "dark",
+      "abilities": ["raise_skeleton", "dark_bolt"]
+    },
+    {
+      "id": "demon",
+      "symbol": "\u0394",
+      "name": "Demon",
+      "hp": 45,
+      "damage": 16,
+      "xp": 60,
+      "weight": 6,
+      "min_level": 4,
+      "max_level": 8,
+      "ai_type": "aggressive",
+      "element": "fire",
+      "abilities": ["fire_strike"],
+      "resistances": { "fire": 0.5 }
+    },
+    {
+      "id": "assassin",
+      "symbol": "a",
+      "name": "Assassin",
+      "hp": 20,
+      "damage": 14,
+      "xp": 35,
+      "weight": 12,
+      "min_level": 2,
+      "max_level": 8,
+      "ai_type": "stealth",
+      "abilities": ["backstab", "vanish"]
+    },
+    {
+      "id": "fire_elemental",
+      "symbol": "F",
+      "name": "Fire Elemental",
+      "hp": 30,
+      "damage": 12,
+      "xp": 45,
+      "weight": 8,
+      "min_level": 3,
+      "max_level": 8,
+      "ai_type": "elemental",
+      "element": "fire",
+      "abilities": ["fire_bolt"],
+      "resistances": { "fire": 1.0 }
+    },
+    {
+      "id": "ice_elemental",
+      "symbol": "I",
+      "name": "Ice Elemental",
+      "hp": 30,
+      "damage": 10,
+      "xp": 45,
+      "weight": 8,
+      "min_level": 3,
+      "max_level": 8,
+      "ai_type": "elemental",
+      "element": "ice",
+      "abilities": ["ice_shard"],
+      "resistances": { "ice": 1.0 }
+    },
+    {
+      "id": "lightning_elemental",
+      "symbol": "Z",
+      "name": "Lightning Elemental",
+      "hp": 25,
+      "damage": 14,
+      "xp": 50,
+      "weight": 6,
+      "min_level": 4,
+      "max_level": 8,
+      "ai_type": "elemental",
+      "element": "lightning",
+      "abilities": ["chain_lightning"],
+      "resistances": { "lightning": 1.0 }
+    },
+    {
+      "id": "rat",
+      "symbol": "r",
+      "name": "Rat",
+      "hp": 5,
+      "damage": 1,
+      "xp": 8,
+      "weight": 40,
+      "min_level": 2,
+      "max_level": 3,
+      "ai_type": "aggressive"
+    },
+    {
+      "id": "plague_rat",
+      "symbol": "p",
+      "name": "Plague Rat",
+      "hp": 7,
+      "damage": 2,
+      "xp": 12,
+      "weight": 22,
+      "min_level": 2,
+      "max_level": 4,
+      "ai_type": "aggressive",
+      "resistances": { "poison": 0.5 }
+    },
+    {
+      "id": "spiderling",
+      "symbol": "x",
+      "name": "Spiderling",
+      "hp": 6,
+      "damage": 2,
+      "xp": 12,
+      "weight": 36,
+      "min_level": 3,
+      "max_level": 4,
+      "ai_type": "aggressive"
+    },
+    {
+      "id": "webweaver",
+      "symbol": "w",
+      "name": "Webweaver",
+      "hp": 9,
+      "damage": 3,
+      "xp": 18,
+      "weight": 18,
+      "min_level": 3,
+      "max_level": 5,
+      "ai_type": "chase"
+    },
+    {
+      "id": "oathbound_guard",
+      "symbol": "G",
+      "name": "Oathbound Guard",
+      "hp": 16,
+      "damage": 5,
+      "xp": 35,
+      "weight": 16,
+      "min_level": 4,
+      "max_level": 6,
+      "ai_type": "chase",
+      "element": "dark",
+      "resistances": { "poison": 0.25 }
+    },
+    {
+      "id": "court_scribe",
+      "symbol": "q",
+      "name": "Court Scribe",
+      "hp": 10,
+      "damage": 4,
+      "xp": 28,
+      "weight": 14,
+      "min_level": 4,
+      "max_level": 6,
+      "ai_type": "ranged_kite"
+    },
+    {
+      "id": "animated_tome",
+      "symbol": "t",
+      "name": "Animated Tome",
+      "hp": 14,
+      "damage": 5,
+      "xp": 40,
+      "weight": 16,
+      "min_level": 6,
+      "max_level": 7,
+      "ai_type": "aggressive",
+      "element": "dark",
+      "resistances": { "poison": 0.5 }
+    },
+    {
+      "id": "crystal_sentinel",
+      "symbol": "C",
+      "name": "Crystal Sentinel",
+      "hp": 22,
+      "damage": 8,
+      "xp": 70,
+      "weight": 14,
+      "min_level": 8,
+      "max_level": 8,
+      "ai_type": "chase",
+      "element": "lightning",
+      "resistances": { "ice": 0.25, "fire": 0.25 }
+    },
+    {
+      "id": "shade",
+      "symbol": "S",
+      "name": "Shade",
+      "hp": 5,
+      "damage": 3,
+      "xp": 20,
+      "weight": 8,
+      "min_level": 1,
+      "max_level": 1,
+      "ai_type": "stealth",
+      "element": "dark",
+      "resistances": { "physical": 0.5 }
+    },
+    {
+      "id": "bile_lurker",
+      "symbol": "B",
+      "name": "Bile Lurker",
+      "hp": 12,
+      "damage": 2,
+      "xp": 22,
+      "weight": 8,
+      "min_level": 2,
+      "max_level": 2,
+      "ai_type": "aggressive",
+      "abilities": ["poison_spit"],
+      "resistances": { "poison": 1.0 }
+    },
+    {
+      "id": "thornling",
+      "symbol": "h",
+      "name": "Thornling",
+      "hp": 8,
+      "damage": 4,
+      "xp": 25,
+      "weight": 8,
+      "min_level": 3,
+      "max_level": 3,
+      "ai_type": "chase",
+      "abilities": ["thorn_burst"]
+    },
+    {
+      "id": "doppelganger",
+      "symbol": "?",
+      "name": "Doppelganger",
+      "hp": 15,
+      "damage": 5,
+      "xp": 40,
+      "weight": 6,
+      "min_level": 4,
+      "max_level": 4,
+      "ai_type": "chase",
+      "element": "dark"
+    },
+    {
+      "id": "frost_wisp",
+      "symbol": "f",
+      "name": "Frost Wisp",
+      "hp": 6,
+      "damage": 6,
+      "xp": 35,
+      "weight": 8,
+      "min_level": 5,
+      "max_level": 5,
+      "ai_type": "ranged_kite",
+      "element": "ice",
+      "abilities": ["ice_shard"],
+      "resistances": { "ice": 1.0, "fire": -0.5 }
+    },
+    {
+      "id": "ink_phantom",
+      "symbol": "i",
+      "name": "Ink Phantom",
+      "hp": 10,
+      "damage": 7,
+      "xp": 45,
+      "weight": 8,
+      "min_level": 6,
+      "max_level": 6,
+      "ai_type": "stealth",
+      "element": "dark",
+      "abilities": ["vanish"]
+    },
+    {
+      "id": "ember_sprite",
+      "symbol": "e",
+      "name": "Ember Sprite",
+      "hp": 8,
+      "damage": 8,
+      "xp": 50,
+      "weight": 8,
+      "min_level": 7,
+      "max_level": 7,
+      "ai_type": "ranged_kite",
+      "element": "fire",
+      "abilities": ["fire_bolt"],
+      "resistances": { "fire": 1.0, "ice": -0.5 }
+    },
+    {
+      "id": "prism_watcher",
+      "symbol": "P",
+      "name": "Prism Watcher",
+      "hp": 18,
+      "damage": 9,
+      "xp": 65,
+      "weight": 6,
+      "min_level": 8,
+      "max_level": 8,
+      "ai_type": "elemental",
+      "element": "lightning",
+      "abilities": ["chain_lightning"],
+      "resistances": { "lightning": 0.75 }
+    }
+  ],
+  "floor_pools": [
+    {
+      "floor": 1,
+      "theme": "stone_dungeon",
+      "lore_aspect": "MEMORY",
+      "enemies": [
+        { "enemy_id": "goblin", "weight": 50 },
+        { "enemy_id": "skeleton", "weight": 28 },
+        { "enemy_id": "orc", "weight": 10 },
+        { "enemy_id": "wraith", "weight": 5 },
+        { "enemy_id": "shade", "weight": 7 }
+      ]
+    },
+    {
+      "floor": 2,
+      "theme": "sewers",
+      "lore_aspect": "CIRCULATION",
+      "enemies": [
+        { "enemy_id": "rat", "weight": 42 },
+        { "enemy_id": "plague_rat", "weight": 23 },
+        { "enemy_id": "orc", "weight": 13 },
+        { "enemy_id": "assassin", "weight": 10 },
+        { "enemy_id": "skeleton", "weight": 5 },
+        { "enemy_id": "bile_lurker", "weight": 7 }
+      ]
+    },
+    {
+      "floor": 3,
+      "theme": "forest_depths",
+      "lore_aspect": "GROWTH",
+      "enemies": [
+        { "enemy_id": "spiderling", "weight": 42 },
+        { "enemy_id": "webweaver", "weight": 23 },
+        { "enemy_id": "rat", "weight": 10 },
+        { "enemy_id": "assassin", "weight": 10 },
+        { "enemy_id": "wraith", "weight": 8 },
+        { "enemy_id": "thornling", "weight": 7 }
+      ]
+    },
+    {
+      "floor": 4,
+      "theme": "mirror_valdris",
+      "lore_aspect": "LEGITIMACY",
+      "enemies": [
+        { "enemy_id": "oathbound_guard", "weight": 32 },
+        { "enemy_id": "skeleton", "weight": 23 },
+        { "enemy_id": "court_scribe", "weight": 15 },
+        { "enemy_id": "assassin", "weight": 13 },
+        { "enemy_id": "wraith", "weight": 10 },
+        { "enemy_id": "doppelganger", "weight": 7 }
+      ]
+    },
+    {
+      "floor": 5,
+      "theme": "ice_cavern",
+      "lore_aspect": "STASIS",
+      "enemies": [
+        { "enemy_id": "ice_elemental", "weight": 28 },
+        { "enemy_id": "skeleton", "weight": 18 },
+        { "enemy_id": "wraith", "weight": 18 },
+        { "enemy_id": "oathbound_guard", "weight": 13 },
+        { "enemy_id": "troll", "weight": 15 },
+        { "enemy_id": "frost_wisp", "weight": 8 }
+      ]
+    },
+    {
+      "floor": 6,
+      "theme": "ancient_library",
+      "lore_aspect": "COGNITION",
+      "enemies": [
+        { "enemy_id": "animated_tome", "weight": 28 },
+        { "enemy_id": "necromancer", "weight": 23 },
+        { "enemy_id": "court_scribe", "weight": 15 },
+        { "enemy_id": "assassin", "weight": 13 },
+        { "enemy_id": "wraith", "weight": 13 },
+        { "enemy_id": "ink_phantom", "weight": 8 }
+      ]
+    },
+    {
+      "floor": 7,
+      "theme": "volcanic_depths",
+      "lore_aspect": "TRANSFORMATION",
+      "enemies": [
+        { "enemy_id": "fire_elemental", "weight": 28 },
+        { "enemy_id": "demon", "weight": 18 },
+        { "enemy_id": "troll", "weight": 18 },
+        { "enemy_id": "necromancer", "weight": 15 },
+        { "enemy_id": "animated_tome", "weight": 13 },
+        { "enemy_id": "ember_sprite", "weight": 8 }
+      ]
+    },
+    {
+      "floor": 8,
+      "theme": "crystal_cave",
+      "lore_aspect": "INTEGRATION",
+      "enemies": [
+        { "enemy_id": "crystal_sentinel", "weight": 34 },
+        { "enemy_id": "lightning_elemental", "weight": 18 },
+        { "enemy_id": "dragon", "weight": 8 },
+        { "enemy_id": "demon", "weight": 15 },
+        { "enemy_id": "wraith", "weight": 18 },
+        { "enemy_id": "prism_watcher", "weight": 7 }
+      ]
+    }
+  ]
+}
