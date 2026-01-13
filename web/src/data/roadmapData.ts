@@ -3,7 +3,7 @@
  */
 
 export type Priority = 'critical' | 'high' | 'medium' | 'low' | 'research';
-export type Status = 'planned' | 'in-progress' | 'completed' | 'blocked' | 'deferred';
+export type Status = 'planned' | 'in-progress' | 'completed' | 'blocked' | 'deferred' | 'removed';
 export type Effort = 'small' | 'medium' | 'large' | 'epic';
 export type Category =
   | 'gameplay'
@@ -44,6 +44,7 @@ export const STATUS_CONFIG: Record<Status, { label: string; color: string; icon:
   completed: { label: 'Completed', color: '#22c55e', icon: '●' },
   blocked: { label: 'Blocked', color: '#ef4444', icon: '✕' },
   deferred: { label: 'Deferred', color: '#4b5563', icon: '◷' },
+  removed: { label: 'Remove', color: '#dc2626', icon: '🗑' },
 };
 
 export const CATEGORY_CONFIG: Record<Category, { label: string; icon: string }> = {

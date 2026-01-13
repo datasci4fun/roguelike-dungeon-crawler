@@ -7,9 +7,10 @@
  * - Search functionality
  * - Stats overview
  * - URL persistence for filters
+ * - Edit mode for status changes (persisted to localStorage)
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AtmosphericPage } from '../components/AtmosphericPage';
 import { PhosphorHeader } from '../components/PhosphorHeader';
@@ -28,6 +29,9 @@ import {
 } from '../data/roadmapData';
 import './Roadmap.css';
 
+// localStorage key for status overrides
+const STORAGE_KEY = 'roadmap-status-overrides';
+
 // Filter state type
 interface FilterState {
   priorities: Priority[];
@@ -36,9 +40,150 @@ interface FilterState {
   search: string;
 }
 
+// Status selector dropdown component
+function StatusSelector({
+  currentStatus,
+  onStatusChange,
+  itemId,
+}: {
+  currentStatus: Status;
+  onStatusChange: (itemId: string, status: Status) => void;
+  itemId: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="status-selector">
+      <button
+        className={`status-selector-btn status-${currentStatus}`}
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ color: STATUS_CONFIG[currentStatus].color }}
+      >
+        {STATUS_CONFIG[currentStatus].icon} {STATUS_CONFIG[currentStatus].label}
+        <span className="status-dropdown-arrow">▼</span>
+      </button>
+      {isOpen && (
+        <div className="status-dropdown">
+          {(Object.keys(STATUS_CONFIG) as Status[]).map((status) => (
+            <button
+              key={status}
+              className={`status-option ${status === currentStatus ? 'active' : ''}`}
+              onClick={() => {
+                onStatusChange(itemId, status);
+                setIsOpen(false);
+              }}
+              style={{ color: STATUS_CONFIG[status].color }}
+            >
+              {STATUS_CONFIG[status].icon} {STATUS_CONFIG[status].label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Roadmap() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+
+  // Edit mode state
+  const [editMode, setEditMode] = useState(false);
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, Status>>({});
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  // Load status overrides from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        setStatusOverrides(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Failed to load roadmap overrides:', e);
+    }
+  }, []);
+
+  // Save status overrides to localStorage
+  const saveOverrides = useCallback((overrides: Record<string, Status>) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(overrides));
+    } catch (e) {
+      console.error('Failed to save roadmap overrides:', e);
+    }
+  }, []);
+
+  // Handle status change
+  const handleStatusChange = useCallback((itemId: string, newStatus: Status) => {
+    const originalItem = ROADMAP_ITEMS.find(item => item.id === itemId);
+    const newOverrides = { ...statusOverrides };
+
+    // If setting back to original status, remove the override
+    if (originalItem && originalItem.status === newStatus) {
+      delete newOverrides[itemId];
+    } else {
+      newOverrides[itemId] = newStatus;
+    }
+
+    setStatusOverrides(newOverrides);
+    saveOverrides(newOverrides);
+  }, [statusOverrides, saveOverrides]);
+
+  // Reset all overrides
+  const resetOverrides = useCallback(() => {
+    setStatusOverrides({});
+    localStorage.removeItem(STORAGE_KEY);
+  }, []);
+
+  // Get effective status for an item (override or original)
+  const getEffectiveStatus = useCallback((item: RoadmapItem): Status => {
+    return statusOverrides[item.id] || item.status;
+  }, [statusOverrides]);
+
+  // Generate export code as JSON for easy processing
+  const generateExportCode = useCallback(() => {
+    if (Object.keys(statusOverrides).length === 0) {
+      return '// No status changes to export';
+    }
+
+    const changes: {
+      statusChanges: { id: string; title: string; from: string; to: string }[];
+      removals: { id: string; title: string }[];
+    } = {
+      statusChanges: [],
+      removals: [],
+    };
+
+    for (const [itemId, newStatus] of Object.entries(statusOverrides)) {
+      const item = ROADMAP_ITEMS.find(i => i.id === itemId);
+      if (item) {
+        if (newStatus === 'removed') {
+          changes.removals.push({ id: itemId, title: item.title });
+        } else {
+          changes.statusChanges.push({
+            id: itemId,
+            title: item.title,
+            from: item.status,
+            to: newStatus,
+          });
+        }
+      }
+    }
+
+    return JSON.stringify(changes, null, 2);
+  }, [statusOverrides]);
+
+  // Copy export code to clipboard
+  const copyExportCode = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(generateExportCode());
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (e) {
+      console.error('Failed to copy:', e);
+    }
+  }, [generateExportCode]);
 
   // Initialize filters from URL params
   const filters: FilterState = useMemo(() => ({
@@ -61,9 +206,16 @@ export function Roadmap() {
     setSearchParams(params);
   };
 
-  // Filter items
+  // Filter items (using effective status for filtering)
   const filteredItems = useMemo(() => {
     return ROADMAP_ITEMS.filter((item) => {
+      const effectiveStatus = getEffectiveStatus(item);
+
+      // Hide removed items unless in edit mode
+      if (effectiveStatus === 'removed' && !editMode) {
+        return false;
+      }
+
       // Priority filter
       if (filters.priorities.length && !filters.priorities.includes(item.priority)) {
         return false;
@@ -72,8 +224,8 @@ export function Roadmap() {
       if (filters.categories.length && !item.category.some((c) => filters.categories.includes(c))) {
         return false;
       }
-      // Status filter
-      if (filters.statuses.length && !filters.statuses.includes(item.status)) {
+      // Status filter (use effective status)
+      if (filters.statuses.length && !filters.statuses.includes(effectiveStatus)) {
         return false;
       }
       // Search filter
@@ -87,7 +239,7 @@ export function Roadmap() {
       }
       return true;
     });
-  }, [filters]);
+  }, [filters, getEffectiveStatus, editMode]);
 
   // Group filtered items by priority
   const groupedItems = useMemo(() => {
@@ -106,9 +258,16 @@ export function Roadmap() {
     return groups;
   }, [filteredItems]);
 
-  // Stats
-  const completionStats = getCompletionStats();
+  // Stats (using effective status for overrides)
+  const completionStats = useMemo(() => {
+    const total = ROADMAP_ITEMS.length;
+    const completed = ROADMAP_ITEMS.filter((item) => getEffectiveStatus(item) === 'completed').length;
+    const inProgress = ROADMAP_ITEMS.filter((item) => getEffectiveStatus(item) === 'in-progress').length;
+    return { total, completed, inProgress, percentage: Math.round((completed / total) * 100) };
+  }, [getEffectiveStatus]);
+
   const priorityStats = getPriorityStats();
+  const overrideCount = Object.keys(statusOverrides).length;
 
   // Toggle item expansion
   const toggleExpand = (id: string) => {
@@ -174,7 +333,52 @@ export function Roadmap() {
             Track our progress as we continue building the ultimate roguelike experience.
             Features are prioritized by impact and grouped by development status.
           </p>
+
+          {/* Edit Mode Controls */}
+          <div className="edit-mode-controls">
+            <button
+              className={`edit-mode-toggle ${editMode ? 'active' : ''}`}
+              onClick={() => setEditMode(!editMode)}
+            >
+              {editMode ? '✓ Edit Mode ON' : '✎ Edit Mode'}
+            </button>
+
+            {editMode && (
+              <>
+                {overrideCount > 0 && (
+                  <>
+                    <span className="override-count">{overrideCount} change{overrideCount !== 1 ? 's' : ''}</span>
+                    <button className="export-btn" onClick={() => setShowExportModal(true)}>
+                      Export Changes
+                    </button>
+                    <button className="reset-btn" onClick={resetOverrides}>
+                      Reset All
+                    </button>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </section>
+
+        {/* Export Modal */}
+        {showExportModal && (
+          <div className="export-modal-overlay" onClick={() => setShowExportModal(false)}>
+            <div className="export-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="export-modal-header">
+                <h3>Export Status Changes</h3>
+                <button className="close-modal" onClick={() => setShowExportModal(false)}>×</button>
+              </div>
+              <div className="export-modal-content">
+                <p>Copy these changes to update roadmapData.ts:</p>
+                <pre className="export-code">{generateExportCode()}</pre>
+                <button className="copy-btn" onClick={copyExportCode}>
+                  {copySuccess ? '✓ Copied!' : 'Copy to Clipboard'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Bar */}
         <section className="roadmap-stats">
@@ -305,20 +509,37 @@ export function Roadmap() {
                 </div>
 
                 <div className="items-grid">
-                  {items.map((item) => (
+                  {items.map((item) => {
+                    const effectiveStatus = getEffectiveStatus(item);
+                    const isModified = statusOverrides[item.id] !== undefined;
+
+                    return (
                     <div
                       key={item.id}
-                      className={`roadmap-card ${expandedItems.has(item.id) ? 'expanded' : ''}`}
+                      className={`roadmap-card ${expandedItems.has(item.id) ? 'expanded' : ''} ${isModified ? 'modified' : ''}`}
                     >
-                      <div className="card-header" onClick={() => toggleExpand(item.id)}>
+                      <div className="card-header" onClick={(e) => {
+                        // Don't toggle expand if clicking on status selector
+                        if ((e.target as HTMLElement).closest('.status-selector')) return;
+                        toggleExpand(item.id);
+                      }}>
                         <div className="card-status">
-                          <span
-                            className="status-icon"
-                            style={{ color: STATUS_CONFIG[item.status].color }}
-                            title={STATUS_CONFIG[item.status].label}
-                          >
-                            {STATUS_CONFIG[item.status].icon}
-                          </span>
+                          {editMode ? (
+                            <StatusSelector
+                              currentStatus={effectiveStatus}
+                              onStatusChange={handleStatusChange}
+                              itemId={item.id}
+                            />
+                          ) : (
+                            <span
+                              className="status-icon"
+                              style={{ color: STATUS_CONFIG[effectiveStatus].color }}
+                              title={STATUS_CONFIG[effectiveStatus].label}
+                            >
+                              {STATUS_CONFIG[effectiveStatus].icon}
+                              {isModified && <span className="modified-dot" title="Modified">*</span>}
+                            </span>
+                          )}
                         </div>
                         <div className="card-main">
                           <h3 className="card-title">{item.title}</h3>
@@ -379,7 +600,8 @@ export function Roadmap() {
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
