@@ -32,3 +32,4 @@ export { EnvConfig } from './EnvConfig';
 export { DependencyViewer } from './DependencyViewer';
 export { RouteExplorer } from './RouteExplorer';
 export { MetricsDashboard } from './MetricsDashboard';
+export { LorePage } from './LorePage';

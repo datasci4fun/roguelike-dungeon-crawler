@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Home, Login, Register, Play, Features, About, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends, Presentation, Roadmap, CodebaseHealth, Changelog, DatabaseExplorer, CacheInspector, AudioJukebox, SystemStatus, ApiPlayground, WebSocketMonitor, BuildInfo, LogViewer, ErrorTracker, PerformanceProfiler, SessionInspector, FeatureFlags, EnvConfig, DependencyViewer, RouteExplorer, MetricsDashboard } from './pages';
+import { Home, Login, Register, Play, Features, About, PlayScene, SceneDemo, Leaderboard, Ghosts, Profile, Achievements, Spectate, Friends, Presentation, Roadmap, CodebaseHealth, Changelog, DatabaseExplorer, CacheInspector, AudioJukebox, SystemStatus, ApiPlayground, WebSocketMonitor, BuildInfo, LogViewer, ErrorTracker, PerformanceProfiler, SessionInspector, FeatureFlags, EnvConfig, DependencyViewer, RouteExplorer, MetricsDashboard, LorePage } from './pages';
 import { FirstPersonDemo } from './pages/FirstPersonDemo';
 import { FirstPersonTestPage } from './pages/FirstPersonTestPage';
 import { Debug3DPage } from './pages/Debug3DPage';
@@ -49,6 +49,7 @@ function App() {
         <Route path="dependencies" element={<DependencyViewer />} />
         <Route path="routes" element={<RouteExplorer />} />
         <Route path="metrics" element={<MetricsDashboard />} />
+        <Route path="lore" element={<LorePage />} />
       </Route>
     </Routes>
   );
