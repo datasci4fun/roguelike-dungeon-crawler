@@ -9,11 +9,13 @@ import {
   SIZE_CONFIG,
   type Area,
   type SizeCategory,
+  type FileType,
 } from '../../data/codebaseHealthData';
 
 export function FilesTab() {
   // File filters
   const [fileAreaFilter, setFileAreaFilter] = useState<Area[]>([]);
+  const [fileTypeFilter, setFileTypeFilter] = useState<FileType[]>([]);
   const [fileSizeFilter, setFileSizeFilter] = useState<SizeCategory[]>([]);
   const [fileSearch, setFileSearch] = useState('');
   const [fileSortBy, setFileSortBy] = useState<'path' | 'loc' | 'type' | 'area'>('loc');
@@ -25,6 +27,9 @@ export function FilesTab() {
 
     if (fileAreaFilter.length > 0) {
       files = files.filter(f => fileAreaFilter.includes(f.area));
+    }
+    if (fileTypeFilter.length > 0) {
+      files = files.filter(f => fileTypeFilter.includes(f.fileType));
     }
     if (fileSizeFilter.length > 0) {
       files = files.filter(f => fileSizeFilter.includes(f.sizeCategory));
@@ -55,7 +60,7 @@ export function FilesTab() {
     });
 
     return files;
-  }, [fileAreaFilter, fileSizeFilter, fileSearch, fileSortBy, fileSortDir]);
+  }, [fileAreaFilter, fileTypeFilter, fileSizeFilter, fileSearch, fileSortBy, fileSortDir]);
 
   // Toggle file sort
   const toggleSort = (column: typeof fileSortBy) => {
@@ -71,6 +76,12 @@ export function FilesTab() {
   const toggleAreaFilter = (area: Area) => {
     setFileAreaFilter(prev =>
       prev.includes(area) ? prev.filter(a => a !== area) : [...prev, area]
+    );
+  };
+
+  const toggleTypeFilter = (type: FileType) => {
+    setFileTypeFilter(prev =>
+      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
     );
   };
 
@@ -103,6 +114,22 @@ export function FilesTab() {
                 style={fileAreaFilter.includes(area) ? { borderColor: AREA_CONFIG[area].color, color: AREA_CONFIG[area].color } : {}}
               >
                 {AREA_CONFIG[area].label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="filter-group">
+          <span className="filter-label">Type:</span>
+          <div className="filter-chips">
+            {(Object.keys(FILE_TYPE_CONFIG) as FileType[]).map(type => (
+              <button
+                key={type}
+                className={`filter-chip ${fileTypeFilter.includes(type) ? 'active' : ''}`}
+                onClick={() => toggleTypeFilter(type)}
+                style={fileTypeFilter.includes(type) ? { borderColor: FILE_TYPE_CONFIG[type].color, color: FILE_TYPE_CONFIG[type].color } : {}}
+              >
+                {FILE_TYPE_CONFIG[type].label}
               </button>
             ))}
           </div>
