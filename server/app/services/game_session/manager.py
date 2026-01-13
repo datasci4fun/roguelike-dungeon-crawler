@@ -8,8 +8,9 @@ import uuid
 
 from ..ghost_recorder import GhostRecorder
 from .session import GameSession
-from .view import is_visible, serialize_visible_tiles, serialize_first_person_view
+from .view import serialize_visible_tiles, serialize_first_person_view
 from .cheats import process_cheat
+from . import manager_serialization
 
 # Add game source parent to path for importing engine as a package
 # In Docker: /app (parent of game_src), Local: ../../../.. (parent of src)
@@ -49,6 +50,9 @@ except ImportError:
         PlayerClass = None
         RACE_STATS = {}
         CLASS_STATS = {}
+
+# Initialize serialization module with game constants
+manager_serialization.set_game_constants(RACE_STATS, CLASS_STATS, UIMode)
 
 
 class GameSessionManager:
@@ -367,77 +371,15 @@ class GameSessionManager:
             "game_state": engine.state.name if engine.state else "UNKNOWN",
             "ui_mode": engine.ui_mode.name if engine.ui_mode else "GAME",
             "turn": session.turn_count,
-            # v6.1: Transition state for cinematic mode changes
             "transition": engine.transition.to_dict(),
         }
 
         # Add player data if available
         if engine.player:
-            player = engine.player
-            # Get facing direction (default to south if not set)
-            facing = getattr(player, 'facing', (0, 1))
-            state["player"] = {
-                "x": player.x,
-                "y": player.y,
-                "health": player.health,
-                "max_health": player.max_health,
-                "attack": player.attack_damage,
-                "defense": player.defense,
-                "level": player.level,
-                "xp": player.xp,
-                "xp_to_level": player.xp_to_next_level,
-                "kills": player.kills,
-                "facing": {"dx": facing[0], "dy": facing[1]},
-            }
+            player_data, facing = manager_serialization.serialize_player(engine, engine.player)
+            state["player"] = player_data
 
-            # Add race/class info if character has them
-            if hasattr(player, 'race') and player.race:
-                race_data = RACE_STATS.get(player.race, {})
-                state["player"]["race"] = {
-                    "id": player.race.name,
-                    "name": race_data.get('name', 'Unknown'),
-                    "trait": player.race_trait,
-                    "trait_name": player.race_trait_name,
-                    "trait_description": player.race_trait_description,
-                }
-
-            if hasattr(player, 'player_class') and player.player_class:
-                class_data = CLASS_STATS.get(player.player_class, {})
-                state["player"]["class"] = {
-                    "id": player.player_class.name,
-                    "name": class_data.get('name', 'Unknown'),
-                    "description": class_data.get('description', ''),
-                }
-
-            # Add abilities info
-            if hasattr(player, 'get_ability_info'):
-                state["player"]["abilities"] = player.get_ability_info()
-            if hasattr(player, 'get_passive_info'):
-                state["player"]["passives"] = player.get_passive_info()
-
-            # Add feats info
-            if hasattr(player, 'feats'):
-                state["player"]["feats"] = player.get_feat_info()
-                state["player"]["pending_feat_selection"] = player.pending_feat_selection
-                if player.pending_feat_selection:
-                    state["player"]["available_feats"] = player.get_available_feats_info()
-
-            # v5.5: Add artifacts info
-            if hasattr(player, 'artifacts'):
-                state["player"]["artifacts"] = [
-                    {
-                        "id": a.artifact_id.name,
-                        "name": a.name,
-                        "symbol": a.symbol,
-                        "charges": a.charges,
-                        "used": a.used,
-                        "active_vow": a.active_vow.name if a.active_vow else None,
-                        "vow_broken": a.vow_broken,
-                    }
-                    for a in player.artifacts
-                ]
-
-            # Add first-person view data (tiles in front of player)
+            # Add first-person view data
             try:
                 state["first_person_view"] = serialize_first_person_view(engine, facing)
             except Exception as e:
@@ -457,77 +399,22 @@ class GameSessionManager:
                 print(f"Error serializing dungeon: {e}")
                 state["dungeon"] = {"level": 1, "width": 50, "height": 30, "tiles": []}
 
-        # Add enemies in view
+        # Add enemies and items in view
         if engine.entity_manager:
-            enemies_list = []
-            for e in engine.entity_manager.enemies:
-                if e is None:
-                    continue
-                try:
-                    if e.is_alive() and is_visible(engine, e.x, e.y):
-                        enemies_list.append({
-                            "x": e.x,
-                            "y": e.y,
-                            "name": e.name if hasattr(e, 'name') and e.name else "enemy",
-                            "health": e.health if hasattr(e, 'health') else 0,
-                            "max_health": e.max_health if hasattr(e, 'max_health') else 0,
-                            "is_elite": getattr(e, 'is_elite', False),
-                            "symbol": e.symbol if hasattr(e, 'symbol') and e.symbol else "?",
-                        })
-                except (AttributeError, TypeError):
-                    continue  # Skip malformed enemy
-            state["enemies"] = enemies_list
-
-            items_list = []
-            for i in engine.entity_manager.items:
-                if i is None:
-                    continue
-                try:
-                    if is_visible(engine, i.x, i.y):
-                        items_list.append({
-                            "x": i.x,
-                            "y": i.y,
-                            "name": i.name if hasattr(i, 'name') and i.name else "item",
-                            "symbol": getattr(i, 'symbol', '?'),
-                        })
-                except (AttributeError, TypeError):
-                    continue  # Skip malformed item
-            state["items"] = items_list
+            state["enemies"] = manager_serialization.serialize_enemies(engine)
+            state["items"] = manager_serialization.serialize_items(engine)
 
         # Add messages
         state["messages"] = engine.messages[-10:] if engine.messages else []
 
         # Add events for animations
-        events_list = []
-        for e in events:
-            if e is None:
-                continue
-            try:
-                event_type = e.type.name if hasattr(e, 'type') and hasattr(e.type, 'name') else "UNKNOWN"
-                event_data = self._sanitize_event_data(e.data) if hasattr(e, 'data') else {}
-                events_list.append({"type": event_type, "data": event_data})
-            except (AttributeError, TypeError):
-                continue  # Skip malformed event
-        state["events"] = events_list
+        state["events"] = manager_serialization.serialize_events(
+            events, manager_serialization.sanitize_event_data
+        )
 
         # Add UI-specific data
         if engine.ui_mode == UIMode.INVENTORY and engine.player:
-            inventory_items = []
-            for item in engine.player.inventory.items:
-                if item is None:
-                    continue
-                try:
-                    inventory_items.append({
-                        "name": item.name if hasattr(item, 'name') and item.name else "Unknown Item",
-                        "type": item.item_type.name if hasattr(item, 'item_type') and item.item_type else "UNKNOWN",
-                        "rarity": item.rarity.name if hasattr(item, 'rarity') and item.rarity else "COMMON",
-                    })
-                except (AttributeError, TypeError):
-                    continue  # Skip malformed item
-            state["inventory"] = {
-                "items": inventory_items,
-                "selected_index": engine.selected_item_index,
-            }
+            state["inventory"] = manager_serialization.serialize_inventory(engine)
 
         if engine.ui_mode == UIMode.DIALOG:
             state["dialog"] = {
@@ -543,31 +430,12 @@ class GameSessionManager:
 
         # Include lore journal data (always available)
         if engine.story_manager:
-            discovered, total = engine.story_manager.get_lore_progress()
-            # Combine all entry types: lore + bestiary + locations + artifacts + sealed page
-            lore_entries = engine.story_manager.get_discovered_lore_entries()
-            bestiary_entries = engine.story_manager.get_bestiary_entries()
-            location_entries = engine.story_manager.get_location_entries()
-            artifact_entries = engine.story_manager.get_artifact_entries()
-            all_entries = lore_entries + bestiary_entries + location_entries + artifact_entries
-
-            # Add sealed page (always visible, shows completion progress)
-            sealed_page = engine.story_manager.get_sealed_page_entry()
-            if sealed_page:
-                all_entries.append(sealed_page)
-
-            # Calculate total discovered across all types
-            total_discovered = len(lore_entries) + len(bestiary_entries) + len(location_entries) + len(artifact_entries)
-            state["lore_journal"] = {
-                "entries": all_entries,
-                "discovered_count": total_discovered,
-                "total_count": total + len(bestiary_entries) + len(location_entries) + len(artifact_entries),
-            }
+            state["lore_journal"] = manager_serialization.serialize_lore_journal(engine)
 
         # Include newly discovered lore notification (one-shot, cleared after sending)
         if hasattr(engine, 'new_lore_discovered') and engine.new_lore_discovered:
             state["new_lore"] = engine.new_lore_discovered
-            engine.new_lore_discovered = None  # Clear after sending
+            engine.new_lore_discovered = None
 
         # Include field pulse state for environmental effects
         if hasattr(engine, 'field_pulse_manager') and engine.field_pulse_manager:
@@ -580,99 +448,13 @@ class GameSessionManager:
 
         # Include zone overlay data when debug mode is enabled
         if getattr(engine, 'show_zones', False) and engine.dungeon:
-            zone_labels = []
-            for room in engine.dungeon.rooms:
-                zone_labels.append({
-                    "x": room.x + room.width // 2,
-                    "y": room.y + room.height // 2,
-                    "zone": room.zone,
-                    "width": room.width,
-                    "height": room.height,
-                })
-            state["zone_overlay"] = {
-                "enabled": True,
-                "labels": zone_labels,
-            }
+            state["zone_overlay"] = manager_serialization.serialize_zone_overlay(engine)
 
         # v6.0: Include battle state when in tactical combat
         if engine.ui_mode == UIMode.BATTLE and hasattr(engine, 'battle') and engine.battle:
-            battle = engine.battle
-            state["battle"] = {
-                "active": True,
-                "biome": battle.biome,
-                "floor_level": battle.floor_level,
-                "turn_number": battle.turn_number,
-                "phase": battle.phase.name if battle.phase else "PLAYER_TURN",
-                "arena_width": battle.arena_width,
-                "arena_height": battle.arena_height,
-                "arena_tiles": battle.arena_tiles,
-                "player": {
-                    "arena_x": battle.player.arena_x,
-                    "arena_y": battle.player.arena_y,
-                    "hp": battle.player.hp,
-                    "max_hp": battle.player.max_hp,
-                    "attack": battle.player.attack,
-                    "defense": battle.player.defense,
-                    "status_effects": [e.get('name', '') for e in battle.player.status_effects],
-                    "cooldowns": battle.player.cooldowns,
-                } if battle.player else None,
-                "enemies": [
-                    {
-                        "entity_id": e.entity_id,
-                        "arena_x": e.arena_x,
-                        "arena_y": e.arena_y,
-                        "hp": e.hp,
-                        "max_hp": e.max_hp,
-                        "attack": e.attack,
-                        "defense": e.defense,
-                        "name": e.name,
-                        "symbol": e.symbol,
-                        "is_elite": e.is_elite,
-                        "is_boss": e.is_boss,
-                        "status_effects": [ef.get('name', '') for ef in e.status_effects],
-                    }
-                    for e in battle.get_living_enemies()
-                ],
-                "reinforcements": [
-                    {
-                        "entity_id": r.entity_id,
-                        "enemy_name": r.enemy_name,
-                        "turns_until_arrival": r.turns_until_arrival,
-                        "is_elite": r.is_elite,
-                        "symbol": r.symbol,
-                    }
-                    for r in battle.reinforcements
-                    if r.turns_until_arrival > 0
-                ],
-                "outcome": battle.outcome.name if battle.outcome else None,
-            }
+            state["battle"] = manager_serialization.serialize_battle_state(engine.battle)
 
         return state
-
-    def _sanitize_event_data(self, data: dict) -> dict:
-        """Convert non-serializable objects in event data to JSON-safe values."""
-        result = {}
-        for key, value in data.items():
-            if hasattr(value, 'x') and hasattr(value, 'y'):
-                # Entity-like object - extract coordinates and name
-                result[key] = {
-                    'x': value.x,
-                    'y': value.y,
-                    'name': getattr(value, 'name', str(value)),
-                }
-            elif isinstance(value, (str, int, float, bool, type(None))):
-                result[key] = value
-            elif isinstance(value, dict):
-                result[key] = self._sanitize_event_data(value)
-            elif isinstance(value, list):
-                result[key] = [
-                    self._sanitize_event_data({'v': v})['v'] if isinstance(v, dict) or hasattr(v, 'x') else v
-                    for v in value
-                ]
-            else:
-                # Fallback - convert to string
-                result[key] = str(value)
-        return result
 
     def get_active_session_count(self) -> int:
         """Get the number of active game sessions."""

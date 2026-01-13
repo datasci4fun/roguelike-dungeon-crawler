@@ -38,6 +38,7 @@ EXCLUDE_FILES = {
 # These contain data definitions, handler registries, or constants that belong together
 DATA_FILE_PATTERNS = {
     '_data.py', '_data.ts', '_definitions.py', '_handlers.py',
+    '_content.py',  # Lore/content data files
     'Data.ts', 'Data.tsx',  # Frontend data files
     'constants.py', 'constants.ts',
 }
