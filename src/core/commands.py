@@ -21,6 +21,17 @@ class CommandType(Enum):
     USE_ITEM_2 = auto()
     USE_ITEM_3 = auto()
 
+    # Battle abilities (v6.0)
+    ABILITY_1 = auto()
+    ABILITY_2 = auto()
+    ABILITY_3 = auto()
+    ABILITY_4 = auto()
+
+    # Battle actions
+    WAIT = auto()
+    FLEE = auto()
+    ATTACK = auto()
+
     # UI navigation
     OPEN_INVENTORY = auto()
     OPEN_CHARACTER = auto()

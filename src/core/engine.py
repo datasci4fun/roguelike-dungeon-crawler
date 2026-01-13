@@ -573,7 +573,7 @@ class GameEngine:
             )
             for trap in detected_traps:
                 trap_name = trap.name if trap and hasattr(trap, 'name') and trap.name else "trap"
-                self.add_message(f"You found a hidden {trap_name}!", important=True)
+                self.add_message(f"You found a hidden {trap_name}!", importance=MessageImportance.IMPORTANT)
                 found_something = True
 
         # Search for secret doors
@@ -582,7 +582,7 @@ class GameEngine:
                 self.player.x, self.player.y, perception, radius=1
             )
             for door in detected_doors:
-                self.add_message("You found a secret door!", important=True)
+                self.add_message("You found a secret door!", importance=MessageImportance.IMPORTANT)
                 # Reveal the secret door on the map - change wall to floor
                 from .constants import TileType
                 self.dungeon.tiles[door.y][door.x] = TileType.FLOOR

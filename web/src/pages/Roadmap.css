@@ -227,6 +227,11 @@
   color: var(--roadmap-status-deferred);
 }
 
+.filter-chip.status-archived.active {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
 .clear-filters-btn {
   margin-top: 1rem;
   padding: 0.5rem 1rem;
@@ -309,7 +314,7 @@
   background: var(--sf-bg-dark);
   border: 1px solid var(--sf-border-subtle);
   border-radius: 8px;
-  overflow: hidden;
+  overflow: visible;
   transition: border-color 0.2s;
 }
 
@@ -626,4 +631,254 @@
   .stat-label {
     font-size: 0.75rem;
   }
+}
+
+/* ============================================================================
+ * Edit Mode Styles
+ * ============================================================================ */
+
+.edit-mode-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.edit-mode-toggle {
+  background: var(--sf-bg-dark);
+  border: 2px solid var(--sf-border-subtle);
+  color: var(--sf-text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.edit-mode-toggle:hover {
+  border-color: var(--sf-accent);
+  color: var(--sf-text-primary);
+}
+
+.edit-mode-toggle.active {
+  background: var(--sf-accent);
+  border-color: var(--sf-accent);
+  color: #000;
+  font-weight: 600;
+}
+
+.override-count {
+  background: var(--sf-accent);
+  color: #000;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.export-btn,
+.reset-btn {
+  background: transparent;
+  border: 1px solid var(--sf-border-subtle);
+  color: var(--sf-text-secondary);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.export-btn:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.reset-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+/* Status Selector Dropdown */
+.status-selector {
+  position: relative;
+  z-index: 10;
+}
+
+.roadmap-card:hover .status-selector {
+  z-index: 9999;
+}
+
+.status-selector-btn {
+  background: var(--sf-bg-dark);
+  border: 1px solid var(--sf-border-subtle);
+  padding: 0.35rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.status-selector-btn:hover {
+  border-color: var(--sf-accent);
+}
+
+.status-dropdown-arrow {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+.status-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #1a1a2e;
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: 4px;
+  padding: 0.25rem;
+  z-index: 9999;
+  min-width: 140px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.status-option {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-radius: 3px;
+  transition: background 0.15s ease;
+}
+
+.status-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.status-option.active {
+  background: rgba(255, 255, 255, 0.15);
+  font-weight: 600;
+}
+
+/* Modified Indicator */
+.modified-dot {
+  color: var(--sf-accent);
+  margin-left: 0.25rem;
+  font-weight: bold;
+}
+
+.roadmap-card.modified {
+  border-color: var(--sf-accent) !important;
+  box-shadow: 0 0 0 1px var(--sf-accent);
+}
+
+/* Archived Status Style */
+.roadmap-card.modified .card-title {
+  position: relative;
+}
+
+.status-archived .card-title,
+.status-selector-btn.status-archived {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+/* Export Modal */
+.export-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.export-modal {
+  background: var(--sf-bg-dark);
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: 8px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.export-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--sf-border-subtle);
+}
+
+.export-modal-header h3 {
+  margin: 0;
+  color: var(--sf-text-primary);
+}
+
+.close-modal {
+  background: transparent;
+  border: none;
+  color: var(--sf-text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-modal:hover {
+  color: var(--sf-text-primary);
+}
+
+.export-modal-content {
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.export-modal-content p {
+  color: var(--sf-text-secondary);
+  margin: 0 0 1rem;
+}
+
+.export-code {
+  background: #1a1a2e;
+  border: 1px solid var(--sf-border-subtle);
+  border-radius: 4px;
+  padding: 1rem;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--sf-text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: 1rem;
+}
+
+.copy-btn {
+  background: var(--sf-accent);
+  border: none;
+  color: #000;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
+  opacity: 0.9;
 }

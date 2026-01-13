@@ -225,6 +225,12 @@ export function GameTerminal({
       // Don't capture input if spectating, disconnected, or no game
       if (isSpectator || !isConnected) return;
 
+      // When in battle mode, BattleHUD handles all input - skip GameTerminal handling
+      // This prevents WASD from triggering both dungeon movement AND battle menu navigation
+      if (gameState?.battle) {
+        return;
+      }
+
       // Prevent default for game keys
       const gameKeys = [
         'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
@@ -256,7 +262,7 @@ export function GameTerminal({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isConnected, isSpectator, gameState?.ui_mode, onCommand, onNewGame, onQuit, gameState]);
+  }, [isConnected, isSpectator, gameState?.ui_mode, gameState?.battle, onCommand, onNewGame, onQuit, gameState]);
 
   // Render game state to terminal
   useEffect(() => {

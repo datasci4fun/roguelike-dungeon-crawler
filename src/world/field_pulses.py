@@ -12,6 +12,8 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
+from ..core.messages import MessageImportance
+
 if TYPE_CHECKING:
     from ..core.engine import GameEngine
 
@@ -346,7 +348,7 @@ class FieldPulseManager:
 
         # Display messages
         for message in event.messages:
-            engine.add_message(message, important=True)
+            engine.add_message(message, importance=MessageImportance.IMPORTANT)
 
         # Apply the effect
         apply_micro_event_effect(event, engine)
@@ -354,7 +356,7 @@ class FieldPulseManager:
         # Unlock codex evidence
         if event.evidence_id:
             if unlock_micro_event_evidence(event, engine):
-                engine.add_message(f"[Codex entry discovered: {event.title}]", important=True)
+                engine.add_message(f"[Codex entry discovered: {event.title}]", importance=MessageImportance.IMPORTANT)
 
         # Mark as triggered
         self.micro_event_triggered = True
