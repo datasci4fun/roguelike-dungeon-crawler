@@ -1,7 +1,12 @@
 # Refactoring Round 1 - Baseline
 
+## Lessons Learned
+- **Always use Glob to find files** - don't guess paths from memory
+- **Read scripts first** to understand where outputs go before searching
+- **PowerShell > cmd /c** on Windows for showing stdout reliably
+
 Generated: 2026-01-13
-Total recommendations: 61 → 58 (after refactoring)
+Total recommendations: 61 → 57 (after refactoring)
 
 ## Files to Refactor (snapshot before changes)
 
@@ -35,4 +40,5 @@ Total recommendations: 61 → 58 (after refactoring)
 | 2026-01-13 | ghosts.py | 557 | 596 (4 files) | Split into package: types.py (58), ghost.py (54), manager.py (460), __init__.py (24) |
 | 2026-01-13 | entities.py | 655 | 668 (5 files) | Split into package: base.py (39), player.py (433), enemy.py (188), __init__.py (8), shim (2) |
 | 2026-01-13 | items.py | 710 | 768 (8 files) | Split into package: types.py (85), base.py (71), equipment.py (119), accessories.py (133), ranged.py (140), consumables.py (192), factory.py (111), __init__.py (84), shim (2) |
+| 2026-01-13 | constants.py | 1043 | 1086 (8 files) | Split into package: enums.py (197), enemy_data.py (295), boss_data.py (98), player_data.py (105), world_data.py (150), combat_data.py (144), ui_config.py (47), __init__.py (108), shim (2) |
 
