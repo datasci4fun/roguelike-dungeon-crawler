@@ -1,0 +1,340 @@
+/**
+ * Changelog Page Styles
+ */
+
+.changelog-page {
+  min-height: 100vh;
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Hero */
+.changelog-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.changelog-stats {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.changelog-stats .stat-value {
+  color: var(--color-accent, #a78bfa);
+  font-weight: 600;
+}
+
+.changelog-stats .stat-sep {
+  margin: 0 0.75rem;
+  opacity: 0.4;
+}
+
+/* Controls */
+.changelog-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.changelog-controls .search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.6rem 1rem;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.9rem;
+}
+
+.changelog-controls .search-input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.changelog-controls .search-input:focus {
+  outline: none;
+  border-color: var(--color-accent, #a78bfa);
+}
+
+.control-buttons {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+}
+
+.toggle-label input[type="checkbox"] {
+  accent-color: var(--color-accent, #a78bfa);
+}
+
+.control-btn {
+  padding: 0.5rem 0.75rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.results-count {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 1rem;
+}
+
+/* Version List */
+.version-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.no-results {
+  text-align: center;
+  padding: 3rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Version Card */
+.version-card {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.version-card:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.version-card.major {
+  border-left: 3px solid var(--color-accent, #a78bfa);
+}
+
+.version-card.expanded {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.version-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.version-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.version-info {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.version-number {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.version-number .v-prefix {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+}
+
+.version-title {
+  font-size: 0.95rem;
+  color: var(--color-accent, #a78bfa);
+  font-weight: 500;
+}
+
+.version-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.version-date {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.expand-icon {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 300;
+  width: 1.5rem;
+  text-align: center;
+}
+
+/* Version Content */
+.version-content {
+  padding: 0 1.25rem 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.change-section {
+  margin-top: 1rem;
+}
+
+.change-section:first-child {
+  margin-top: 1.25rem;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.section-icon {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 1rem;
+  width: 1.25rem;
+  text-align: center;
+}
+
+.change-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.change-item {
+  position: relative;
+  padding: 0.4rem 0 0.4rem 1.25rem;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
+.change-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.85rem;
+  width: 4px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+}
+
+.change-item strong {
+  color: #fff;
+}
+
+.item-details {
+  margin: 0.4rem 0 0 0;
+  padding: 0 0 0 1rem;
+  list-style: none;
+}
+
+.item-details li {
+  position: relative;
+  padding: 0.2rem 0 0.2rem 1rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.item-details li::before {
+  content: '>';
+  position: absolute;
+  left: 0;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: monospace;
+}
+
+/* Footer */
+.changelog-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.changelog-footer code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.changelog-footer .generated-time {
+  margin-left: 0.5rem;
+  opacity: 0.7;
+}
+
+.changelog-footer .generated-time::before {
+  content: '|';
+  margin-right: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .changelog-page {
+    padding: 1rem;
+  }
+
+  .changelog-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .control-buttons {
+    justify-content: space-between;
+  }
+
+  .version-info {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .version-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .version-content {
+    padding: 0 1rem 1rem;
+  }
+}

@@ -81,6 +81,10 @@ export function Layout() {
                     <span className="menu-icon">🩺</span>
                     Codebase Health
                   </Link>
+                  <Link to="/changelog" onClick={closeDropdown}>
+                    <span className="menu-icon">📋</span>
+                    Patch Notes
+                  </Link>
                 </div>
               )}
             </div>
