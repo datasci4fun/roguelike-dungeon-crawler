@@ -13,7 +13,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Howl } from 'howler';
 import { useAudio } from '../contexts/AudioContext';
-import { MUSIC_TRACKS, BIOME_NAMES } from '../config/audioConfig';
+import { MUSIC_TRACKS } from '../config/audioConfig';
 import './AudioJukebox.css';
 
 interface TrackInfo {

@@ -65,9 +65,9 @@ const SPEED_COLORS: Record<string, string> = {
 const CATEGORY_COLORS: Record<string, string> = {
   common: '#6b7280',
   elite: '#3b82f6',
-  miniboss: '#a855f7',
+  thematic: '#8b5cf6',
+  rare: '#ec4899',
   boss: '#f59e0b',
-  unique: '#22c55e',
 };
 
 export function Bestiary() {
