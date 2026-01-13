@@ -172,6 +172,10 @@ export function Layout() {
                     <span className="menu-icon">🚩</span>
                     Feature Flags
                   </Link>
+                  <Link to="/env-config" onClick={closeDropdown}>
+                    <span className="menu-icon">⚙️</span>
+                    Env Config
+                  </Link>
                   <Link to="/codebase-health" onClick={closeDropdown}>
                     <span className="menu-icon">🩺</span>
                     Codebase Health
