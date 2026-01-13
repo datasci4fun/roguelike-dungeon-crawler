@@ -89,6 +89,10 @@ export function Layout() {
                     <span className="menu-icon">🗄️</span>
                     DB Explorer
                   </Link>
+                  <Link to="/cache-inspector" onClick={closeDropdown}>
+                    <span className="menu-icon">⚡</span>
+                    Cache Inspector
+                  </Link>
                 </div>
               )}
             </div>

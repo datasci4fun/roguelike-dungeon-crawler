@@ -17,6 +17,7 @@ from .api.friends import router as friends_router
 from .api.saves import router as saves_router
 from .api.daily import router as daily_router
 from .api.dbexplorer import router as dbexplorer_router
+from .api.cache import router as cache_router
 
 
 @asynccontextmanager
@@ -75,6 +76,7 @@ def create_app() -> FastAPI:
     app.include_router(saves_router)
     app.include_router(daily_router, prefix="/api")
     app.include_router(dbexplorer_router, tags=["dev-tools"])
+    app.include_router(cache_router, tags=["dev-tools"])
 
     return app
 
