@@ -97,6 +97,10 @@ export function Layout() {
                     <span className="menu-icon">🎵</span>
                     Audio Jukebox
                   </Link>
+                  <Link to="/system-status" onClick={closeDropdown}>
+                    <span className="menu-icon">📡</span>
+                    System Status
+                  </Link>
                 </div>
               )}
             </div>
