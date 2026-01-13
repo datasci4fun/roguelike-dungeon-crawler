@@ -1,4 +1,8 @@
-"""Player entity class."""
+"""Player entity class.
+
+Delegates to:
+- player_feats.py: Feat bonus aggregators
+"""
 from typing import List, Optional
 
 from ...core.constants import (
@@ -10,6 +14,7 @@ from ..player_abilities import (
     PlayerAbility, AbilityCategory, get_abilities_for_class, PLAYER_ABILITIES
 )
 from ..feats import Feat, FEATS, get_feat, get_available_feats, should_gain_feat_at_level, FEAT_LEVELS
+from . import player_feats
 from .base import Entity
 
 
@@ -516,102 +521,48 @@ class Player(Entity):
             for f in available
         ]
 
-    # ========== Feat Bonus Aggregators ==========
+    # ========== Feat Bonus Aggregators (delegated to player_feats) ==========
 
     def get_total_damage_multiplier(self) -> float:
         """Get total damage multiplier from all feats."""
-        multiplier = 1.0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat and feat.damage_multiplier > 0:
-                multiplier *= (1 + feat.damage_multiplier)
-        return multiplier
+        return player_feats.get_total_damage_multiplier(self.feats)
 
     def get_total_crit_bonus(self) -> float:
         """Get total crit bonus from feats."""
-        bonus = 0.0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat:
-                bonus += feat.crit_bonus
-        return bonus
+        return player_feats.get_total_crit_bonus(self.feats)
 
     def get_total_dodge_bonus(self) -> float:
         """Get total dodge bonus from feats."""
-        bonus = 0.0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat:
-                bonus += feat.dodge_bonus
-        return bonus
+        return player_feats.get_total_dodge_bonus(self.feats)
 
     def get_total_block_bonus(self) -> float:
         """Get total block bonus from feats."""
-        bonus = 0.0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat:
-                bonus += feat.block_bonus
-        return bonus
+        return player_feats.get_total_block_bonus(self.feats)
 
     def get_total_resistance(self) -> float:
         """Get total damage resistance from feats."""
-        resistance = 0.0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat:
-                resistance += feat.resistance_all
-        return min(resistance, 0.75)  # Cap at 75%
+        return player_feats.get_total_resistance(self.feats)
 
     def get_life_steal(self) -> float:
         """Get life steal percentage from feats."""
-        steal = 0.0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat:
-                steal += feat.life_steal
-        return steal
+        return player_feats.get_life_steal(self.feats)
 
     def get_thorns_damage(self) -> float:
         """Get thorns damage percentage from feats."""
-        thorns = 0.0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat:
-                thorns += feat.thorns
-        return thorns
+        return player_feats.get_thorns_damage(self.feats)
 
     def get_xp_feat_bonus(self) -> float:
         """Get XP bonus from feats (not race trait)."""
-        bonus = 0.0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat:
-                bonus += feat.xp_bonus
-        return bonus
+        return player_feats.get_xp_feat_bonus(self.feats)
 
     def get_vision_feat_bonus(self) -> int:
         """Get vision bonus from feats."""
-        bonus = 0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat:
-                bonus += feat.vision_bonus
-        return bonus
+        return player_feats.get_vision_feat_bonus(self.feats)
 
     def get_heal_bonus(self) -> float:
         """Get healing effectiveness bonus from feats."""
-        bonus = 0.0
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat:
-                bonus += feat.heal_bonus
-        return bonus
+        return player_feats.get_heal_bonus(self.feats)
 
     def has_first_strike(self) -> bool:
         """Check if player has first strike feat."""
-        for feat_id in self.feats:
-            feat = get_feat(feat_id)
-            if feat and feat.first_strike:
-                return True
-        return False
+        return player_feats.has_first_strike(self.feats)

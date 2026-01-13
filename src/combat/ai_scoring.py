@@ -6,6 +6,10 @@ Deterministic action selection for enemy AI:
 - choose_action(): pick best action with deterministic tie-break
 
 No randomness allowed - same inputs must produce same outputs.
+
+Delegates to:
+- ai_scoring_hazards.py: Hazard pathfinding and pressure analysis
+- ai_kiting.py: Ranged kiting heuristics
 """
 from dataclasses import dataclass
 from enum import Enum, auto
@@ -15,6 +19,15 @@ from .battle_types import BattleState, BattleEntity
 from .battle_actions import (
     BattleAction, manhattan_distance, get_valid_move_tiles,
     BATTLE_MOVE_RANGE
+)
+from .ai_scoring_hazards import (
+    HAZARD_COST,
+    get_tile_hazard, get_hazard_cost, is_tile_hazard,
+    min_cost_path_hazard, player_safe_escape_count,
+    score_path_hazard, score_hazard_exit, score_hazard_stay_penalty,
+    score_hazard_pressure,
+    PATH_HAZARD_WEIGHT, W_EXIT_HAZARD, W_STAY_HAZARD,
+    PRESSURE_WEIGHT, SAFE_ESCAPE_BASE,
 )
 from ..core.constants import AIBehavior
 
@@ -67,14 +80,6 @@ W_STATUS = {
     'burn': 10,
 }
 
-# Hazard tile costs (higher = more avoidance)
-HAZARD_COST = {
-    '~': 120,    # Lava - basically never step unless winning
-    '!': 55,     # Poison gas
-    '\u2248': 30,  # Deep water (≈)
-    '=': 18,     # Ice (slide deferred, mild penalty)
-}
-
 # Positioning weights
 W_ADJACENCY_MELEE = 18      # Bonus for melee being adjacent
 W_CLOSING_PRESSURE = 6      # Per tile away from preferred distance
@@ -86,15 +91,6 @@ W_LOW_HP_SURVIVAL = 25      # Penalty when hp<30% adjacent non-killshot
 
 # Maximum move tiles to consider (for performance)
 MAX_MOVE_CANDIDATES = 12
-
-# v6.2 Slice 2: Hazard Intelligence weights
-PATH_HAZARD_WEIGHT = 1.0    # Multiplier for path hazard cost
-W_EXIT_HAZARD = 15          # Bonus for moving off a hazard tile
-W_STAY_HAZARD = 40          # Penalty for staying on a hazard tile
-
-# Hazard pressure weights (cornering player)
-PRESSURE_WEIGHT = 4         # Per safe escape reduced
-SAFE_ESCAPE_BASE = 6        # "Normal" number of safe escapes
 
 
 # =============================================================================
@@ -224,171 +220,6 @@ def enumerate_candidate_actions(
 # =============================================================================
 # Action Scoring
 # =============================================================================
-
-def get_tile_hazard(battle: BattleState, x: int, y: int) -> str:
-    """Get hazard type at tile, or empty string if none."""
-    if y < 0 or y >= battle.arena_height or x < 0 or x >= battle.arena_width:
-        return ''
-    tile = battle.arena_tiles[y][x]
-    return tile if tile in HAZARD_COST else ''
-
-
-def get_hazard_cost(tile: str) -> float:
-    """Get hazard cost for a tile type."""
-    return HAZARD_COST.get(tile, 0.0)
-
-
-# =============================================================================
-# v6.2 Slice 2: Hazard Intelligence
-# =============================================================================
-
-def min_cost_path_hazard(
-    battle: BattleState,
-    start: Tuple[int, int],
-    goal: Tuple[int, int],
-    pulse_mult: float = 1.0
-) -> float:
-    """
-    Calculate minimum hazard cost to path from start to goal.
-
-    Uses BFS/Dijkstra with hazard tile costs. Arena is small (≤11×11)
-    so this is cheap to compute.
-
-    Args:
-        battle: Current battle state
-        start: Starting (x, y) position
-        goal: Target (x, y) position
-        pulse_mult: Field pulse multiplier for hazard damage
-
-    Returns:
-        Total hazard cost along minimum-cost path, or 0 if no path.
-        Returns float('inf') if goal is unreachable.
-    """
-    import heapq
-
-    if start == goal:
-        return 0.0
-
-    # Priority queue: (cost, x, y)
-    # Use (cost, y, x) for deterministic tie-break
-    pq = [(0.0, start[1], start[0])]
-    visited = set()
-
-    # Neighbor expansion order: N, E, S, W (deterministic)
-    directions = [(0, -1), (1, 0), (0, 1), (-1, 0)]
-
-    while pq:
-        cost, y, x = heapq.heappop(pq)
-
-        if (x, y) == goal:
-            return cost
-
-        if (x, y) in visited:
-            continue
-        visited.add((x, y))
-
-        for dx, dy in directions:
-            nx, ny = x + dx, y + dy
-
-            # Check bounds
-            if nx < 0 or nx >= battle.arena_width or ny < 0 or ny >= battle.arena_height:
-                continue
-
-            # Check walkable (allow hazards, they just cost more)
-            tile = battle.arena_tiles[ny][nx]
-            if tile == '#':
-                continue
-
-            if (nx, ny) in visited:
-                continue
-
-            # Calculate step cost
-            step_cost = 0.0
-            if tile in HAZARD_COST:
-                step_cost = HAZARD_COST[tile] * pulse_mult
-
-            heapq.heappush(pq, (cost + step_cost, ny, nx))
-
-    # No path found
-    return float('inf')
-
-
-def is_tile_hazard(battle: BattleState, x: int, y: int) -> bool:
-    """Check if a tile is a hazard."""
-    if y < 0 or y >= battle.arena_height or x < 0 or x >= battle.arena_width:
-        return False
-    tile = battle.arena_tiles[y][x]
-    return tile in HAZARD_COST
-
-
-def player_safe_escape_count(
-    battle: BattleState,
-    enemy_end_pos: Tuple[int, int],
-    ai_type: AIBehavior
-) -> int:
-    """
-    Count player's safe escape options after enemy moves.
-
-    Safe escape = tile that is:
-    - Walkable and in bounds
-    - Not a hazard
-    - Not adjacent to enemy_end_pos (for melee threat)
-    - Not occupied by another entity
-
-    Args:
-        battle: Current battle state
-        enemy_end_pos: Where the enemy will be after moving
-        ai_type: AI behavior type (melee vs ranged)
-
-    Returns:
-        Number of safe escape tiles for player
-    """
-    player = battle.player
-    if player is None:
-        return 0
-
-    px, py = player.arena_x, player.arena_y
-    safe_count = 0
-
-    # Check all adjacent tiles (player's movement options)
-    directions = [(0, -1), (1, 0), (0, 1), (-1, 0)]
-
-    for dx, dy in directions:
-        nx, ny = px + dx, py + dy
-
-        # Check bounds
-        if nx < 0 or nx >= battle.arena_width or ny < 0 or ny >= battle.arena_height:
-            continue
-
-        # Check walkable
-        tile = battle.arena_tiles[ny][nx]
-        if tile == '#':
-            continue
-
-        # Check not a hazard
-        if tile in HAZARD_COST:
-            continue
-
-        # Check not occupied by enemy
-        occupied = False
-        for enemy in battle.enemies:
-            if enemy.hp > 0 and enemy.arena_x == nx and enemy.arena_y == ny:
-                occupied = True
-                break
-        if occupied:
-            continue
-
-        # Check not adjacent to enemy (melee threat)
-        # Only apply melee adjacency check for melee AI types
-        if ai_type in {AIBehavior.CHASE, AIBehavior.AGGRESSIVE, AIBehavior.STEALTH}:
-            dist_to_enemy = manhattan_distance(nx, ny, enemy_end_pos[0], enemy_end_pos[1])
-            if dist_to_enemy <= 1:
-                continue  # Adjacent to enemy = not safe
-
-        safe_count += 1
-
-    return safe_count
-
 
 def calculate_expected_damage(
     attacker: BattleEntity,
