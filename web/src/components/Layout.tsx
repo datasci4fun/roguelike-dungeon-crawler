@@ -101,6 +101,10 @@ export function Layout() {
                     <span className="menu-icon">📡</span>
                     System Status
                   </Link>
+                  <Link to="/api-playground" onClick={closeDropdown}>
+                    <span className="menu-icon">🧪</span>
+                    API Playground
+                  </Link>
                 </div>
               )}
             </div>
