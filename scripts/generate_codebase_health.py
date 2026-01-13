@@ -39,6 +39,20 @@ INCLUDE_EXTENSIONS = {
     '.py', '.ts', '.tsx', '.js', '.jsx', '.css', '.scss', '.md', '.json', '.yaml', '.yml'
 }
 
+# Known schema/framework base classes that indicate related inheritance patterns
+SCHEMA_BASES = {
+    # Pydantic
+    'BaseModel', 'BaseSettings', 'GenericModel',
+    # SQLAlchemy
+    'Base', 'DeclarativeBase', 'AbstractConcreteBase',
+    # Django
+    'Model', 'View', 'Form', 'ModelForm', 'Serializer', 'ModelSerializer',
+    # FastAPI/Starlette
+    'HTTPException',
+    # Generic patterns
+    'ABC', 'Protocol',
+}
+
 # Size thresholds
 SIZE_THRESHOLDS = {
     'small': (0, 99),
@@ -80,6 +94,55 @@ def pluralize(count: int, singular: str, plural: str = None) -> str:
     if plural is None:
         plural = singular + 's'
     return singular if count == 1 else plural
+
+
+def find_semantic_groups(class_names: List[str]) -> Dict[str, List[str]]:
+    """Find classes that are semantically related by shared name patterns.
+
+    Examples:
+        - Ghost, GhostPath, GhostManager -> grouped by 'Ghost' prefix
+        - PlayerData, EnemyData, ItemData -> grouped by 'Data' suffix
+        - Room, BSPNode, Dungeon -> not grouped (no pattern)
+    """
+    if len(class_names) < 2:
+        return {}
+
+    groups: Dict[str, List[str]] = defaultdict(list)
+
+    # Check for prefix patterns (GhostPath shares "Ghost" with Ghost)
+    for cls in class_names:
+        # Find all other classes that share a substantial prefix
+        for other in class_names:
+            if cls == other:
+                continue
+            # One name must be a prefix of the other (at least 4 chars)
+            shorter, longer = (cls, other) if len(cls) <= len(other) else (other, cls)
+            if len(shorter) >= 4 and longer.startswith(shorter):
+                groups[shorter].append(longer)
+
+    # Check for suffix patterns (PlayerData, EnemyData share "Data")
+    # Common suffixes: Manager, Handler, Service, Data, Config, State, etc.
+    common_suffixes = ['Manager', 'Handler', 'Service', 'Data', 'Config', 'State',
+                       'Factory', 'Builder', 'Provider', 'Controller', 'Repository']
+    for suffix in common_suffixes:
+        matching = [c for c in class_names if c.endswith(suffix) and len(c) > len(suffix)]
+        if len(matching) >= 2:
+            groups[f"*{suffix}"].extend(matching)
+
+    # Deduplicate and filter to groups with 2+ members
+    result = {}
+    for key, members in groups.items():
+        # Deduplicate members first
+        unique_members = list(dict.fromkeys(members))  # Preserves order
+        # Include the base class if it's a prefix pattern
+        if not key.startswith('*') and key in class_names:
+            all_members = [key] + [m for m in unique_members if m != key]
+        else:
+            all_members = unique_members
+        if len(all_members) >= 2:
+            result[key] = all_members
+
+    return result
 
 
 def should_exclude(path: Path) -> bool:
@@ -569,17 +632,52 @@ def generate_technique(file_path: str, analysis: FileAnalysis, file_type: str, l
 
         # Find truly independent classes (no inheritance relationship with others in file)
         independent_classes = []
+        schema_base_classes: Set[str] = set()  # Track schema/framework bases used
+
         for cls in analysis.classes:
             parent = analysis.base_classes.get(cls)
+
+            # Track schema base classes (Pydantic, SQLAlchemy, etc.)
+            if parent in SCHEMA_BASES:
+                schema_base_classes.add(parent)
+
             # Independent if: no parent OR parent not in this file AND not a parent of others in file
             is_child_of_local = parent in classes_in_file
             is_parent_of_local = cls in parent_counts and any(c in classes_in_file for c in parent_counts[cls])
+            # Also consider schema base as a form of relationship
+            has_schema_parent = parent in SCHEMA_BASES
 
-            if not is_child_of_local and not is_parent_of_local:
+            if not is_child_of_local and not is_parent_of_local and not has_schema_parent:
                 independent_classes.append(cls)
             elif is_parent_of_local and not is_child_of_local:
                 # This is a base class with children in file - note it separately
                 pass
+
+        # Check for semantic naming patterns that indicate related classes
+        non_enum_classes = [c for c in analysis.classes if c not in analysis.enums]
+        semantic_groups = find_semantic_groups(non_enum_classes)
+
+        # If classes share a schema base, note the pattern
+        if schema_base_classes and len(non_enum_classes) >= 2:
+            for base in schema_base_classes:
+                inheriting = [c for c in analysis.classes
+                              if analysis.base_classes.get(c) == base]
+                if len(inheriting) >= 2:
+                    class_list = ', '.join(f'`{c}`' for c in inheriting[:4])
+                    techniques.append(f"{len(inheriting)} `{base}` schemas: {class_list} - keep together as domain models")
+                    # Remove from independent since they're related by schema
+                    independent_classes = [c for c in independent_classes if c not in inheriting]
+
+        # If classes share semantic naming, note the pattern
+        if semantic_groups:
+            for pattern, members in list(semantic_groups.items())[:2]:
+                member_list = ', '.join(f'`{m}`' for m in members[:3])
+                if pattern.startswith('*'):
+                    techniques.append(f"Related by `{pattern[1:]}` suffix: {member_list}")
+                else:
+                    techniques.append(f"Related by `{pattern}` prefix: {member_list}")
+                # Remove from independent
+                independent_classes = [c for c in independent_classes if c not in members]
 
         # Detect parent + children pattern (like Entity + Player + Enemy)
         base_with_children = [(p, children) for p, children in parent_counts.items()
@@ -590,11 +688,21 @@ def generate_technique(file_path: str, analysis: FileAnalysis, file_type: str, l
                 child_list = ', '.join(f'`{c}`' for c in children[:3])
                 techniques.append(f"Base `{base}` with subclasses {child_list} - extract to `{base.lower()}/` package or keep tightly coupled")
 
-        # Suggest splits only for truly independent classes
-        if len(independent_classes) >= 3 and not any('subclasses' in t for t in techniques):
+        # Check if filename matches a class name (e.g., dungeon.py contains Dungeon class)
+        # This indicates the file is organized around that concept, so all classes are related
+        filename_matches_class = any(
+            filename.lower() == cls.lower() or
+            filename.lower() == cls.lower() + 's' or  # pluralized
+            cls.lower() in filename.lower()
+            for cls in analysis.classes
+        )
+
+        # Suggest splits only for truly independent classes (after removing schema and semantic groups)
+        # Skip if filename matches a class - indicates domain organization
+        if len(independent_classes) >= 3 and not filename_matches_class and not any('subclasses' in t or 'schemas' in t or 'Related' in t for t in techniques):
             class_list = ', '.join(f'`{c}`' for c in independent_classes[:4])
             techniques.append(f"Extract unrelated classes into modules: {class_list}")
-        elif len(independent_classes) == 2 and not any('subclasses' in t or 'Base' in t for t in techniques):
+        elif len(independent_classes) == 2 and not filename_matches_class and not any('subclasses' in t or 'Base' in t or 'schemas' in t or 'Related' in t for t in techniques):
             techniques.append(f"Split into `{independent_classes[0].lower()}.py` and `{independent_classes[1].lower()}.py`")
         elif len(analysis.classes) == 1 and loc > 400 and not analysis.enums:
             # Single large class - suggest composition or extraction
@@ -630,8 +738,8 @@ def generate_technique(file_path: str, analysis: FileAnalysis, file_type: str, l
         if 'router' in analysis.decorators or 'app' in analysis.decorators:
             techniques.append("Split API routes into domain-specific router modules")
 
-        # Constant-heavy files (data files)
-        if len(analysis.constants) >= 5 and len(analysis.classes) == 0 and len(analysis.functions) <= 3:
+        # Constant-heavy files (data files) - skip if enums present (handled above)
+        if len(analysis.constants) >= 5 and len(analysis.classes) == 0 and len(analysis.functions) <= 3 and not analysis.enums:
             # Try to group constants by prefix
             prefixes = defaultdict(list)
             for const in analysis.constants:
@@ -928,8 +1036,9 @@ def generate_refactor_suggestions(files: List[FileStats]) -> List[RefactorItem]:
                 technique=technique
             ))
 
-        # Deep nesting (>5 levels)
-        if f.nesting_depth > 5:
+        # Deep nesting (>6 levels) - increased from 5 to reduce noise
+        # Many projects have legitimate 6-level structures (e.g., cutscenes/game_over/scenes/XX_Name/)
+        if f.nesting_depth > 6:
             ref_id += 1
             # For deep nesting, suggest a more appropriate location
             path_parts = Path(f.path).parts
