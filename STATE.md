@@ -174,17 +174,14 @@ src/
 
 ### Commands
 ```bash
+# Start all services (backend + frontend)
+docker-compose up -d
+
 # Terminal client
 python main.py
 
-# Web frontend
-cd web && npm run dev
-
-# Backend (Docker)
-docker-compose up -d
-
-# Type check
-cd web && npx tsc --noEmit
+# Type check frontend
+docker exec roguelike_frontend npm run typecheck
 
 # Python tests
 .venv/Scripts/python -m pytest tests/ -v
