@@ -2,7 +2,6 @@
 import curses
 import os
 import sys
-import time
 from typing import List, Tuple, Dict, Any
 
 from ..core.constants import (
@@ -16,6 +15,8 @@ from ..world.traps import Trap
 from ..world.hazards import Hazard
 from ..entities import Player, Enemy
 from ..items import Item
+from .animation_manager import AnimationManager
+from .render_colors import get_element_color, get_status_indicators, get_message_color
 
 
 class Renderer:
@@ -26,11 +27,8 @@ class Renderer:
         curses.curs_set(0)  # Hide cursor
         self.stdscr.clear()
 
-        # Animation tracking
-        self.animations: List[Dict[str, Any]] = []  # Entity hit animations
-        self.damage_numbers: List[Dict[str, Any]] = []  # Floating damage numbers
-        self.direction_indicators: List[Dict[str, Any]] = []  # Attack direction arrows
-        self.corpses: List[Dict[str, Any]] = []  # Temporary corpse animations (flash on death)
+        # Animation manager handles all visual effects
+        self._anim_mgr = AnimationManager()
 
         # Detect Unicode support - be conservative on Windows
         self.use_unicode = self._detect_unicode_support()
@@ -117,16 +115,7 @@ class Renderer:
 
     def _get_element_color(self, enemy) -> int:
         """Get the curses color pair for an enemy based on their current element."""
-        from ..core.constants import ElementType, ELEMENT_COLORS
-
-        # Get current element (for cycling elemental enemies)
-        current_element = getattr(enemy, 'current_element', None)
-        if current_element is None:
-            current_element = getattr(enemy, 'element', ElementType.NONE)
-
-        # Map element to color pair
-        color_pair = ELEMENT_COLORS.get(current_element, 3)  # Default to red (color pair 3)
-        return curses.color_pair(color_pair)
+        return get_element_color(enemy)
 
     def _smart_truncate(self, text: str, max_length: int) -> str:
         """
@@ -163,7 +152,7 @@ class Renderer:
                 visible_traps: List[Trap] = None, hazards: List[Hazard] = None):
         """Render the entire game state."""
         # Clean up expired animations
-        self._cleanup_animations()
+        self._anim_mgr.cleanup_expired()
 
         self.stdscr.clear()
 
@@ -216,122 +205,23 @@ class Renderer:
 
         self.stdscr.refresh()
 
-    # Public animation methods (called by game.py)
+    # Public animation methods (delegate to AnimationManager)
 
     def add_hit_animation(self, entity: Any, duration: float = 0.15):
-        """
-        Add a hit flash animation to an entity.
-
-        Args:
-            entity: The entity that was hit (Player or Enemy)
-            duration: How long the flash lasts (seconds)
-        """
-        self.animations.append({
-            'entity': entity,
-            'effect': 'hit',
-            'start_time': time.time(),
-            'duration': duration
-        })
+        """Add a hit flash animation to an entity."""
+        self._anim_mgr.add_hit_animation(entity, duration)
 
     def add_damage_number(self, x: int, y: int, damage: int, duration: float = 0.5):
-        """
-        Add a floating damage number above a position.
-
-        Args:
-            x: X coordinate
-            y: Y coordinate
-            damage: Amount of damage to display
-            duration: How long the number floats (seconds)
-        """
-        self.damage_numbers.append({
-            'x': x,
-            'y': y - 1,  # Display above the entity
-            'text': f"-{damage}",
-            'start_time': time.time(),
-            'duration': duration
-        })
+        """Add a floating damage number above a position."""
+        self._anim_mgr.add_damage_number(x, y, damage, duration)
 
     def add_direction_indicator(self, from_x: int, from_y: int, to_x: int, to_y: int, duration: float = 0.1):
-        """
-        Add an attack direction arrow from attacker to target.
-
-        Args:
-            from_x, from_y: Attacker position
-            to_x, to_y: Target position
-            duration: How long the arrow shows (seconds)
-        """
-        # Calculate direction
-        dx = to_x - from_x
-        dy = to_y - from_y
-
-        # Determine arrow character
-        if dx == 0 and dy < 0:
-            arrow = '↑'
-        elif dx == 0 and dy > 0:
-            arrow = '↓'
-        elif dx < 0 and dy == 0:
-            arrow = '←'
-        elif dx > 0 and dy == 0:
-            arrow = '→'
-        elif dx > 0 and dy < 0:
-            arrow = '↗'
-        elif dx > 0 and dy > 0:
-            arrow = '↘'
-        elif dx < 0 and dy > 0:
-            arrow = '↙'
-        elif dx < 0 and dy < 0:
-            arrow = '↖'
-        else:
-            arrow = '·'  # Fallback for same position
-
-        # Place arrow between attacker and target
-        arrow_x = from_x + (1 if dx > 0 else -1 if dx < 0 else 0)
-        arrow_y = from_y + (1 if dy > 0 else -1 if dy < 0 else 0)
-
-        self.direction_indicators.append({
-            'x': arrow_x,
-            'y': arrow_y,
-            'char': arrow,
-            'start_time': time.time(),
-            'duration': duration
-        })
+        """Add an attack direction arrow from attacker to target."""
+        self._anim_mgr.add_direction_indicator(from_x, from_y, to_x, to_y, duration)
 
     def add_death_flash(self, x: int, y: int, duration: float = 0.2):
-        """
-        Add a brief death flash where an enemy died (will be replaced by corpse).
-
-        Args:
-            x, y: Position where entity died
-            duration: How long the flash lasts (seconds)
-        """
-        self.corpses.append({
-            'x': x,
-            'y': y,
-            'char': '%',
-            'start_time': time.time(),
-            'duration': duration,
-            'phase': 'flash'  # 'flash' = bright, will transition to permanent corpse in dungeon
-        })
-
-    def _cleanup_animations(self):
-        """Remove expired animations."""
-        current_time = time.time()
-
-        # Remove expired hit animations
-        self.animations = [anim for anim in self.animations
-                          if current_time - anim['start_time'] < anim['duration']]
-
-        # Remove expired damage numbers
-        self.damage_numbers = [num for num in self.damage_numbers
-                              if current_time - num['start_time'] < num['duration']]
-
-        # Remove expired direction indicators
-        self.direction_indicators = [ind for ind in self.direction_indicators
-                                    if current_time - ind['start_time'] < ind['duration']]
-
-        # Remove expired corpse flashes
-        self.corpses = [corpse for corpse in self.corpses
-                       if current_time - corpse['start_time'] < corpse['duration']]
+        """Add a brief death flash where an enemy died."""
+        self._anim_mgr.add_death_flash(x, y, duration)
 
     def _render_dungeon(self, dungeon: Dungeon, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
         """Render the dungeon tiles within the viewport."""
@@ -591,7 +481,7 @@ class Renderer:
 
             try:
                 # Check if enemy has active hit animation
-                is_animated = any(anim['entity'] == enemy for anim in self.animations)
+                is_animated = self._anim_mgr.is_entity_animated(enemy)
 
                 if curses.has_colors():
                     # Shimmer effect for detected invisible enemies
@@ -647,7 +537,7 @@ class Renderer:
 
         try:
             # Check if player has active hit animation
-            is_animated = any(anim['entity'] == player for anim in self.animations)
+            is_animated = self._anim_mgr.is_entity_animated(player)
 
             if curses.has_colors():
                 color = curses.color_pair(2)  # Yellow for player
@@ -666,7 +556,7 @@ class Renderer:
 
     def _render_damage_numbers(self, dungeon: Dungeon, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
         """Render floating damage numbers above entities."""
-        for dmg_num in self.damage_numbers:
+        for dmg_num in self._anim_mgr.damage_numbers:
             world_x, world_y = dmg_num['x'], dmg_num['y']
 
             # Only render if position is visible and in bounds
@@ -693,7 +583,7 @@ class Renderer:
 
     def _render_direction_indicators(self, dungeon: Dungeon, vp_x: int, vp_y: int, vp_w: int, vp_h: int):
         """Render attack direction arrows."""
-        for indicator in self.direction_indicators:
+        for indicator in self._anim_mgr.direction_indicators:
             world_x, world_y = indicator['x'], indicator['y']
 
             # Only render if position is visible and in bounds
@@ -968,119 +858,12 @@ class Renderer:
             pass
 
     def _get_status_indicators(self, player: Player) -> List[Tuple[str, int]]:
-        """
-        Get status indicators for the player based on their current state.
-
-        Returns:
-            List of (status_text, color_pair) tuples
-        """
-        import time
-        from ..core.constants import PLAYER_ATTACK_DAMAGE, ATK_GAIN_PER_LEVEL, StatusEffectType
-
-        indicators = []
-
-        # Health-based status
-        health_pct = player.health / player.max_health if player.max_health > 0 else 0
-
-        if health_pct <= 0.25:
-            # Critical: flashing red
-            if curses.has_colors():
-                # Flash on/off every 0.5 seconds
-                if int(time.time() * 2) % 2 == 0:
-                    indicators.append(("[CRITICAL]", curses.color_pair(3) | curses.A_BOLD | curses.A_REVERSE))
-                else:
-                    indicators.append(("[CRITICAL]", curses.color_pair(3) | curses.A_BOLD))
-            else:
-                indicators.append(("[CRITICAL]", curses.A_BOLD))
-        elif health_pct <= 0.5:
-            # Wounded: yellow
-            if curses.has_colors():
-                indicators.append(("[WOUNDED]", curses.color_pair(2)))
-            else:
-                indicators.append(("[WOUNDED]", curses.A_NORMAL))
-
-        # Attack boost status (from strength potions)
-        # Expected attack = base + (level - 1) * gain_per_level
-        expected_attack = PLAYER_ATTACK_DAMAGE + (player.level - 1) * ATK_GAIN_PER_LEVEL
-        if player.attack_damage > expected_attack:
-            # Player has used strength potions
-            if curses.has_colors():
-                indicators.append(("[STRONG]", curses.color_pair(4) | curses.A_BOLD))
-            else:
-                indicators.append(("[STRONG]", curses.A_BOLD))
-
-        # v4.0: Status effects
-        if hasattr(player, 'status_effects') and player.status_effects:
-            for effect in player.status_effects.effects:
-                if effect.effect_type == StatusEffectType.POISON:
-                    if curses.has_colors():
-                        indicators.append(("[POISON]", curses.color_pair(4)))  # Green
-                    else:
-                        indicators.append(("[POISON]", curses.A_NORMAL))
-                elif effect.effect_type == StatusEffectType.BURN:
-                    if curses.has_colors():
-                        indicators.append(("[BURN]", curses.color_pair(3)))  # Red
-                    else:
-                        indicators.append(("[BURN]", curses.A_NORMAL))
-                elif effect.effect_type == StatusEffectType.FREEZE:
-                    if curses.has_colors():
-                        indicators.append(("[FREEZE]", curses.color_pair(5)))  # Cyan
-                    else:
-                        indicators.append(("[FREEZE]", curses.A_NORMAL))
-                elif effect.effect_type == StatusEffectType.STUN:
-                    if curses.has_colors():
-                        indicators.append(("[STUN]", curses.color_pair(2)))  # Yellow
-                    else:
-                        indicators.append(("[STUN]", curses.A_NORMAL))
-
-        return indicators
+        """Get status indicators for the player based on their current state."""
+        return get_status_indicators(player)
 
     def _get_message_color(self, message: str) -> int:
-        """
-        Determine the color pair and attributes for a message based on its content.
-
-        Returns:
-            Color pair with optional BOLD attribute
-        """
-        if not curses.has_colors():
-            return curses.A_NORMAL
-
-        msg_lower = message.lower()
-
-        # Boss defeat messages (bright magenta + bold)
-        if "defeated" in msg_lower and ("***" in message or "boss" in msg_lower):
-            return curses.color_pair(6) | curses.A_BOLD
-
-        # Boss ability messages (magenta)
-        if any(word in msg_lower for word in ["summons", "slams", "breathes", "drains", "fires", "sweeps", "war cry", "regenerates", "raises", "teleports"]):
-            return curses.color_pair(6)
-
-        # Combat kill messages (bright red + bold)
-        if "killed" in msg_lower:
-            return curses.color_pair(8) | curses.A_BOLD
-
-        # Level up messages (bright yellow + bold)
-        if "level up" in msg_lower or "level:" in msg_lower and "player" not in msg_lower:
-            return curses.color_pair(9) | curses.A_BOLD
-
-        # Healing messages (bright green)
-        if "healed" in msg_lower or "restored" in msg_lower:
-            return curses.color_pair(10) | curses.A_BOLD
-
-        # Combat damage messages (red)
-        if "hit" in msg_lower or "damage" in msg_lower:
-            return curses.color_pair(3)
-
-        # Item pickup messages (cyan)
-        if "picked up" in msg_lower or "dropped" in msg_lower:
-            return curses.color_pair(5)
-
-        # Boss presence messages (magenta)
-        if "powerful presence" in msg_lower or "awaits" in msg_lower:
-            return curses.color_pair(6)
-
-        # Default (white)
-        return curses.color_pair(1)
+        """Determine the color pair and attributes for a message based on its content."""
+        return get_message_color(message)
 
     def _render_ui_panel(self, player: Player, dungeon: Dungeon, enemies: List[Enemy],
                          items: List[Item]):
