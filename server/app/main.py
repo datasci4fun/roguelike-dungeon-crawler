@@ -33,6 +33,7 @@ from .api.lore import router as lore_router
 from .api.bestiary import router as bestiary_router
 from .api.items import router as items_router
 from .api.gameguide import router as gameguide_router
+from .api.codebase_health import router as codebase_health_router
 
 
 @asynccontextmanager
@@ -108,6 +109,7 @@ def create_app() -> FastAPI:
     app.include_router(dependencies_router, tags=["dev-tools"])
     app.include_router(routes_router, tags=["dev-tools"])
     app.include_router(metrics_router, tags=["dev-tools"])
+    app.include_router(codebase_health_router, tags=["dev-tools"])
     app.include_router(lore_router, tags=["content"])
     app.include_router(bestiary_router, tags=["content"])
     app.include_router(items_router, tags=["content"])

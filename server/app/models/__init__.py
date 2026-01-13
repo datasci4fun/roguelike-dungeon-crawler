@@ -5,6 +5,7 @@ from .chat_message import ChatMessage, ChatChannel
 from .user_achievement import UserAchievement
 from .game_save import GameSave
 from .daily_challenge import DailyChallenge, DailyChallengeResult
+from .codebase_health import CodebaseFileStats, CodebaseRefactorTodo, CodebaseScanMeta
 
 __all__ = [
     "User",
@@ -15,4 +16,7 @@ __all__ = [
     "GameSave",
     "DailyChallenge",
     "DailyChallengeResult",
+    "CodebaseFileStats",
+    "CodebaseRefactorTodo",
+    "CodebaseScanMeta",
 ]

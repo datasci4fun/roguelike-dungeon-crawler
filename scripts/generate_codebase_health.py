@@ -6,11 +6,16 @@ Scans the repository and generates web/src/data/codebaseHealthData.ts
 with file statistics and refactor suggestions.
 
 Usage:
-    python scripts/generate_codebase_health.py
+    python scripts/generate_codebase_health.py [--database]
+
+Options:
+    --database    Also write data to PostgreSQL database
 """
 
 import os
 import re
+import sys
+import argparse
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Tuple, Optional, Set
@@ -1381,8 +1386,119 @@ export function getRefactorStats(): {{ total: number; pending: number; completed
     return ts_content
 
 
+def write_to_database(files: List[FileStats], refactors: List[RefactorItem]) -> bool:
+    """Write file stats and refactor items to PostgreSQL database.
+
+    Returns True if successful, False otherwise.
+    """
+    try:
+        import psycopg2
+        from psycopg2.extras import execute_values
+    except ImportError:
+        print("ERROR: psycopg2 not installed. Run: pip install psycopg2-binary")
+        return False
+
+    # Load database settings from server config
+    # Add server directory to path for imports
+    server_dir = REPO_ROOT / "server"
+    sys.path.insert(0, str(server_dir))
+
+    try:
+        from app.core.config import settings
+        db_url = settings.database_url_sync
+    except ImportError:
+        # Fallback to environment variables or defaults
+        import os
+        host = os.environ.get('POSTGRES_HOST', 'localhost')
+        port = os.environ.get('POSTGRES_PORT', '5432')
+        user = os.environ.get('POSTGRES_USER', 'roguelike')
+        password = os.environ.get('POSTGRES_PASSWORD', 'roguelike_secret')
+        database = os.environ.get('POSTGRES_DB', 'roguelike')
+        db_url = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+    print(f"Connecting to database...")
+
+    try:
+        conn = psycopg2.connect(db_url)
+        cur = conn.cursor()
+
+        # Clear existing data (latest only approach)
+        print("Clearing existing data...")
+        cur.execute("DELETE FROM codebase_file_stats")
+        cur.execute("DELETE FROM codebase_refactor_todos")
+        cur.execute("DELETE FROM codebase_scan_meta")
+
+        # Insert file stats
+        print(f"Inserting {len(files)} file records...")
+        file_data = [
+            (f.path, f.loc, f.nesting_depth, f.file_type, f.area, f.size_category, datetime.utcnow())
+            for f in files
+        ]
+        execute_values(
+            cur,
+            """INSERT INTO codebase_file_stats
+               (path, loc, nesting_depth, file_type, area, size_category, created_at)
+               VALUES %s""",
+            file_data
+        )
+
+        # Insert refactor todos
+        print(f"Inserting {len(refactors)} refactor records...")
+        import json
+        refactor_data = [
+            (
+                r.id, r.title, r.description, r.priority, r.status,
+                json.dumps(r.category), r.effort, json.dumps(r.affected_files),
+                json.dumps(r.details), r.automated_reason, r.technique, datetime.utcnow()
+            )
+            for r in refactors
+        ]
+        execute_values(
+            cur,
+            """INSERT INTO codebase_refactor_todos
+               (item_id, title, description, priority, status, category, effort,
+                affected_files, details, automated_reason, technique, created_at)
+               VALUES %s""",
+            refactor_data
+        )
+
+        # Insert scan metadata
+        total_loc = sum(f.loc for f in files)
+        avg_loc = total_loc // len(files) if files else 0
+        cur.execute(
+            """INSERT INTO codebase_scan_meta
+               (generated_at, total_files, total_loc, total_todos, avg_loc)
+               VALUES (%s, %s, %s, %s, %s)""",
+            (datetime.utcnow(), len(files), total_loc, len(refactors), avg_loc)
+        )
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        print("Database write complete!")
+        return True
+
+    except psycopg2.Error as e:
+        print(f"Database error: {e}")
+        return False
+
+
 def main():
     """Main entry point."""
+    parser = argparse.ArgumentParser(description="Codebase Health Scanner")
+    parser.add_argument(
+        '--database', '-d',
+        action='store_true',
+        help='Also write data to PostgreSQL database'
+    )
+    parser.add_argument(
+        '--database-only',
+        action='store_true',
+        help='Only write to database (skip TypeScript generation)'
+    )
+    args = parser.parse_args()
+
     print("Scanning repository...")
     files = scan_repository()
     print(f"Found {len(files)} files")
@@ -1391,13 +1507,21 @@ def main():
     refactors = generate_refactor_suggestions(files)
     print(f"Generated {len(refactors)} suggestions")
 
-    print("Generating TypeScript...")
-    ts_content = generate_typescript(files, refactors)
+    # Write to TypeScript file (unless database-only mode)
+    if not args.database_only:
+        print("Generating TypeScript...")
+        ts_content = generate_typescript(files, refactors)
 
-    print(f"Writing to {OUTPUT_FILE}...")
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
-        f.write(ts_content)
+        print(f"Writing to {OUTPUT_FILE}...")
+        OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
+            f.write(ts_content)
+
+    # Write to database if requested
+    if args.database or args.database_only:
+        print("\nWriting to database...")
+        if not write_to_database(files, refactors):
+            print("WARNING: Database write failed!")
 
     # Print summary
     total_loc = sum(f.loc for f in files)
@@ -1415,7 +1539,8 @@ def main():
     for area, count in sorted(areas.items()):
         print(f"  {area}: {count}")
     print(f"\nRefactor suggestions: {len(refactors)}")
-    print(f"\nOutput: {OUTPUT_FILE}")
+    if not args.database_only:
+        print(f"\nOutput: {OUTPUT_FILE}")
     print("=" * 50)
 
 
