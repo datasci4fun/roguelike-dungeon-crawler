@@ -75,7 +75,7 @@ export function CharacterCreation() {
     itemCount: CLASS_IDS.length,
     columns: 2,
     selectedIndex: CLASS_IDS.indexOf(selectedClass),
-    onSelect: (index) => setSelectedClass(CLASS_IDS[index]),
+    onSelect: (index) => setSelectedClass(CLASS_IDS[index] as ClassId),
     enabled: !showIntro && !isStarting && !constantsLoading,
   });
 
@@ -231,7 +231,7 @@ export function CharacterCreation() {
                     key={c.id}
                     {...itemProps}
                     className={`option-card ${selectedClass === c.id ? 'selected' : ''}`}
-                    onClick={() => setSelectedClass(c.id)}
+                    onClick={() => setSelectedClass(c.id as ClassId)}
                   >
                     <div className="option-name">{c.name}</div>
                     <div className="option-desc">{c.description}</div>

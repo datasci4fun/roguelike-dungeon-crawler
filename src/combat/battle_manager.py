@@ -389,6 +389,10 @@ class BattleManager:
         if battle is None:
             return
 
+        # v6.9: Emit player turn end event
+        if self.events:
+            self.events.emit(EventType.PLAYER_TURN_END)
+
         battle.player.has_acted = True
         battle.phase = BattlePhase.ENEMY_TURN
 
@@ -434,6 +438,10 @@ class BattleManager:
             enemy.has_acted = False
 
         battle.phase = BattlePhase.PLAYER_TURN
+
+        # v6.9: Emit player turn start event
+        if self.events:
+            self.events.emit(EventType.PLAYER_TURN_START)
 
     def _handle_entity_death(self, entity: BattleEntity) -> None:
         """Handle entity death in battle."""
