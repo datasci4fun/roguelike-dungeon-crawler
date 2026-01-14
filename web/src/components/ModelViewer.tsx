@@ -1,5 +1,6 @@
 /**
  * ModelViewer - Simple Three.js GLB/OBJ model viewer
+ * Fixed for React 18 StrictMode compatibility
  */
 
 import { useEffect, useRef } from 'react';
@@ -23,12 +24,17 @@ export function ModelViewer({
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const modelRef = useRef<THREE.Group | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
-  const animationRef = useRef<number>(0);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const lightsAddedRef = useRef(false);
 
+  // Initialize renderer once
   useEffect(() => {
     if (!containerRef.current) return;
+    if (rendererRef.current) return;
+
+    const container = containerRef.current;
 
     // Scene
     const scene = new THREE.Scene();
@@ -37,7 +43,8 @@ export function ModelViewer({
 
     // Camera
     const camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
-    camera.position.set(2, 2, 3);
+    camera.position.set(3, 3, 3);
+    camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
     // Renderer
@@ -45,7 +52,7 @@ export function ModelViewer({
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    containerRef.current.appendChild(renderer.domElement);
+    container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // Controls
@@ -56,26 +63,62 @@ export function ModelViewer({
     controls.autoRotateSpeed = 2;
     controlsRef.current = controls;
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-    scene.add(ambientLight);
+    // Lighting (only add once)
+    if (!lightsAddedRef.current) {
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 7);
-    scene.add(directionalLight);
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(5, 10, 7);
+      scene.add(directionalLight);
 
-    const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
-    backLight.position.set(-5, 5, -5);
-    scene.add(backLight);
+      const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+      backLight.position.set(-5, 5, -5);
+      scene.add(backLight);
 
-    // Load model
+      lightsAddedRef.current = true;
+    }
+
+    // Animation loop
+    const animate = () => {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      // Don't dispose during StrictMode remount
+    };
+  }, [width, height, backgroundColor]);
+
+  // Load model when modelPath changes
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    // Remove previous model if exists
+    if (modelRef.current) {
+      scene.remove(modelRef.current);
+      modelRef.current.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          if (child.material instanceof THREE.Material) {
+            child.material.dispose();
+          }
+        }
+      });
+      modelRef.current = null;
+    }
+
+    // Load new model
     const loader = new GLTFLoader();
     loader.load(
       modelPath,
       (gltf) => {
         const model = gltf.scene;
 
-        // Ensure materials are visible
+        // Apply materials
         model.traverse((child) => {
           if (child instanceof THREE.Mesh) {
             // Enable vertex colors if present
@@ -84,10 +127,10 @@ export function ModelViewer({
                 vertexColors: true,
                 metalness: 0.1,
                 roughness: 0.8,
+                side: THREE.DoubleSide,
               });
-            }
-            // Ensure double-sided rendering
-            if (child.material) {
+            } else if (child.material) {
+              // Ensure double-sided rendering
               (child.material as THREE.Material).side = THREE.DoubleSide;
             }
           }
@@ -98,40 +141,22 @@ export function ModelViewer({
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         const maxDim = Math.max(size.x, size.y, size.z);
-        const scale = 2 / maxDim;
 
-        model.scale.setScalar(scale);
-        model.position.sub(center.multiplyScalar(scale));
+        if (maxDim > 0) {
+          const scale = 2 / maxDim;
+          model.scale.setScalar(scale);
+          model.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+        }
 
-        console.log('Model loaded:', modelPath, 'Scale:', scale);
         scene.add(model);
+        modelRef.current = model;
       },
-      (progress) => {
-        console.log('Loading progress:', (progress.loaded / progress.total * 100).toFixed(1) + '%');
-      },
+      undefined,
       (error) => {
         console.error('Error loading model:', error);
       }
     );
-
-    // Animation loop
-    const animate = () => {
-      animationRef.current = requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    // Cleanup
-    return () => {
-      cancelAnimationFrame(animationRef.current);
-      controls.dispose();
-      renderer.dispose();
-      if (containerRef.current && renderer.domElement) {
-        containerRef.current.removeChild(renderer.domElement);
-      }
-    };
-  }, [modelPath, width, height, backgroundColor]);
+  }, [modelPath]);
 
   return (
     <div

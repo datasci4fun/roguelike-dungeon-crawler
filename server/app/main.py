@@ -37,6 +37,7 @@ from .api.bestiary import router as bestiary_router
 from .api.items import router as items_router
 from .api.gameguide import router as gameguide_router
 from .api.game_constants import router as game_constants_router
+from .api.assets import router as assets_router
 
 
 @asynccontextmanager
@@ -131,6 +132,7 @@ def create_app() -> FastAPI:
     app.include_router(items_router, tags=["content"])
     app.include_router(gameguide_router, tags=["content"])
     app.include_router(game_constants_router, tags=["game-constants"])
+    app.include_router(assets_router, tags=["dev-tools"])
 
     # Add exception handler to capture errors (only in debug mode)
     if settings.debug:
