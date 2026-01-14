@@ -5,7 +5,6 @@ import { FirstPersonDemo } from './pages/FirstPersonDemo';
 import { FirstPersonTestPage } from './pages/FirstPersonTestPage';
 import { Debug3DPage } from './pages/Debug3DPage';
 import { AssetViewer } from './pages/AssetViewer';
-import { ThreeTest } from './pages/ThreeTest';
 import { CharacterCreation } from './pages/CharacterCreation';
 import { JobsProvider } from './contexts/JobsContext';
 import { AssetsProvider } from './contexts/AssetsContext';
@@ -30,7 +29,6 @@ function App() {
         <Route path="first-person-test" element={<FirstPersonTestPage />} />
         <Route path="debug-3d" element={<Debug3DPage />} />
         <Route path="asset-viewer" element={<AssetViewer />} />
-        <Route path="three-test" element={<ThreeTest />} />
         <Route path="spectate" element={<Spectate />} />
         <Route path="leaderboard" element={<Leaderboard />} />
         <Route path="ghosts" element={<Ghosts />} />
