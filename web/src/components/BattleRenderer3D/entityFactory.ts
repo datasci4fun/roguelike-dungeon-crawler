@@ -169,7 +169,12 @@ export function createEntity3D(
   const modelPath = entity.name ? getModelPathForEnemy(entity.name) : null;
   const cachedModel = modelPath ? modelCache.get(modelPath) : null;
 
-  console.log('[BattleRenderer3D] model lookup:', { modelPath, hasCachedModel: !!cachedModel });
+  console.log('[BattleRenderer3D] model lookup:', {
+    entityName: entity.name,
+    modelPath,
+    hasCachedModel: !!cachedModel,
+    cacheSize: modelCache.size
+  });
 
   if (cachedModel) {
     // Use 3D model
@@ -191,13 +196,16 @@ export function createEntity3D(
     console.log('[BattleRenderer3D] 3D model added with scale:', ENTITY_MODEL_SCALE, 'y-offset:', ENTITY_MODEL_Y_OFFSET);
   } else {
     // Fall back to sprite
+    console.log('[BattleRenderer3D] Using sprite fallback for:', entity.name);
     const spriteGroup = createEntitySprite(entity, false);
+    console.log('[BattleRenderer3D] Sprite group created with', spriteGroup.children.length, 'children');
     // Move children from sprite group to this group
     while (spriteGroup.children.length > 0) {
       const child = spriteGroup.children[0];
       spriteGroup.remove(child);
       group.add(child);
     }
+    console.log('[BattleRenderer3D] Entity group now has', group.children.length, 'children');
     return group;
   }
 

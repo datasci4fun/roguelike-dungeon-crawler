@@ -79,7 +79,10 @@ export function updateEntities(
     const pz = (battle.player.arena_y - arena_height / 2) * TILE_SIZE;
 
     const existing = animMap.get(playerId);
-    if (existing) {
+    // Check if sprite is still in the group (could be stale from React Strict Mode remount)
+    const isStillInGroup = existing && group.children.includes(existing.sprite);
+
+    if (existing && isStillInGroup) {
       // Update target position
       existing.targetX = px;
       existing.targetZ = pz;
@@ -99,7 +102,13 @@ export function updateEntities(
         existing.lastHp = battle.player.hp;
       }
     } else {
-      // New entity - create sprite at target position
+      // New entity OR stale reference (sprite no longer in group)
+      if (existing && !isStillInGroup) {
+        console.log('[BattleRenderer3D] Recreating stale player entity');
+        animMap.delete(playerId);
+      }
+
+      // Create sprite at target position
       const sprite = createEntitySprite(battle.player as BattleEntity, true);
       sprite.position.set(px, 0, pz);
       group.add(sprite);
@@ -118,12 +127,16 @@ export function updateEntities(
   for (const enemy of battle.enemies) {
     if (enemy.hp > 0) {
       const enemyId = enemy.entity_id;
+      console.log('[BattleRenderer3D] Processing enemy:', { enemyId, name: enemy.name, existsInAnimMap: animMap.has(enemyId) });
       currentIds.add(enemyId);
       const ex = (enemy.arena_x - arena_width / 2) * TILE_SIZE;
       const ez = (enemy.arena_y - arena_height / 2) * TILE_SIZE;
 
       const existing = animMap.get(enemyId);
-      if (existing) {
+      // Check if sprite is still in the group (could be stale from React Strict Mode remount)
+      const isStillInGroup = existing && group.children.includes(existing.sprite);
+
+      if (existing && isStillInGroup) {
         // Update target position
         existing.targetX = ex;
         existing.targetZ = ez;
@@ -155,7 +168,14 @@ export function updateEntities(
           }
         }
       } else {
-        // New entity - create at target position (use 3D model if available)
+        // New entity OR stale reference (sprite no longer in group)
+        // Clean up stale animMap entry if it exists
+        if (existing && !isStillInGroup) {
+          console.log('[BattleRenderer3D] Recreating stale entity:', enemy.name);
+          animMap.delete(enemyId);
+        }
+
+        // Create entity at target position (use 3D model if available)
         const entity = createEntity3D(enemy, false);
         entity.position.set(ex, 0, ez);
         group.add(entity);
@@ -175,6 +195,7 @@ export function updateEntities(
   const entriesToRemove: string[] = [];
   animMap.forEach((anim, id) => {
     if (!currentIds.has(id)) {
+      console.log('[BattleRenderer3D] Removing entity not in currentIds:', id, 'currentIds:', Array.from(currentIds));
       group.remove(anim.sprite);
       anim.sprite.traverse((obj) => {
         if (obj instanceof THREE.Sprite) {
@@ -186,4 +207,10 @@ export function updateEntities(
     }
   });
   entriesToRemove.forEach(id => animMap.delete(id));
+
+  console.log('[BattleRenderer3D] updateEntities finished:', {
+    groupChildCount: group.children.length,
+    animMapSize: animMap.size,
+    currentIds: Array.from(currentIds)
+  });
 }
