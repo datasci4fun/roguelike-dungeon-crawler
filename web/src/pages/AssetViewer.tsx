@@ -2,7 +2,7 @@
  * AssetViewer - Dev tool for viewing 3D assets and managing generation queue
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ASSET_QUEUE,
@@ -10,6 +10,10 @@ import {
   getQueuedByPriority,
   type Asset3D,
 } from '../data/assetQueue';
+import { ModelViewer } from '../components/ModelViewer';
+import { useJobs } from '../contexts/JobsContext';
+
+const API_BASE = 'http://localhost:8000';
 
 type TabId = 'queue' | 'done' | 'all';
 type CategoryFilter = 'all' | Asset3D['category'];
@@ -39,6 +43,20 @@ export function AssetViewer() {
   const [tab, setTab] = useState<TabId>('queue');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [selectedAsset, setSelectedAsset] = useState<Asset3D | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [generateError, setGenerateError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Use global jobs context
+  const { jobs, createJob, isLoading: generating } = useJobs();
+
+  // Find active job for selected asset
+  const currentJob = selectedAsset
+    ? jobs.find(j => j.asset_id === selectedAsset.id && (j.status === 'pending' || j.status === 'processing'))
+    : null;
 
   const stats = useMemo(() => getAssetStats(), []);
 
@@ -63,6 +81,85 @@ export function AssetViewer() {
     return assets;
   }, [tab, category]);
 
+  // Handle escape key to close fullscreen
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && fullscreen) {
+        setFullscreen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [fullscreen]);
+
+  // Clear messages when selecting a different asset
+  useEffect(() => {
+    setUploadError(null);
+    setUploadSuccess(null);
+    setGenerateError(null);
+  }, [selectedAsset?.id]);
+
+  // Handle file upload
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !selectedAsset) return;
+
+    setUploading(true);
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(
+        `${API_BASE}/api/assets/concept-art/${selectedAsset.id}`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Upload failed');
+      }
+
+      const result = await response.json();
+      setUploadSuccess(`Uploaded ${result.filename} (${(result.size / 1024).toFixed(1)} KB)`);
+
+      // Update the asset's sourceImage in the local state
+      if (selectedAsset) {
+        selectedAsset.sourceImage = result.path;
+      }
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+      // Reset file input so the same file can be re-selected
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Handle generate model request
+  const handleGenerateClick = async () => {
+    if (!selectedAsset) return;
+
+    setGenerateError(null);
+
+    const job = await createJob(selectedAsset.id);
+    if (!job) {
+      setGenerateError('Failed to create job');
+    }
+    // Job tracking is handled globally by JobsContext
+  };
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -70,6 +167,15 @@ export function AssetViewer() {
       color: '#e0e0e0',
       fontFamily: 'system-ui, sans-serif',
     }}>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        onChange={handleFileSelect}
+        style={{ display: 'none' }}
+      />
+
       {/* Header */}
       <header style={{
         padding: '20px 40px',
@@ -300,9 +406,9 @@ export function AssetViewer() {
             }}>
               <h2 style={{ margin: '0 0 15px', color: '#fff' }}>{selectedAsset.name}</h2>
 
-              {/* Preview placeholder */}
+              {/* 3D Preview */}
               <div style={{
-                height: '200px',
+                height: '250px',
                 background: '#1a1a2e',
                 borderRadius: '8px',
                 display: 'flex',
@@ -310,9 +416,37 @@ export function AssetViewer() {
                 justifyContent: 'center',
                 marginBottom: '15px',
                 border: '1px solid #333',
+                overflow: 'hidden',
+                position: 'relative',
               }}>
                 {selectedAsset.status === 'done' && selectedAsset.modelPath ? (
-                  <span style={{ color: '#69db7c' }}>3D Preview Available</span>
+                  <>
+                    <Suspense fallback={<span style={{ color: '#888' }}>Loading model...</span>}>
+                      <ModelViewer
+                        modelPath={selectedAsset.modelPath}
+                        width={310}
+                        height={250}
+                      />
+                    </Suspense>
+                    <button
+                      onClick={() => setFullscreen(true)}
+                      style={{
+                        position: 'absolute',
+                        top: '8px',
+                        right: '8px',
+                        padding: '6px 10px',
+                        background: 'rgba(0,0,0,0.6)',
+                        color: '#fff',
+                        border: '1px solid #555',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                      }}
+                      title="View fullscreen"
+                    >
+                      ⛶ Fullscreen
+                    </button>
+                  </>
                 ) : (
                   <span style={{ color: '#666' }}>No 3D model yet</span>
                 )}
@@ -353,6 +487,201 @@ export function AssetViewer() {
                   </tr>
                 </tbody>
               </table>
+
+              {/* Concept Art Upload Section */}
+              <div style={{ marginTop: '20px' }}>
+                <div style={{ color: '#888', fontSize: '12px', marginBottom: '8px' }}>
+                  Concept Art
+                </div>
+
+                {selectedAsset.sourceImage ? (
+                  <div style={{
+                    padding: '10px',
+                    background: '#1a1a2e',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    color: '#69db7c',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}>
+                    <span style={{ color: '#37b24d' }}>&#10003;</span>
+                    {selectedAsset.sourceImage}
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '10px',
+                    background: '#1a1a2e',
+                    borderRadius: '4px',
+                    fontSize: '13px',
+                    color: '#888',
+                  }}>
+                    No concept art uploaded
+                  </div>
+                )}
+
+                <button
+                  onClick={handleUploadClick}
+                  disabled={uploading}
+                  style={{
+                    marginTop: '10px',
+                    width: '100%',
+                    padding: '12px',
+                    background: uploading ? '#444' : '#4dabf7',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: uploading ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  {uploading ? (
+                    <>Uploading...</>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '16px' }}>&#8593;</span>
+                      Upload Concept Art
+                    </>
+                  )}
+                </button>
+
+                {uploadError && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 10px',
+                    background: '#f03e3e22',
+                    border: '1px solid #f03e3e',
+                    borderRadius: '4px',
+                    color: '#f03e3e',
+                    fontSize: '12px',
+                  }}>
+                    {uploadError}
+                  </div>
+                )}
+
+                {uploadSuccess && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 10px',
+                    background: '#37b24d22',
+                    border: '1px solid #37b24d',
+                    borderRadius: '4px',
+                    color: '#37b24d',
+                    fontSize: '12px',
+                  }}>
+                    {uploadSuccess}
+                  </div>
+                )}
+              </div>
+
+              {/* Generate 3D Model Section */}
+              <div style={{ marginTop: '20px' }}>
+                <div style={{ color: '#888', fontSize: '12px', marginBottom: '8px' }}>
+                  3D Model Generation
+                </div>
+
+                <button
+                  onClick={handleGenerateClick}
+                  disabled={generating || !selectedAsset.sourceImage}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    background: generating
+                      ? '#444'
+                      : !selectedAsset.sourceImage
+                      ? '#333'
+                      : '#cc5de8',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: generating || !selectedAsset.sourceImage ? 'not-allowed' : 'pointer',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                  }}
+                  title={!selectedAsset.sourceImage ? 'Upload concept art first' : 'Start 3D model generation'}
+                >
+                  {generating ? (
+                    <>Generating...</>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '16px' }}>&#9881;</span>
+                      Generate 3D Model
+                    </>
+                  )}
+                </button>
+
+                {!selectedAsset.sourceImage && (
+                  <div style={{
+                    marginTop: '6px',
+                    fontSize: '11px',
+                    color: '#888',
+                    textAlign: 'center',
+                  }}>
+                    Upload concept art first
+                  </div>
+                )}
+
+                {currentJob && (
+                  <div style={{
+                    marginTop: '8px',
+                    background: '#4dabf722',
+                    border: '1px solid #4dabf7',
+                    borderRadius: '4px',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      padding: '8px 10px',
+                      color: '#4dabf7',
+                      fontSize: '12px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}>
+                      <span>
+                        {currentJob.progress || currentJob.status}
+                        {currentJob.status === 'pending' && ' - waiting for worker'}
+                      </span>
+                      {currentJob.progress_pct !== undefined && currentJob.progress_pct !== null && (
+                        <span style={{ fontWeight: 'bold' }}>{currentJob.progress_pct}%</span>
+                      )}
+                    </div>
+                    {currentJob.progress_pct !== undefined && currentJob.progress_pct !== null && (
+                      <div style={{ height: '3px', background: '#1a1a2e' }}>
+                        <div style={{
+                          width: `${currentJob.progress_pct}%`,
+                          height: '100%',
+                          background: '#4dabf7',
+                          transition: 'width 0.3s',
+                        }} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {generateError && (
+                  <div style={{
+                    marginTop: '8px',
+                    padding: '8px 10px',
+                    background: '#f03e3e22',
+                    border: '1px solid #f03e3e',
+                    borderRadius: '4px',
+                    color: '#f03e3e',
+                    fontSize: '12px',
+                  }}>
+                    {generateError}
+                  </div>
+                )}
+
+              </div>
 
               {selectedAsset.notes && (
                 <div style={{ marginTop: '15px' }}>
@@ -407,16 +736,16 @@ export function AssetViewer() {
             </h4>
             <ol style={{ margin: 0, paddingLeft: '20px', color: '#888', fontSize: '13px' }}>
               <li style={{ marginBottom: '8px' }}>
-                Create concept art in <code style={{ color: '#69db7c' }}>concept_art/</code>
+                Select asset, click <strong style={{ color: '#4dabf7' }}>Upload Concept Art</strong>
               </li>
               <li style={{ marginBottom: '8px' }}>
-                Run generate command (see above)
+                Click <strong style={{ color: '#cc5de8' }}>Generate 3D Model</strong> to queue job
               </li>
               <li style={{ marginBottom: '8px' }}>
-                Convert OBJ to GLB in Blender
+                Run worker: <code style={{ color: '#69db7c' }}>python tools/3d-pipeline/job_worker.py</code>
               </li>
               <li style={{ marginBottom: '8px' }}>
-                Place in <code style={{ color: '#69db7c' }}>web/public/assets/models/</code>
+                Convert OBJ to GLB (trimesh or Blender)
               </li>
               <li>
                 Update <code style={{ color: '#69db7c' }}>assetQueue.ts</code> status
@@ -425,6 +754,76 @@ export function AssetViewer() {
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Modal */}
+      {fullscreen && selectedAsset?.modelPath && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.95)',
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setFullscreen(false)}
+        >
+          <div
+            style={{
+              background: '#1a1a2e',
+              borderRadius: '12px',
+              padding: '20px',
+              border: '1px solid #444',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '15px',
+            }}>
+              <h2 style={{ margin: 0, color: '#fff' }}>{selectedAsset.name}</h2>
+              <button
+                onClick={() => setFullscreen(false)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#333',
+                  color: '#fff',
+                  border: '1px solid #555',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+              >
+                ✕ Close (Esc)
+              </button>
+            </div>
+            <Suspense fallback={<span style={{ color: '#888' }}>Loading model...</span>}>
+              <ModelViewer
+                modelPath={selectedAsset.modelPath}
+                width={800}
+                height={600}
+              />
+            </Suspense>
+            <div style={{
+              marginTop: '10px',
+              textAlign: 'center',
+              color: '#888',
+              fontSize: '12px',
+            }}>
+              Drag to rotate • Scroll to zoom • Click outside to close
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

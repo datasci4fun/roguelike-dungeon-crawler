@@ -61,6 +61,10 @@ services:
     volumes:
       - ./server:/app
       - ./src:/app/game_src  # Mount game engine for import
+      - ./concept_art:/concept_art  # Mount concept art for 3D asset pipeline
+      - ./jobs:/jobs  # Mount job queue for 3D generation
+      - ./tools:/tools  # Mount tools for 3D pipeline worker
+      - ./web/public/assets:/web_assets  # Mount output directory for generated models
     restart: unless-stopped
 
   # React Frontend (Vite dev server with HMR)
@@ -78,6 +82,22 @@ services:
       - CHOKIDAR_USEPOLLING=true  # Fallback polling flag
     restart: unless-stopped
 
+  # 3D Model Generation Worker (TripoSR)
+  3d-worker:
+    build:
+      context: ./tools/3d-pipeline
+      dockerfile: Dockerfile
+    container_name: roguelike_3d_worker
+    volumes:
+      - ./jobs:/jobs  # Job queue (shared with backend)
+      - ./concept_art:/concept_art  # Source images
+      - ./web/public/assets/models:/web_assets/models  # Generated output
+      - triposr_models:/models  # Huggingface model cache
+    environment:
+      - HF_HOME=/models
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:
+  triposr_models:  # Cache for Huggingface TripoSR model

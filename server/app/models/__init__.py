@@ -18,6 +18,14 @@ from .game_constants import (
     Item,
     GameConstantsMeta,
 )
+from .asset3d import (
+    Asset3D,
+    GenerationJob,
+    AssetCategory,
+    AssetStatus,
+    AssetPriority,
+    JobStatus,
+)
 
 __all__ = [
     "User",
@@ -40,4 +48,11 @@ __all__ = [
     "StatusEffect",
     "Item",
     "GameConstantsMeta",
+    # 3D Assets
+    "Asset3D",
+    "GenerationJob",
+    "AssetCategory",
+    "AssetStatus",
+    "AssetPriority",
+    "JobStatus",
 ]

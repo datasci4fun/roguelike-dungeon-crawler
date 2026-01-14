@@ -6,10 +6,15 @@ import { FirstPersonTestPage } from './pages/FirstPersonTestPage';
 import { Debug3DPage } from './pages/Debug3DPage';
 import { AssetViewer } from './pages/AssetViewer';
 import { CharacterCreation } from './pages/CharacterCreation';
+import { JobsProvider } from './contexts/JobsContext';
+import { AssetsProvider } from './contexts/AssetsContext';
+import { JobsPanel } from './components/JobsPanel';
 
 function App() {
   return (
-    <Routes>
+    <AssetsProvider>
+    <JobsProvider>
+      <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="features" element={<Features />} />
@@ -56,7 +61,10 @@ function App() {
         <Route path="items" element={<ItemCompendium />} />
         <Route path="guide" element={<GameGuide />} />
       </Route>
-    </Routes>
+      </Routes>
+      <JobsPanel />
+    </JobsProvider>
+    </AssetsProvider>
   );
 }
 
