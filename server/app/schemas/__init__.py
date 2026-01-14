@@ -46,6 +46,17 @@ from .game_constants import (
     MetadataResponse,
     InvalidateCacheResponse,
 )
+from .asset3d import (
+    Asset3DCreate,
+    Asset3DUpdate,
+    Asset3DResponse,
+    Asset3DWithJobs,
+    JobCreate,
+    JobUpdate,
+    JobResponse,
+    AssetStats,
+    UploadResponse,
+)
 
 __all__ = [
     "UserCreate",
@@ -91,4 +102,14 @@ __all__ = [
     "CacheStatusResponse",
     "MetadataResponse",
     "InvalidateCacheResponse",
+    # 3D Assets
+    "Asset3DCreate",
+    "Asset3DUpdate",
+    "Asset3DResponse",
+    "Asset3DWithJobs",
+    "JobCreate",
+    "JobUpdate",
+    "JobResponse",
+    "AssetStats",
+    "UploadResponse",
 ]

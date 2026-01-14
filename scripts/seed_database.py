@@ -41,6 +41,7 @@ from app.models.game_constants import (
     Item,
     GameConstantsMeta,
 )
+from app.models.asset3d import Asset3D
 
 
 # Seed file locations
@@ -96,6 +97,11 @@ SEED_CONFIG = {
         "file": "items.json",
         "model": Item,
         "id_field": "item_id",
+    },
+    "assets3d": {
+        "file": "assets3d.json",
+        "model": Asset3D,
+        "id_field": "asset_id",
     },
 }
 
@@ -273,6 +279,26 @@ def map_item_data(data: dict) -> dict:
     }
 
 
+def map_asset3d_data(data: dict) -> dict:
+    """Map 3D asset JSON data to model fields."""
+    now = datetime.utcnow()
+    return {
+        "asset_id": data["id"],
+        "name": data["name"],
+        "category": data["category"],
+        "status": data.get("status", "queued"),
+        "priority": data.get("priority", "medium"),
+        "source_image": data.get("source_image"),
+        "model_path": data.get("model_path"),
+        "texture_path": data.get("texture_path"),
+        "notes": data.get("notes"),
+        "vertex_count": data.get("vertex_count"),
+        "file_size_bytes": data.get("file_size_bytes"),
+        "created_at": now,
+        "updated_at": now,
+    }
+
+
 # Mapping functions for each table
 DATA_MAPPERS = {
     "enemies": map_enemy_data,
@@ -284,6 +310,7 @@ DATA_MAPPERS = {
     "hazards": map_hazard_data,
     "status_effects": map_status_effect_data,
     "items": map_item_data,
+    "assets3d": map_asset3d_data,
 }
 
 

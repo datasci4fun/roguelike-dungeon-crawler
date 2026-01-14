@@ -1,9 +1,15 @@
 /**
  * 3D Asset Generation Queue
  *
- * Defines concept art to generate and tracks generation status.
+ * Assets are now stored in the database. This file provides:
+ * - Type definitions for assets
+ * - API functions to fetch from database
+ * - Fallback static data for development without database
+ *
  * Run: python tools/3d-pipeline/generate_asset.py <source_image> --name <id>
  */
+
+const API_BASE = 'http://localhost:8000';
 
 export interface Asset3D {
   id: string;
@@ -15,6 +21,65 @@ export interface Asset3D {
   texturePath?: string; // Path to texture
   notes?: string;
   priority: 'high' | 'medium' | 'low';
+}
+
+// API response type (matches database schema)
+export interface Asset3DResponse {
+  asset_id: string;
+  name: string;
+  category: 'enemy' | 'boss' | 'item' | 'prop' | 'character';
+  status: 'queued' | 'generating' | 'done' | 'error';
+  priority: 'high' | 'medium' | 'low';
+  source_image?: string;
+  model_path?: string;
+  texture_path?: string;
+  notes?: string;
+  vertex_count?: number;
+  file_size_bytes?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Convert API response to Asset3D format
+function responseToAsset(r: Asset3DResponse): Asset3D {
+  return {
+    id: r.asset_id,
+    name: r.name,
+    category: r.category,
+    status: r.status,
+    priority: r.priority,
+    sourceImage: r.source_image,
+    modelPath: r.model_path,
+    texturePath: r.texture_path,
+    notes: r.notes,
+  };
+}
+
+// Fetch assets from database API
+export async function fetchAssetsFromAPI(): Promise<Asset3D[]> {
+  try {
+    const response = await fetch(`${API_BASE}/api/assets3d`);
+    if (response.ok) {
+      const data: Asset3DResponse[] = await response.json();
+      return data.map(responseToAsset);
+    }
+  } catch (err) {
+    console.warn('Failed to fetch assets from API, using static fallback');
+  }
+  return ASSET_QUEUE;
+}
+
+// Fetch asset stats from API
+export async function fetchAssetStatsFromAPI() {
+  try {
+    const response = await fetch(`${API_BASE}/api/assets3d/stats`);
+    if (response.ok) {
+      return await response.json();
+    }
+  } catch (err) {
+    console.warn('Failed to fetch asset stats from API');
+  }
+  return getAssetStats();
 }
 
 // Assets we want to generate for the game

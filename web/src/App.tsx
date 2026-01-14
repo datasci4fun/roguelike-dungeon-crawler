@@ -8,10 +8,12 @@ import { AssetViewer } from './pages/AssetViewer';
 import { ThreeTest } from './pages/ThreeTest';
 import { CharacterCreation } from './pages/CharacterCreation';
 import { JobsProvider } from './contexts/JobsContext';
+import { AssetsProvider } from './contexts/AssetsContext';
 import { JobsPanel } from './components/JobsPanel';
 
 function App() {
   return (
+    <AssetsProvider>
     <JobsProvider>
       <Routes>
       <Route path="/" element={<Layout />}>
@@ -64,6 +66,7 @@ function App() {
       </Routes>
       <JobsPanel />
     </JobsProvider>
+    </AssetsProvider>
   );
 }
 

@@ -1,0 +1,222 @@
+{
+  "version": "1.0.0",
+  "updated_at": "2026-01-15",
+  "description": "3D asset definitions for game entities",
+  "data": [
+    {
+      "id": "test-triangle",
+      "name": "Test Triangle (pygltflib)",
+      "category": "prop",
+      "status": "done",
+      "priority": "high",
+      "model_path": "/assets/models/test-triangle.glb",
+      "notes": "Simple triangle created with pygltflib - spec compliant."
+    },
+    {
+      "id": "pygltf-cube",
+      "name": "Test Cube (pygltflib)",
+      "category": "prop",
+      "status": "done",
+      "priority": "high",
+      "model_path": "/assets/models/pygltf-cube.glb",
+      "notes": "Green cube created with pygltflib - spec compliant."
+    },
+    {
+      "id": "test-cube",
+      "name": "Test Cube (trimesh)",
+      "category": "prop",
+      "status": "done",
+      "priority": "high",
+      "model_path": "/assets/models/test-cube.glb",
+      "notes": "Simple 8-vertex cube exported by trimesh."
+    },
+    {
+      "id": "robot-golem",
+      "name": "Robot Golem",
+      "category": "enemy",
+      "status": "done",
+      "priority": "high",
+      "source_image": "tools/3d-pipeline/TripoSR/examples/robot.png",
+      "model_path": "/assets/models/robot/robot.glb",
+      "notes": "Generated from TripoSR example. 122k vertices, 3MB GLB with vertex colors."
+    },
+    {
+      "id": "goblin",
+      "name": "Goblin",
+      "category": "enemy",
+      "status": "done",
+      "priority": "high",
+      "source_image": "concept_art/goblin.png",
+      "model_path": "/assets/models/goblin/goblin.glb",
+      "notes": "Floor 1 common enemy. Generated from OpenGameArt concept."
+    },
+    {
+      "id": "skeleton",
+      "name": "Skeleton Warrior",
+      "category": "enemy",
+      "status": "queued",
+      "priority": "high",
+      "notes": "Classic undead. Sword and shield."
+    },
+    {
+      "id": "slime",
+      "name": "Slime",
+      "category": "enemy",
+      "status": "queued",
+      "priority": "high",
+      "notes": "Translucent green blob. Simple geometry."
+    },
+    {
+      "id": "rat",
+      "name": "Giant Rat",
+      "category": "enemy",
+      "status": "queued",
+      "priority": "high",
+      "notes": "Sewer enemy. Brown fur, red eyes."
+    },
+    {
+      "id": "spider",
+      "name": "Giant Spider",
+      "category": "enemy",
+      "status": "queued",
+      "priority": "high",
+      "notes": "Forest enemy. 8 legs, hairy."
+    },
+    {
+      "id": "goblin-king",
+      "name": "Goblin King",
+      "category": "boss",
+      "status": "queued",
+      "priority": "medium",
+      "notes": "Floor 1 boss. Large goblin with crown."
+    },
+    {
+      "id": "rat-king",
+      "name": "Rat King",
+      "category": "boss",
+      "status": "queued",
+      "priority": "medium",
+      "notes": "Floor 2 boss. Multiple rats merged."
+    },
+    {
+      "id": "spider-queen",
+      "name": "Spider Queen",
+      "category": "boss",
+      "status": "queued",
+      "priority": "medium",
+      "notes": "Floor 3 boss. Giant spider with egg sac."
+    },
+    {
+      "id": "frost-giant",
+      "name": "Frost Giant",
+      "category": "boss",
+      "status": "queued",
+      "priority": "medium",
+      "notes": "Floor 5 boss. Blue skin, ice armor."
+    },
+    {
+      "id": "dragon-emperor",
+      "name": "Dragon Emperor",
+      "category": "boss",
+      "status": "queued",
+      "priority": "medium",
+      "notes": "Final boss. Massive dragon."
+    },
+    {
+      "id": "health-potion",
+      "name": "Health Potion",
+      "category": "item",
+      "status": "queued",
+      "priority": "low",
+      "notes": "Red liquid in glass bottle."
+    },
+    {
+      "id": "mana-potion",
+      "name": "Mana Potion",
+      "category": "item",
+      "status": "queued",
+      "priority": "low",
+      "notes": "Blue liquid in glass bottle."
+    },
+    {
+      "id": "chest",
+      "name": "Treasure Chest",
+      "category": "prop",
+      "status": "queued",
+      "priority": "low",
+      "notes": "Wooden chest with gold trim."
+    },
+    {
+      "id": "sword",
+      "name": "Iron Sword",
+      "category": "item",
+      "status": "queued",
+      "priority": "low",
+      "notes": "Basic sword. Metal blade, leather grip."
+    },
+    {
+      "id": "shield",
+      "name": "Wooden Shield",
+      "category": "item",
+      "status": "queued",
+      "priority": "low",
+      "notes": "Round wooden shield."
+    },
+    {
+      "id": "torch",
+      "name": "Wall Torch",
+      "category": "prop",
+      "status": "queued",
+      "priority": "low",
+      "notes": "Flaming torch on wall bracket."
+    },
+    {
+      "id": "barrel",
+      "name": "Barrel",
+      "category": "prop",
+      "status": "queued",
+      "priority": "low",
+      "notes": "Wooden barrel. Dungeon decoration."
+    },
+    {
+      "id": "crate",
+      "name": "Wooden Crate",
+      "category": "prop",
+      "status": "queued",
+      "priority": "low",
+      "notes": "Simple wooden crate."
+    },
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "category": "character",
+      "status": "queued",
+      "priority": "medium",
+      "notes": "Player class. Heavy armor, sword."
+    },
+    {
+      "id": "mage",
+      "name": "Mage",
+      "category": "character",
+      "status": "queued",
+      "priority": "medium",
+      "notes": "Player class. Robes, staff."
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "category": "character",
+      "status": "queued",
+      "priority": "medium",
+      "notes": "Player class. Light armor, daggers."
+    },
+    {
+      "id": "cleric",
+      "name": "Cleric",
+      "category": "character",
+      "status": "queued",
+      "priority": "medium",
+      "notes": "Player class. Holy robes, mace."
+    }
+  ]
+}
