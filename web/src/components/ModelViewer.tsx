@@ -28,6 +28,7 @@ export function ModelViewer({
   const controlsRef = useRef<OrbitControls | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const lightsAddedRef = useRef(false);
+  const loadIdRef = useRef(0); // Track which load is current
 
   // Initialize renderer once
   useEffect(() => {
@@ -97,6 +98,9 @@ export function ModelViewer({
     const scene = sceneRef.current;
     if (!scene) return;
 
+    // Increment load ID to invalidate any in-flight loads
+    const currentLoadId = ++loadIdRef.current;
+
     // Remove previous model if exists
     if (modelRef.current) {
       scene.remove(modelRef.current);
@@ -116,6 +120,20 @@ export function ModelViewer({
     loader.load(
       modelPath,
       (gltf) => {
+        // Check if this load is still current (not superseded by a newer load)
+        if (currentLoadId !== loadIdRef.current) {
+          // Dispose the loaded model since we don't need it
+          gltf.scene.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+              child.geometry.dispose();
+              if (child.material instanceof THREE.Material) {
+                child.material.dispose();
+              }
+            }
+          });
+          return;
+        }
+
         const model = gltf.scene;
 
         // Apply materials
