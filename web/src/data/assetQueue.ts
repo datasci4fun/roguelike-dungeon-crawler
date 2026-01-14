@@ -19,6 +19,39 @@ export interface Asset3D {
 
 // Assets we want to generate for the game
 export const ASSET_QUEUE: Asset3D[] = [
+  // TEST - pygltflib triangle (spec-compliant)
+  {
+    id: 'test-triangle',
+    name: 'Test Triangle (pygltflib)',
+    category: 'prop',
+    status: 'done',
+    priority: 'high',
+    modelPath: '/assets/models/test-triangle.glb',
+    notes: 'Simple triangle created with pygltflib - spec compliant.',
+  },
+
+  // TEST - pygltflib cube (spec-compliant)
+  {
+    id: 'pygltf-cube',
+    name: 'Test Cube (pygltflib)',
+    category: 'prop',
+    status: 'done',
+    priority: 'high',
+    modelPath: '/assets/models/pygltf-cube.glb',
+    notes: 'Green cube created with pygltflib - spec compliant.',
+  },
+
+  // TEST - trimesh cube (for comparison)
+  {
+    id: 'test-cube',
+    name: 'Test Cube (trimesh)',
+    category: 'prop',
+    status: 'done',
+    priority: 'high',
+    modelPath: '/assets/models/test-cube.glb',
+    notes: 'Simple 8-vertex cube exported by trimesh.',
+  },
+
   // COMPLETED - Example model
   {
     id: 'robot-golem',
@@ -36,9 +69,11 @@ export const ASSET_QUEUE: Asset3D[] = [
     id: 'goblin',
     name: 'Goblin',
     category: 'enemy',
-    status: 'queued',
+    status: 'done',
     priority: 'high',
-    notes: 'Floor 1 common enemy. Green skin, crude weapon.',
+    sourceImage: 'concept_art/goblin.png',
+    modelPath: '/assets/models/goblin/goblin.glb',
+    notes: 'Floor 1 common enemy. Generated from OpenGameArt concept.',
   },
   {
     id: 'skeleton',
