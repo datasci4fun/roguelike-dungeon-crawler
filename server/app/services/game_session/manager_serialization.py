@@ -191,11 +191,29 @@ def serialize_lore_journal(engine) -> dict:
 
 def serialize_battle_state(battle) -> dict:
     """Serialize tactical battle state."""
+    # v6.11: Build turn order list with full entity data
+    turn_order_entities = []
+    for entity_id in battle.turn_order:
+        entity = battle.get_entity_by_id(entity_id)
+        if entity and entity.hp > 0:
+            turn_order_entities.append({
+                "entity_id": entity.entity_id,
+                "display_id": entity.display_id,
+                "name": entity.name if not entity.is_player else "Hero",
+                "initiative": entity.initiative,
+                "hp": entity.hp,
+                "max_hp": entity.max_hp,
+                "is_player": entity.is_player,
+                "is_elite": entity.is_elite,
+                "is_boss": entity.is_boss,
+                "symbol": entity.symbol,
+            })
+
     return {
         "active": True,
         "biome": battle.biome,
         "floor_level": battle.floor_level,
-        "turn_number": battle.turn_number,
+        "round": battle.turn_number,  # Frontend expects 'round'
         "phase": battle.phase.name if battle.phase else "PLAYER_TURN",
         "arena_width": battle.arena_width,
         "arena_height": battle.arena_height,
@@ -209,6 +227,8 @@ def serialize_battle_state(battle) -> dict:
             "defense": battle.player.defense,
             "status_effects": [e.get('name', '') for e in battle.player.status_effects],
             "cooldowns": battle.player.cooldowns,
+            "display_id": battle.player.display_id,
+            "initiative": battle.player.initiative,
         } if battle.player else None,
         "enemies": [
             {
@@ -224,6 +244,8 @@ def serialize_battle_state(battle) -> dict:
                 "is_elite": e.is_elite,
                 "is_boss": e.is_boss,
                 "status_effects": [ef.get('name', '') for ef in e.status_effects],
+                "display_id": e.display_id,
+                "initiative": e.initiative,
             }
             for e in battle.get_living_enemies()
         ],
@@ -239,6 +261,9 @@ def serialize_battle_state(battle) -> dict:
             if r.turns_until_arrival > 0
         ],
         "outcome": battle.outcome.name if battle.outcome else None,
+        # v6.11: Turn order data
+        "turn_order": turn_order_entities,
+        "active_entity_index": battle.active_entity_index,
     }
 
 

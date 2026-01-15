@@ -49,6 +49,10 @@ class BattleEntity:
     symbol: str = ""                  # Entity symbol for sprite
     is_elite: bool = False            # Elite enemy flag
     is_boss: bool = False             # Boss enemy flag
+    display_id: str = ""              # Unique display ID (e.g., "goblin_01", "player")
+
+    # Initiative system (v6.11)
+    initiative: int = 0               # Turn order priority (higher = earlier)
 
     # Battle-specific state
     has_acted: bool = False           # Has taken action this turn
@@ -72,6 +76,8 @@ class BattleEntity:
             'symbol': self.symbol,
             'is_elite': self.is_elite,
             'is_boss': self.is_boss,
+            'display_id': self.display_id,
+            'initiative': self.initiative,
             'has_acted': self.has_acted,
             'status_effects': [e.copy() for e in self.status_effects],
             'cooldowns': self.cooldowns.copy(),
@@ -95,6 +101,8 @@ class BattleEntity:
             symbol=data.get('symbol', ''),
             is_elite=data.get('is_elite', False),
             is_boss=data.get('is_boss', False),
+            display_id=data.get('display_id', ''),
+            initiative=data.get('initiative', 0),
             has_acted=data.get('has_acted', False),
         )
         entity.status_effects = [e.copy() for e in data.get('status_effects', [])]
@@ -237,6 +245,10 @@ class BattleState:
     phase: BattlePhase = BattlePhase.PLAYER_TURN
     outcome: BattleOutcome = BattleOutcome.PENDING
 
+    # Initiative/turn order (v6.11)
+    turn_order: List[str] = field(default_factory=list)  # Entity IDs in initiative order
+    active_entity_index: int = 0                          # Current turn in turn_order
+
     # Seed for deterministic generation (replay/debug)
     seed: int = 0
 
@@ -266,6 +278,8 @@ class BattleState:
             'turn_number': self.turn_number,
             'phase': self.phase.name,
             'outcome': self.outcome.name,
+            'turn_order': list(self.turn_order),
+            'active_entity_index': self.active_entity_index,
             'seed': self.seed,
             # v6.0.5: Artifact state
             'duplicate_seal_armed': self.duplicate_seal_armed,
@@ -304,6 +318,8 @@ class BattleState:
         state.enemies = [BattleEntity.from_dict(e) for e in data.get('enemies', [])]
         state.reinforcements = [PendingReinforcement.from_dict(r) for r in data.get('reinforcements', [])]
         state.reinforcement_edges = [tuple(e) for e in data.get('reinforcement_edges', [])]
+        state.turn_order = list(data.get('turn_order', []))
+        state.active_entity_index = data.get('active_entity_index', 0)
 
         return state
 
@@ -326,3 +342,49 @@ class BattleState:
             if enemy.hp > 0 and enemy.arena_x == x and enemy.arena_y == y:
                 return enemy
         return None
+
+    def get_entity_by_id(self, entity_id: str) -> Optional[BattleEntity]:
+        """Get entity by entity_id."""
+        if self.player and self.player.entity_id == entity_id:
+            return self.player
+        for enemy in self.enemies:
+            if enemy.entity_id == entity_id:
+                return enemy
+        return None
+
+    def calculate_turn_order(self) -> None:
+        """Calculate turn order based on initiative (v6.11).
+
+        Higher initiative = earlier in turn order.
+        Ties broken by: player first, then by entity_id.
+        """
+        all_entities: List[BattleEntity] = []
+        if self.player and self.player.hp > 0:
+            all_entities.append(self.player)
+        for enemy in self.enemies:
+            if enemy.hp > 0:
+                all_entities.append(enemy)
+
+        # Sort by initiative (descending), then player priority, then entity_id
+        all_entities.sort(
+            key=lambda e: (-e.initiative, not e.is_player, e.entity_id)
+        )
+
+        self.turn_order = [e.entity_id for e in all_entities]
+        self.active_entity_index = 0
+
+    def get_current_entity(self) -> Optional[BattleEntity]:
+        """Get the entity whose turn it currently is."""
+        if not self.turn_order or self.active_entity_index >= len(self.turn_order):
+            return None
+        current_id = self.turn_order[self.active_entity_index]
+        return self.get_entity_by_id(current_id)
+
+    def get_turn_order_entities(self) -> List[BattleEntity]:
+        """Get list of entities in turn order (for UI display)."""
+        entities = []
+        for entity_id in self.turn_order:
+            entity = self.get_entity_by_id(entity_id)
+            if entity and entity.hp > 0:
+                entities.append(entity)
+        return entities

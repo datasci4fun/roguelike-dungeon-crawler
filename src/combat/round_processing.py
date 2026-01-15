@@ -40,7 +40,7 @@ class RoundProcessor:
             dot = effect_dict.get('damage_per_tick', 0)
             if dot > 0:
                 entity.hp -= dot
-                if self.events:
+                if self.events is not None:
                     self.events.emit(
                         EventType.DAMAGE_NUMBER,
                         x=entity.arena_x,
@@ -71,7 +71,7 @@ class RoundProcessor:
             else:
                 self.engine.add_message("Enemy defeated!")
 
-                if self.events:
+                if self.events is not None:
                     self.events.emit(
                         EventType.DEATH_FLASH,
                         x=entity.arena_x,
@@ -121,7 +121,7 @@ class RoundProcessor:
             if entity.is_player:
                 self.engine.add_message(f"The lava burns! (-{damage} HP)")
 
-            if self.events:
+            if self.events is not None:
                 self.events.emit(
                     EventType.DAMAGE_NUMBER,
                     x=x, y=y,

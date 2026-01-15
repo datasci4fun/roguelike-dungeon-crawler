@@ -3,8 +3,8 @@
  *
  * Features a hierarchical command menu system like classic JRPGs.
  */
-import { useEffect, useCallback, useState } from 'react';
-import { type BattleState, type BattleReinforcement } from '../types';
+import { useEffect, useCallback, useState, useRef } from 'react';
+import { type BattleState, type BattleReinforcement, type TurnOrderEntry, type GameEvent } from '../types';
 import './BattleHUD.css';
 
 export type SelectedAction = 'move' | 'attack' | 'ability1' | 'ability2' | 'ability3' | 'ability4' | null;
@@ -21,6 +21,7 @@ interface BattleHUDProps {
   onActionSelect?: (action: SelectedAction) => void;
   clickedTile?: { tile: TileCoord; hasEnemy: boolean } | null;
   onTileClickHandled?: () => void;
+  events?: GameEvent[];  // v6.11: For tracking current enemy turn
 }
 
 type MenuState = 'main' | 'abilities' | 'items' | 'target' | 'confirm';
@@ -64,18 +65,90 @@ function groupReinforcements(reinforcements: BattleReinforcement[]) {
     .sort((a, b) => a.turns - b.turns);
 }
 
-export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect, clickedTile, onTileClickHandled }: BattleHUDProps) {
+// v6.11: Turn Order Display Component
+// Updated to highlight by entity ID (supports dynamic enemy turn tracking)
+function TurnOrderDisplay({ turnOrder, currentActingId, isPlayerTurn }: {
+  turnOrder: TurnOrderEntry[];
+  currentActingId: string | null;
+  isPlayerTurn: boolean;
+}) {
+  if (!turnOrder || turnOrder.length === 0) return null;
+
+  return (
+    <div className="battle-panel battle-panel-turn-order">
+      <div className="bp-header">TURN ORDER</div>
+      <div className="bp-content">
+        <div className="turn-order-list">
+          {turnOrder.map((entry) => {
+            // Highlight player during player turn, or current enemy during enemy turn
+            const isActive = isPlayerTurn
+              ? entry.is_player
+              : entry.entity_id === currentActingId;
+            const entryClass = entry.is_player ? 'player' :
+                              entry.is_boss ? 'boss' :
+                              entry.is_elite ? 'elite' : 'enemy';
+
+            return (
+              <div
+                key={entry.entity_id}
+                className={`turn-order-entry ${entryClass} ${isActive ? 'active' : ''}`}
+              >
+                <span className="to-initiative">{entry.initiative}</span>
+                <span className="to-name">{entry.display_id || entry.name}</span>
+                <span className="to-hp">{entry.hp}/{entry.max_hp}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect, clickedTile, onTileClickHandled, events }: BattleHUDProps) {
   const { player, enemies, reinforcements = [], round, phase, biome } = battle;
 
   const [menuState, setMenuState] = useState<MenuState>('main');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
 
+  // Track actions used this turn (for multi-action turn system)
+  const [hasMovedThisTurn, setHasMovedThisTurn] = useState(false);
+  const [hasActedThisTurn, setHasActedThisTurn] = useState(false);
+
+  // Track round number to detect new turns (use ref to avoid re-render issues)
+  const lastRoundRef = useRef(round);
+
+  // v6.11: Track current acting entity for turn order highlighting
+  const [currentActingEnemyId, setCurrentActingEnemyId] = useState<string | null>(null);
+  const [isPlayerTurn, setIsPlayerTurn] = useState(true);
+
+  // v6.11: Extract current acting enemy from events
+  useEffect(() => {
+    if (!events) return;
+
+    // Check for turn phase events (process in order they appear)
+    for (const event of events) {
+      if (event.type === 'PLAYER_TURN_START') {
+        setIsPlayerTurn(true);
+        setCurrentActingEnemyId(null);
+      } else if (event.type === 'PLAYER_TURN_END') {
+        setIsPlayerTurn(false);
+      } else if (event.type === 'ENEMY_TURN_START') {
+        setCurrentActingEnemyId(event.data.enemy_id as string);
+      } else if (event.type === 'ENEMY_TURN_END') {
+        // Keep showing the last acting enemy until next turn starts
+      }
+    }
+  }, [events]);
+
   const mainMenuItems: MenuItem[] = [
-    { id: 'attack', label: 'ATTACK', shortcut: '1', description: 'Strike adjacent enemy' },
-    { id: 'abilities', label: 'ABILITIES', shortcut: '2', description: 'Special abilities' },
-    { id: 'defend', label: 'DEFEND', shortcut: '3', description: 'Brace for attacks' },
-    { id: 'flee', label: 'FLEE', shortcut: '4', description: 'Attempt escape' },
+    { id: 'move', label: 'MOVE', shortcut: '1', description: 'Move to adjacent tile', disabled: hasMovedThisTurn },
+    { id: 'attack', label: 'ATTACK', shortcut: '2', description: 'Strike adjacent enemy', disabled: hasActedThisTurn },
+    { id: 'abilities', label: 'ABILITIES', shortcut: '3', description: 'Special abilities', disabled: hasActedThisTurn },
+    { id: 'defend', label: 'DEFEND', shortcut: '4', description: 'Brace for attacks', disabled: hasActedThisTurn },
+    { id: 'end_turn', label: 'END TURN', shortcut: '5', description: 'End your turn' },
+    { id: 'flee', label: 'FLEE', shortcut: '6', description: 'Attempt escape' },
   ];
 
   const abilityMenuItems: MenuItem[] = [
@@ -94,18 +167,41 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
 
   const currentItems = getCurrentMenuItems();
 
-  const executeCommand = useCallback((command: string) => {
+  const executeCommand = useCallback((command: string, isMove = false) => {
     onCommand(command);
-    setMenuState('main');
-    setSelectedIndex(0);
-    setPendingAction(null);
-    onActionSelect?.(null);
+
+    if (isMove) {
+      // After moving, return to main menu but track that we moved
+      setHasMovedThisTurn(true);
+      setMenuState('main');
+      setSelectedIndex(0);
+      setPendingAction(null);
+      onActionSelect?.(null);
+    } else if (command === 'END_TURN') {
+      // End turn resets everything (backend will switch to enemy turn)
+      setMenuState('main');
+      setSelectedIndex(0);
+      setPendingAction(null);
+      onActionSelect?.(null);
+    } else {
+      // Combat action (attack/ability/defend) - mark as acted, return to menu
+      setHasActedThisTurn(true);
+      setMenuState('main');
+      setSelectedIndex(0);
+      setPendingAction(null);
+      onActionSelect?.(null);
+    }
   }, [onCommand, onActionSelect]);
 
   const handleSelect = useCallback((item: MenuItem) => {
     if (item.disabled) return;
 
     switch (item.id) {
+      case 'move':
+        onActionSelect?.('move');
+        setMenuState('target');
+        setPendingAction('MOVE');
+        break;
       case 'attack':
         onActionSelect?.('attack');
         setMenuState('target');
@@ -117,6 +213,9 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
         break;
       case 'defend':
         executeCommand('WAIT');
+        break;
+      case 'end_turn':
+        executeCommand('END_TURN');
         break;
       case 'flee':
         setMenuState('confirm');
@@ -151,12 +250,41 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
   useEffect(() => {
     if (!clickedTile || phase !== 'PLAYER_TURN' || menuState !== 'target') return;
 
-    const { hasEnemy } = clickedTile;
-    if (hasEnemy && pendingAction) {
+    const { tile, hasEnemy } = clickedTile;
+
+    // Check if we've already acted/moved this turn (prevent double actions)
+    if (pendingAction === 'MOVE' && hasMovedThisTurn) {
+      onTileClickHandled?.();
+      return;
+    }
+    if (pendingAction !== 'MOVE' && hasActedThisTurn) {
+      onTileClickHandled?.();
+      return;
+    }
+
+    if (pendingAction === 'MOVE') {
+      // For movement, calculate direction based on clicked tile vs player position
+      const dx = tile.x - player.arena_x;
+      const dy = tile.y - player.arena_y;
+
+      // Only allow adjacent tiles (Manhattan distance of 1) and NOT enemy tiles
+      if (Math.abs(dx) + Math.abs(dy) === 1 && !hasEnemy) {
+        let moveCmd = '';
+        if (dx === 1) moveCmd = 'MOVE_RIGHT';
+        else if (dx === -1) moveCmd = 'MOVE_LEFT';
+        else if (dy === 1) moveCmd = 'MOVE_DOWN';
+        else if (dy === -1) moveCmd = 'MOVE_UP';
+
+        if (moveCmd) {
+          executeCommand(moveCmd, true);  // true = isMove
+        }
+      }
+    } else if (hasEnemy && pendingAction) {
+      // For attack/ability, require clicking on enemy
       executeCommand(pendingAction);
     }
     onTileClickHandled?.();
-  }, [clickedTile, menuState, pendingAction, phase, executeCommand, onTileClickHandled]);
+  }, [clickedTile, menuState, pendingAction, phase, player.arena_x, player.arena_y, executeCommand, onTileClickHandled, hasMovedThisTurn, hasActedThisTurn]);
 
   // Keyboard controls
   useEffect(() => {
@@ -184,31 +312,15 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
         return;
       }
 
-      // Movement (always available)
+      // Menu navigation (W/S or arrows to navigate menu)
       if (key === 'w' || key === 'arrowup') {
-        if (e.shiftKey || menuState !== 'main' && menuState !== 'abilities') {
-          executeCommand('MOVE_UP');
-        } else {
-          e.preventDefault();
-          setSelectedIndex(prev => (prev - 1 + currentItems.length) % currentItems.length);
-        }
+        e.preventDefault();
+        setSelectedIndex(prev => (prev - 1 + currentItems.length) % currentItems.length);
         return;
       }
       if (key === 's' || key === 'arrowdown') {
-        if (e.shiftKey || menuState !== 'main' && menuState !== 'abilities') {
-          executeCommand('MOVE_DOWN');
-        } else {
-          e.preventDefault();
-          setSelectedIndex(prev => (prev + 1) % currentItems.length);
-        }
-        return;
-      }
-      if (key === 'a' || key === 'arrowleft') {
-        executeCommand('MOVE_LEFT');
-        return;
-      }
-      if (key === 'd' || key === 'arrowright') {
-        executeCommand('MOVE_RIGHT');
+        e.preventDefault();
+        setSelectedIndex(prev => (prev + 1) % currentItems.length);
         return;
       }
 
@@ -240,7 +352,20 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [phase, menuState, selectedIndex, currentItems, pendingAction, overviewComplete, handleSelect, handleConfirm, executeCommand, onActionSelect]);
 
-  // Reset on phase change
+  // Reset on new round (new turn cycle)
+  useEffect(() => {
+    if (round !== lastRoundRef.current) {
+      lastRoundRef.current = round;
+      setMenuState('main');
+      setSelectedIndex(0);
+      setPendingAction(null);
+      // Reset turn tracking for new turn
+      setHasMovedThisTurn(false);
+      setHasActedThisTurn(false);
+    }
+  }, [round]);
+
+  // Also reset menu state when phase becomes PLAYER_TURN (for initial setup)
   useEffect(() => {
     if (phase === 'PLAYER_TURN') {
       setMenuState('main');
@@ -300,6 +425,15 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
         </div>
       </div>
 
+      {/* Turn Order Panel (v6.11) */}
+      {battle.turn_order && battle.turn_order.length > 0 && (
+        <TurnOrderDisplay
+          turnOrder={battle.turn_order}
+          currentActingId={currentActingEnemyId}
+          isPlayerTurn={isPlayerTurn}
+        />
+      )}
+
       {/* Bottom-left command menu */}
       {phase === 'PLAYER_TURN' && overviewComplete && (
         <div className="battle-panel battle-panel-commands">
@@ -328,10 +462,9 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
 
             {menuState === 'target' && (
               <div className="cmd-target">
-                <p>Click enemy or press ENTER</p>
+                <p>{pendingAction === 'MOVE' ? 'Click adjacent tile to move' : 'Click enemy to attack'}</p>
                 <div className="cmd-buttons">
-                  <button onClick={() => pendingAction && executeCommand(pendingAction)}>OK</button>
-                  <button onClick={() => { setMenuState('main'); setPendingAction(null); onActionSelect?.(null); }}>Cancel</button>
+                  <button onClick={() => { setMenuState('main'); setPendingAction(null); onActionSelect?.(null); }}>Cancel (ESC)</button>
                 </div>
               </div>
             )}
@@ -346,7 +479,7 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
               </div>
             )}
           </div>
-          <div className="bp-hint">A/D to move | Shift+W/S to move</div>
+          <div className="bp-hint">W/S: Navigate | Enter: Select | ESC: Cancel</div>
         </div>
       )}
 

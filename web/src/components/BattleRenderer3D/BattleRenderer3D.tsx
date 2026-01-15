@@ -20,6 +20,7 @@ import {
 } from './constants';
 import type {
   OverviewPhase,
+  CameraMode,
   TileCoord,
   EntityAnimState,
   DamageNumber,
@@ -28,6 +29,7 @@ import type {
   AttackTelegraph,
   BattleRenderer3DProps,
   EnemyTurnState,
+  BumpAnimation,
 } from './types';
 import { preloadBattleModels } from './modelLoader';
 import { buildArena, buildGridOverlay } from './arenaBuilder';
@@ -97,13 +99,28 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
   // Track if 3D models have been loaded
   const modelsLoadedRef = useRef(false);
 
+  // Camera mode state (first-person vs third-person)
+  const cameraModeRef = useRef<CameraMode>('first-person');
+  const [cameraMode, setCameraMode] = useState<CameraMode>('first-person');
+
+  // Third-person zoom level
+  const thirdPersonZoomRef = useRef(1.0);  // 1.0 = default, smaller = closer
+
   // Turn-based combat state
-  const [turnPhase, setTurnPhase] = useState<'player' | 'enemy' | 'end_of_round'>('player');
   const [currentEnemyTurn, setCurrentEnemyTurn] = useState<EnemyTurnState | null>(null);
   const currentEnemyTurnRef = useRef<string | null>(null);
   const turnQueueRef = useRef<Array<{ type: string; data: Record<string, unknown> }>>([]);
   const processingTurnRef = useRef(false);
   const [turnQueueTrigger, setTurnQueueTrigger] = useState(0);
+
+  // v6.11: Sequential enemy turn animation state
+  const enemyTurnPhaseActiveRef = useRef(false);
+  const pendingEnemyPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const visualEnemyPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const completedEnemyTurnsRef = useRef<Set<string>>(new Set());
+
+  // v6.11: Bump animation for enemy attacks
+  const bumpAnimationsRef = useRef<Map<string, BumpAnimation>>(new Map());
 
   // Keep callback ref updated
   useEffect(() => {
@@ -127,7 +144,7 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
     preloadBattleModels(battle.enemies).then(() => {
       modelsLoadedRef.current = true;
       if (entityGroupRef.current && battleRef.current) {
-        const showPlayer = overviewPhaseRef.current !== 'complete';
+        const showPlayer = overviewPhaseRef.current !== 'complete' || cameraModeRef.current === 'third-person';
         updateEntities(entityGroupRef.current, battleRef.current, showPlayer, entityAnimRef.current);
       }
     });
@@ -259,13 +276,15 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
           if (nextPhase === 'complete' && !overviewCompleteRef.current) {
             overviewCompleteRef.current = true;
             onOverviewCompleteRef.current?.();
-            updateEntities(entityGroup, battleRef.current, true, entityAnimRef.current);
+            const showPlayer = cameraModeRef.current === 'third-person';
+            updateEntities(entityGroup, battleRef.current, showPlayer, entityAnimRef.current);
           }
         }
       }
 
       if (phase === 'complete' && lastPhase !== 'complete') {
-        updateEntities(entityGroup, battleRef.current, true, entityAnimRef.current);
+        const showPlayer = cameraModeRef.current === 'third-person';
+        updateEntities(entityGroup, battleRef.current, showPlayer, entityAnimRef.current);
       }
       lastPhase = phase;
 
@@ -281,12 +300,36 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
         if (dist > 0.01) {
           anim.currentX += dx * lerpSpeed;
           anim.currentZ += dz * lerpSpeed;
-          anim.sprite.position.set(anim.currentX, 0, anim.currentZ);
         } else if (dist > 0) {
           anim.currentX = anim.targetX;
           anim.currentZ = anim.targetZ;
-          anim.sprite.position.set(anim.currentX, 0, anim.currentZ);
         }
+
+        // v6.11: Apply bump animation offset if active
+        let finalX = anim.currentX;
+        let finalZ = anim.currentZ;
+        const bump = bumpAnimationsRef.current.get(entityId);
+        if (bump) {
+          const elapsed = now - bump.startTime;
+          if (elapsed >= bump.duration) {
+            // Animation complete - remove it
+            bumpAnimationsRef.current.delete(entityId);
+          } else {
+            // Calculate bump progress (0 to 1 to 0)
+            const progress = elapsed / bump.duration;
+            // Use sine curve: goes 0 -> 1 -> 0 over the duration
+            const bumpProgress = Math.sin(progress * Math.PI);
+
+            // Calculate offset toward target
+            const bumpDx = (bump.targetX - bump.originX) * bump.bumpDistance * bumpProgress;
+            const bumpDz = (bump.targetZ - bump.originZ) * bump.bumpDistance * bumpProgress;
+
+            finalX = anim.currentX + bumpDx;
+            finalZ = anim.currentZ + bumpDz;
+          }
+        }
+
+        anim.sprite.position.set(finalX, 0, finalZ);
 
         const isActiveTurn = activeEnemyId !== null && entityId === activeEnemyId;
 
@@ -387,7 +430,9 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
         shakeResult.shakeX,
         shakeResult.shakeY,
         cameraCurrentX.current,
-        cameraCurrentZ.current
+        cameraCurrentZ.current,
+        cameraModeRef.current,
+        thirdPersonZoomRef.current
       );
 
       renderer.render(scene, camera);
@@ -419,11 +464,73 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
   }, []);
 
   // Update entities when battle state changes
+  // v6.11: During enemy turn phase, don't update enemy positions (they're animated sequentially)
   useEffect(() => {
     if (entityGroupRef.current && battle) {
-      updateEntities(entityGroupRef.current, battle, true, entityAnimRef.current);
+      const showPlayer = overviewPhaseRef.current !== 'complete' || cameraModeRef.current === 'third-person';
+
+      // v6.11 FIX: Check for turn events in events BEFORE updating entities
+      // This prevents the race condition where battle state updates before turn queue processes
+      const hasPlayerTurnEnd = events?.some(e => e.type === 'PLAYER_TURN_END');
+      const hasPlayerTurnStart = events?.some(e => e.type === 'PLAYER_TURN_START');
+
+      // If PLAYER_TURN_START is in events, we're starting a new player turn - reset enemy phase
+      if (hasPlayerTurnStart && enemyTurnPhaseActiveRef.current) {
+        enemyTurnPhaseActiveRef.current = false;
+        pendingEnemyPositionsRef.current.clear();
+        visualEnemyPositionsRef.current.clear();
+        completedEnemyTurnsRef.current.clear();
+      }
+
+      if (hasPlayerTurnEnd && !enemyTurnPhaseActiveRef.current) {
+        // Entering enemy turn phase - capture current visual positions NOW
+        enemyTurnPhaseActiveRef.current = true;
+        completedEnemyTurnsRef.current.clear();
+        pendingEnemyPositionsRef.current.clear();
+        visualEnemyPositionsRef.current.clear();
+
+        // Store current visual positions for all enemies (before they're updated)
+        for (const enemy of battle.enemies) {
+          if (enemy.hp > 0) {
+            const animState = entityAnimRef.current.get(enemy.entity_id);
+            if (animState) {
+              visualEnemyPositionsRef.current.set(enemy.entity_id, {
+                x: animState.currentX,
+                y: animState.currentZ,
+              });
+            }
+            // Store final position from backend as pending
+            pendingEnemyPositionsRef.current.set(enemy.entity_id, {
+              x: enemy.arena_x,
+              y: enemy.arena_y,
+            });
+          }
+        }
+      }
+
+      // v6.11: During enemy turn phase, create modified battle state with frozen enemy positions
+      if (enemyTurnPhaseActiveRef.current) {
+        // Update entities but manually freeze enemy positions that haven't acted yet
+        updateEntities(entityGroupRef.current, battle, showPlayer, entityAnimRef.current);
+
+        // After updateEntities sets targets from battle state, override targets for enemies
+        // whose turns haven't completed yet (keep them at their pre-turn positions)
+        for (const enemy of battle.enemies) {
+          if (enemy.hp > 0 && !completedEnemyTurnsRef.current.has(enemy.entity_id)) {
+            const animState = entityAnimRef.current.get(enemy.entity_id);
+            const visualPos = visualEnemyPositionsRef.current.get(enemy.entity_id);
+            if (animState && visualPos) {
+              // Keep target at the visual position (pre-turn position)
+              animState.targetX = visualPos.x;
+              animState.targetZ = visualPos.y;
+            }
+          }
+        }
+      } else {
+        updateEntities(entityGroupRef.current, battle, showPlayer, entityAnimRef.current);
+      }
     }
-  }, [battle.player?.hp, battle.player?.arena_x, battle.player?.arena_y, battle.enemies]);
+  }, [battle.player?.hp, battle.player?.arena_x, battle.player?.arena_y, battle.enemies, events]);
 
   // Update highlights when selected action changes
   useEffect(() => {
@@ -466,10 +573,30 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       }
 
       if (event.type === 'ENEMY_ATTACK' && telegraphGroupRef.current) {
+        const enemyId = event.data.enemy_id as string;
+        const fromX = event.data.from_x as number;
+        const fromY = event.data.from_y as number;
         const toX = event.data.to_x as number;
         const toY = event.data.to_y as number;
-        const worldX = (toX - arena_width / 2) * TILE_SIZE;
-        const worldZ = (toY - arena_height / 2) * TILE_SIZE;
+        const worldFromX = (fromX - arena_width / 2) * TILE_SIZE;
+        const worldFromZ = (fromY - arena_height / 2) * TILE_SIZE;
+        const worldToX = (toX - arena_width / 2) * TILE_SIZE;
+        const worldToZ = (toY - arena_height / 2) * TILE_SIZE;
+
+        // v6.11: Start bump animation for attacking enemy
+        const animState = entityAnimRef.current.get(enemyId);
+        if (animState) {
+          bumpAnimationsRef.current.set(enemyId, {
+            entityId: enemyId,
+            startTime: Date.now(),
+            duration: 500,
+            originX: animState.currentX,
+            originZ: animState.currentZ,
+            targetX: worldToX,
+            targetZ: worldToZ,
+            bumpDistance: 0.4,  // Move 40% toward player
+          });
+        }
 
         const sharedGeo = getSharedGeometries();
         const telegraphMaterial = new THREE.MeshBasicMaterial({
@@ -481,7 +608,7 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
 
         const telegraph = new THREE.Mesh(sharedGeo.telegraphPlane, telegraphMaterial);
         telegraph.rotation.x = -Math.PI / 2;
-        telegraph.position.set(worldX, 0.05, worldZ);
+        telegraph.position.set(worldToX, 0.05, worldToZ);
         telegraphGroupRef.current.add(telegraph);
 
         telegraphsRef.current.push({
@@ -510,7 +637,7 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
     }
   }, [events]);
 
-  // Process turn queue
+  // Process turn queue with sequential enemy animations (v6.11)
   useEffect(() => {
     if (processingTurnRef.current || turnQueueRef.current.length === 0) return;
 
@@ -525,39 +652,98 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       turnQueueRef.current = turnQueueRef.current.slice(1);
 
       if (event.type === 'PLAYER_TURN_START') {
-        setTurnPhase('player');
+        // v6.11: End enemy turn phase, clear state
+        enemyTurnPhaseActiveRef.current = false;
+        pendingEnemyPositionsRef.current.clear();
+        visualEnemyPositionsRef.current.clear();
+        completedEnemyTurnsRef.current.clear();
         setCurrentEnemyTurn(null);
         processingTurnRef.current = false;
         setTimeout(processNextTurn, 100);
       } else if (event.type === 'PLAYER_TURN_END') {
-        setTurnPhase('enemy');
+        // v6.11: Start enemy turn phase - capture current positions
+        enemyTurnPhaseActiveRef.current = true;
+        completedEnemyTurnsRef.current.clear();
+
+        // Store current visual positions for all enemies
+        for (const enemy of battleRef.current?.enemies || []) {
+          if (enemy.hp > 0) {
+            // Store current position as visual position
+            const animState = entityAnimRef.current.get(enemy.entity_id);
+            if (animState) {
+              visualEnemyPositionsRef.current.set(enemy.entity_id, {
+                x: animState.currentX,
+                y: animState.currentZ,
+              });
+            }
+            // Store final position from backend as pending
+            pendingEnemyPositionsRef.current.set(enemy.entity_id, {
+              x: enemy.arena_x,
+              y: enemy.arena_y,
+            });
+          }
+        }
         processingTurnRef.current = false;
         setTimeout(processNextTurn, 100);
       } else if (event.type === 'ENEMY_TURN_START') {
+        const enemyId = event.data.enemy_id as string;
         setCurrentEnemyTurn({
-          enemyId: event.data.enemy_id as string,
+          enemyId,
           enemyName: event.data.enemy_name as string,
           turnIndex: event.data.turn_index as number,
           totalEnemies: event.data.total_enemies as number,
         });
         processingTurnRef.current = false;
-        setTimeout(processNextTurn, 100);
+        setTimeout(processNextTurn, 300);  // Brief pause before enemy acts
       } else if (event.type === 'ENEMY_TURN_END') {
+        const enemyId = event.data.enemy_id as string;
+
+        // v6.11: Now update this enemy's target position
+        completedEnemyTurnsRef.current.add(enemyId);
+
+        const pendingPos = pendingEnemyPositionsRef.current.get(enemyId);
+        if (pendingPos && entityGroupRef.current && battleRef.current) {
+          const { arena_width, arena_height } = battleRef.current;
+          const targetX = (pendingPos.x - arena_width / 2) * TILE_SIZE;
+          const targetZ = (pendingPos.y - arena_height / 2) * TILE_SIZE;
+
+          // Update the animation state target for this enemy
+          const animState = entityAnimRef.current.get(enemyId);
+          if (animState) {
+            animState.targetX = targetX;
+            animState.targetZ = targetZ;
+          }
+        }
+
+        // Longer delay to show enemy action
         setTimeout(() => {
           processingTurnRef.current = false;
           processNextTurn();
-        }, 600);
+        }, 800);
       }
     };
 
     processNextTurn();
   }, [turnQueueTrigger]);
 
-  // Skip overview on keypress
+  // Skip overview and camera toggle on keypress
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === ' ' || e.key === 'Escape') {
         skipOverview();
+      }
+
+      // Toggle camera mode with 'V' key
+      if ((e.key === 'v' || e.key === 'V') && overviewCompleteRef.current) {
+        const newMode = cameraModeRef.current === 'first-person' ? 'third-person' : 'first-person';
+        cameraModeRef.current = newMode;
+        setCameraMode(newMode);
+
+        // Update entity visibility based on new mode
+        if (entityGroupRef.current && battleRef.current) {
+          const showPlayer = newMode === 'third-person';
+          updateEntities(entityGroupRef.current, battleRef.current, showPlayer, entityAnimRef.current);
+        }
       }
     };
 
@@ -650,10 +836,21 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       e.preventDefault();
     };
 
+    const handleWheel = (e: WheelEvent) => {
+      // Only zoom in third-person mode
+      if (cameraModeRef.current !== 'third-person') return;
+
+      e.preventDefault();
+      const zoomSpeed = 0.1;
+      const delta = e.deltaY > 0 ? zoomSpeed : -zoomSpeed;
+      thirdPersonZoomRef.current = Math.max(0.5, Math.min(2.0, thirdPersonZoomRef.current + delta));
+    };
+
     container.addEventListener('mousedown', handleMouseDown);
     container.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('click', handleClick);
     container.addEventListener('contextmenu', handleContextMenu);
+    container.addEventListener('wheel', handleWheel, { passive: false });
     window.addEventListener('mouseup', handleMouseUp);
 
     return () => {
@@ -661,6 +858,7 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       container.removeEventListener('mousemove', handleMouseMove);
       container.removeEventListener('click', handleClick);
       container.removeEventListener('contextmenu', handleContextMenu);
+      container.removeEventListener('wheel', handleWheel);
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [battle, selectedAction, screenToTile, onTileClick, onTileHover, skipOverview]);
@@ -678,36 +876,51 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
           height: '100%',
         }}
       />
-      {/* Turn indicator overlay */}
-      {overviewCompleteRef.current && (
+      {/* Enemy turn indicator (only shown during enemy turns with specific enemy info) */}
+      {currentEnemyTurn && (
         <div
-          className="turn-indicator"
+          className="enemy-turn-indicator"
           style={{
             position: 'absolute',
-            top: '20px',
+            top: '60px',
             left: '50%',
             transform: 'translateX(-50%)',
-            padding: '8px 24px',
-            backgroundColor: turnPhase === 'player' ? 'rgba(68, 68, 255, 0.8)' : 'rgba(255, 68, 68, 0.8)',
+            padding: '6px 16px',
+            backgroundColor: 'rgba(255, 68, 68, 0.8)',
             color: 'white',
-            fontSize: '18px',
+            fontSize: '14px',
             fontWeight: 'bold',
             fontFamily: 'monospace',
             borderRadius: '4px',
-            border: '2px solid rgba(255, 255, 255, 0.6)',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+            border: '1px solid rgba(255, 255, 255, 0.4)',
             zIndex: 100,
             pointerEvents: 'none',
-            transition: 'background-color 0.3s ease',
           }}
         >
-          {turnPhase === 'player' ? (
-            'YOUR TURN'
-          ) : currentEnemyTurn ? (
-            `${currentEnemyTurn.enemyName}'s Turn (${currentEnemyTurn.turnIndex + 1}/${currentEnemyTurn.totalEnemies})`
-          ) : (
-            'ENEMY TURN'
-          )}
+          {currentEnemyTurn.enemyName} ({currentEnemyTurn.turnIndex + 1}/{currentEnemyTurn.totalEnemies})
+        </div>
+      )}
+      {/* Camera mode indicator */}
+      {cameraMode === 'third-person' && (
+        <div
+          className="camera-mode-indicator"
+          style={{
+            position: 'absolute',
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '6px 16px',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            color: '#88ff88',
+            fontSize: '14px',
+            fontFamily: 'monospace',
+            borderRadius: '4px',
+            border: '1px solid rgba(136, 255, 136, 0.4)',
+            zIndex: 100,
+            pointerEvents: 'none',
+          }}
+        >
+          TACTICAL VIEW (V to toggle)
         </div>
       )}
     </>
