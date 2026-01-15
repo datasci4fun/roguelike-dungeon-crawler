@@ -10,6 +10,7 @@ import { GameTerminal } from '../components/GameTerminal';
 import { FirstPersonRenderer, FirstPersonRenderer3D, type CorridorInfoEntry } from '../components/SceneRenderer';
 import { CharacterHUD } from '../components/CharacterHUD';
 import { StatusHUD } from '../components/StatusHUD';
+import { StatsHUD } from '../components/StatsHUD';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
@@ -489,6 +490,20 @@ export function Play() {
                       onCorridorInfo={handleCorridorInfo}
                     />
                   </Graphics3DErrorBoundary>
+                )}
+                {/* Stats HUD overlay (top-left) - hide during battle */}
+                {gameState?.player && !gameState?.battle && (
+                  <StatsHUD
+                    level={gameState.player.level}
+                    className={gameState.player.class?.name}
+                    health={gameState.player.health}
+                    maxHealth={gameState.player.max_health}
+                    xp={gameState.player.xp}
+                    xpToLevel={gameState.player.xp_to_level}
+                    attack={gameState.player.attack}
+                    defense={gameState.player.defense}
+                    kills={gameState.player.kills}
+                  />
                 )}
                 {/* Character HUD overlay - hide during battle */}
                 {gameState?.player?.race && !gameState?.battle && (
