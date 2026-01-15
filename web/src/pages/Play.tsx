@@ -93,15 +93,17 @@ export function Play() {
       }
     };
 
-    // Initial size
-    updateSize();
+    // Initial size - use requestAnimationFrame to ensure layout is complete
+    requestAnimationFrame(() => {
+      updateSize();
+    });
 
     // Watch for resize
     const observer = new ResizeObserver(updateSize);
     observer.observe(container);
 
     return () => observer.disconnect();
-  }, [showSceneView]);
+  }, [showSceneView, showTerminal]);
 
   // Audio management
   const { crossfadeTo, isUnlocked, unlockAudio } = useAudioManager();
