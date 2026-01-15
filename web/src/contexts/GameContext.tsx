@@ -15,7 +15,7 @@ interface GameContextValue {
   newAchievements: NewAchievement[];
   connect: () => void;
   disconnect: () => void;
-  sendCommand: (command: string) => void;
+  sendCommand: (command: string, data?: Record<string, unknown>) => void;
   newGame: (config?: CharacterConfig) => void;
   quit: () => void;
   clearAchievements: () => void;
@@ -108,11 +108,12 @@ export function GameProvider({ children }: { children: ReactNode }) {
     setGameState(null);
   }, []);
 
-  const sendCommand = useCallback((command: string) => {
+  const sendCommand = useCallback((command: string, data?: Record<string, unknown>) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         action: 'command',
         command: command,
+        data: data,
       }));
     }
   }, []);

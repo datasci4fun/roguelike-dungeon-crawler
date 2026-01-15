@@ -130,6 +130,9 @@ class BattleManager:
             px = compiled['width'] // 2
             py = compiled['height'] - 2
 
+        # v6.11: Roll player initiative (base 10 + random 1-20)
+        player_initiative = 10 + rng.randint(1, 20)
+
         battle.player = BattleEntity(
             entity_id='player',
             is_player=True,
@@ -141,7 +144,12 @@ class BattleManager:
             max_hp=player.max_health,
             attack=player.attack_damage,
             defense=player.defense,
+            display_id='Hero',
+            initiative=player_initiative,
         )
+
+        # v6.11: Track enemy name counts for display_id generation
+        enemy_name_counts: Dict[str, int] = {}
 
         # Place enemies in arena using spawn region
         enemy_spawns = compiled['enemy_spawn']
@@ -155,6 +163,19 @@ class BattleManager:
             else:
                 ex = (i + 1) * compiled['width'] // (len(enemy_ids) + 1)
                 ey = 1
+
+            # v6.11: Generate unique display_id (e.g., "Goblin_01", "Rat_02")
+            enemy_name = getattr(enemy, 'name', 'Enemy') or 'Enemy'
+            name_key = enemy_name.lower().replace(' ', '_')
+            enemy_name_counts[name_key] = enemy_name_counts.get(name_key, 0) + 1
+            display_id = f"{enemy_name}_{enemy_name_counts[name_key]:02d}"
+
+            # v6.11: Roll enemy initiative (base 5 + random 1-20, elites/bosses get bonus)
+            enemy_initiative = 5 + rng.randint(1, 20)
+            if getattr(enemy, 'is_elite', False):
+                enemy_initiative += 5
+            if getattr(enemy, 'is_boss', False):
+                enemy_initiative += 10
 
             battle_enemy = BattleEntity(
                 entity_id=enemy_id,
@@ -171,6 +192,8 @@ class BattleManager:
                 symbol=getattr(enemy, 'symbol', ''),
                 is_elite=getattr(enemy, 'is_elite', False),
                 is_boss=getattr(enemy, 'is_boss', False),
+                display_id=display_id,
+                initiative=enemy_initiative,
             )
             battle.enemies.append(battle_enemy)
 
@@ -198,6 +221,9 @@ class BattleManager:
         # v6.0.5: Sync artifact state from player
         battle.duplicate_seal_armed = getattr(player, 'duplicate_next_consumable', False)
 
+        # v6.11: Calculate turn order based on initiative
+        battle.calculate_turn_order()
+
         # Store battle state in engine
         self.engine.battle = battle
 
@@ -206,7 +232,7 @@ class BattleManager:
         self.engine.ui_mode = UIMode.BATTLE
 
         # Emit battle start event
-        if self.events:
+        if self.events is not None:
             self.events.emit(
                 EventType.BATTLE_START,
                 biome=biome,
@@ -261,7 +287,7 @@ class BattleManager:
             self.engine.start_transition(TransitionKind.FLEE)
 
         # Emit battle end event
-        if self.events:
+        if self.events is not None:
             self.events.emit(
                 EventType.BATTLE_END,
                 outcome=outcome.name,
@@ -301,20 +327,27 @@ class BattleManager:
             self.end_battle(BattleOutcome.DEFEAT)
             return True
 
-        # Handle movement commands
+        # Handle movement commands (v6.11: movement doesn't end turn)
         if command_type == 'MOVE_UP':
-            return self._try_player_move(0, -1)
+            return self._try_player_move(0, -1, end_turn=False)
         elif command_type == 'MOVE_DOWN':
-            return self._try_player_move(0, 1)
+            return self._try_player_move(0, 1, end_turn=False)
         elif command_type == 'MOVE_LEFT':
-            return self._try_player_move(-1, 0)
+            return self._try_player_move(-1, 0, end_turn=False)
         elif command_type == 'MOVE_RIGHT':
-            return self._try_player_move(1, 0)
+            return self._try_player_move(1, 0, end_turn=False)
 
-        # Handle wait/pass turn
-        elif command_type in ('WAIT', 'CONFIRM'):
-            self.engine.add_message("You wait...")
+        # Handle explicit end turn (v6.11)
+        elif command_type == 'END_TURN':
+            self.engine.add_message("Turn ended.")
             self._end_player_turn()
+            return True
+
+        # Handle wait/defend (v6.11: does NOT end turn - player must use END_TURN)
+        elif command_type in ('WAIT', 'CONFIRM'):
+            self.engine.add_message("You brace for attacks. (+2 Defense this round)")
+            # Apply temporary defense buff
+            battle.player.add_status({'name': 'defending', 'duration': 1, 'defense_bonus': 2})
             return True
 
         # Handle flee attempt
@@ -347,25 +380,32 @@ class BattleManager:
 
         return False
 
-    def _try_player_move(self, dx: int, dy: int) -> bool:
-        """Try to move player in direction. If enemy present, attack instead."""
+    def _try_player_move(self, dx: int, dy: int, end_turn: bool = True) -> bool:
+        """Try to move player in direction. If enemy present, attack instead.
+
+        Args:
+            dx, dy: Direction to move
+            end_turn: Whether to end turn after action (v6.11: False for movement)
+        """
         battle = self.engine.battle
+        # v6.11: Pass end_turn_callback only if we should end the turn
+        end_turn_cb = self._end_player_turn if end_turn else None
         return self._player_actions.try_player_move(
-            battle, dx, dy, self._end_player_turn, self._handle_entity_death
+            battle, dx, dy, end_turn_cb, self._handle_entity_death
         )
 
     def _try_basic_attack(self, target_pos: Tuple[int, int] = None) -> bool:
-        """Try to attack an adjacent enemy."""
+        """Try to attack an adjacent enemy. (v6.11: does NOT end turn)"""
         battle = self.engine.battle
         return self._player_actions.try_basic_attack(
-            battle, target_pos, self._end_player_turn, self._handle_entity_death
+            battle, target_pos, None, self._handle_entity_death
         )
 
     def _try_use_ability(self, ability_index: int, target_pos: Tuple[int, int] = None) -> bool:
-        """Try to use a class ability."""
+        """Try to use a class ability. (v6.11: does NOT end turn)"""
         battle = self.engine.battle
         return self._player_actions.try_use_ability(
-            battle, ability_index, target_pos, self._end_player_turn, self._handle_entity_death
+            battle, ability_index, target_pos, None, self._handle_entity_death
         )
 
     def _try_flee(self) -> bool:
@@ -374,9 +414,9 @@ class BattleManager:
         return True
 
     def _try_use_item(self, item_index: int) -> bool:
-        """Try to use a consumable item in battle."""
+        """Try to use a consumable item in battle. (v6.11: does NOT end turn)"""
         battle = self.engine.battle
-        return self._player_actions.try_use_item(battle, item_index, self._end_player_turn)
+        return self._player_actions.try_use_item(battle, item_index, None)
 
     def _use_woundglass_battle(self) -> bool:
         """Activate Woundglass Shard in battle."""
@@ -388,6 +428,10 @@ class BattleManager:
         battle = self.engine.battle
         if battle is None:
             return
+
+        # v6.9: Emit player turn end event
+        if self.events is not None:
+            self.events.emit(EventType.PLAYER_TURN_END)
 
         battle.player.has_acted = True
         battle.phase = BattlePhase.ENEMY_TURN
@@ -435,6 +479,10 @@ class BattleManager:
 
         battle.phase = BattlePhase.PLAYER_TURN
 
+        # v6.9: Emit player turn start event
+        if self.events is not None:
+            self.events.emit(EventType.PLAYER_TURN_START)
+
     def _handle_entity_death(self, entity: BattleEntity) -> None:
         """Handle entity death in battle."""
         if entity.is_player:
@@ -442,7 +490,7 @@ class BattleManager:
         else:
             self.engine.add_message("Enemy defeated!")
 
-            if self.events:
+            if self.events is not None:
                 self.events.emit(
                     EventType.DEATH_FLASH,
                     x=entity.arena_x,

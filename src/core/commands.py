@@ -31,6 +31,7 @@ class CommandType(Enum):
     WAIT = auto()
     FLEE = auto()
     ATTACK = auto()
+    END_TURN = auto()  # Explicitly end player's turn (v6.11)
 
     # UI navigation
     OPEN_INVENTORY = auto()
@@ -46,6 +47,14 @@ class CommandType(Enum):
     INVENTORY_EQUIP = auto()
     INVENTORY_DROP = auto()
     INVENTORY_READ = auto()
+    INVENTORY_SELECT = auto()  # Select item by index (data contains index)
+
+    # Equipment actions (unequip from Character window)
+    UNEQUIP_WEAPON = auto()
+    UNEQUIP_ARMOR = auto()
+    UNEQUIP_OFF_HAND = auto()
+    UNEQUIP_RING = auto()
+    UNEQUIP_AMULET = auto()
 
     # Dialog responses
     CONFIRM = auto()
@@ -159,6 +168,15 @@ INVENTORY_COMMANDS = {
     CommandType.INVENTORY_EQUIP,
     CommandType.INVENTORY_DROP,
     CommandType.INVENTORY_READ,
+    CommandType.INVENTORY_SELECT,
+}
+
+EQUIPMENT_COMMANDS = {
+    CommandType.UNEQUIP_WEAPON,
+    CommandType.UNEQUIP_ARMOR,
+    CommandType.UNEQUIP_OFF_HAND,
+    CommandType.UNEQUIP_RING,
+    CommandType.UNEQUIP_AMULET,
 }
 
 SCROLL_COMMANDS = {

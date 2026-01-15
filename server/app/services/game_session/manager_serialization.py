@@ -166,6 +166,53 @@ def serialize_inventory(engine) -> dict:
     }
 
 
+def serialize_equipped_item(item) -> dict | None:
+    """Serialize a single equipped item."""
+    if item is None:
+        return None
+    try:
+        result = {
+            "name": item.name if hasattr(item, 'name') else "Unknown",
+            "type": item.item_type.name if hasattr(item, 'item_type') and item.item_type else "UNKNOWN",
+            "rarity": item.rarity.name if hasattr(item, 'rarity') and item.rarity else "COMMON",
+            "description": item.description if hasattr(item, 'description') else "",
+        }
+        # Add stat bonuses based on item type
+        if hasattr(item, 'attack_bonus'):
+            result["attack_bonus"] = item.attack_bonus
+        if hasattr(item, 'defense_bonus'):
+            result["defense_bonus"] = item.defense_bonus
+        if hasattr(item, 'block_chance'):
+            result["block_chance"] = item.block_chance
+        if hasattr(item, 'damage'):
+            result["damage"] = item.damage
+        if hasattr(item, 'range'):
+            result["range"] = item.range
+        if hasattr(item, 'is_ranged'):
+            result["is_ranged"] = item.is_ranged
+        if hasattr(item, 'stat_bonuses'):
+            result["stat_bonuses"] = item.stat_bonuses
+        if hasattr(item, 'effect'):
+            result["effect"] = item.effect
+        if hasattr(item, 'effect_value'):
+            result["effect_value"] = item.effect_value
+        return result
+    except (AttributeError, TypeError):
+        return None
+
+
+def serialize_equipment(engine) -> dict:
+    """Serialize player's equipped items."""
+    player = engine.player
+    return {
+        "weapon": serialize_equipped_item(player.equipped_weapon),
+        "armor": serialize_equipped_item(player.equipped_armor),
+        "off_hand": serialize_equipped_item(player.equipped_off_hand),
+        "ring": serialize_equipped_item(player.equipped_ring),
+        "amulet": serialize_equipped_item(player.equipped_amulet),
+    }
+
+
 def serialize_lore_journal(engine) -> dict:
     """Serialize lore journal data."""
     discovered, total = engine.story_manager.get_lore_progress()
@@ -191,11 +238,29 @@ def serialize_lore_journal(engine) -> dict:
 
 def serialize_battle_state(battle) -> dict:
     """Serialize tactical battle state."""
+    # v6.11: Build turn order list with full entity data
+    turn_order_entities = []
+    for entity_id in battle.turn_order:
+        entity = battle.get_entity_by_id(entity_id)
+        if entity and entity.hp > 0:
+            turn_order_entities.append({
+                "entity_id": entity.entity_id,
+                "display_id": entity.display_id,
+                "name": entity.name if not entity.is_player else "Hero",
+                "initiative": entity.initiative,
+                "hp": entity.hp,
+                "max_hp": entity.max_hp,
+                "is_player": entity.is_player,
+                "is_elite": entity.is_elite,
+                "is_boss": entity.is_boss,
+                "symbol": entity.symbol,
+            })
+
     return {
         "active": True,
         "biome": battle.biome,
         "floor_level": battle.floor_level,
-        "turn_number": battle.turn_number,
+        "round": battle.turn_number,  # Frontend expects 'round'
         "phase": battle.phase.name if battle.phase else "PLAYER_TURN",
         "arena_width": battle.arena_width,
         "arena_height": battle.arena_height,
@@ -209,6 +274,8 @@ def serialize_battle_state(battle) -> dict:
             "defense": battle.player.defense,
             "status_effects": [e.get('name', '') for e in battle.player.status_effects],
             "cooldowns": battle.player.cooldowns,
+            "display_id": battle.player.display_id,
+            "initiative": battle.player.initiative,
         } if battle.player else None,
         "enemies": [
             {
@@ -224,6 +291,8 @@ def serialize_battle_state(battle) -> dict:
                 "is_elite": e.is_elite,
                 "is_boss": e.is_boss,
                 "status_effects": [ef.get('name', '') for ef in e.status_effects],
+                "display_id": e.display_id,
+                "initiative": e.initiative,
             }
             for e in battle.get_living_enemies()
         ],
@@ -239,6 +308,9 @@ def serialize_battle_state(battle) -> dict:
             if r.turns_until_arrival > 0
         ],
         "outcome": battle.outcome.name if battle.outcome else None,
+        # v6.11: Turn order data
+        "turn_order": turn_order_entities,
+        "active_entity_index": battle.active_entity_index,
     }
 
 

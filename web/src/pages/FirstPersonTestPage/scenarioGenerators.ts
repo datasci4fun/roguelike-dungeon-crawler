@@ -3,7 +3,7 @@
  */
 import type { BiomeId } from '../../components/SceneRenderer/biomes';
 import type { FirstPersonView, FirstPersonTile, FirstPersonEntity } from '../../hooks/useGameSocket';
-import { generateTile, generateRow, generateWaterRow, generateCavernRow } from './tileUtils';
+import { generateRow, generateWaterRow, generateCavernRow } from './tileUtils';
 import { FACING_MAP, type ScenarioId, type CustomParams, type FacingDirection } from './types';
 
 // Generate unique scenes for each biome

@@ -139,6 +139,14 @@ class EventType(Enum):
     BATTLE_START = auto()    # Entered tactical battle mode
     BATTLE_END = auto()      # Exited battle mode (victory/defeat/flee)
 
+    # Battle turn events (v6.9 - visible turn-based combat)
+    ENEMY_TURN_START = auto()  # Enemy turn started (enemy_id, enemy_name, turn_index, total_enemies)
+    ENEMY_TURN_END = auto()    # Enemy turn ended (enemy_id)
+    ENEMY_MOVE = auto()        # Enemy moved (enemy_id, from_x, from_y, to_x, to_y)
+    ENEMY_ATTACK = auto()      # Enemy attacked (enemy_id, target_id, damage)
+    PLAYER_TURN_START = auto() # Player turn started
+    PLAYER_TURN_END = auto()   # Player turn ended
+
     # Transition events (v6.1)
     TRANSITION_START = auto()  # Transition began (kind in data)
     TRANSITION_END = auto()    # Transition completed or skipped

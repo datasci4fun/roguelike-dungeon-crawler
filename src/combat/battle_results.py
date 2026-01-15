@@ -331,7 +331,7 @@ class GhostAssistHandler:
                     "A Champion's imprint surges! (+5 HP)"
                 )
 
-                if self.events:
+                if self.events is not None:
                     self.events.emit(
                         EventType.BUFF_FLASH,
                         entity=player

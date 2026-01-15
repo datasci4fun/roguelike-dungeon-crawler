@@ -38,15 +38,35 @@ class EnemyTurnProcessor:
         return 1.0
 
     def process_enemy_turns(self, battle: BattleState) -> None:
-        """Process all enemy actions."""
+        """Process all enemy actions with per-enemy turn events (v6.9)."""
         if battle is None:
             return
 
-        for enemy in battle.get_living_enemies():
+        living_enemies = battle.get_living_enemies()
+        total_enemies = len(living_enemies)
+
+        for idx, enemy in enumerate(living_enemies):
             if enemy.hp <= 0:
                 continue
 
+            # v6.9: Emit turn start event for visible turn sequencing
+            if self.events is not None:
+                self.events.emit(
+                    EventType.ENEMY_TURN_START,
+                    enemy_id=enemy.entity_id,
+                    enemy_name=enemy.name or 'Enemy',
+                    turn_index=idx,
+                    total_enemies=total_enemies
+                )
+
             self._enemy_take_turn(battle, enemy)
+
+            # v6.9: Emit turn end event
+            if self.events is not None:
+                self.events.emit(
+                    EventType.ENEMY_TURN_END,
+                    enemy_id=enemy.entity_id
+                )
 
     def _enemy_take_turn(self, battle: BattleState, enemy: BattleEntity) -> None:
         """Execute a single enemy's turn using v6.2 AI scoring system."""
@@ -89,11 +109,33 @@ class EnemyTurnProcessor:
     ) -> None:
         """Execute a chosen enemy action (v6.2 unified action handler)."""
         if action.action_type == CandidateType.ATTACK:
+            # v6.9: Emit attack event before executing
+            if self.events is not None:
+                self.events.emit(
+                    EventType.ENEMY_ATTACK,
+                    enemy_id=enemy.entity_id,
+                    target_id=player.entity_id,
+                    from_x=enemy.arena_x,
+                    from_y=enemy.arena_y,
+                    to_x=player.arena_x,
+                    to_y=player.arena_y
+                )
             self._execute_enemy_attack(battle, enemy, player)
 
         elif action.action_type == CandidateType.MOVE:
+            old_x, old_y = enemy.arena_x, enemy.arena_y
             new_x, new_y = execute_ai_action(battle, enemy, action)
-            if (new_x, new_y) != (enemy.arena_x, enemy.arena_y):
+            if (new_x, new_y) != (old_x, old_y):
+                # v6.9: Emit move event before updating position
+                if self.events is not None:
+                    self.events.emit(
+                        EventType.ENEMY_MOVE,
+                        enemy_id=enemy.entity_id,
+                        from_x=old_x,
+                        from_y=old_y,
+                        to_x=new_x,
+                        to_y=new_y
+                    )
                 enemy.arena_x = new_x
                 enemy.arena_y = new_y
                 # Check hazards on the new tile
@@ -119,7 +161,7 @@ class EnemyTurnProcessor:
         damage = int(base_damage * pulse_amp)
         player.hp -= damage
 
-        if self.events:
+        if self.events is not None:
             self.events.emit(
                 EventType.DAMAGE_NUMBER,
                 x=player.arena_x,
@@ -232,7 +274,7 @@ class EnemyTurnProcessor:
         damage = max(1, int(base_damage * damage_mult) - defense)
         player.hp -= damage
 
-        if self.events:
+        if self.events is not None:
             self.events.emit(
                 EventType.DAMAGE_NUMBER,
                 x=player.arena_x,

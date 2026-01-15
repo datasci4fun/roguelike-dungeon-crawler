@@ -3,7 +3,7 @@
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { getGameWsUrl } from '../services/api';
-import type { BattleState, TransitionState } from '../types';
+import type { BattleState, TransitionState, EquipmentState } from '../types';
 
 export type GameState = 'PLAYING' | 'DEAD' | 'VICTORY' | 'TITLE' | 'INTRO';
 export type UIMode = 'GAME' | 'INVENTORY' | 'CHARACTER' | 'HELP' | 'MESSAGE_LOG' | 'DIALOG' | 'READING';
@@ -262,6 +262,7 @@ export interface FullGameState {
     items: InventoryItem[];
     selected_index: number;
   };
+  equipment?: EquipmentState;
   dialog?: {
     title: string;
     message: string;
@@ -308,7 +309,7 @@ export interface UseGameSocketResult {
   newAchievements: NewAchievement[];
   connect: () => void;
   disconnect: () => void;
-  sendCommand: (command: string) => void;
+  sendCommand: (command: string, data?: Record<string, unknown>) => void;
   newGame: (config?: CharacterConfig) => void;
   quit: () => void;
   clearAchievements: () => void;
@@ -388,11 +389,12 @@ export function useGameSocket(token: string | null): UseGameSocketResult {
     setGameState(null);
   }, []);
 
-  const sendCommand = useCallback((command: string) => {
+  const sendCommand = useCallback((command: string, data?: Record<string, unknown>) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({
         action: 'command',
         command: command,
+        data: data,
       }));
     }
   }, []);

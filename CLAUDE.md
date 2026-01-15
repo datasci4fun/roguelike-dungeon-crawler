@@ -7,6 +7,7 @@ Repo already contains core systems (dungeon gen, renderer, enemies, items, level
 ## Source of truth
 - Gameplay/features: README.md (aspirational but mostly implemented)
 - Git workflow: WORKFLOW.md
+- UI migration plan: **[PLAN_UI_MIGRATION.md](PLAN_UI_MIGRATION.md)** - Major UI overhaul to move terminal elements into 3D view
 - If PLAN.md exists, treat it as guidance; do not delete working features to "match the plan" unless asked.
 
 ## How to run (Windows)

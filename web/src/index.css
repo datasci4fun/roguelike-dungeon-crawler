@@ -76,6 +76,25 @@
   --roadmap-status-completed: #22c55e;
   --roadmap-status-blocked: #ef4444;
   --roadmap-status-deferred: #4b5563;
+
+  /* ========================================================================
+   * Battle UI - Hybrid Theme
+   * ======================================================================== */
+  --battle-player: #4ade80;
+  --battle-player-dim: rgba(74, 222, 128, 0.2);
+  --battle-player-glow: rgba(74, 222, 128, 0.5);
+  --battle-enemy: #ff6b6b;
+  --battle-enemy-dim: rgba(255, 107, 107, 0.2);
+  --battle-elite: #a855f7;
+  --battle-elite-dim: rgba(168, 85, 247, 0.2);
+  --battle-boss: #ffd700;
+  --battle-boss-dim: rgba(255, 215, 0, 0.2);
+  --battle-highlight: #ffd700;
+  --battle-highlight-glow: rgba(255, 215, 0, 0.4);
+  --battle-bg: rgba(10, 10, 20, 0.95);
+  --battle-bg-panel: linear-gradient(180deg, rgba(20, 20, 35, 0.95) 0%, rgba(15, 15, 25, 0.95) 100%);
+  --battle-border: rgba(74, 222, 128, 0.3);
+  --battle-border-active: rgba(74, 222, 128, 0.6);
 }
 
 a {

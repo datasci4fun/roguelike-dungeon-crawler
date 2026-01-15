@@ -225,6 +225,19 @@ class ReinforcementManager:
                 )
 
                 if spawn_pos:
+                    # v6.11: Roll initiative for reinforcement (5 + d20, +5 for elite)
+                    enemy_initiative = 5 + random.randint(1, 20)
+                    if reinforcement.is_elite:
+                        enemy_initiative += 5
+
+                    # v6.11: Generate unique display_id based on existing enemies
+                    name_key = reinforcement.enemy_name.lower().replace(' ', '_')
+                    existing_count = sum(
+                        1 for e in battle.enemies
+                        if e.name.lower().replace(' ', '_') == name_key
+                    )
+                    display_id = f"{reinforcement.enemy_name}_{existing_count + 1:02d}"
+
                     # Create battle entity
                     battle_enemy = BattleEntity(
                         entity_id=reinforcement.entity_id,
@@ -241,10 +254,15 @@ class ReinforcementManager:
                         symbol=reinforcement.symbol,
                         is_elite=reinforcement.is_elite,
                         is_boss=False,  # Reinforcements are not bosses
+                        display_id=display_id,
+                        initiative=enemy_initiative,
                     )
                     battle.enemies.append(battle_enemy)
                     battle.reinforcements_spawned += 1
                     spawned.append(battle_enemy)
+
+                    # v6.11: Recalculate turn order to include new reinforcement
+                    battle.calculate_turn_order()
 
                     # v6.0.5: Register in bestiary and ledger
                     if hasattr(self.engine, 'story_manager') and self.engine.story_manager:

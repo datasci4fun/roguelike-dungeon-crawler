@@ -143,6 +143,37 @@ export interface Item {
   symbol: string;
 }
 
+// Equipment types
+export interface EquippedItem {
+  name: string;
+  type: string;
+  rarity: string;
+  description: string;
+  // Weapon stats
+  attack_bonus?: number;
+  damage?: number;
+  range?: number;
+  is_ranged?: boolean;
+  // Armor/Shield stats
+  defense_bonus?: number;
+  block_chance?: number;
+  // Ring stats
+  stat_bonuses?: Record<string, number>;
+  // Amulet stats
+  effect?: string;
+  effect_value?: number;
+}
+
+export type EquipmentSlot = 'weapon' | 'armor' | 'off_hand' | 'ring' | 'amulet';
+
+export interface EquipmentState {
+  weapon: EquippedItem | null;
+  armor: EquippedItem | null;
+  off_hand: EquippedItem | null;
+  ring: EquippedItem | null;
+  amulet: EquippedItem | null;
+}
+
 export interface Dungeon {
   level: number;
   width: number;
@@ -184,6 +215,7 @@ export interface GameState {
     items: { name: string; type: string; rarity: string }[];
     selected_index: number;
   };
+  equipment?: EquipmentState;
   dialog?: {
     title: string;
     message: string;
@@ -207,6 +239,23 @@ export interface BattleEntity {
   is_elite?: boolean;
   is_boss?: boolean;
   status_effects: string[];
+  // v6.11: Initiative system
+  display_id?: string;
+  initiative?: number;
+}
+
+// v6.11: Turn order entry for UI display
+export interface TurnOrderEntry {
+  entity_id: string;
+  display_id: string;
+  name: string;
+  initiative: number;
+  hp: number;
+  max_hp: number;
+  is_player: boolean;
+  is_elite: boolean;
+  is_boss: boolean;
+  symbol: string;
 }
 
 export interface BattleReinforcement {
@@ -231,6 +280,9 @@ export interface BattleState {
   duplicate_seal_armed?: boolean;
   woundglass_reveal_active?: boolean;
   safe_tiles_revealed?: [number, number][];
+  // v6.11: Turn order system
+  turn_order?: TurnOrderEntry[];
+  active_entity_index?: number;
 }
 
 // Leaderboard types

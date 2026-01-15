@@ -19,6 +19,7 @@ import { GameOver } from '../components/GameOver';
 import { GameOverCutscene, type DeathFateId } from '../components/GameOverCutscene';
 import { VictoryCutscene, type VictoryLegacyId } from '../components/VictoryCutscene';
 import { LoreCodex } from '../components/LoreCodex';
+import { CharacterWindow } from '../components/CharacterWindow';
 import { BattleRenderer3D } from '../components/BattleRenderer3D';
 import { BattleHUD, type SelectedAction, type TileCoord } from '../components/BattleHUD';
 import { TransitionCurtain } from '../components/TransitionCurtain';
@@ -367,6 +368,11 @@ export function Play() {
     setPendingNewLore(null);
   }, []);
 
+  // Handler for opening lore journal (from CharacterWindow Journal tab)
+  const handleOpenLoreJournal = useCallback(() => {
+    setShowLoreJournal(true);
+  }, []);
+
   // Cheat hotkeys (dev/testing) - F1-F6 keys
   useEffect(() => {
     const handleCheatKey = (e: KeyboardEvent) => {
@@ -455,6 +461,7 @@ export function Play() {
                       onActionSelect={setBattleSelectedAction}
                       clickedTile={battleClickedTile}
                       onTileClickHandled={() => setBattleClickedTile(null)}
+                      events={gameState.events}
                     />
                   </>
                 ) : use3DMode ? (
@@ -501,6 +508,34 @@ export function Play() {
                   <StatusHUD
                     fieldPulse={gameState?.field_pulse}
                     artifacts={gameState?.player?.artifacts}
+                  />
+                )}
+                {/* Character Window Modal (includes inventory tab) - inside scene container */}
+                {(gameState?.ui_mode === 'CHARACTER' || gameState?.ui_mode === 'INVENTORY') && gameState?.player && (
+                  <CharacterWindow
+                    player={gameState.player}
+                    onClose={() => sendCommand('ESCAPE')}
+                    inventory={gameState.inventory}
+                    onInventoryNavigate={(dir) => sendCommand(dir === 'up' ? 'INVENTORY_UP' : 'INVENTORY_DOWN')}
+                    onInventorySelect={(index) => sendCommand('INVENTORY_SELECT', { index })}
+                    onInventoryUse={() => sendCommand('INVENTORY_USE')}
+                    onInventoryDrop={() => sendCommand('INVENTORY_DROP')}
+                    onInventoryRead={() => sendCommand('INVENTORY_READ')}
+                    equipment={gameState.equipment}
+                    onUnequip={(slot) => sendCommand(`UNEQUIP_${slot.toUpperCase()}`)}
+                    initialTab={gameState.ui_mode === 'INVENTORY' ? 'inventory' : 'stats'}
+                    loreJournal={gameState.lore_journal}
+                    onOpenLoreCodex={handleOpenLoreJournal}
+                  />
+                )}
+                {/* Lore Codex Modal - inside scene container */}
+                {showLoreJournal && gameState?.lore_journal && (
+                  <LoreCodex
+                    entries={gameState.lore_journal.entries}
+                    discoveredCount={gameState.lore_journal.discovered_count}
+                    totalCount={gameState.lore_journal.total_count}
+                    onClose={handleCloseLoreJournal}
+                    initialEntryId={pendingNewLore?.lore_id}
                   />
                 )}
                 {/* v6.1: Transition Curtain - contained within scene view */}
@@ -689,17 +724,6 @@ export function Play() {
 
       {/* Debug Toast */}
       <DebugToast message={toastMessage} onDismiss={clearToast} />
-
-      {/* Lore Codex Modal */}
-      {showLoreJournal && gameState?.lore_journal && (
-        <LoreCodex
-          entries={gameState.lore_journal.entries}
-          discoveredCount={gameState.lore_journal.discovered_count}
-          totalCount={gameState.lore_journal.total_count}
-          onClose={handleCloseLoreJournal}
-          initialEntryId={pendingNewLore?.lore_id}
-        />
-      )}
 
       {/* New Lore Notification Bar */}
       {pendingNewLore && !showLoreJournal && (

@@ -33,16 +33,26 @@ class PlayerActionHandler:
 
     def try_player_move(self, battle: BattleState, dx: int, dy: int,
                         end_turn_callback, entity_death_callback) -> bool:
-        """Try to move player in direction. If enemy present, attack instead."""
+        """Try to move player in direction. If enemy present, attack instead.
+
+        Args:
+            battle: Current battle state
+            dx, dy: Direction delta
+            end_turn_callback: Called to end turn (can be None for no auto-end)
+            entity_death_callback: Called when entity dies
+
+        v6.11: end_turn_callback can be None to allow movement without ending turn.
+        """
         player = battle.player
 
         new_x = player.arena_x + dx
         new_y = player.arena_y + dy
 
+        # v6.11: Check for enemy at target - DON'T auto-attack, just block
         target = battle.get_entity_at(new_x, new_y)
         if target and not target.is_player and target.hp > 0:
-            return self.execute_attack(battle, player, target, 1.0,
-                                        end_turn_callback, entity_death_callback)
+            self.engine.add_message("Can't move into enemy! Use ATTACK command.")
+            return False
 
         if not battle.is_tile_walkable(new_x, new_y):
             self.engine.add_message("Can't move there.")
@@ -61,7 +71,9 @@ class PlayerActionHandler:
         if self._round_processor:
             self._round_processor.check_tile_hazards(player, new_x, new_y)
 
-        end_turn_callback()
+        # v6.11: Only end turn if callback provided
+        if end_turn_callback:
+            end_turn_callback()
         return True
 
     def try_basic_attack(self, battle: BattleState, target_pos: Tuple[int, int],
@@ -145,7 +157,7 @@ class PlayerActionHandler:
 
         target.hp -= damage
 
-        if self.events:
+        if self.events is not None:
             self.events.emit(
                 EventType.DAMAGE_NUMBER,
                 x=target.arena_x,
@@ -165,7 +177,9 @@ class PlayerActionHandler:
         if self._reinforcement_mgr:
             self._reinforcement_mgr.add_noise(battle, 'attack')
 
-        end_turn_callback()
+        # v6.11: Only end turn if callback provided
+        if end_turn_callback:
+            end_turn_callback()
         return True
 
     def execute_ability(self, battle: BattleState, caster: BattleEntity,
@@ -186,7 +200,7 @@ class PlayerActionHandler:
             damage = max(1, int(base_damage * damage_mult) - defense)
             target.hp -= damage
 
-            if self.events:
+            if self.events is not None:
                 self.events.emit(
                     EventType.DAMAGE_NUMBER,
                     x=target.arena_x,
@@ -216,7 +230,9 @@ class PlayerActionHandler:
         if self._reinforcement_mgr:
             self._reinforcement_mgr.add_noise(battle, noise_type)
 
-        end_turn_callback()
+        # v6.11: Only end turn if callback provided
+        if end_turn_callback:
+            end_turn_callback()
         return True
 
     def execute_self_buff(self, battle: BattleState, caster: BattleEntity,
@@ -242,7 +258,9 @@ class PlayerActionHandler:
         if self._reinforcement_mgr:
             self._reinforcement_mgr.add_noise(battle, 'spell')
 
-        end_turn_callback()
+        # v6.11: Only end turn if callback provided
+        if end_turn_callback:
+            end_turn_callback()
         return True
 
     def _apply_aoe(self, battle: BattleState, caster: BattleEntity,
@@ -258,7 +276,7 @@ class PlayerActionHandler:
                 aoe_damage = max(1, int(caster.attack * ability.damage_mult * 0.5))
                 enemy.hp -= aoe_damage
 
-                if self.events:
+                if self.events is not None:
                     self.events.emit(
                         EventType.DAMAGE_NUMBER,
                         x=enemy.arena_x,
@@ -316,14 +334,16 @@ class PlayerActionHandler:
                 battle.player.hp = min(battle.player.hp + heal, battle.player.max_hp)
                 self.engine.add_message(f"Used {item.name}! (+{heal} HP)")
 
-                if self.events:
+                if self.events is not None:
                     self.events.emit(
                         EventType.BUFF_FLASH,
                         entity=battle.player
                     )
 
         inventory.remove_item(item_index)
-        end_turn_callback()
+        # v6.11: Only end turn if callback provided
+        if end_turn_callback:
+            end_turn_callback()
         return True
 
     def use_woundglass(self, battle: BattleState) -> bool:

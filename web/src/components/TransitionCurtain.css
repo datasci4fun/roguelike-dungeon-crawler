@@ -21,6 +21,7 @@
   right: 0;
   bottom: 0;
   background: #000;
+  pointer-events: none; /* Never capture clicks - this is purely visual */
 }
 
 /* Letterbox bars for cinematic feel */
@@ -32,6 +33,7 @@
   background: #000;
   z-index: 1;
   transition: height 0.3s ease-out;
+  pointer-events: none; /* Never capture clicks */
 }
 
 .letterbox-top {

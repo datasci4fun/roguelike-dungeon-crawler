@@ -1092,7 +1092,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     title: '3D Asset Pipeline',
     description: 'CLI workflow for AI-generated 3D models using TripoSR (open-source)',
     priority: 'research',
-    status: 'done',
+    status: 'completed',
     category: ['3d', 'infrastructure'],
     effort: 'epic',
     details: [

@@ -4,7 +4,7 @@
  * Provides asset data from the database with automatic fetching and caching.
  */
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 
 const API_BASE = 'http://localhost:8000';
 
