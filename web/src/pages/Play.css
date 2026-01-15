@@ -107,6 +107,11 @@
   position: relative; /* For CharacterHUD positioning */
 }
 
+/* When terminal is hidden, scene takes full width */
+.game-views.terminal-hidden .scene-wrapper {
+  flex: 1 1 100%;
+}
+
 .scene-wrapper canvas {
   display: block;
 }

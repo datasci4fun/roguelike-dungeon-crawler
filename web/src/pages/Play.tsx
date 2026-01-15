@@ -13,6 +13,8 @@ import { StatusHUD } from '../components/StatusHUD';
 import { StatsHUD } from '../components/StatsHUD';
 import { GameMessagesPanel } from '../components/GameMessagesPanel';
 import { Minimap } from '../components/Minimap';
+import { HelpWindow } from '../components/HelpWindow';
+import { GameMenu } from '../components/GameMenu';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
@@ -37,6 +39,8 @@ export function Play() {
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   const [isGameMessagesCollapsed, setIsGameMessagesCollapsed] = useState(false);
   const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
+  const [showHelpWindow, setShowHelpWindow] = useState(false);
+  const [showGameMenu, setShowGameMenu] = useState(false);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSceneView, setShowSceneView] = useState(true);
@@ -45,6 +49,9 @@ export function Play() {
   });
   const [use3DMode, setUse3DMode] = useState(() => {
     try { return localStorage.getItem('use3DMode') === '1'; } catch { return false; }
+  });
+  const [showTerminal, setShowTerminal] = useState(() => {
+    try { return localStorage.getItem('showTerminal') !== '0'; } catch { return true; }
   });
   const [showGameOver, setShowGameOver] = useState<'death' | 'victory' | null>(null);
   const [deathCutsceneComplete, setDeathCutsceneComplete] = useState(false);
@@ -280,6 +287,11 @@ export function Play() {
     try { localStorage.setItem('use3DMode', use3DMode ? '1' : '0'); } catch {}
   }, [use3DMode]);
 
+  // Persist terminal visibility preference
+  useEffect(() => {
+    try { localStorage.setItem('showTerminal', showTerminal ? '1' : '0'); } catch {}
+  }, [showTerminal]);
+
   // Debug hotkeys (F8: wireframe, F9: occluded, F10: snapshot)
   useEffect(() => {
     if (!debugEnabled) return;
@@ -367,6 +379,54 @@ export function Play() {
     return () => window.removeEventListener('keydown', handleJournalKey);
   }, [gameState?.ui_mode, showLoreJournal]);
 
+  // Help window hotkey (? key)
+  useEffect(() => {
+    const handleHelpKey = (e: KeyboardEvent) => {
+      // Don't trigger when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      // Don't trigger when in a game UI mode (inventory, dialog, etc)
+      if (gameState?.ui_mode && gameState.ui_mode !== 'GAME') {
+        return;
+      }
+
+      if (e.key === '?') {
+        e.preventDefault();
+        setShowHelpWindow((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleHelpKey);
+    return () => window.removeEventListener('keydown', handleHelpKey);
+  }, [gameState?.ui_mode]);
+
+  // Game menu hotkey (Esc key when in game mode)
+  useEffect(() => {
+    const handleMenuKey = (e: KeyboardEvent) => {
+      // Don't trigger when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      // Only trigger in GAME mode (not in inventory, character screen, etc.)
+      if (gameState?.ui_mode && gameState.ui_mode !== 'GAME') {
+        return;
+      }
+      // Don't trigger if other modals are open
+      if (showLoreJournal || showHelpWindow) {
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowGameMenu((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleMenuKey);
+    return () => window.removeEventListener('keydown', handleMenuKey);
+  }, [gameState?.ui_mode, showLoreJournal, showHelpWindow]);
+
   // Handler for closing lore journal (clears pending notification)
   const handleCloseLoreJournal = useCallback(() => {
     setShowLoreJournal(false);
@@ -434,16 +494,18 @@ export function Play() {
             </div>
           )}
 
-          <div className="game-views">
-            <div className="terminal-wrapper">
-              <GameTerminal
-                gameState={gameState}
-                onCommand={handleCommand}
-                onNewGame={handleNewGame}
-                onQuit={quit}
-                isConnected={gameStatus === 'connected'}
-              />
-            </div>
+          <div className={`game-views ${!showTerminal ? 'terminal-hidden' : ''}`}>
+            {showTerminal && (
+              <div className="terminal-wrapper">
+                <GameTerminal
+                  gameState={gameState}
+                  onCommand={handleCommand}
+                  onNewGame={handleNewGame}
+                  onQuit={quit}
+                  isConnected={gameStatus === 'connected'}
+                />
+              </div>
+            )}
 
             {showSceneView && (
               <div className="scene-wrapper" ref={sceneContainerRef}>
@@ -575,6 +637,22 @@ export function Play() {
                     initialEntryId={pendingNewLore?.lore_id}
                   />
                 )}
+                {/* Help Window Modal - inside scene container */}
+                {showHelpWindow && (
+                  <HelpWindow onClose={() => setShowHelpWindow(false)} />
+                )}
+                {/* Game Menu Modal - inside scene container */}
+                {showGameMenu && (
+                  <GameMenu
+                    onClose={() => setShowGameMenu(false)}
+                    onQuit={quit}
+                    onOpenHelp={() => {
+                      setShowGameMenu(false);
+                      setShowHelpWindow(true);
+                    }}
+                    onQuitToTitle={() => navigate('/')}
+                  />
+                )}
                 {/* v6.1: Transition Curtain - contained within scene view */}
                 <TransitionCurtain
                   transition={gameState?.transition}
@@ -662,6 +740,19 @@ export function Play() {
               3D Mode
               <span id="3d-mode-desc" className="visually-hidden">
                 Use Three.js 3D rendering instead of canvas 2D
+              </span>
+            </label>
+
+            <label className="scene-toggle">
+              <input
+                type="checkbox"
+                checked={showTerminal}
+                onChange={(e) => setShowTerminal(e.target.checked)}
+                aria-describedby="terminal-desc"
+              />
+              Terminal
+              <span id="terminal-desc" className="visually-hidden">
+                Show or hide the terminal panel
               </span>
             </label>
 
