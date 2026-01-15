@@ -11,6 +11,7 @@ import { FirstPersonRenderer, FirstPersonRenderer3D, type CorridorInfoEntry } fr
 import { CharacterHUD } from '../components/CharacterHUD';
 import { StatusHUD } from '../components/StatusHUD';
 import { StatsHUD } from '../components/StatsHUD';
+import { GameMessagesPanel } from '../components/GameMessagesPanel';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
@@ -33,6 +34,7 @@ export function Play() {
   const { isAuthenticated, isLoading, token } = useAuth();
   const navigate = useNavigate();
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
+  const [isGameMessagesCollapsed, setIsGameMessagesCollapsed] = useState(false);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSceneView, setShowSceneView] = useState(true);
@@ -523,6 +525,14 @@ export function Play() {
                   <StatusHUD
                     fieldPulse={gameState?.field_pulse}
                     artifacts={gameState?.player?.artifacts}
+                  />
+                )}
+                {/* Game Messages Panel (bottom-left) - hide during battle */}
+                {gameState?.messages && !gameState?.battle && (
+                  <GameMessagesPanel
+                    messages={gameState.messages}
+                    isCollapsed={isGameMessagesCollapsed}
+                    onToggle={() => setIsGameMessagesCollapsed(prev => !prev)}
                   />
                 )}
                 {/* Character Window Modal (includes inventory tab) - inside scene container */}

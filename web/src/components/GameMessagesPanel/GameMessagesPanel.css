@@ -1,0 +1,244 @@
+.game-messages-panel {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  width: 320px;
+  max-height: 200px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 10;
+  backdrop-filter: blur(4px);
+  overflow: hidden;
+}
+
+.game-messages-panel.collapsed {
+  width: auto;
+  max-height: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.game-messages-panel.collapsed:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+.collapsed-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.collapsed-icon {
+  font-size: 14px;
+}
+
+.collapsed-count {
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+/* Tab Bar */
+.messages-tabs {
+  display: flex;
+  background: rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.messages-tab {
+  flex: 1;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  font-size: 11px;
+  font-family: monospace;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.messages-tab:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e0e0e0;
+}
+
+.messages-tab.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffd700;
+  border-bottom: 2px solid #ffd700;
+}
+
+.tab-count {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-size: 9px;
+}
+
+.messages-tab.active .tab-count {
+  background: rgba(255, 215, 0, 0.2);
+}
+
+.messages-collapse-btn {
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.messages-collapse-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+/* Messages Container */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 80px;
+  max-height: 150px;
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.messages-empty {
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Message Items */
+.message-item {
+  padding: 2px 0;
+  line-height: 1.4;
+  animation: message-fade-in 0.3s ease;
+  word-wrap: break-word;
+}
+
+@keyframes message-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-text {
+  display: block;
+}
+
+/* Category-specific styles */
+.message-item.combat {
+  border-left: 2px solid #ef4444;
+  padding-left: 6px;
+  margin-left: -2px;
+}
+
+.message-item.loot {
+  border-left: 2px solid #fbbf24;
+  padding-left: 6px;
+  margin-left: -2px;
+}
+
+.message-item.system {
+  border-left: 2px solid #60a5fa;
+  padding-left: 6px;
+  margin-left: -2px;
+}
+
+/* Scroll to bottom button */
+.scroll-to-bottom {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  background: rgba(255, 215, 0, 0.9);
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  font-size: 10px;
+  font-family: monospace;
+  font-weight: bold;
+  cursor: pointer;
+  animation: bounce 1s ease infinite;
+  z-index: 5;
+}
+
+.scroll-to-bottom:hover {
+  background: #ffd700;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-3px);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .game-messages-panel {
+    width: 280px;
+    max-height: 150px;
+    bottom: 70px; /* Above touch controls */
+  }
+
+  .messages-tab {
+    padding: 5px 4px;
+    font-size: 10px;
+  }
+
+  .messages-container {
+    max-height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-messages-panel {
+    width: calc(100% - 20px);
+    left: 10px;
+    right: 10px;
+  }
+}
