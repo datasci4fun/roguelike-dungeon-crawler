@@ -1,12 +1,12 @@
 /**
  * BattleRenderer3D Camera Controller
  *
- * Handles camera positioning for overview phases and first-person gameplay.
+ * Handles camera positioning for overview phases, first-person, and third-person gameplay.
  */
 import * as THREE from 'three';
 import type { BattleState } from '../../types';
-import { TILE_SIZE, CAMERA_HEIGHT, PHASE_DURATIONS } from './constants';
-import type { OverviewPhase } from './types';
+import { TILE_SIZE, CAMERA_HEIGHT, PHASE_DURATIONS, THIRD_PERSON_DISTANCE, THIRD_PERSON_HEIGHT } from './constants';
+import type { OverviewPhase, CameraMode } from './types';
 
 /**
  * Easing function for smooth camera transitions
@@ -16,9 +16,10 @@ export function easeInOutCubic(t: number): number {
 }
 
 /**
- * Update camera position based on overview phase
+ * Update camera position based on overview phase and camera mode
  * v6.5: Added shakeX/shakeY for camera shake effect
  * v6.9: Added lerped camera position for smooth player movement
+ * v6.10: Added cameraMode for first-person/third-person toggle
  */
 export function updateCamera(
   camera: THREE.PerspectiveCamera,
@@ -30,7 +31,9 @@ export function updateCamera(
   shakeX: number = 0,
   shakeY: number = 0,
   lerpedX?: number,
-  lerpedZ?: number
+  lerpedZ?: number,
+  cameraMode: CameraMode = 'first-person',
+  thirdPersonZoom: number = 1.0
 ) {
   const { arena_width, arena_height } = battle;
   const centerX = 0;
@@ -39,22 +42,33 @@ export function updateCamera(
   const elapsed = Date.now() - phaseStartTime;
 
   if (phase === 'complete') {
-    // First-person at player position with mouse look
     if (battle.player) {
       // Use lerped position if provided, otherwise calculate directly
       const px = lerpedX ?? (battle.player.arena_x - arena_width / 2) * TILE_SIZE;
       const pz = lerpedZ ?? (battle.player.arena_y - arena_height / 2) * TILE_SIZE;
 
-      // v6.5: Apply camera shake offset
-      camera.position.set(px + shakeX, CAMERA_HEIGHT + shakeY, pz);
+      if (cameraMode === 'third-person') {
+        // Third-person: Camera above and behind player, orbiting with yaw
+        // Apply zoom factor to distance and height
+        const distance = THIRD_PERSON_DISTANCE * thirdPersonZoom;
+        const height = THIRD_PERSON_HEIGHT * thirdPersonZoom;
+        const camX = px + Math.sin(yaw) * distance;
+        const camZ = pz + Math.cos(yaw) * distance;
 
-      // Apply yaw (horizontal rotation) and pitch (vertical rotation)
-      const lookDistance = 5;
-      const lookX = px + Math.sin(yaw) * lookDistance;
-      const lookY = CAMERA_HEIGHT + pitch * lookDistance;
-      const lookZ = pz - Math.cos(yaw) * lookDistance;
+        camera.position.set(camX + shakeX, height + shakeY, camZ);
+        camera.lookAt(px, 0, pz);
+      } else {
+        // First-person at player position with mouse look
+        camera.position.set(px + shakeX, CAMERA_HEIGHT + shakeY, pz);
 
-      camera.lookAt(lookX, lookY, lookZ);
+        // Apply yaw (horizontal rotation) and pitch (vertical rotation)
+        const lookDistance = 5;
+        const lookX = px + Math.sin(yaw) * lookDistance;
+        const lookY = CAMERA_HEIGHT + pitch * lookDistance;
+        const lookZ = pz - Math.cos(yaw) * lookDistance;
+
+        camera.lookAt(lookX, lookY, lookZ);
+      }
     }
     return;
   }

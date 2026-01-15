@@ -455,6 +455,7 @@ export function Play() {
                       onActionSelect={setBattleSelectedAction}
                       clickedTile={battleClickedTile}
                       onTileClickHandled={() => setBattleClickedTile(null)}
+                      events={gameState.events}
                     />
                   </>
                 ) : use3DMode ? (

@@ -50,7 +50,7 @@ class EnemyTurnProcessor:
                 continue
 
             # v6.9: Emit turn start event for visible turn sequencing
-            if self.events:
+            if self.events is not None:
                 self.events.emit(
                     EventType.ENEMY_TURN_START,
                     enemy_id=enemy.entity_id,
@@ -62,7 +62,7 @@ class EnemyTurnProcessor:
             self._enemy_take_turn(battle, enemy)
 
             # v6.9: Emit turn end event
-            if self.events:
+            if self.events is not None:
                 self.events.emit(
                     EventType.ENEMY_TURN_END,
                     enemy_id=enemy.entity_id
@@ -110,7 +110,7 @@ class EnemyTurnProcessor:
         """Execute a chosen enemy action (v6.2 unified action handler)."""
         if action.action_type == CandidateType.ATTACK:
             # v6.9: Emit attack event before executing
-            if self.events:
+            if self.events is not None:
                 self.events.emit(
                     EventType.ENEMY_ATTACK,
                     enemy_id=enemy.entity_id,
@@ -127,7 +127,7 @@ class EnemyTurnProcessor:
             new_x, new_y = execute_ai_action(battle, enemy, action)
             if (new_x, new_y) != (old_x, old_y):
                 # v6.9: Emit move event before updating position
-                if self.events:
+                if self.events is not None:
                     self.events.emit(
                         EventType.ENEMY_MOVE,
                         enemy_id=enemy.entity_id,
@@ -161,7 +161,7 @@ class EnemyTurnProcessor:
         damage = int(base_damage * pulse_amp)
         player.hp -= damage
 
-        if self.events:
+        if self.events is not None:
             self.events.emit(
                 EventType.DAMAGE_NUMBER,
                 x=player.arena_x,
@@ -274,7 +274,7 @@ class EnemyTurnProcessor:
         damage = max(1, int(base_damage * damage_mult) - defense)
         player.hp -= damage
 
-        if self.events:
+        if self.events is not None:
             self.events.emit(
                 EventType.DAMAGE_NUMBER,
                 x=player.arena_x,

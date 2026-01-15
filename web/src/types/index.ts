@@ -207,6 +207,23 @@ export interface BattleEntity {
   is_elite?: boolean;
   is_boss?: boolean;
   status_effects: string[];
+  // v6.11: Initiative system
+  display_id?: string;
+  initiative?: number;
+}
+
+// v6.11: Turn order entry for UI display
+export interface TurnOrderEntry {
+  entity_id: string;
+  display_id: string;
+  name: string;
+  initiative: number;
+  hp: number;
+  max_hp: number;
+  is_player: boolean;
+  is_elite: boolean;
+  is_boss: boolean;
+  symbol: string;
 }
 
 export interface BattleReinforcement {
@@ -231,6 +248,9 @@ export interface BattleState {
   duplicate_seal_armed?: boolean;
   woundglass_reveal_active?: boolean;
   safe_tiles_revealed?: [number, number][];
+  // v6.11: Turn order system
+  turn_order?: TurnOrderEntry[];
+  active_entity_index?: number;
 }
 
 // Leaderboard types

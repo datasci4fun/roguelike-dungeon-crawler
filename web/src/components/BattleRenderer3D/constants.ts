@@ -18,6 +18,10 @@ export const BATTLE_FOG_FAR = 25;
 export const ENTITY_MODEL_SCALE = 1.4;
 export const ENTITY_MODEL_Y_OFFSET = 0.3;
 
+// Third-person camera settings
+export const THIRD_PERSON_DISTANCE = 12;  // Units behind player
+export const THIRD_PERSON_HEIGHT = 10;    // Units above ground
+
 // Hazard material properties (emissive glow)
 export const HAZARD_EMISSIVE: Record<string, number> = {
   '~': 0xff3300, // Lava - orange glow

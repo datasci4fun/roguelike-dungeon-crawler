@@ -31,6 +31,7 @@ class CommandType(Enum):
     WAIT = auto()
     FLEE = auto()
     ATTACK = auto()
+    END_TURN = auto()  # Explicitly end player's turn (v6.11)
 
     # UI navigation
     OPEN_INVENTORY = auto()

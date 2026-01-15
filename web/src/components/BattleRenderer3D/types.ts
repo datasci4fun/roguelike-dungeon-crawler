@@ -9,6 +9,9 @@ import { PHASE_ORDER } from './constants';
 
 export type OverviewPhase = typeof PHASE_ORDER[number];
 
+// Camera perspective mode
+export type CameraMode = 'first-person' | 'third-person';
+
 export interface TileCoord {
   x: number;
   y: number;
@@ -76,4 +79,16 @@ export interface EnemyTurnState {
   enemyName: string;
   turnIndex: number;
   totalEnemies: number;
+}
+
+// Bump animation state for attack visual feedback
+export interface BumpAnimation {
+  entityId: string;
+  startTime: number;
+  duration: number;        // Total animation duration (ms)
+  originX: number;         // Starting position
+  originZ: number;
+  targetX: number;         // Position to bump toward (player position)
+  targetZ: number;
+  bumpDistance: number;    // How far to travel (0-1, fraction of total distance)
 }
