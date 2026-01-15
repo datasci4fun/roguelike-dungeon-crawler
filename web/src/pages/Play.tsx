@@ -12,6 +12,7 @@ import { CharacterHUD } from '../components/CharacterHUD';
 import { StatusHUD } from '../components/StatusHUD';
 import { StatsHUD } from '../components/StatsHUD';
 import { GameMessagesPanel } from '../components/GameMessagesPanel';
+import { Minimap } from '../components/Minimap';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
@@ -35,6 +36,7 @@ export function Play() {
   const navigate = useNavigate();
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
   const [isGameMessagesCollapsed, setIsGameMessagesCollapsed] = useState(false);
+  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSceneView, setShowSceneView] = useState(true);
@@ -533,6 +535,16 @@ export function Play() {
                     messages={gameState.messages}
                     isCollapsed={isGameMessagesCollapsed}
                     onToggle={() => setIsGameMessagesCollapsed(prev => !prev)}
+                  />
+                )}
+                {/* Minimap (bottom-right) - hide during battle */}
+                {gameState?.first_person_view?.top_down_window && !gameState?.battle && (
+                  <Minimap
+                    tiles={gameState.first_person_view.top_down_window}
+                    playerFacing={gameState.first_person_view.facing}
+                    dungeonLevel={gameState.dungeon?.level || 1}
+                    isCollapsed={isMinimapCollapsed}
+                    onToggle={() => setIsMinimapCollapsed(prev => !prev)}
                   />
                 )}
                 {/* Character Window Modal (includes inventory tab) - inside scene container */}
