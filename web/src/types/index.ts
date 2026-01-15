@@ -143,6 +143,37 @@ export interface Item {
   symbol: string;
 }
 
+// Equipment types
+export interface EquippedItem {
+  name: string;
+  type: string;
+  rarity: string;
+  description: string;
+  // Weapon stats
+  attack_bonus?: number;
+  damage?: number;
+  range?: number;
+  is_ranged?: boolean;
+  // Armor/Shield stats
+  defense_bonus?: number;
+  block_chance?: number;
+  // Ring stats
+  stat_bonuses?: Record<string, number>;
+  // Amulet stats
+  effect?: string;
+  effect_value?: number;
+}
+
+export type EquipmentSlot = 'weapon' | 'armor' | 'off_hand' | 'ring' | 'amulet';
+
+export interface EquipmentState {
+  weapon: EquippedItem | null;
+  armor: EquippedItem | null;
+  off_hand: EquippedItem | null;
+  ring: EquippedItem | null;
+  amulet: EquippedItem | null;
+}
+
 export interface Dungeon {
   level: number;
   width: number;
@@ -184,6 +215,7 @@ export interface GameState {
     items: { name: string; type: string; rarity: string }[];
     selected_index: number;
   };
+  equipment?: EquipmentState;
   dialog?: {
     title: string;
     message: string;

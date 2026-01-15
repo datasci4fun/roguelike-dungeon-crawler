@@ -4,7 +4,7 @@
  * Renders tactical battle arena in 3D view.
  * v6.9: Refactored into modular components.
  */
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useLayoutEffect, useCallback, useState } from 'react';
 import * as THREE from 'three';
 import { getBiome } from '../SceneRenderer/biomes';
 
@@ -126,6 +126,16 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
   useEffect(() => {
     onOverviewCompleteRef.current = onOverviewComplete;
   }, [onOverviewComplete]);
+
+  // Keep mouse event callback refs updated (for stable event listener attachment)
+  const onTileClickRef = useRef(onTileClick);
+  const onTileHoverRef = useRef(onTileHover);
+  const selectedActionRef = useRef(selectedAction);
+  useEffect(() => {
+    onTileClickRef.current = onTileClick;
+    onTileHoverRef.current = onTileHover;
+    selectedActionRef.current = selectedAction;
+  }, [onTileClick, onTileHover, selectedAction]);
 
   // Keep current enemy turn ref updated
   useEffect(() => {
@@ -574,12 +584,8 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
 
       if (event.type === 'ENEMY_ATTACK' && telegraphGroupRef.current) {
         const enemyId = event.data.enemy_id as string;
-        const fromX = event.data.from_x as number;
-        const fromY = event.data.from_y as number;
         const toX = event.data.to_x as number;
         const toY = event.data.to_y as number;
-        const worldFromX = (fromX - arena_width / 2) * TILE_SIZE;
-        const worldFromZ = (fromY - arena_height / 2) * TILE_SIZE;
         const worldToX = (toX - arena_width / 2) * TILE_SIZE;
         const worldToZ = (toY - arena_height / 2) * TILE_SIZE;
 
@@ -751,35 +757,38 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [skipOverview]);
 
-  // Tile coordinate conversion
-  const screenToTile = useCallback((clientX: number, clientY: number): TileCoord | null => {
-    if (!containerRef.current || !cameraRef.current || !sceneRef.current) return null;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    mouseRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-    mouseRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-
-    raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
-
-    const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    const intersectPoint = new THREE.Vector3();
-
-    if (raycasterRef.current.ray.intersectPlane(floorPlane, intersectPoint)) {
-      const { arena_width, arena_height } = battle;
-      const tileX = Math.floor(intersectPoint.x / TILE_SIZE + arena_width / 2);
-      const tileY = Math.floor(intersectPoint.z / TILE_SIZE + arena_height / 2);
-
-      if (tileX >= 0 && tileX < arena_width && tileY >= 0 && tileY < arena_height) {
-        return { x: tileX, y: tileY };
-      }
-    }
-    return null;
-  }, [battle]);
-
-  // Mouse interaction handlers
-  useEffect(() => {
+  // Mouse interaction handlers - attached ONCE on mount, using refs for changing values
+  // Using useLayoutEffect ensures container ref is available (runs synchronously after DOM mutations)
+  useLayoutEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    // Helper to convert screen coords to tile (reads from refs, not closures)
+    const getTileFromScreen = (clientX: number, clientY: number): TileCoord | null => {
+      if (!containerRef.current || !cameraRef.current || !sceneRef.current) return null;
+
+      const rect = containerRef.current.getBoundingClientRect();
+      mouseRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouseRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
+
+      const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const intersectPoint = new THREE.Vector3();
+
+      if (raycasterRef.current.ray.intersectPlane(floorPlane, intersectPoint)) {
+        const currentBattle = battleRef.current;
+        const { arena_width, arena_height } = currentBattle;
+        const halfTile = TILE_SIZE / 2;
+        const tileX = Math.floor((intersectPoint.x + halfTile) / TILE_SIZE + arena_width / 2);
+        const tileY = Math.floor((intersectPoint.z + halfTile) / TILE_SIZE + arena_height / 2);
+
+        if (tileX >= 0 && tileX < arena_width && tileY >= 0 && tileY < arena_height) {
+          return { x: tileX, y: tileY };
+        }
+      }
+      return null;
+    };
 
     const handleMouseDown = (e: MouseEvent) => {
       if (e.button === 2) {
@@ -799,18 +808,19 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
         lastMouseRef.current = { x: e.clientX, y: e.clientY };
       }
 
-      const tile = screenToTile(e.clientX, e.clientY);
+      const tile = getTileFromScreen(e.clientX, e.clientY);
       if (hoverHighlightRef.current) {
+        const currentBattle = battleRef.current;
         if (tile) {
-          const worldX = (tile.x - battle.arena_width / 2) * TILE_SIZE;
-          const worldZ = (tile.y - battle.arena_height / 2) * TILE_SIZE;
+          const worldX = (tile.x - currentBattle.arena_width / 2) * TILE_SIZE;
+          const worldZ = (tile.y - currentBattle.arena_height / 2) * TILE_SIZE;
           hoverHighlightRef.current.position.set(worldX, 0.04, worldZ);
           hoverHighlightRef.current.visible = true;
         } else {
           hoverHighlightRef.current.visible = false;
         }
       }
-      onTileHover?.(tile);
+      onTileHoverRef.current?.(tile);
     };
 
     const handleMouseUp = () => {
@@ -823,12 +833,13 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
         return;
       }
 
-      const tile = screenToTile(e.clientX, e.clientY);
-      if (tile && onTileClick) {
-        const hasEnemy = battle.enemies.some(
+      const tile = getTileFromScreen(e.clientX, e.clientY);
+      const currentBattle = battleRef.current;
+      if (tile && onTileClickRef.current) {
+        const hasEnemy = currentBattle.enemies.some(
           enemy => enemy.hp > 0 && enemy.arena_x === tile.x && enemy.arena_y === tile.y
         );
-        onTileClick(tile, hasEnemy);
+        onTileClickRef.current(tile, hasEnemy);
       }
     };
 
@@ -861,7 +872,7 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
       container.removeEventListener('wheel', handleWheel);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [battle, selectedAction, screenToTile, onTileClick, onTileHover, skipOverview]);
+  }, [skipOverview]); // Only depends on skipOverview which is stable (has [] deps)
 
   return (
     <>
@@ -874,6 +885,7 @@ export function BattleRenderer3D({ battle, onOverviewComplete, selectedAction, o
           left: 0,
           width: '100%',
           height: '100%',
+          zIndex: 0,  // Ensure canvas is below BattleHUD overlay (z-index: 10)
         }}
       />
       {/* Enemy turn indicator (only shown during enemy turns with specific enemy info) */}

@@ -10,6 +10,67 @@ import { ENTITY_MODEL_SCALE, ENTITY_MODEL_Y_OFFSET } from './constants';
 import { modelCache } from './modelLoader';
 
 /**
+ * Create name label sprite for entity
+ * Shows the display_id (e.g., "Goblin_01") above the entity
+ */
+export function createNameLabel(entity: BattleEntity, isPlayer: boolean): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 48;
+  const ctx = canvas.getContext('2d')!;
+
+  // Get icon based on entity type (matching turn order panel)
+  let icon = '👹'; // Default enemy
+  if (isPlayer) {
+    icon = '⚔';
+  } else if (entity.is_boss) {
+    icon = '👑';
+  } else if (entity.is_elite) {
+    icon = '★';
+  }
+
+  // Get display text - use display_id if available, otherwise name
+  const name = isPlayer ? 'HERO' : (entity.display_id || entity.name || 'Enemy');
+  const displayText = `${icon} ${name}`;
+
+  // Determine color based on entity type
+  let textColor = '#ff6b6b'; // Default enemy red
+  if (isPlayer) {
+    textColor = '#4ade80'; // Player green
+  } else if (entity.is_boss) {
+    textColor = '#ffd700'; // Boss gold
+  } else if (entity.is_elite) {
+    textColor = '#a855f7'; // Elite purple
+  }
+
+  // Draw text with outline for visibility
+  ctx.font = 'bold 28px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  // Black outline
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 4;
+  ctx.strokeText(displayText, 128, 24);
+
+  // Colored fill
+  ctx.fillStyle = textColor;
+  ctx.fillText(displayText, 128, 24);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+  });
+
+  const sprite = new THREE.Sprite(material);
+  sprite.scale.set(2.0, 0.4, 1);
+  sprite.name = 'nameLabel';
+  return sprite;
+}
+
+/**
  * Create HP bar sprite for entity
  */
 export function createHpBar(entity: BattleEntity): THREE.Sprite {
@@ -105,6 +166,11 @@ export function createEntitySprite(
   const hpSprite = createHpBar(entity);
   hpSprite.position.y = 1.6;
   group.add(hpSprite);
+
+  // Name label above HP bar
+  const nameLabel = createNameLabel(entity, isPlayer);
+  nameLabel.position.y = 1.95;
+  group.add(nameLabel);
 
   // v6.5 Battle Polish: Add glowing aura ring for boss enemies
   if (entity.is_boss && !isPlayer) {
@@ -213,6 +279,11 @@ export function createEntity3D(
   const hpSprite = createHpBar(entity);
   hpSprite.position.y = ENTITY_MODEL_SCALE + 0.1; // Above model
   group.add(hpSprite);
+
+  // Add name label above HP bar
+  const nameLabel = createNameLabel(entity, false);
+  nameLabel.position.y = ENTITY_MODEL_SCALE + 0.45; // Above HP bar
+  group.add(nameLabel);
 
   // Add boss ring for boss enemies
   if (entity.is_boss) {

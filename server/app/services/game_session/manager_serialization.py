@@ -166,6 +166,53 @@ def serialize_inventory(engine) -> dict:
     }
 
 
+def serialize_equipped_item(item) -> dict | None:
+    """Serialize a single equipped item."""
+    if item is None:
+        return None
+    try:
+        result = {
+            "name": item.name if hasattr(item, 'name') else "Unknown",
+            "type": item.item_type.name if hasattr(item, 'item_type') and item.item_type else "UNKNOWN",
+            "rarity": item.rarity.name if hasattr(item, 'rarity') and item.rarity else "COMMON",
+            "description": item.description if hasattr(item, 'description') else "",
+        }
+        # Add stat bonuses based on item type
+        if hasattr(item, 'attack_bonus'):
+            result["attack_bonus"] = item.attack_bonus
+        if hasattr(item, 'defense_bonus'):
+            result["defense_bonus"] = item.defense_bonus
+        if hasattr(item, 'block_chance'):
+            result["block_chance"] = item.block_chance
+        if hasattr(item, 'damage'):
+            result["damage"] = item.damage
+        if hasattr(item, 'range'):
+            result["range"] = item.range
+        if hasattr(item, 'is_ranged'):
+            result["is_ranged"] = item.is_ranged
+        if hasattr(item, 'stat_bonuses'):
+            result["stat_bonuses"] = item.stat_bonuses
+        if hasattr(item, 'effect'):
+            result["effect"] = item.effect
+        if hasattr(item, 'effect_value'):
+            result["effect_value"] = item.effect_value
+        return result
+    except (AttributeError, TypeError):
+        return None
+
+
+def serialize_equipment(engine) -> dict:
+    """Serialize player's equipped items."""
+    player = engine.player
+    return {
+        "weapon": serialize_equipped_item(player.equipped_weapon),
+        "armor": serialize_equipped_item(player.equipped_armor),
+        "off_hand": serialize_equipped_item(player.equipped_off_hand),
+        "ring": serialize_equipped_item(player.equipped_ring),
+        "amulet": serialize_equipped_item(player.equipped_amulet),
+    }
+
+
 def serialize_lore_journal(engine) -> dict:
     """Serialize lore journal data."""
     discovered, total = engine.story_manager.get_lore_progress()

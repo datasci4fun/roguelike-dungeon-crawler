@@ -171,7 +171,7 @@ export function TransitionCurtain({ transition, onSkip }: TransitionCurtainProps
       className={`transition-curtain ${phase} ${showLetterbox ? 'letterbox' : ''}`}
       style={{
         opacity: displayOpacity,
-        pointerEvents: transition?.active ? 'auto' : 'none',
+        pointerEvents: 'none', // Never capture clicks - curtain is purely visual
       }}
     >
       {/* Main black overlay */}

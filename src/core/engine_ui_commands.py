@@ -6,7 +6,7 @@ battle, title, and intro screen command processing.
 
 from typing import Optional, Tuple
 
-from .constants import UIMode, ItemRarity
+from .constants import UIMode, ItemRarity, EquipmentSlot
 from .commands import Command, CommandType
 
 
@@ -46,6 +46,13 @@ class UICommandsMixin:
 
         elif cmd_type == CommandType.INVENTORY_READ:
             self._read_selected_item()
+
+        elif cmd_type == CommandType.INVENTORY_SELECT:
+            # Select item by index (from click)
+            if command.data and 'index' in command.data:
+                index = command.data['index']
+                if 0 <= index < len(inventory.items):
+                    self.selected_item_index = index
 
     def _use_or_equip_selected_item(self):
         """Use or equip the currently selected inventory item."""
@@ -124,8 +131,58 @@ class UICommandsMixin:
 
     def process_character_command(self, command: Command):
         """Process a command in character screen."""
-        if command.type == CommandType.CLOSE_SCREEN:
+        cmd_type = command.type
+
+        if cmd_type == CommandType.CLOSE_SCREEN:
             self.ui_mode = UIMode.GAME
+
+        # Equipment unequip commands
+        elif cmd_type == CommandType.UNEQUIP_WEAPON:
+            message = self.player.unequip(EquipmentSlot.WEAPON)
+            self.add_message(message)
+
+        elif cmd_type == CommandType.UNEQUIP_ARMOR:
+            message = self.player.unequip(EquipmentSlot.ARMOR)
+            self.add_message(message)
+
+        elif cmd_type == CommandType.UNEQUIP_OFF_HAND:
+            message = self.player.unequip(EquipmentSlot.OFF_HAND)
+            self.add_message(message)
+
+        elif cmd_type == CommandType.UNEQUIP_RING:
+            message = self.player.unequip(EquipmentSlot.RING)
+            self.add_message(message)
+
+        elif cmd_type == CommandType.UNEQUIP_AMULET:
+            message = self.player.unequip(EquipmentSlot.AMULET)
+            self.add_message(message)
+
+        # Inventory commands (for Inventory tab in CharacterWindow)
+        elif cmd_type == CommandType.INVENTORY_UP:
+            inventory = self.player.inventory
+            if len(inventory.items) > 0:
+                self.selected_item_index = (self.selected_item_index - 1) % len(inventory.items)
+
+        elif cmd_type == CommandType.INVENTORY_DOWN:
+            inventory = self.player.inventory
+            if len(inventory.items) > 0:
+                self.selected_item_index = (self.selected_item_index + 1) % len(inventory.items)
+
+        elif cmd_type == CommandType.INVENTORY_SELECT:
+            if command.data and 'index' in command.data:
+                index = command.data['index']
+                inventory = self.player.inventory
+                if 0 <= index < len(inventory.items):
+                    self.selected_item_index = index
+
+        elif cmd_type == CommandType.INVENTORY_USE:
+            self._use_or_equip_selected_item()
+
+        elif cmd_type == CommandType.INVENTORY_DROP:
+            self._drop_selected_item()
+
+        elif cmd_type == CommandType.INVENTORY_READ:
+            self._read_selected_item()
 
     def process_help_command(self, command: Command):
         """Process a command in help screen."""

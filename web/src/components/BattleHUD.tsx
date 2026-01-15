@@ -65,9 +65,81 @@ function groupReinforcements(reinforcements: BattleReinforcement[]) {
     .sort((a, b) => a.turns - b.turns);
 }
 
-// v6.11: Turn Order Display Component
-// Updated to highlight by entity ID (supports dynamic enemy turn tracking)
-function TurnOrderDisplay({ turnOrder, currentActingId, isPlayerTurn }: {
+// Helper: Get icon for entity type
+function getEntityIcon(entry: TurnOrderEntry): string {
+  if (entry.is_player) return '⚔';
+  if (entry.is_boss) return '👑';
+  if (entry.is_elite) return '★';
+  return '👹';
+}
+
+// Helper: Get CSS class for entity type
+function getEntityClass(entry: TurnOrderEntry): string {
+  if (entry.is_player) return 'player';
+  if (entry.is_boss) return 'boss';
+  if (entry.is_elite) return 'elite';
+  return 'enemy';
+}
+
+// v6.12: Combatants Panel - Consolidated turn order + enemies
+function CombatantsPanel({ turnOrder, currentActingId, isPlayerTurn, reinforcements }: {
+  turnOrder: TurnOrderEntry[];
+  currentActingId: string | null;
+  isPlayerTurn: boolean;
+  reinforcements: { name: string; count: number; turns: number; isElite: boolean }[];
+}) {
+  if (!turnOrder || turnOrder.length === 0) return null;
+
+  const enemyCount = turnOrder.filter(e => !e.is_player).length;
+
+  return (
+    <div className="battle-panel battle-panel-combatants">
+      <div className="bp-header">COMBATANTS (Enemies: {enemyCount})</div>
+      <div className="bp-content">
+        <div className="combatants-list">
+          {turnOrder.map((entry) => {
+            const isActive = isPlayerTurn
+              ? entry.is_player
+              : entry.entity_id === currentActingId;
+            const entryClass = getEntityClass(entry);
+            const hpPercent = Math.max(0, Math.min(100, (entry.hp / entry.max_hp) * 100));
+
+            return (
+              <div
+                key={entry.entity_id}
+                className={`combatant-entry ${entryClass} ${isActive ? 'active' : ''}`}
+              >
+                <span className="combatant-icon">{getEntityIcon(entry)}</span>
+                <span className="combatant-name">{entry.display_id || entry.name}</span>
+                <div className="combatant-hp-bar">
+                  <div
+                    className="combatant-hp-fill"
+                    style={{ width: `${hpPercent}%` }}
+                  />
+                  <span className="combatant-hp-text">{entry.hp}/{entry.max_hp}</span>
+                </div>
+                {isActive && <span className="combatant-active-marker">◄</span>}
+              </div>
+            );
+          })}
+        </div>
+        {reinforcements.length > 0 && (
+          <div className="combatants-reinforcements">
+            <div className="reinforcements-header">▼ INCOMING</div>
+            {reinforcements.slice(0, 3).map((g, i) => (
+              <div key={i} className={`reinforcement-entry ${g.turns <= 2 ? 'urgent' : ''}`}>
+                {g.isElite && '★'} {g.name} {g.count > 1 && `x${g.count}`} ({g.turns}T)
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// v6.12: Initiative Timeline - Bottom horizontal strip
+function InitiativeTimeline({ turnOrder, currentActingId, isPlayerTurn }: {
   turnOrder: TurnOrderEntry[];
   currentActingId: string | null;
   isPlayerTurn: boolean;
@@ -75,38 +147,34 @@ function TurnOrderDisplay({ turnOrder, currentActingId, isPlayerTurn }: {
   if (!turnOrder || turnOrder.length === 0) return null;
 
   return (
-    <div className="battle-panel battle-panel-turn-order">
-      <div className="bp-header">TURN ORDER</div>
-      <div className="bp-content">
-        <div className="turn-order-list">
-          {turnOrder.map((entry) => {
-            // Highlight player during player turn, or current enemy during enemy turn
-            const isActive = isPlayerTurn
-              ? entry.is_player
-              : entry.entity_id === currentActingId;
-            const entryClass = entry.is_player ? 'player' :
-                              entry.is_boss ? 'boss' :
-                              entry.is_elite ? 'elite' : 'enemy';
+    <div className="initiative-timeline">
+      <span className="timeline-label">INITIATIVE:</span>
+      <div className="timeline-icons">
+        {turnOrder.map((entry, i) => {
+          const isActive = isPlayerTurn
+            ? entry.is_player
+            : entry.entity_id === currentActingId;
+          const entryClass = getEntityClass(entry);
 
-            return (
-              <div
-                key={entry.entity_id}
-                className={`turn-order-entry ${entryClass} ${isActive ? 'active' : ''}`}
+          return (
+            <span key={entry.entity_id} className="timeline-entry">
+              <span
+                className={`timeline-icon ${entryClass} ${isActive ? 'active' : ''}`}
+                title={`${entry.display_id || entry.name} (${entry.hp}/${entry.max_hp})`}
               >
-                <span className="to-initiative">{entry.initiative}</span>
-                <span className="to-name">{entry.display_id || entry.name}</span>
-                <span className="to-hp">{entry.hp}/{entry.max_hp}</span>
-              </div>
-            );
-          })}
-        </div>
+                {getEntityIcon(entry)}
+              </span>
+              {i < turnOrder.length - 1 && <span className="timeline-arrow">→</span>}
+            </span>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect, clickedTile, onTileClickHandled, events }: BattleHUDProps) {
-  const { player, enemies, reinforcements = [], round, phase, biome } = battle;
+  const { player, reinforcements = [], round, phase, biome } = battle;
 
   const [menuState, setMenuState] = useState<MenuState>('main');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -375,7 +443,6 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
   }, [phase]);
 
   const reinforcementGroups = groupReinforcements(reinforcements);
-  const livingEnemies = enemies.filter(e => e.hp > 0);
 
   return (
     <div className="battle-hud">
@@ -399,38 +466,25 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
             <span>ATK {player.attack}</span>
             <span>DEF {player.defense}</span>
           </div>
+          {/* Turn state indicators */}
+          <div className="turn-state-indicators">
+            <span className={`turn-state ${hasMovedThisTurn ? 'completed' : ''}`}>
+              {hasMovedThisTurn ? '✓' : '○'} MOVE
+            </span>
+            <span className={`turn-state ${hasActedThisTurn ? 'completed' : ''}`}>
+              {hasActedThisTurn ? '✓' : '○'} ACTION
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Right panel - Enemies */}
-      <div className="battle-panel battle-panel-right">
-        <div className="bp-header">ENEMIES ({livingEnemies.length})</div>
-        <div className="bp-content">
-          {livingEnemies.slice(0, 3).map((enemy, i) => (
-            <div key={enemy.entity_id} className="bp-enemy">
-              <span>{enemy.symbol || 'E'} {enemy.name || `Enemy ${i+1}`}</span>
-              <HealthBar current={enemy.hp} max={enemy.max_hp} showNumbers={false} />
-            </div>
-          ))}
-          {reinforcementGroups.length > 0 && (
-            <div className="bp-reinforcements">
-              <span className="bp-incoming">INCOMING</span>
-              {reinforcementGroups.slice(0, 2).map((g, i) => (
-                <div key={i} className="bp-reinforce-entry">
-                  {g.name} {g.count > 1 && `x${g.count}`} - {g.turns}T
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Turn Order Panel (v6.11) */}
+      {/* Right panel - Combatants (consolidated turn order + enemies) */}
       {battle.turn_order && battle.turn_order.length > 0 && (
-        <TurnOrderDisplay
+        <CombatantsPanel
           turnOrder={battle.turn_order}
           currentActingId={currentActingEnemyId}
           isPlayerTurn={isPlayerTurn}
+          reinforcements={reinforcementGroups}
         />
       )}
 
@@ -486,6 +540,15 @@ export function BattleHUD({ battle, onCommand, overviewComplete, onActionSelect,
       {/* Enemy turn indicator */}
       {phase !== 'PLAYER_TURN' && (
         <div className="battle-waiting">Enemy Turn...</div>
+      )}
+
+      {/* Bottom initiative timeline */}
+      {battle.turn_order && battle.turn_order.length > 0 && (
+        <InitiativeTimeline
+          turnOrder={battle.turn_order}
+          currentActingId={currentActingEnemyId}
+          isPlayerTurn={isPlayerTurn}
+        />
       )}
     </div>
   );

@@ -1,144 +1,81 @@
-# Next Session - Battle System Continuation
+# Next Session - UI Migration to 3D View
 
 ## Session Date: 2026-01-15
 
-## What Was Implemented (Latest Session)
+## Current Session Completed
 
-### Enemy Attack Bump Animation (v6.11)
-- Enemies now visually lunge toward the player when attacking
-- 500ms animation using sine curve easing (smooth in/out)
-- Enemy moves 40% toward target, then returns to original position
+### CharacterWindow Enhancements
+- **Redesigned styling** - Traditional RPG parchment/stone aesthetic with fixed sizing
+- **Inventory tab integration** - Moved inventory from separate window into CharacterWindow tab
+- **Equipment tab** - Full equipment management with 5 slots (Weapon, Off-Hand, Armor, Ring, Amulet)
+- **Journal tab** - Lore summary with progress bar, category breakdown, recent discoveries
+- **Unequip functionality** - Backend commands for unequipping items from Character screen
 
-**Files modified:**
-- `web/src/components/BattleRenderer3D/BattleRenderer3D.tsx` - Bump animation logic in animation loop, triggered on ENEMY_ATTACK event
-- `web/src/components/BattleRenderer3D/types.ts` - Added `BumpAnimation` interface
+### LoreCodex Integration
+- **Moved inside 3D scene container** - Now renders as overlay within scene-wrapper
+- **Position changed** - From `position: fixed` to `position: absolute`
+- **Integrated with CharacterWindow** - Journal tab shows lore summary with button to open full Codex
 
-### Bug Fixes (v6.11)
+### Inventory Click Selection Fix
+- **Added INVENTORY_SELECT command** - Direct selection by index instead of looped navigation
+- **Updated sendCommand** - Now accepts optional data parameter for commands with payloads
+- **Fixed in both contexts** - GameContext.tsx and useGameSocket.ts updated
 
-#### 1. Reinforcements Now Appear in Turn Order
-- Reinforcements roll initiative (5 + d20, +5 for elites)
-- Assigned unique display_id based on existing enemies
-- `calculate_turn_order()` called after spawn
-
-**Files modified:**
-- `src/combat/reinforcements.py` - Added initiative roll, display_id generation, turn order recalculation
-
-#### 2. Sequential Enemy Animations Fixed
-- Fixed race condition where battle state updated before turn queue processed PLAYER_TURN_END
-- Now synchronously check for turn events before updating entity positions
-- Enemies stay frozen until their individual ENEMY_TURN_END event fires
-
-**Files modified:**
-- `web/src/components/BattleRenderer3D/BattleRenderer3D.tsx` - Check PLAYER_TURN_END/START in events before updating entities
-
-#### 3. Turn Order Highlighting Fixed
-- Turn order panel now highlights current actor by entity ID
-- Tracks current enemy from ENEMY_TURN_START events
-- Highlights player during player turn, current enemy during enemy turn
-
-**Files modified:**
-- `web/src/components/BattleHUD.tsx` - Added `currentActingEnemyId`, `isPlayerTurn` state; track from events
-- `web/src/pages/Play.tsx` - Pass events prop to BattleHUD
-
-#### 4. Critical EventQueue Bug Fixed
-- `EventQueue.__bool__` returns False when queue is empty
-- Changed all `if self.events:` to `if self.events is not None:` in combat code
-- This was preventing ENEMY_ATTACK and other events from being emitted
-
-**Files modified:**
-- `src/combat/battle_manager.py`
-- `src/combat/battle_player_actions.py`
-- `src/combat/battle_results.py`
-- `src/combat/enemy_turns.py`
-- `src/combat/round_processing.py`
+**Files Modified:**
+- `web/src/components/CharacterWindow.tsx` - Major updates, all tabs functional
+- `web/src/components/CharacterWindow.css` - Equipment and Journal tab styles
+- `web/src/components/LoreCodex/LoreCodex.scss` - Position fix for scene container
+- `web/src/pages/Play.tsx` - LoreCodex moved inside scene-wrapper, new props
+- `web/src/contexts/GameContext.tsx` - sendCommand with data support
+- `web/src/hooks/useGameSocket.ts` - sendCommand with data support
+- `src/core/commands.py` - INVENTORY_SELECT, UNEQUIP_* commands
+- `src/core/engine_ui_commands.py` - Handlers for new commands
+- `server/app/services/game_session/manager.py` - Command routing fixes
+- `server/app/services/game_session/manager_serialization.py` - Equipment serialization
 
 ---
 
-## Previously Implemented
+## Next Major Task: UI Migration
 
-### Multi-Action Turn System (v6.11)
-- Player can MOVE once per turn AND take one action (ATTACK/ABILITY/DEFEND)
-- Must click END TURN to finish turn and let enemies act
-- Actions properly disable after use and reset on new round
+### Reference Document
+**See [PLAN_UI_MIGRATION.md](PLAN_UI_MIGRATION.md)** for the complete implementation plan.
 
-### Initiative & Turn Order System (v6.11)
-- Player rolls 10 + d20 for initiative
-- Enemies roll 5 + d20 (elites +5, bosses +10)
-- Turn order calculated at battle start, sorted by initiative (highest first)
-- Unique display IDs for enemies: "Goblin_01", "Rat_02", etc.
+### Goal
+Move all terminal UI elements into the 3D first-person view to eventually hide the terminal panel entirely.
 
-### Turn Order UI
-- Panel on right side showing all combatants sorted by initiative
-- Color coded: green=player, orange=enemy, purple=elite, gold=boss
-- Shows initiative value, display ID, and HP
-- Highlights currently acting entity
+### Implementation Order
 
----
+| Phase | Component | Location | Status |
+|-------|-----------|----------|--------|
+| 1 | **StatsHUD** | Top-left of 3D view | Not started |
+| 2 | **ChatPanel** | Bottom-left, tabbed messages | Not started |
+| 3 | **Minimap** | Bottom-right, tile grid | Not started |
+| 4 | **HelpWindow** | Modal window | Not started |
+| 5 | **GameMenu** | Modal with save/load | Not started |
+| 6 | **Terminal Toggle** | Hide terminal option | Not started |
 
-## Known Issues / Future Enhancements
+### Phase 1: StatsHUD
+**First component to build** - Displays player vitals in top-left:
+- Level with class name
+- HP bar (color-coded by health %)
+- XP bar (progress to next level)
+- ATK, DEF, Kills stats with icons
+- Low health warning effects
 
-### Potential Improvements
-1. **Player attack bump animation** - Add similar bump animation when player attacks
-2. **Death animation** - Add visual feedback when enemies die (fade out, particle effect)
-3. **Ability animations** - Different visual effects for different abilities
-4. **Camera focus** - Camera could pan to follow current actor during enemy turn
+**Data available**: `gameState.player` has all required stats
 
-### Edge Cases to Test
-1. Multiple reinforcements joining at once - do they all get correct turn order?
-2. Boss fights with many minions - performance of turn order updates
-3. Very fast clicking END TURN - ensure animations complete properly
-
----
-
-## Architecture Notes
-
-### Event Flow
-1. Backend processes all enemy turns at once in `EnemyTurnProcessor.process_enemy_turns()`
-2. Events are emitted during processing: ENEMY_TURN_START, ENEMY_MOVE, ENEMY_ATTACK, ENEMY_TURN_END
-3. Final battle state + events array sent to frontend via WebSocket
-4. Frontend checks for PLAYER_TURN_END in events BEFORE updating entity positions
-5. Position freezing prevents enemies from jumping to final positions
-6. Turn queue processes events sequentially with delays
-7. Each ENEMY_TURN_END releases that enemy to move to final position
-
-### Key State Variables (BattleRenderer3D)
-```typescript
-enemyTurnPhaseActiveRef        // true during enemy turn animation
-pendingEnemyPositionsRef       // final positions from backend (Map<entityId, {x, y}>)
-visualEnemyPositionsRef        // pre-turn positions to hold enemies at (Map<entityId, {x, y}>)
-completedEnemyTurnsRef         // Set of entity IDs that have completed their turn
-bumpAnimationsRef              // Active bump animations (Map<entityId, BumpAnimation>)
-currentEnemyTurn               // Currently acting enemy state for UI display
-```
-
-### Key State Variables (BattleHUD)
-```typescript
-hasMovedThisTurn               // Player has used move action
-hasActedThisTurn               // Player has used combat action
-lastRoundRef                   // Track round changes to reset turn state
-currentActingEnemyId           // Entity ID of currently acting enemy (from events)
-isPlayerTurn                   // Whether it's player's turn (for highlighting)
-```
+### Phase 5 Backend Work
+Save/Load system requires new endpoints:
+- `POST /api/game/save`
+- `GET /api/game/saves`
+- `POST /api/game/load/{save_id}`
 
 ---
 
-## Testing Checklist
-- [x] Turn order displays correctly at battle start
-- [x] Turn order updates when reinforcements join
-- [x] Enemies move one at a time with visible delays
-- [x] Currently acting enemy is highlighted in turn order
-- [x] Player can move + attack in same turn
-- [x] END TURN properly triggers enemy phase
-- [x] Actions reset properly on new round
-- [x] Enemy bump animation plays on attack
-- [x] ENEMY_ATTACK events emit correctly
-
----
-
-## Quick Start for Next Session
+## Quick Start
 
 ```bash
-# Start backend server (required for battle testing)
+# Start backend server
 cd server && .venv/Scripts/python -m uvicorn app.main:app --reload --port 8000
 
 # Start frontend dev server
@@ -148,4 +85,60 @@ cd web && npm run dev
 docker-compose up -d
 ```
 
-**To test battles:** Start a game, explore until you encounter an enemy. The 3D battle renderer should load with the turn order panel visible. Position yourself adjacent (cardinally, not diagonally) to an enemy and click END TURN to see the bump animation.
+---
+
+## Testing Current Changes
+
+1. **CharacterWindow** - Press C, verify all 5 tabs work
+2. **Inventory in CharacterWindow** - Press C then tab 3, or press I directly
+3. **Click selection** - Click items in inventory list, should select immediately
+4. **Equipment tab** - Press C then tab 4, see equipped items, test Unequip button
+5. **Journal tab** - Press C then tab 5, see lore progress and categories
+6. **LoreCodex** - Press J, should render inside 3D view area (not full screen)
+
+---
+
+## Architecture Notes
+
+### Current Component Hierarchy (3D View)
+```
+Play.tsx
+└── scene-wrapper (position: relative)
+    ├── FirstPersonRenderer3D / BattleRenderer3D
+    ├── CharacterHUD (top-right area)
+    ├── StatusHUD (field pulse, artifacts)
+    ├── CharacterWindow (modal, centered)
+    ├── LoreCodex (modal, centered)
+    └── TransitionCurtain / Cutscenes
+```
+
+### Target Component Hierarchy (After Migration)
+```
+Play.tsx
+└── scene-wrapper (position: relative)
+    ├── FirstPersonRenderer3D / BattleRenderer3D
+    ├── StatsHUD (NEW - top-left)
+    ├── CharacterHUD (existing - top-right)
+    ├── StatusHUD (existing)
+    ├── Minimap (NEW - bottom-right)
+    ├── ChatPanel (NEW - bottom-left)
+    ├── CharacterWindow (modal)
+    ├── LoreCodex (modal)
+    ├── HelpWindow (NEW - modal)
+    ├── GameMenu (NEW - modal)
+    └── TransitionCurtain / Cutscenes
+```
+
+---
+
+## Known Issues
+
+None currently blocking. All implemented features working correctly.
+
+---
+
+## Git Status
+
+Branch: `feature/camera-perspective-toggle`
+
+Uncommitted changes from this session - should commit before starting UI migration work.

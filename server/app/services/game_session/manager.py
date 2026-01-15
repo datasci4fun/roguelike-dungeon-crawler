@@ -273,7 +273,7 @@ class GameSessionManager:
             process_cheat(engine, cmd_type)
             return self.serialize_game_state(session, [])
 
-        command = Command(cmd_type)
+        command = Command(cmd_type, data=data)
 
         # Process based on current game state
         player_acted = False
@@ -289,7 +289,9 @@ class GameSessionManager:
                 engine.process_dialog_command(command)
             elif engine.ui_mode == UIMode.MESSAGE_LOG:
                 engine.process_message_log_command(command)
-            elif engine.ui_mode in (UIMode.CHARACTER, UIMode.HELP, UIMode.READING):
+            elif engine.ui_mode == UIMode.CHARACTER:
+                engine.process_character_command(command)
+            elif engine.ui_mode in (UIMode.HELP, UIMode.READING):
                 # These close on any command
                 if cmd_type == CommandType.CLOSE_SCREEN:
                     engine.ui_mode = UIMode.GAME
@@ -413,8 +415,10 @@ class GameSessionManager:
         )
 
         # Add UI-specific data
-        if engine.ui_mode == UIMode.INVENTORY and engine.player:
+        # Include inventory and equipment for both INVENTORY and CHARACTER modes (CharacterWindow has these tabs)
+        if engine.ui_mode in (UIMode.INVENTORY, UIMode.CHARACTER) and engine.player:
             state["inventory"] = manager_serialization.serialize_inventory(engine)
+            state["equipment"] = manager_serialization.serialize_equipment(engine)
 
         if engine.ui_mode == UIMode.DIALOG:
             state["dialog"] = {
