@@ -104,8 +104,51 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
   },
 
   // ============================================================================
-  // HIGH PRIORITY
+  // HIGH PRIORITY - COMPLETED
   // ============================================================================
+  {
+    id: 'high-dnd',
+    title: 'D&D Combat System',
+    description: 'Full D&D-style ability scores, dice rolling, and combat mechanics',
+    priority: 'high',
+    status: 'completed',
+    category: ['gameplay', 'backend', 'frontend'],
+    effort: 'epic',
+    targetVersion: 'v6.12',
+    details: [
+      'Ability scores: STR, DEX, CON, LUCK for all characters',
+      'Dice rolling with LUCK-influenced rerolls',
+      'd20 attack rolls vs Armor Class, crits and fumbles',
+      'Weapon damage dice (1d4 to 2d8) with finesse support',
+      'DEX/CON saving throws for traps and hazards',
+      'DEX-based initiative with DICE_ROLL events',
+      'Level-scaling proficiency bonus (D&D 5e formula)',
+      '3D animated dice HUD in battle overlay',
+      'Character creation stat rolling with 3d6',
+      'All 28 enemies have AC, attack_bonus, damage_dice',
+      'Completed 2026-01-16 (PRs #74-77)',
+    ],
+  },
+  {
+    id: 'high-ui-migration',
+    title: 'UI Migration to 3D Overlay',
+    description: 'Move terminal UI elements to Three.js overlay for immersive gameplay',
+    priority: 'high',
+    status: 'completed',
+    category: ['frontend', '3d'],
+    effort: 'large',
+    targetVersion: 'v6.12',
+    details: [
+      'StatsHUD: Player vitals overlay (HP, gold, level, race)',
+      'GameMessagesPanel: Tabbed message log (All/Combat/System/Lore)',
+      'Minimap: Dungeon overview in corner with fog of war',
+      'CharacterWindow: Equipment, inventory, journal tabs',
+      'HelpWindow: Controls reference overlay (? key)',
+      'Terminal toggle with Tab key',
+      'Keyboard handler works when terminal hidden',
+      'Completed 2026-01-16 (PRs #71-73)',
+    ],
+  },
   {
     id: 'high-01',
     title: 'Database Save System',
@@ -502,7 +545,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['gameplay'],
     effort: 'large',
-    targetVersion: 'v6.6',
+    targetVersion: 'v6.13',
     details: [
       'Unlock after first victory',
       'Keep selected abilities and artifacts',
@@ -520,7 +563,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'deferred',
     category: ['gameplay', 'content'],
     effort: 'medium',
-    targetVersion: 'v6.6',
+    targetVersion: 'v6.13',
     details: [
       'All bosses back-to-back with brief rest periods',
       'Limited healing between fights',
@@ -537,7 +580,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['backend', 'frontend'],
     effort: 'large',
-    targetVersion: 'v6.6',
+    targetVersion: 'v6.13',
     details: [
       'Full run history stored in database',
       'Death location heatmaps',
@@ -555,7 +598,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['multiplayer', 'backend'],
     effort: 'medium',
-    targetVersion: 'v6.6',
+    targetVersion: 'v6.13',
     details: [
       'Score-based rankings',
       'Speedrun categories (any%, all bosses, 100%)',
@@ -573,7 +616,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['gameplay', 'lore', 'content'],
     effort: 'large',
-    targetVersion: 'v6.6',
+    targetVersion: 'v6.13',
     details: [
       'Dialogue tree data structure with branching paths',
       'NPC interaction trigger (proximity or action key)',
@@ -599,7 +642,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'deferred',
     category: ['content', 'gameplay'],
     effort: 'large',
-    targetVersion: 'v6.7',
+    targetVersion: 'v6.14',
     details: [
       'Summon undead minions that fight alongside player',
       'Life drain abilities that heal when dealing damage',
@@ -617,7 +660,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'deferred',
     category: ['content', 'gameplay'],
     effort: 'large',
-    targetVersion: 'v6.7',
+    targetVersion: 'v6.14',
     details: [
       'Combo system that chains attacks',
       'Chi resource that builds during combat',
@@ -635,7 +678,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'deferred',
     category: ['content', 'gameplay', 'audio'],
     effort: 'large',
-    targetVersion: 'v6.7',
+    targetVersion: 'v6.14',
     details: [
       'Song abilities with area-of-effect',
       'Inspire allies (co-op) or self-buff',
@@ -653,7 +696,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'deferred',
     category: ['gameplay', 'content'],
     effort: 'large',
-    targetVersion: 'v6.8',
+    targetVersion: 'v6.15',
     details: [
       'Material drops from enemies and exploration',
       'Crafting recipes discovered through lore',
@@ -672,7 +715,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     category: ['gameplay', 'content'],
     effort: 'medium',
     dependencies: ['med-12'],
-    targetVersion: 'v6.8',
+    targetVersion: 'v6.15',
     details: [
       'Elemental damage enchantments (fire, ice, lightning)',
       'Defensive enchantments (resistance, thorns)',
@@ -690,7 +733,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['gameplay', 'content'],
     effort: 'large',
-    targetVersion: 'v6.8',
+    targetVersion: 'v6.15',
     details: [
       'Findable pet eggs on dungeon floors',
       'Pet types: attack, defense, support',
@@ -708,7 +751,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'deferred',
     category: ['lore', 'content'],
     effort: 'medium',
-    targetVersion: 'v6.7',
+    targetVersion: 'v6.14',
     details: [
       'Pre-fall kingdom history',
       'Each boss warden backstory',
@@ -726,7 +769,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['gameplay', 'content'],
     effort: 'large',
-    targetVersion: 'v6.8',
+    targetVersion: 'v6.15',
     details: [
       'NPC quest givers (ghost NPCs)',
       'Fetch quests with rare items',
@@ -744,7 +787,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['gameplay'],
     effort: 'medium',
-    targetVersion: 'v6.8',
+    targetVersion: 'v6.15',
     details: [
       'Pressure plate sequences',
       'Torch lighting puzzles',
@@ -762,7 +805,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['gameplay', 'content'],
     effort: 'medium',
-    targetVersion: 'v6.7',
+    targetVersion: 'v6.14',
     details: [
       'Destructible walls hiding entrances',
       'Perception checks to reveal',
@@ -780,7 +823,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['gameplay'],
     effort: 'large',
-    targetVersion: 'v6.9',
+    targetVersion: 'v6.16',
     details: [
       'Unlock points earned from runs',
       'Three branches per class',
@@ -798,7 +841,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['gameplay', '3d'],
     effort: 'medium',
-    targetVersion: 'v6.9',
+    targetVersion: 'v6.16',
     details: [
       'Rain reduces visibility',
       'Fog hides enemies at distance',
@@ -816,7 +859,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['backend', 'infrastructure'],
     effort: 'medium',
-    targetVersion: 'v6.7',
+    targetVersion: 'v6.14',
     details: [
       'Move JWT token validation to Redis cache',
       'Session data stored with TTL matching token expiry',
@@ -834,7 +877,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['backend', 'infrastructure'],
     effort: 'small',
-    targetVersion: 'v6.7',
+    targetVersion: 'v6.14',
     details: [
       'Sliding window rate limiting algorithm',
       'Per-endpoint configurable limits',
@@ -852,7 +895,7 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
     status: 'planned',
     category: ['backend', 'multiplayer'],
     effort: 'small',
-    targetVersion: 'v6.7',
+    targetVersion: 'v6.14',
     details: [
       'Cache top 100 scores per leaderboard type',
       'Redis sorted sets for efficient ranking',
