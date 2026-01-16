@@ -150,12 +150,18 @@ export function CharacterPreview3D({
     isDraggingRef.current = false;
   }, []);
 
+  // Initialize renderer once on mount
   useEffect(() => {
     if (!containerRef.current) return;
 
     const container = containerRef.current;
     const width = container.clientWidth || 300;
     const containerHeight = height;
+
+    // Clear any existing canvases (handles React Strict Mode)
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -169,10 +175,18 @@ export function CharacterPreview3D({
     cameraRef.current = camera;
 
     // Renderer
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: 'low-power',
+      });
+    } catch (e) {
+      console.error('Failed to create WebGL context:', e);
+      return;
+    }
+
     renderer.setSize(width, containerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x0a0a12, 0.5);
@@ -197,11 +211,6 @@ export function CharacterPreview3D({
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
     scene.add(ground);
-
-    // Character group
-    const character = createCharacter(race, classId);
-    scene.add(character);
-    characterRef.current = character;
 
     // Animation loop
     let lastTime = performance.now();
@@ -247,17 +256,42 @@ export function CharacterPreview3D({
 
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
+    // Cleanup only on unmount
     return () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationIdRef.current);
 
-      if (rendererRef.current && containerRef.current) {
-        containerRef.current.removeChild(rendererRef.current.domElement);
+      if (rendererRef.current) {
         rendererRef.current.dispose();
+        rendererRef.current = null;
       }
 
-      scene.traverse((obj) => {
+      if (sceneRef.current) {
+        sceneRef.current.traverse((obj) => {
+          if (obj instanceof THREE.Mesh) {
+            obj.geometry.dispose();
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach((m) => m.dispose());
+            } else {
+              obj.material.dispose();
+            }
+          }
+        });
+        sceneRef.current = null;
+      }
+    };
+  }, [height]); // Only recreate renderer if height changes
+
+  // Update character when race or class changes (no renderer recreation)
+  useEffect(() => {
+    if (!sceneRef.current) return;
+
+    const scene = sceneRef.current;
+
+    // Remove old character
+    if (characterRef.current) {
+      scene.remove(characterRef.current);
+      characterRef.current.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry.dispose();
           if (Array.isArray(obj.material)) {
@@ -267,8 +301,13 @@ export function CharacterPreview3D({
           }
         }
       });
-    };
-  }, [race, classId, height]);
+    }
+
+    // Create new character
+    const character = createCharacter(race, classId);
+    scene.add(character);
+    characterRef.current = character;
+  }, [race, classId]);
 
   return (
     <div

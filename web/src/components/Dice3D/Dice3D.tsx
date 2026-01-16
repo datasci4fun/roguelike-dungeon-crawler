@@ -107,7 +107,7 @@ export function Dice3D({
   const [isRolling, setIsRolling] = useState(false);
   const [currentRotation, setCurrentRotation] = useState({ rotateX: 0, rotateY: 0, rotateZ: 0 });
   const [showResult, setShowResult] = useState(false);
-  const rollTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Get final rotation to show result
   const getResultRotation = useCallback(() => {
@@ -127,23 +127,16 @@ export function Dice3D({
   }, [dieType, result]);
 
   // Handle rolling animation
+  // CSS handles the visual tumbling animation, we just track timing here
   useEffect(() => {
     if (rolling && !isRolling) {
       setIsRolling(true);
       setShowResult(false);
 
-      // Random tumbling during roll
+      // Roll duration before showing result
       const rollDuration = 1500 + Math.random() * 500;
-      const tumbleInterval = setInterval(() => {
-        setCurrentRotation({
-          rotateX: Math.random() * 720 - 360,
-          rotateY: Math.random() * 720 - 360,
-          rotateZ: Math.random() * 720 - 360,
-        });
-      }, 100);
 
       rollTimeoutRef.current = setTimeout(() => {
-        clearInterval(tumbleInterval);
         setCurrentRotation(getResultRotation());
         setShowResult(true);
 
@@ -154,13 +147,23 @@ export function Dice3D({
       }, rollDuration);
 
       return () => {
-        clearInterval(tumbleInterval);
         if (rollTimeoutRef.current) {
           clearTimeout(rollTimeoutRef.current);
         }
       };
     }
   }, [rolling, isRolling, getResultRotation, onRollComplete]);
+
+  // Handle external rolling prop becoming false while still animating
+  // This can happen if the parent decides the roll is complete before our animation finishes
+  useEffect(() => {
+    if (!rolling && isRolling) {
+      // External says stop rolling - force stop the animation
+      setIsRolling(false);
+      setCurrentRotation(getResultRotation());
+      setShowResult(true);
+    }
+  }, [rolling, isRolling, getResultRotation]);
 
   // Set initial rotation when not rolling
   useEffect(() => {
