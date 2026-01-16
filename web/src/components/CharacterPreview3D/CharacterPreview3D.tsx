@@ -109,15 +109,12 @@ export function CharacterPreview3D({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const characterRef = useRef<THREE.Group | null>(null);
-  const groundRef = useRef<THREE.Mesh | null>(null);
   const animationIdRef = useRef<number>(0);
   const timeRef = useRef<number>(0);
   const rotationRef = useRef<number>(0);
   const isDraggingRef = useRef<boolean>(false);
   const lastMouseXRef = useRef<number>(0);
   const targetRotationRef = useRef<number>(0);
-  const initializedRef = useRef<boolean>(false);
-  const webglErrorRef = useRef<boolean>(false);
 
   // Handle mouse drag for rotation
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -153,13 +150,44 @@ export function CharacterPreview3D({
     isDraggingRef.current = false;
   }, []);
 
-  // Initialize WebGL renderer once on mount
+  // Single effect that handles everything
   useEffect(() => {
-    if (!containerRef.current || initializedRef.current || webglErrorRef.current) return;
+    if (!containerRef.current) return;
 
     const container = containerRef.current;
     const width = container.clientWidth || 300;
     const containerHeight = height;
+
+    // Clear any existing canvases (handles React Strict Mode)
+    while (container.firstChild) {
+      container.removeChild(container.firstChild);
+    }
+
+    // Clean up previous renderer if exists
+    if (rendererRef.current) {
+      rendererRef.current.dispose();
+      rendererRef.current = null;
+    }
+
+    // Clean up previous scene
+    if (sceneRef.current) {
+      sceneRef.current.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry.dispose();
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((m) => m.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      });
+      sceneRef.current = null;
+    }
+
+    // Cancel previous animation
+    if (animationIdRef.current) {
+      cancelAnimationFrame(animationIdRef.current);
+    }
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -172,17 +200,16 @@ export function CharacterPreview3D({
     camera.lookAt(0, 1, 0);
     cameraRef.current = camera;
 
-    // Renderer - wrap in try-catch for WebGL context errors
+    // Renderer
     let renderer: THREE.WebGLRenderer;
     try {
       renderer = new THREE.WebGLRenderer({
         antialias: true,
         alpha: true,
-        powerPreference: 'low-power', // Reduce GPU load
+        powerPreference: 'low-power',
       });
     } catch (e) {
       console.error('Failed to create WebGL context:', e);
-      webglErrorRef.current = true;
       return;
     }
 
@@ -191,18 +218,6 @@ export function CharacterPreview3D({
     renderer.setClearColor(0x0a0a12, 0.5);
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
-
-    // Handle WebGL context loss
-    renderer.domElement.addEventListener('webglcontextlost', (e) => {
-      e.preventDefault();
-      console.warn('WebGL context lost');
-      cancelAnimationFrame(animationIdRef.current);
-    });
-
-    renderer.domElement.addEventListener('webglcontextrestored', () => {
-      console.log('WebGL context restored');
-      animate();
-    });
 
     // Lights
     const ambient = new THREE.AmbientLight(0x333344, 0.5);
@@ -222,9 +237,11 @@ export function CharacterPreview3D({
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
     scene.add(ground);
-    groundRef.current = ground;
 
-    initializedRef.current = true;
+    // Create character
+    const character = createCharacter(race, classId);
+    scene.add(character);
+    characterRef.current = character;
 
     // Animation loop
     let lastTime = performance.now();
@@ -270,17 +287,13 @@ export function CharacterPreview3D({
 
     window.addEventListener('resize', handleResize);
 
-    // Cleanup on unmount only
+    // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationIdRef.current);
-      initializedRef.current = false;
 
       if (rendererRef.current) {
         rendererRef.current.dispose();
-        if (containerRef.current && rendererRef.current.domElement.parentNode) {
-          containerRef.current.removeChild(rendererRef.current.domElement);
-        }
         rendererRef.current = null;
       }
 
@@ -298,50 +311,7 @@ export function CharacterPreview3D({
         sceneRef.current = null;
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [height]); // Only reinitialize if height changes
-
-  // Update character when race or class changes (without recreating renderer)
-  useEffect(() => {
-    // Wait for scene to be initialized by the first effect
-    if (!sceneRef.current || !initializedRef.current) {
-      // If not ready yet, try again after a short delay
-      const timer = setTimeout(() => {
-        if (sceneRef.current && initializedRef.current) {
-          updateCharacter();
-        }
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-
-    updateCharacter();
-
-    function updateCharacter() {
-      const scene = sceneRef.current;
-      if (!scene) return;
-
-      // Remove old character if it exists
-      if (characterRef.current) {
-        scene.remove(characterRef.current);
-        characterRef.current.traverse((obj) => {
-          if (obj instanceof THREE.Mesh) {
-            obj.geometry.dispose();
-            if (Array.isArray(obj.material)) {
-              obj.material.forEach((m) => m.dispose());
-            } else {
-              obj.material.dispose();
-            }
-          }
-        });
-        characterRef.current = null;
-      }
-
-      // Create new character with current race and class
-      const character = createCharacter(race, classId);
-      scene.add(character);
-      characterRef.current = character;
-    }
-  }, [race, classId]);
+  }, [race, classId, height]);
 
   return (
     <div
