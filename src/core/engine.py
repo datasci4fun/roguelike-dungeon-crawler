@@ -17,7 +17,7 @@ from .commands import (
 
 # Turn commands set
 TURN_COMMANDS = {CommandType.TURN_LEFT, CommandType.TURN_RIGHT}
-from ..world import Dungeon, TrapManager, HazardManager, SecretDoorManager, TorchManager, FieldPulseManager
+from ..world import Dungeon, TrapManager, HazardManager, SecretDoorManager, TorchManager, FieldPulseManager, PuzzleManager
 from ..entities import Player, GhostManager
 from ..items import Item, ItemType, ScrollTeleport, LoreScroll, LoreBook
 from ..story import StoryManager, CompletionLedger, derive_victory_legacy, resolve_ending
@@ -93,6 +93,9 @@ class GameEngine(EnvironmentMixin, UICommandsMixin):
 
         # v5.5: Ghost manager
         self.ghost_manager = GhostManager()
+
+        # v7.0: Puzzle manager
+        self.puzzle_manager = PuzzleManager()
 
         # v5.5: Completion ledger for run tracking
         self.completion_ledger = CompletionLedger()
@@ -723,6 +726,17 @@ class GameEngine(EnvironmentMixin, UICommandsMixin):
                         # Make the hidden door walkable
                         self.dungeon.tiles[ty][tx] = TileType.FLOOR
 
+            # v7.0: Check puzzle state if switch is part of a puzzle
+            if interactive.puzzle_id and self.puzzle_manager:
+                result = self.puzzle_manager.on_switch_activated(x, y)
+                if result:
+                    self.add_message(result['message'], importance=MessageImportance.IMPORTANT)
+                    if result.get('solved') and result.get('reward'):
+                        # Apply puzzle reward
+                        messages = self.puzzle_manager.apply_reward(result['reward'], self.dungeon)
+                        for msg in messages[1:]:  # Skip first (already shown)
+                            self.add_message(msg, importance=MessageImportance.IMPORTANT)
+
             # Emit event for puzzle tracking
             if interactive.puzzle_id:
                 self.event_queue.emit(
@@ -754,6 +768,16 @@ class GameEngine(EnvironmentMixin, UICommandsMixin):
                 target_interactive = self.dungeon.get_interactive_at(tx, ty)
                 if target_interactive:
                     target_interactive.toggle()
+
+            # v7.0: Check puzzle state if lever is part of a puzzle
+            if interactive.puzzle_id and self.puzzle_manager:
+                result = self.puzzle_manager.on_lever_toggled(x, y, is_active)
+                if result:
+                    self.add_message(result['message'], importance=MessageImportance.IMPORTANT)
+                    if result.get('solved') and result.get('reward'):
+                        messages = self.puzzle_manager.apply_reward(result['reward'], self.dungeon)
+                        for msg in messages[1:]:
+                            self.add_message(msg, importance=MessageImportance.IMPORTANT)
 
             if interactive.puzzle_id:
                 self.event_queue.emit(

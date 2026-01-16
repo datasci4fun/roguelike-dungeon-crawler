@@ -78,6 +78,108 @@ def layout_cell_blocks(dungeon: 'Dungeon', room: 'Room'):
                     dungeon.tiles[divider_y][dx] = TileType.WALL
 
 
+@register_layout(1, "wardens_office")
+def layout_wardens_office(dungeon: 'Dungeon', room: 'Room'):
+    """Create the Warden's Office with a switch sequence puzzle.
+
+    Features:
+    - Desk/cabinet area (wall protrusion)
+    - 3 switches that must be activated in sequence
+    - Hidden door that opens when puzzle is solved
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
+    from .puzzles import create_switch_sequence_puzzle
+
+    if room.width < 8 or room.height < 6:
+        return
+
+    # Create a small alcove/desk area on one wall
+    alcove_x = room.x + room.width - 3
+    alcove_y = room.y + 1
+    for y in range(alcove_y, min(alcove_y + 2, room.y + room.height - 1)):
+        if alcove_x < room.x + room.width - 1:
+            dungeon.tiles[y][alcove_x] = TileType.WALL
+
+    # Place 3 switches on the south wall (room.y + room.height - 1 is outer wall)
+    # Switches go on north-facing walls visible from inside
+    switch_wall_y = room.y + room.height - 1
+    switch_positions = []
+
+    switch_x_positions = [
+        room.x + 2,
+        room.x + room.width // 2,
+        room.x + room.width - 3,
+    ]
+
+    for i, sx in enumerate(switch_x_positions):
+        if 0 <= sx < dungeon.width and 0 <= switch_wall_y < dungeon.height:
+            if dungeon.tiles[switch_wall_y][sx] == TileType.WALL:
+                switch_positions.append((sx, switch_wall_y))
+                switch = InteractiveTile.switch(
+                    target=None,  # Target will be set by puzzle
+                    wall_face=WallFace.NORTH,
+                    examine_text=f"An old lever marked with {['I', 'II', 'III'][i]}.",
+                    activate_text="Click.",
+                    puzzle_id="wardens_secret",
+                )
+                dungeon.add_interactive(sx, switch_wall_y, switch)
+
+    # Place hidden door on east wall
+    door_x = room.x + room.width - 1
+    door_y = room.y + room.height // 2
+
+    if 0 <= door_x < dungeon.width and 0 <= door_y < dungeon.height:
+        if dungeon.tiles[door_y][door_x] == TileType.WALL:
+            hidden_door = InteractiveTile.hidden_door(
+                wall_face=WallFace.WEST,
+                examine_text="The wall here has faint scratches...",
+            )
+            dungeon.add_interactive(door_x, door_y, hidden_door)
+
+            # Create the puzzle
+            if len(switch_positions) >= 2:
+                puzzle = create_switch_sequence_puzzle(
+                    puzzle_id="wardens_secret",
+                    switch_positions=switch_positions,
+                    door_position=(door_x, door_y),
+                    hint="The numbers must mean something...",
+                )
+                # Add puzzle to dungeon's puzzle manager (will be wired in engine)
+                if hasattr(dungeon, '_pending_puzzles'):
+                    dungeon._pending_puzzles.append(puzzle)
+                else:
+                    dungeon._pending_puzzles = [puzzle]
+
+
+@register_layout(1, "intake_hall")
+def layout_intake_hall(dungeon: 'Dungeon', room: 'Room'):
+    """Create the Intake Hall - player's starting area.
+
+    Features:
+    - Open layout for easy navigation
+    - Mural on wall with lore
+    - Visual marker for "entrance" behind player
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
+
+    if room.width < 6 or room.height < 5:
+        return
+
+    # Add a mural on the north wall
+    mural_x = room.x + room.width // 2
+    mural_y = room.y  # North wall
+
+    if 0 <= mural_x < dungeon.width and 0 <= mural_y < dungeon.height:
+        if dungeon.tiles[mural_y][mural_x] == TileType.WALL:
+            mural = InteractiveTile.mural(
+                lore_id="LORE_FIRST_EXPEDITION",
+                wall_face=WallFace.SOUTH,
+                examine_text="A faded fresco shows armored figures descending stone stairs. "
+                            "Their faces are worn away, but determination shows in their posture.",
+            )
+            dungeon.add_interactive(mural_x, mural_y, mural)
+
+
 # =============================================================================
 # FLOOR 2: Sewer Layouts
 # =============================================================================
