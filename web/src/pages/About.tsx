@@ -23,18 +23,18 @@ const TECH_STACK = {
   backend: [
     { name: 'Python 3.11', desc: 'Server runtime', icon: '🐍' },
     { name: 'FastAPI', desc: 'Async REST API framework', icon: '🚀' },
-    { name: 'SQLite', desc: 'Embedded database', icon: '🗄️' },
+    { name: 'PostgreSQL', desc: 'Primary database', icon: '🗄️' },
+    { name: 'Redis', desc: 'Caching layer', icon: '⚡' },
     { name: 'SQLAlchemy', desc: 'ORM and migrations', icon: '🔗' },
-    { name: 'JWT Auth', desc: 'Secure authentication', icon: '🔐' },
-    { name: 'WebSockets', desc: 'Real-time spectator mode', icon: '📡' },
+    { name: 'JWT + WebSockets', desc: 'Auth and real-time', icon: '🔐' },
   ],
   gameEngine: [
     { name: 'BSP Algorithm', desc: 'Procedural dungeon generation', icon: '🗺️' },
+    { name: 'D&D Combat', desc: 'd20 rolls, AC, saving throws', icon: '🎲' },
     { name: 'A* Pathfinding', desc: 'Enemy AI navigation', icon: '🧠' },
-    { name: 'Turn-based Combat', desc: 'Tactical battle system', icon: '⚔️' },
+    { name: 'Tactical Battles', desc: 'Instanced arena combat', icon: '⚔️' },
     { name: 'State Machine', desc: 'Game flow management', icon: '🔄' },
     { name: 'Entity System', desc: 'Flexible game objects', icon: '📦' },
-    { name: 'Loot Tables', desc: 'Weighted item drops', icon: '🎲' },
   ],
 };
 
@@ -46,12 +46,12 @@ const AI_MODELS = [
     role: 'Primary Development',
     contributions: [
       'Core game architecture and systems',
+      'D&D-style combat with dice mechanics',
       'React component design and implementation',
       'Three.js 3D rendering pipeline',
-      'FastAPI backend and database schema',
+      'FastAPI backend with PostgreSQL/Redis',
+      '3D asset generation pipeline (TripoSR)',
       'Cutscene engine and cinematic system',
-      'CSS styling and responsive design',
-      'Procedural sound effects (Web Audio API)',
       'Bug fixes and optimization',
     ],
     color: '#d4a574',
@@ -97,15 +97,15 @@ const AI_MODELS = [
 
 // Project statistics
 const PROJECT_STATS = [
-  { label: 'Lines of Code', value: '50,000+', icon: '📝' },
-  { label: 'React Components', value: '80+', icon: '🧩' },
-  { label: 'API Endpoints', value: '40+', icon: '🔌' },
-  { label: 'Game Systems', value: '25+', icon: '⚙️' },
+  { label: 'Lines of Code', value: '112,000+', icon: '📝' },
+  { label: 'React Components', value: '115+', icon: '🧩' },
+  { label: 'API Endpoints', value: '50+', icon: '🔌' },
+  { label: 'Game Systems', value: '30+', icon: '⚙️' },
   { label: 'Dungeon Floors', value: '8', icon: '🏰' },
-  { label: 'Unique Enemies', value: '30+', icon: '👹' },
+  { label: 'Unique Enemies', value: '28', icon: '👹' },
   { label: 'Achievements', value: '33', icon: '🏆' },
   { label: 'Lore Entries', value: '32', icon: '📜' },
-  { label: 'Music Tracks', value: '16', icon: '🎼' },
+  { label: 'Audio Files', value: '50+', icon: '🎼' },
   { label: 'Ending Variants', value: '6', icon: '🎭' },
 ];
 
@@ -181,7 +181,7 @@ export function About() {
                 <p>
                   One person. No team. No contractors. Just a single human with a vision,
                   directing four AI tools to build something that would typically require
-                  a full development studio—in just two weeks.
+                  a full development studio—in just 2.5 weeks.
                 </p>
               </div>
             </div>

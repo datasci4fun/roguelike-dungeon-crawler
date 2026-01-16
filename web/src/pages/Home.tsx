@@ -259,7 +259,7 @@ export function Home() {
         <footer className="home-footer">
           <div className="footer-art">═══════════════════════════════════════</div>
           <p>A browser-based roguelike adventure</p>
-          <p className="footer-version">v6.3</p>
+          <p className="footer-version">v6.12</p>
         </footer>
       </div>
     </AtmosphericPage>
