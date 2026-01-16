@@ -2,11 +2,58 @@
 
 **Last Updated:** 2026-01-16
 **Branch:** develop
-**Version:** v6.12.0 (D&D Combat System Complete)
+**Version:** v7.0.0 (Immersive Exploration System)
 
 ---
 
-## Current Status: v6.12.0 - D&D Combat System
+## Current Status: v7.0.0 - Immersive Exploration System
+
+Complete interactive exploration system with wall interactions, puzzles, visual depth, and environmental storytelling.
+
+### v7.0 Exploration System (PR #78)
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| **Interactive Tiles** | Switch, lever, mural, inscription, pressure plate, hidden door | ✅ Complete |
+| **Puzzle System** | Multi-element puzzles with state tracking | ✅ Complete |
+| **Visual Depth** | Elevation, slopes, set pieces (entrance doors, boss throne) | ✅ Complete |
+| **Lore Discovery** | LorePopup for mural/inscription examination | ✅ Complete |
+| **Environmental Clues** | Hints and warnings on all 8 floors | ✅ Complete |
+| **Interaction SFX** | 7 procedural sounds for interactions | ✅ Complete |
+| **Puzzle Achievements** | PUZZLE_SOLVER, PUZZLE_MASTER flags | ✅ Complete |
+
+### New v7.0 Files
+
+| File | Purpose |
+|------|---------|
+| `src/core/constants/interactive.py` | InteractiveTile, TileVisual, enums |
+| `src/world/puzzles.py` | PuzzleManager and puzzle types |
+| `web/src/components/LorePopup.tsx` | Lore discovery popup |
+| `web/src/components/LorePopup.css` | Lore popup styling |
+
+### Puzzle Locations
+
+| Floor | Zone | Puzzle Type |
+|-------|------|-------------|
+| 1 | wardens_office | Switch sequence (3 switches) |
+| 5 | frozen_galleries | Pressure plates (3 plates) |
+
+### Environmental Clues by Floor
+
+| Floor | Zone | Clue Type |
+|-------|------|-----------|
+| 1 | cell_blocks | Prisoner tally marks |
+| 2 | waste_channels | Bloodstain warnings |
+| 3 | druid_ring | Broken weapon (boss hint) |
+| 4 | record_vaults | Faded maps (secret rooms) |
+| 5 | ice_tombs | Frozen corpse (survival tips) |
+| 6 | forbidden_stacks | Forbidden knowledge riddles |
+| 7 | forge_halls | Fire creature warnings |
+| 8 | vault_antechamber | Final boss hints |
+
+---
+
+## Previous Version: v6.12.0 - D&D Combat System
 
 Full D&D-style ability scores, dice rolling, and combat mechanics integrated throughout the game.
 
@@ -141,6 +188,18 @@ docker compose up 3d-worker
 ---
 
 ## Recent Changes
+
+### v7.0.0 (2026-01-16) - Immersive Exploration System (PR #78)
+- New: Interactive tile system (switch, lever, mural, inscription, pressure plate, hidden door)
+- New: PuzzleManager with switch sequence and pressure plate puzzle types
+- New: TileVisual system with elevation, slopes, and set pieces
+- New: LorePopup component for mural/inscription discovery
+- New: Environmental clue inscriptions across all 8 floors
+- New: 7 procedural sound effects for interactions
+- New: PUZZLE_SOLVER and PUZZLE_MASTER achievement flags
+- New: Entrance doors set piece in intake_hall
+- New: Boss throne set piece in crystal boss approach
+- New: Descent visuals in Floor 7 and 8 boss approach rooms
 
 ### v6.12.0 (2026-01-16) - D&D System Enhancements (PR #77)
 - New: DEX-based initiative (d20 + DEX mod) with DICE_ROLL events
@@ -285,11 +344,12 @@ web/src/
 ```
 src/
 ├── core/          # Engine, events, commands
+│   └── constants/ # InteractiveTile, TileVisual (v7.0)
 ├── combat/        # Battle system, AI
 ├── entities/      # Player, enemies, items
 ├── managers/      # Entity, level, combat managers
 ├── story/         # Lore, completion tracking
-└── world/         # Dungeon generation, zones
+└── world/         # Dungeon generation, zones, puzzles (v7.0)
 ```
 
 ---
