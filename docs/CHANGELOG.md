@@ -4,6 +4,45 @@ All notable changes to this project.
 
 ---
 
+## [7.1.0] - 2026-01-16 - Zone Layout Designer (PR #80)
+
+### Added
+- **Zone Layout Designer**: Novel rule-based level editor at `/level-editor`
+  - Generate sample dungeons with specific seeds for any floor (1-8)
+  - View zone configurations with color-coded rooms
+  - **Rule Builder**: Visual interface to create asset placement rules
+    - Position strategies: center, corners, walls, entrances, random, perimeter
+    - Count specs: fixed, range, density-based, all positions
+    - Rotation options: fixed angle, face center, face wall, random
+    - Scale and spacing controls
+  - **Presets**: One-click patterns (corner pillars, center statue, wall torches, etc.)
+  - **Python Export**: Generates `@register_layout` code via modal popup
+  - Resizable panels for workflow customization
+- **Model Library System**: Extracted 3D models into reusable modules
+  - `entranceDoors.ts`, `bossThrone.ts`, `pillar.ts`, `statue.ts`
+  - Central registry with categories and metadata
+  - Shared material presets (wood, stone, metal, iron, gold, fabric)
+- **Model Generator Skill**: Claude skill for procedural Three.js model creation
+- **Presentation Slides**: AI synthesis theory and Level Editor case study
+
+### Fixed
+- DieType export causing Vite module errors (type-only export syntax)
+- WebGL context loss from multiple renderer instances
+- Passive event listener warnings on map canvas
+- CharacterPreview3D not appearing on initial load
+- CharacterPreview3D not updating when race/class changes
+- Dice animation stuck in rolling state during stat rolling
+- Dice 3D appearance during rolling
+
+### Technical
+- `web/src/pages/LevelEditor/`: 8 new components (~3,500 lines)
+- `web/src/models/`: 6 new model files with registry
+- `web/src/services/editorApi.ts`: Editor API client
+- `server/app/api/editor.py`: Backend editor endpoints
+- `.claude/skills/model-generator/SKILL.md`: Model generation skill
+
+---
+
 ## [6.12.0] - 2026-01-16 - D&D System Enhancements (PR #77)
 
 ### Added

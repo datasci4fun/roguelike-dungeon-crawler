@@ -51,6 +51,7 @@ const AI_MODELS = [
       'Three.js 3D rendering pipeline',
       'FastAPI backend with PostgreSQL/Redis',
       '3D asset generation pipeline (TripoSR)',
+      'Zone Layout Designer (rule-based level editor)',
       'Cutscene engine and cinematic system',
       'Bug fixes and optimization',
     ],
@@ -97,13 +98,13 @@ const AI_MODELS = [
 
 // Project statistics
 const PROJECT_STATS = [
-  { label: 'Lines of Code', value: '112,000+', icon: '📝' },
-  { label: 'React Components', value: '115+', icon: '🧩' },
-  { label: 'API Endpoints', value: '50+', icon: '🔌' },
-  { label: 'Game Systems', value: '30+', icon: '⚙️' },
+  { label: 'Lines of Code', value: '118,000+', icon: '📝' },
+  { label: 'React Components', value: '55+', icon: '🧩' },
+  { label: 'Python Modules', value: '216+', icon: '🐍' },
+  { label: 'Merged PRs', value: '80', icon: '🔀' },
   { label: 'Dungeon Floors', value: '8', icon: '🏰' },
   { label: 'Unique Enemies', value: '28', icon: '👹' },
-  { label: 'Achievements', value: '34', icon: '🏆' },
+  { label: 'Achievements', value: '36', icon: '🏆' },
   { label: 'Lore Entries', value: '32', icon: '📜' },
   { label: 'Audio Files', value: '50+', icon: '🎼' },
   { label: 'Ending Variants', value: '6', icon: '🎭' },

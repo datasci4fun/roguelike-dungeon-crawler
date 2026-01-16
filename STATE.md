@@ -2,11 +2,49 @@
 
 **Last Updated:** 2026-01-16
 **Branch:** develop
-**Version:** v7.0.0 (Immersive Exploration System)
+**Version:** v7.1.0 (Zone Layout Designer)
 
 ---
 
-## Current Status: v7.0.0 - Immersive Exploration System
+## Current Status: v7.1.0 - Zone Layout Designer
+
+Novel rule-based level editor with model library system and procedural code generation.
+
+### v7.1 Zone Layout Designer (PR #80)
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| **Zone Layout Designer** | Visual rule builder at `/level-editor` | ✅ Complete |
+| **Rule Builder** | Position, count, rotation, scale controls | ✅ Complete |
+| **Presets** | One-click patterns (pillars, statues, torches) | ✅ Complete |
+| **Python Export** | Generates `@register_layout` code | ✅ Complete |
+| **Model Library** | 4 extracted models with registry | ✅ Complete |
+| **Model Generator Skill** | Claude skill for Three.js models | ✅ Complete |
+| **Presentation Slides** | AI synthesis theory case study | ✅ Complete |
+
+### New v7.1 Files
+
+| File | Purpose |
+|------|---------|
+| `web/src/pages/LevelEditor/*.tsx` | 8 Level Editor components |
+| `web/src/models/*.ts` | 6 model files with registry |
+| `web/src/services/editorApi.ts` | Editor API client |
+| `server/app/api/editor.py` | Backend editor endpoints |
+| `.claude/skills/model-generator/SKILL.md` | Model generation skill |
+
+### Bug Fixes (hotfix/v7-verification)
+
+| Issue | Fix |
+|-------|-----|
+| DieType export error | Separated type-only exports |
+| WebGL context loss | Added forceContextLoss() cleanup |
+| Passive event listeners | Native addEventListener with passive: false |
+| CharacterPreview3D not loading | Rewrote with single useEffect approach |
+| Dice animation stuck | Fixed rolling state management |
+
+---
+
+## Previous Version: v7.0.0 - Immersive Exploration System
 
 Complete interactive exploration system with wall interactions, puzzles, visual depth, and environmental storytelling.
 
