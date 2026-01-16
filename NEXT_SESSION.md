@@ -1,96 +1,135 @@
-# Next Session - Post UI Migration
+# Next Session - D&D Stats & Dice System
 
-## Session Date: 2026-01-15
+## Session Date: 2026-01-16
 
 ## Completed This Session
 
-### UI Migration Complete (PR #73)
+### D&D-Style Stats & Dice System (PR #74)
 
-All 6 phases of the UI migration plan have been implemented:
+Implemented full D&D-style ability scores and dice rolling mechanics:
 
-| Phase | Component | Status |
-|-------|-----------|--------|
-| 1 | **StatsHUD** | Complete - Top-left overlay with level, race, class, HP/XP bars, ATK/DEF/Kills |
-| 2 | **GameMessagesPanel** | Complete - Bottom-left with tabbed filtering (All/Combat/Loot/System) |
-| 3 | **Minimap** | Complete - Bottom-right 11x11 tile grid with player facing indicator |
-| 4 | **HelpWindow** | Complete - Modal with tabbed sections (Movement/Actions/Screens/Combat/Tips) |
-| 5 | **GameMenu** | Complete - Pause menu with Resume/Help/Settings/Quit options |
-| 6 | **Terminal Removal** | Complete - Terminal fully removed, keyboard input handled in Play.tsx |
+| Component | Description | Status |
+|-----------|-------------|--------|
+| **Dice Roller** | Core dice module with LUCK influence | Complete |
+| **Ability Scores** | STR, DEX, CON, LUCK system | Complete |
+| **D&D Combat** | Attack rolls vs AC, damage dice, saves | Complete |
+| **Database Models** | Race/class modifiers, weapons | Complete |
+| **Seed Data** | Updated races, classes, new weapons | Complete |
+| **3D Dice** | Animated CSS 3D dice (d4-d20) | Complete |
+| **StatRoller** | Character creation dice UI | Complete |
+| **DiceRollHUD** | Battle dice display overlay | Complete |
 
-### HUD Consolidation
-- Removed duplicate CharacterHUD component
-- StatsHUD now shows race name alongside class (e.g., "Lv.1 Elf Mage")
-- CharacterWindow X button fixed (pointer-events on decorative elements)
+### Backend (Python)
 
-### Accessibility & Compatibility Fixes
-- Fixed Minimap nested interactive controls (role="region" instead of "img")
-- Removed viewport zoom restrictions for accessibility
-- Added id/name attributes to form inputs
-- Added -webkit-backdrop-filter prefix for Safari (7 files)
-- Added -webkit-user-select prefix and fixed property order
-- Added -webkit-optimize-contrast for image-rendering (Edge)
-- Fixed -webkit-background-clip order in SCSS files
-- Replaced min-height: auto with min-height: 0 for Firefox
+**New Files:**
+- `src/core/dice.py` - Core dice rolling with LUCK influence
+  - `roll_die()`, `roll_dice()`, `roll_notation()`, `roll_d20()`
+  - LUCK: chance to roll twice and take higher/lower
+- `src/entities/ability_scores.py` - Ability score system
+  - `AbilityScores` dataclass (str, dex, con, luck)
+  - Race/class modifier constants and application
+- `src/combat/dnd_combat.py` - D&D combat resolution
+  - `AttackRoll`, `DamageRoll`, `SavingThrow` dataclasses
+  - `make_attack_roll()` - 1d20 + modifier vs AC
+  - `make_damage_roll()` - weapon dice + modifier
+  - `resolve_attack()` - full combat resolution
 
-**Files Created:**
-- `web/src/components/StatsHUD/` - Player vitals overlay
-- `web/src/components/GameMessagesPanel/` - Tabbed message panel
-- `web/src/components/Minimap/` - Dungeon minimap
-- `web/src/components/HelpWindow/` - Help modal
-- `web/src/components/GameMenu/` - Pause menu
+**Modified Files:**
+- `src/entities/entity/player.py` - Added ability scores, armor_class, modifiers
 
-**Files Modified:**
-- `web/src/pages/Play.tsx` - Major refactor, removed terminal, added keyboard handler
-- `web/src/pages/Play.css` - Removed terminal-related styles
-- Various CSS files for compatibility prefixes
+### Database Models
+
+**Updated `server/app/models/game_constants.py`:**
+- **Race**: base_str/dex/con/luck, str/dex/con/luck_modifier
+- **PlayerClass**: str/dex/con/luck_modifier, hit_die, primary_stat, armor_proficiency
+- **Enemy**: armor_class, attack_bonus, damage_dice, str/dex/con_score
+- **Weapon** (new): weapon_id, damage_dice, damage_type, stat_used, is_ranged, properties
+
+### Seed Data
+
+**`data/seeds/races.json`** - All 5 races with ability scores:
+| Race | Base Stats | Modifiers |
+|------|------------|-----------|
+| Human | 10/10/10/10 | +0/+0/+0/+2 LUCK |
+| Elf | 8/12/8/10 | -1 STR/+2 DEX |
+| Dwarf | 12/8/12/8 | +1 STR/+2 CON/-1 LUCK |
+| Halfling | 6/14/10/12 | -2 STR/+2 DEX/+2 LUCK |
+| Orc | 14/8/12/6 | +2 STR/+1 CON/-1 LUCK |
+
+**`data/seeds/classes.json`** - All 4 classes with hit dice:
+| Class | Hit Die | Primary | Modifiers |
+|-------|---------|---------|-----------|
+| Warrior | d10 | STR | +2 STR/+1 CON |
+| Mage | d6 | DEX | -1 STR/+1 DEX/+2 LUCK |
+| Rogue | d8 | DEX | +2 DEX/+1 LUCK |
+| Cleric | d8 | CON | +2 CON/+1 LUCK |
+
+**`data/seeds/weapons.json`** (new) - 16 weapons with D&D damage:
+- Melee: fist (1d4), dagger (1d4), shortsword (1d6), longsword (1d8), greatsword (2d6), etc.
+- Ranged: shortbow (1d6), longbow (1d8), crossbow (1d8), throwing knife (1d4)
+
+### Frontend (React/TypeScript)
+
+**New Components:**
+- `web/src/components/Dice3D/` - 3D animated dice with CSS transforms
+  - Supports d4, d6, d8, d10, d12, d20
+  - Rolling animation, LUCK glow effect
+- `web/src/components/DiceRollHUD/` - Combat dice overlay
+  - Queue system for multiple rolls
+  - Shows attack vs AC, damage, critical/fumble
+- `web/src/components/StatRoller/` - Character creation roller
+  - Interactive 3d6 rolling per stat
+  - Race/class modifier preview
+  - "Roll All" and "Accept" buttons
+
+**Modified Files:**
+- `web/src/pages/CharacterCreation.tsx` - Added stat rolling modal
+- `web/src/pages/Play.tsx` - Integrated DiceRollHUD, DICE_ROLL event processing
+- `web/src/types/index.ts` - Added AbilityScores, DiceRollEvent types
 
 ---
 
 ## Current State
 
-### Component Hierarchy (3D View)
+### Stat Calculation Flow
+1. Roll 3d6 for each stat (3-18 base)
+2. Add race base adjustment (race_base - 10)
+3. Apply race modifier
+4. Apply class modifier
+5. Final stat used for combat modifiers
+
+### Combat Flow (Ready for Integration)
+1. Attack: 1d20 + DEX modifier vs target AC
+2. Hit: Roll weapon damage dice + STR modifier
+3. Critical (nat 20): Double damage dice
+4. Fumble (nat 1): Auto-miss
+5. LUCK influences reroll chances
+
+### Component Hierarchy Update
 ```
 Play.tsx
-└── scene-wrapper (position: relative)
-    ├── FirstPersonRenderer3D / BattleRenderer3D
-    ├── StatsHUD (top-left) - NEW
-    ├── StatusHUD (field pulse, artifacts)
-    ├── GameMessagesPanel (bottom-left) - NEW
-    ├── Minimap (bottom-right) - NEW
-    ├── CharacterWindow (modal - C/I keys)
-    ├── LoreCodex (modal - J key)
-    ├── HelpWindow (modal - ? key) - NEW
-    ├── GameMenu (modal - ESC key) - NEW
-    └── TransitionCurtain / Cutscenes
+└── scene-wrapper
+    ├── BattleRenderer3D
+    ├── BattleHUD
+    ├── DiceRollHUD (top-right) - NEW
+    └── ...other overlays
 ```
-
-### Keyboard Controls
-- **WASD/Arrows** - Movement
-- **C** - Character window (Stats tab)
-- **I** - Character window (Inventory tab)
-- **J** - Lore Codex
-- **?** - Help window
-- **ESC** - Game menu (pause)
-- **E** - Use/Equip item (in inventory)
-- **D** - Drop item (in inventory)
 
 ---
 
 ## Next Tasks
 
-### Potential Improvements
-1. **Save/Load System** - GameMenu Settings option is disabled, needs backend endpoints
-2. **Audio Settings** - Add volume controls to GameMenu
-3. **Minimap Enhancements** - Zoom levels, fog of war toggle
-4. **Mobile Touch Controls** - Verify all new overlays work on mobile
+### Backend Integration Required
+1. **Emit DICE_ROLL Events** - Combat system needs to emit events for dice HUD
+2. **Use D&D Combat Module** - Replace probability combat with dice rolls
+3. **Database Migration** - Create Alembic migration for new columns
+4. **Seed Data Sync** - Run seed sync to update database
 
-### Known Limitations (Not Fixable in Code)
-- `content-type` headers - Server configuration
-- `cache-control` header - Server/CDN configuration
-- `x-content-type-options` header - Server configuration
-- `meta[name=theme-color]` - Firefox doesn't support (harmless)
-- `scrollbar-width` - Safari has no equivalent
-- `text-shadow` in @keyframes - Performance warning, would require major animation rewrites
+### Potential Improvements
+1. **Saving Throws** - Integrate with traps and hazards
+2. **Weapon Equipment** - Use weapon damage dice from inventory
+3. **Enemy Combat** - Use enemy armor_class and damage_dice
+4. **Skill Checks** - Add ability-based skill checks
 
 ---
 
@@ -112,6 +151,8 @@ cd web && npm run dev
 
 ## Git Status
 
-Branch: `develop` (synced with master)
+Branch: `develop`
 
-All changes committed and merged via PR #73.
+Recent merges:
+- PR #74 - D&D-style ability scores and dice rolling system
+- PR #73 - UI Migration (StatsHUD, GameMessagesPanel, Minimap, etc.)
