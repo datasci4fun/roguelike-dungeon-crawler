@@ -7,6 +7,7 @@ import './StatsHUD.css';
 
 interface StatsHUDProps {
   level: number;
+  raceName?: string;
   className?: string;
   health: number;
   maxHealth: number;
@@ -34,6 +35,7 @@ function getHealthStatus(ratio: number): 'healthy' | 'wounded' | 'critical' {
 
 export function StatsHUD({
   level,
+  raceName,
   className,
   health,
   maxHealth,
@@ -55,10 +57,14 @@ export function StatsHUD({
       role="region"
       aria-label="Player statistics"
     >
-      {/* Level and Class */}
+      {/* Level, Race and Class */}
       <div className="stats-level" role="group" aria-label="Character level">
         <span className="level-number">Lv.{level}</span>
-        {className && <span className="class-name">{className}</span>}
+        {(raceName || className) && (
+          <span className="class-name">
+            {raceName}{raceName && className ? ' ' : ''}{className}
+          </span>
+        )}
       </div>
 
       {/* HP Bar */}

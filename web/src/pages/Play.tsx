@@ -8,7 +8,6 @@ import { useSfxGameEvents, useSfxCommands } from '../hooks/useSfxGameEvents';
 import { useDebugRenderer } from '../hooks/useDebugRenderer';
 import { mapKeyToCommand } from '../components/GameTerminal/keymap';
 import { FirstPersonRenderer, FirstPersonRenderer3D, type CorridorInfoEntry } from '../components/SceneRenderer';
-import { CharacterHUD } from '../components/CharacterHUD';
 import { StatusHUD } from '../components/StatusHUD';
 import { StatsHUD } from '../components/StatsHUD';
 import { GameMessagesPanel } from '../components/GameMessagesPanel';
@@ -599,6 +598,7 @@ export function Play() {
                 {gameState?.player && !gameState?.battle && (
                   <StatsHUD
                     level={gameState.player.level}
+                    raceName={gameState.player.race?.name}
                     className={gameState.player.class?.name}
                     health={gameState.player.health}
                     maxHealth={gameState.player.max_health}
@@ -607,19 +607,6 @@ export function Play() {
                     attack={gameState.player.attack}
                     defense={gameState.player.defense}
                     kills={gameState.player.kills}
-                  />
-                )}
-                {/* Character HUD overlay - hide during battle */}
-                {gameState?.player?.race && !gameState?.battle && (
-                  <CharacterHUD
-                    race={gameState.player.race}
-                    playerClass={gameState.player.class}
-                    abilities={gameState.player.abilities}
-                    passives={gameState.player.passives}
-                    health={gameState.player.health}
-                    maxHealth={gameState.player.max_health}
-                    showAbilities={true}
-                    compact={false}
                   />
                 )}
                 {/* Status HUD overlay (Field Pulse, Artifacts, Vows) - hide during battle */}
