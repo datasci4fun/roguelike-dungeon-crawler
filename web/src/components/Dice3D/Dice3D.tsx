@@ -107,7 +107,7 @@ export function Dice3D({
   const [isRolling, setIsRolling] = useState(false);
   const [currentRotation, setCurrentRotation] = useState({ rotateX: 0, rotateY: 0, rotateZ: 0 });
   const [showResult, setShowResult] = useState(false);
-  const rollTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const rollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Get final rotation to show result
   const getResultRotation = useCallback(() => {

@@ -3,7 +3,7 @@
  */
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { getGameWsUrl } from '../services/api';
-import type { BattleState, TransitionState, EquipmentState } from '../types';
+import type { BattleState, TransitionState, EquipmentState, AbilityScores } from '../types';
 
 export type GameState = 'PLAYING' | 'DEAD' | 'VICTORY' | 'TITLE' | 'INTRO';
 export type UIMode = 'GAME' | 'INVENTORY' | 'CHARACTER' | 'HELP' | 'MESSAGE_LOG' | 'DIALOG' | 'READING';
@@ -60,6 +60,7 @@ export type ClassId = 'WARRIOR' | 'MAGE' | 'ROGUE';
 export interface CharacterConfig {
   race: RaceId;
   class: ClassId;
+  ability_scores?: AbilityScores;
 }
 
 export interface PlayerRace {

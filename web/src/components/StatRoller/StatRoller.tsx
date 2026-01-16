@@ -110,10 +110,6 @@ export function StatRoller({ race, playerClass, onComplete, allowReroll = true }
 
   // Calculate final stat with all modifiers
   const calculateFinalStat = useCallback((stat: StatName, baseRoll: number): number => {
-    const raceBase = raceMods.base[stat.substring(0, 3) as keyof AbilityModifiers] || raceMods.base[stat as unknown as keyof AbilityModifiers];
-    const raceMod = raceMods.mods[stat.substring(0, 3) as keyof AbilityModifiers] || raceMods.mods[stat as unknown as keyof AbilityModifiers];
-    const classMod = classMods[stat.substring(0, 3) as keyof AbilityModifiers] || classMods[stat as unknown as keyof AbilityModifiers];
-
     // Map stat name to modifier key
     const modKey = stat === 'strength' ? 'str' : stat === 'dexterity' ? 'dex' : stat === 'constitution' ? 'con' : 'luck';
 
