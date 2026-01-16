@@ -727,9 +727,11 @@ export function Play() {
           </div>
 
           <div className="game-controls" role="group" aria-label="View settings">
-            <label className="scene-toggle">
+            <label className="scene-toggle" htmlFor="scene-view-toggle">
               <input
                 type="checkbox"
+                id="scene-view-toggle"
+                name="sceneView"
                 checked={showSceneView}
                 onChange={(e) => setShowSceneView(e.target.checked)}
                 aria-describedby="scene-view-desc"
@@ -740,9 +742,11 @@ export function Play() {
               </span>
             </label>
 
-            <label className="scene-toggle">
+            <label className="scene-toggle" htmlFor="tile-grid-toggle">
               <input
                 type="checkbox"
+                id="tile-grid-toggle"
+                name="tileGrid"
                 checked={useTileGrid}
                 onChange={(e) => setUseTileGrid(e.target.checked)}
                 disabled={!showSceneView}
@@ -754,9 +758,11 @@ export function Play() {
               </span>
             </label>
 
-            <label className="scene-toggle">
+            <label className="scene-toggle" htmlFor="3d-mode-toggle">
               <input
                 type="checkbox"
+                id="3d-mode-toggle"
+                name="use3DMode"
                 checked={use3DMode}
                 onChange={(e) => setUse3DMode(e.target.checked)}
                 disabled={!showSceneView}

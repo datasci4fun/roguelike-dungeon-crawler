@@ -205,6 +205,8 @@ export function ChatPanel({
           <input
             ref={inputRef}
             type="text"
+            id="chat-message-input"
+            name="message"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.stopPropagation()}

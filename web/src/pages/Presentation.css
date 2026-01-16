@@ -82,6 +82,7 @@
   background: rgba(20, 20, 30, 0.9);
   border: 1px solid rgba(74, 222, 128, 0.2);
   border-radius: 50px;
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
 }
 
@@ -841,7 +842,7 @@ body.export-mode .header {
 }
 
 .presentation.export-mode .slide-container {
-  min-height: auto;
+  min-height: 0;
   padding: 0;
   position: relative;
   z-index: 200;
@@ -1033,13 +1034,13 @@ body.export-mode .header {
 
 /* Ensure content layer can scroll in export mode */
 body.export-mode .atm-content-layer {
-  min-height: auto !important;
+  min-height: 0 !important;
   height: auto !important;
   overflow: visible !important;
 }
 
 body.export-mode .atmospheric-page {
-  min-height: auto !important;
+  min-height: 0 !important;
   height: auto !important;
   overflow: visible !important;
 }

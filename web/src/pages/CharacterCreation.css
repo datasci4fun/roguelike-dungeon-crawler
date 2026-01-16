@@ -42,6 +42,7 @@
 
 .selection-section {
   background: rgba(10, 10, 15, 0.8);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   border-radius: 8px;
   padding: 1.5rem;
@@ -214,6 +215,7 @@
 
 .preview-section {
   background: rgba(10, 10, 15, 0.85);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   border-radius: 8px;
   padding: 1.5rem;

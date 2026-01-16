@@ -150,7 +150,7 @@ export function Minimap({
   }
 
   return (
-    <div className="minimap" role="img" aria-label={`Minimap - Floor ${dungeonLevel}`}>
+    <div className="minimap" role="region" aria-label={`Minimap - Floor ${dungeonLevel}`}>
       {/* Header with level and compass */}
       <div className="minimap-header">
         <span className="minimap-level-label">Floor {dungeonLevel}</span>
@@ -170,7 +170,7 @@ export function Minimap({
       </div>
 
       {/* Tile Grid */}
-      <div className="minimap-grid">
+      <div className="minimap-grid" role="img" aria-label="Dungeon map">
         {tiles.map((row, y) => (
           <div key={y} className="minimap-row">
             {row.map((char, x) => {
