@@ -1,144 +1,117 @@
-# Next Session - UI Migration to 3D View
+# Next Session - Post UI Migration
 
 ## Session Date: 2026-01-15
 
-## Current Session Completed
+## Completed This Session
 
-### CharacterWindow Enhancements
-- **Redesigned styling** - Traditional RPG parchment/stone aesthetic with fixed sizing
-- **Inventory tab integration** - Moved inventory from separate window into CharacterWindow tab
-- **Equipment tab** - Full equipment management with 5 slots (Weapon, Off-Hand, Armor, Ring, Amulet)
-- **Journal tab** - Lore summary with progress bar, category breakdown, recent discoveries
-- **Unequip functionality** - Backend commands for unequipping items from Character screen
+### UI Migration Complete (PR #73)
 
-### LoreCodex Integration
-- **Moved inside 3D scene container** - Now renders as overlay within scene-wrapper
-- **Position changed** - From `position: fixed` to `position: absolute`
-- **Integrated with CharacterWindow** - Journal tab shows lore summary with button to open full Codex
+All 6 phases of the UI migration plan have been implemented:
 
-### Inventory Click Selection Fix
-- **Added INVENTORY_SELECT command** - Direct selection by index instead of looped navigation
-- **Updated sendCommand** - Now accepts optional data parameter for commands with payloads
-- **Fixed in both contexts** - GameContext.tsx and useGameSocket.ts updated
+| Phase | Component | Status |
+|-------|-----------|--------|
+| 1 | **StatsHUD** | Complete - Top-left overlay with level, race, class, HP/XP bars, ATK/DEF/Kills |
+| 2 | **GameMessagesPanel** | Complete - Bottom-left with tabbed filtering (All/Combat/Loot/System) |
+| 3 | **Minimap** | Complete - Bottom-right 11x11 tile grid with player facing indicator |
+| 4 | **HelpWindow** | Complete - Modal with tabbed sections (Movement/Actions/Screens/Combat/Tips) |
+| 5 | **GameMenu** | Complete - Pause menu with Resume/Help/Settings/Quit options |
+| 6 | **Terminal Removal** | Complete - Terminal fully removed, keyboard input handled in Play.tsx |
+
+### HUD Consolidation
+- Removed duplicate CharacterHUD component
+- StatsHUD now shows race name alongside class (e.g., "Lv.1 Elf Mage")
+- CharacterWindow X button fixed (pointer-events on decorative elements)
+
+### Accessibility & Compatibility Fixes
+- Fixed Minimap nested interactive controls (role="region" instead of "img")
+- Removed viewport zoom restrictions for accessibility
+- Added id/name attributes to form inputs
+- Added -webkit-backdrop-filter prefix for Safari (7 files)
+- Added -webkit-user-select prefix and fixed property order
+- Added -webkit-optimize-contrast for image-rendering (Edge)
+- Fixed -webkit-background-clip order in SCSS files
+- Replaced min-height: auto with min-height: 0 for Firefox
+
+**Files Created:**
+- `web/src/components/StatsHUD/` - Player vitals overlay
+- `web/src/components/GameMessagesPanel/` - Tabbed message panel
+- `web/src/components/Minimap/` - Dungeon minimap
+- `web/src/components/HelpWindow/` - Help modal
+- `web/src/components/GameMenu/` - Pause menu
 
 **Files Modified:**
-- `web/src/components/CharacterWindow.tsx` - Major updates, all tabs functional
-- `web/src/components/CharacterWindow.css` - Equipment and Journal tab styles
-- `web/src/components/LoreCodex/LoreCodex.scss` - Position fix for scene container
-- `web/src/pages/Play.tsx` - LoreCodex moved inside scene-wrapper, new props
-- `web/src/contexts/GameContext.tsx` - sendCommand with data support
-- `web/src/hooks/useGameSocket.ts` - sendCommand with data support
-- `src/core/commands.py` - INVENTORY_SELECT, UNEQUIP_* commands
-- `src/core/engine_ui_commands.py` - Handlers for new commands
-- `server/app/services/game_session/manager.py` - Command routing fixes
-- `server/app/services/game_session/manager_serialization.py` - Equipment serialization
+- `web/src/pages/Play.tsx` - Major refactor, removed terminal, added keyboard handler
+- `web/src/pages/Play.css` - Removed terminal-related styles
+- Various CSS files for compatibility prefixes
 
 ---
 
-## Next Major Task: UI Migration
+## Current State
 
-### Reference Document
-**See [PLAN_UI_MIGRATION.md](PLAN_UI_MIGRATION.md)** for the complete implementation plan.
+### Component Hierarchy (3D View)
+```
+Play.tsx
+└── scene-wrapper (position: relative)
+    ├── FirstPersonRenderer3D / BattleRenderer3D
+    ├── StatsHUD (top-left) - NEW
+    ├── StatusHUD (field pulse, artifacts)
+    ├── GameMessagesPanel (bottom-left) - NEW
+    ├── Minimap (bottom-right) - NEW
+    ├── CharacterWindow (modal - C/I keys)
+    ├── LoreCodex (modal - J key)
+    ├── HelpWindow (modal - ? key) - NEW
+    ├── GameMenu (modal - ESC key) - NEW
+    └── TransitionCurtain / Cutscenes
+```
 
-### Goal
-Move all terminal UI elements into the 3D first-person view to eventually hide the terminal panel entirely.
+### Keyboard Controls
+- **WASD/Arrows** - Movement
+- **C** - Character window (Stats tab)
+- **I** - Character window (Inventory tab)
+- **J** - Lore Codex
+- **?** - Help window
+- **ESC** - Game menu (pause)
+- **E** - Use/Equip item (in inventory)
+- **D** - Drop item (in inventory)
 
-### Implementation Order
+---
 
-| Phase | Component | Location | Status |
-|-------|-----------|----------|--------|
-| 1 | **StatsHUD** | Top-left of 3D view | Not started |
-| 2 | **ChatPanel** | Bottom-left, tabbed messages | Not started |
-| 3 | **Minimap** | Bottom-right, tile grid | Not started |
-| 4 | **HelpWindow** | Modal window | Not started |
-| 5 | **GameMenu** | Modal with save/load | Not started |
-| 6 | **Terminal Toggle** | Hide terminal option | Not started |
+## Next Tasks
 
-### Phase 1: StatsHUD
-**First component to build** - Displays player vitals in top-left:
-- Level with class name
-- HP bar (color-coded by health %)
-- XP bar (progress to next level)
-- ATK, DEF, Kills stats with icons
-- Low health warning effects
+### Potential Improvements
+1. **Save/Load System** - GameMenu Settings option is disabled, needs backend endpoints
+2. **Audio Settings** - Add volume controls to GameMenu
+3. **Minimap Enhancements** - Zoom levels, fog of war toggle
+4. **Mobile Touch Controls** - Verify all new overlays work on mobile
 
-**Data available**: `gameState.player` has all required stats
-
-### Phase 5 Backend Work
-Save/Load system requires new endpoints:
-- `POST /api/game/save`
-- `GET /api/game/saves`
-- `POST /api/game/load/{save_id}`
+### Known Limitations (Not Fixable in Code)
+- `content-type` headers - Server configuration
+- `cache-control` header - Server/CDN configuration
+- `x-content-type-options` header - Server configuration
+- `meta[name=theme-color]` - Firefox doesn't support (harmless)
+- `scrollbar-width` - Safari has no equivalent
+- `text-shadow` in @keyframes - Performance warning, would require major animation rewrites
 
 ---
 
 ## Quick Start
 
 ```bash
+# Using docker-compose (recommended)
+docker-compose up -d
+
+# Or manually:
 # Start backend server
 cd server && .venv/Scripts/python -m uvicorn app.main:app --reload --port 8000
 
 # Start frontend dev server
 cd web && npm run dev
-
-# Or use docker-compose
-docker-compose up -d
 ```
-
----
-
-## Testing Current Changes
-
-1. **CharacterWindow** - Press C, verify all 5 tabs work
-2. **Inventory in CharacterWindow** - Press C then tab 3, or press I directly
-3. **Click selection** - Click items in inventory list, should select immediately
-4. **Equipment tab** - Press C then tab 4, see equipped items, test Unequip button
-5. **Journal tab** - Press C then tab 5, see lore progress and categories
-6. **LoreCodex** - Press J, should render inside 3D view area (not full screen)
-
----
-
-## Architecture Notes
-
-### Current Component Hierarchy (3D View)
-```
-Play.tsx
-└── scene-wrapper (position: relative)
-    ├── FirstPersonRenderer3D / BattleRenderer3D
-    ├── CharacterHUD (top-right area)
-    ├── StatusHUD (field pulse, artifacts)
-    ├── CharacterWindow (modal, centered)
-    ├── LoreCodex (modal, centered)
-    └── TransitionCurtain / Cutscenes
-```
-
-### Target Component Hierarchy (After Migration)
-```
-Play.tsx
-└── scene-wrapper (position: relative)
-    ├── FirstPersonRenderer3D / BattleRenderer3D
-    ├── StatsHUD (NEW - top-left)
-    ├── CharacterHUD (existing - top-right)
-    ├── StatusHUD (existing)
-    ├── Minimap (NEW - bottom-right)
-    ├── ChatPanel (NEW - bottom-left)
-    ├── CharacterWindow (modal)
-    ├── LoreCodex (modal)
-    ├── HelpWindow (NEW - modal)
-    ├── GameMenu (NEW - modal)
-    └── TransitionCurtain / Cutscenes
-```
-
----
-
-## Known Issues
-
-None currently blocking. All implemented features working correctly.
 
 ---
 
 ## Git Status
 
-Branch: `feature/camera-perspective-toggle`
+Branch: `develop` (synced with master)
 
-Uncommitted changes from this session - should commit before starting UI migration work.
+All changes committed and merged via PR #73.
