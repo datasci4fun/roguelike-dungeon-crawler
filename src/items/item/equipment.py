@@ -9,10 +9,14 @@ if TYPE_CHECKING:
 
 
 class Weapon(Item):
-    """Base class for melee weapon items."""
+    """Base class for melee weapon items.
+
+    Now includes D&D-style damage dice (v6.10).
+    """
 
     def __init__(self, x: int, y: int, item_type: ItemType, name: str,
-                 description: str, attack_bonus: int, rarity):
+                 description: str, attack_bonus: int, rarity,
+                 damage_dice: str = "1d6", stat_used: str = "STR"):
         from ...core.constants import EquipmentSlot
         super().__init__(
             x=x, y=y,
@@ -24,13 +28,15 @@ class Weapon(Item):
             equip_slot=EquipmentSlot.WEAPON
         )
         self.attack_bonus = attack_bonus
+        self.damage_dice = damage_dice  # D&D damage notation (e.g., "1d6", "2d6")
+        self.stat_used = stat_used  # Which ability score for attack/damage (STR or DEX)
 
     def use(self, player: 'Player') -> str:
         return "Use [E] to equip this weapon."
 
 
 class Dagger(Weapon):
-    """Basic starting weapon."""
+    """Basic starting weapon. Light, finesse weapon using DEX."""
 
     def __init__(self, x: int, y: int):
         from ...core.constants import ItemRarity
@@ -38,9 +44,11 @@ class Dagger(Weapon):
             x=x, y=y,
             item_type=ItemType.WEAPON_DAGGER,
             name="Dagger",
-            description="+1 ATK",
+            description="+1 ATK (1d4)",
             attack_bonus=1,
-            rarity=ItemRarity.COMMON
+            rarity=ItemRarity.COMMON,
+            damage_dice="1d4",
+            stat_used="DEX"  # Finesse weapon
         )
 
 
@@ -53,9 +61,11 @@ class Sword(Weapon):
             x=x, y=y,
             item_type=ItemType.WEAPON_SWORD,
             name="Iron Sword",
-            description="+3 ATK",
+            description="+3 ATK (1d8)",
             attack_bonus=3,
-            rarity=ItemRarity.UNCOMMON
+            rarity=ItemRarity.UNCOMMON,
+            damage_dice="1d8",
+            stat_used="STR"
         )
 
 
@@ -68,9 +78,11 @@ class Axe(Weapon):
             x=x, y=y,
             item_type=ItemType.WEAPON_AXE,
             name="Battle Axe",
-            description="+5 ATK",
+            description="+5 ATK (1d10)",
             attack_bonus=5,
-            rarity=ItemRarity.RARE
+            rarity=ItemRarity.RARE,
+            damage_dice="1d10",
+            stat_used="STR"
         )
 
 
@@ -83,9 +95,11 @@ class DragonSlayer(Weapon):
             x=x, y=y,
             item_type=ItemType.WEAPON_DRAGON_SLAYER,
             name="Dragon Slayer",
-            description="+8 ATK, Legendary",
+            description="+8 ATK (2d8), Legendary",
             attack_bonus=8,
-            rarity=ItemRarity.LEGENDARY
+            rarity=ItemRarity.LEGENDARY,
+            damage_dice="2d8",
+            stat_used="STR"
         )
 
 

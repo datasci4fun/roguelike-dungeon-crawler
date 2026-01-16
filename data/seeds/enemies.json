@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "updated_at": "2026-01-13T00:00:00Z",
+  "version": "1.1.0",
+  "updated_at": "2026-01-16T00:00:00Z",
   "config": {
     "elite_spawn_rate": 0.2,
     "elite_hp_multiplier": 2,
@@ -18,7 +18,13 @@
       "xp": 10,
       "weight": 40,
       "min_level": 1,
-      "max_level": 3
+      "max_level": 3,
+      "armor_class": 11,
+      "attack_bonus": 1,
+      "damage_dice": "1d4",
+      "str_score": 8,
+      "dex_score": 12,
+      "con_score": 8
     },
     {
       "id": "skeleton",
@@ -29,7 +35,13 @@
       "xp": 15,
       "weight": 30,
       "min_level": 1,
-      "max_level": 6
+      "max_level": 6,
+      "armor_class": 12,
+      "attack_bonus": 2,
+      "damage_dice": "1d6",
+      "str_score": 10,
+      "dex_score": 10,
+      "con_score": 10
     },
     {
       "id": "orc",
@@ -40,7 +52,13 @@
       "xp": 20,
       "weight": 15,
       "min_level": 2,
-      "max_level": 5
+      "max_level": 5,
+      "armor_class": 12,
+      "attack_bonus": 3,
+      "damage_dice": "1d8",
+      "str_score": 14,
+      "dex_score": 10,
+      "con_score": 12
     },
     {
       "id": "wraith",
@@ -51,7 +69,13 @@
       "xp": 25,
       "weight": 8,
       "min_level": 3,
-      "max_level": 8
+      "max_level": 8,
+      "armor_class": 13,
+      "attack_bonus": 4,
+      "damage_dice": "1d8",
+      "str_score": 6,
+      "dex_score": 14,
+      "con_score": 8
     },
     {
       "id": "troll",
@@ -62,7 +86,13 @@
       "xp": 35,
       "weight": 5,
       "min_level": 5,
-      "max_level": 8
+      "max_level": 8,
+      "armor_class": 13,
+      "attack_bonus": 4,
+      "damage_dice": "1d10",
+      "str_score": 16,
+      "dex_score": 8,
+      "con_score": 16
     },
     {
       "id": "dragon",
@@ -73,7 +103,13 @@
       "xp": 100,
       "weight": 2,
       "min_level": 8,
-      "max_level": 8
+      "max_level": 8,
+      "armor_class": 16,
+      "attack_bonus": 7,
+      "damage_dice": "2d8",
+      "str_score": 18,
+      "dex_score": 10,
+      "con_score": 18
     },
     {
       "id": "necromancer",
@@ -87,7 +123,13 @@
       "max_level": 8,
       "ai_type": "ranged_kite",
       "element": "dark",
-      "abilities": ["raise_skeleton", "dark_bolt"]
+      "abilities": ["raise_skeleton", "dark_bolt"],
+      "armor_class": 12,
+      "attack_bonus": 5,
+      "damage_dice": "2d6",
+      "str_score": 8,
+      "dex_score": 12,
+      "con_score": 12
     },
     {
       "id": "demon",
@@ -102,7 +144,13 @@
       "ai_type": "aggressive",
       "element": "fire",
       "abilities": ["fire_strike"],
-      "resistances": { "fire": 0.5 }
+      "resistances": { "fire": 0.5 },
+      "armor_class": 15,
+      "attack_bonus": 6,
+      "damage_dice": "2d10",
+      "str_score": 16,
+      "dex_score": 12,
+      "con_score": 16
     },
     {
       "id": "assassin",
@@ -115,7 +163,13 @@
       "min_level": 2,
       "max_level": 8,
       "ai_type": "stealth",
-      "abilities": ["backstab", "vanish"]
+      "abilities": ["backstab", "vanish"],
+      "armor_class": 14,
+      "attack_bonus": 6,
+      "damage_dice": "2d8",
+      "str_score": 10,
+      "dex_score": 16,
+      "con_score": 10
     },
     {
       "id": "fire_elemental",
@@ -130,7 +184,13 @@
       "ai_type": "elemental",
       "element": "fire",
       "abilities": ["fire_bolt"],
-      "resistances": { "fire": 1.0 }
+      "resistances": { "fire": 1.0 },
+      "armor_class": 13,
+      "attack_bonus": 5,
+      "damage_dice": "2d6",
+      "str_score": 12,
+      "dex_score": 14,
+      "con_score": 14
     },
     {
       "id": "ice_elemental",
@@ -145,7 +205,13 @@
       "ai_type": "elemental",
       "element": "ice",
       "abilities": ["ice_shard"],
-      "resistances": { "ice": 1.0 }
+      "resistances": { "ice": 1.0 },
+      "armor_class": 13,
+      "attack_bonus": 4,
+      "damage_dice": "2d6",
+      "str_score": 12,
+      "dex_score": 12,
+      "con_score": 14
     },
     {
       "id": "lightning_elemental",
@@ -160,7 +226,13 @@
       "ai_type": "elemental",
       "element": "lightning",
       "abilities": ["chain_lightning"],
-      "resistances": { "lightning": 1.0 }
+      "resistances": { "lightning": 1.0 },
+      "armor_class": 14,
+      "attack_bonus": 6,
+      "damage_dice": "2d8",
+      "str_score": 10,
+      "dex_score": 16,
+      "con_score": 12
     },
     {
       "id": "rat",
@@ -172,7 +244,13 @@
       "weight": 40,
       "min_level": 2,
       "max_level": 3,
-      "ai_type": "aggressive"
+      "ai_type": "aggressive",
+      "armor_class": 10,
+      "attack_bonus": 0,
+      "damage_dice": "1d4",
+      "str_score": 6,
+      "dex_score": 14,
+      "con_score": 8
     },
     {
       "id": "plague_rat",
@@ -185,7 +263,13 @@
       "min_level": 2,
       "max_level": 4,
       "ai_type": "aggressive",
-      "resistances": { "poison": 0.5 }
+      "resistances": { "poison": 0.5 },
+      "armor_class": 11,
+      "attack_bonus": 1,
+      "damage_dice": "1d4",
+      "str_score": 6,
+      "dex_score": 14,
+      "con_score": 10
     },
     {
       "id": "spiderling",
@@ -197,7 +281,13 @@
       "weight": 36,
       "min_level": 3,
       "max_level": 4,
-      "ai_type": "aggressive"
+      "ai_type": "aggressive",
+      "armor_class": 11,
+      "attack_bonus": 2,
+      "damage_dice": "1d4",
+      "str_score": 8,
+      "dex_score": 14,
+      "con_score": 8
     },
     {
       "id": "webweaver",
@@ -209,7 +299,13 @@
       "weight": 18,
       "min_level": 3,
       "max_level": 5,
-      "ai_type": "chase"
+      "ai_type": "chase",
+      "armor_class": 12,
+      "attack_bonus": 3,
+      "damage_dice": "1d6",
+      "str_score": 10,
+      "dex_score": 14,
+      "con_score": 10
     },
     {
       "id": "oathbound_guard",
@@ -223,7 +319,13 @@
       "max_level": 6,
       "ai_type": "chase",
       "element": "dark",
-      "resistances": { "poison": 0.25 }
+      "resistances": { "poison": 0.25 },
+      "armor_class": 14,
+      "attack_bonus": 4,
+      "damage_dice": "1d10",
+      "str_score": 14,
+      "dex_score": 10,
+      "con_score": 14
     },
     {
       "id": "court_scribe",
@@ -235,7 +337,13 @@
       "weight": 14,
       "min_level": 4,
       "max_level": 6,
-      "ai_type": "ranged_kite"
+      "ai_type": "ranged_kite",
+      "armor_class": 11,
+      "attack_bonus": 3,
+      "damage_dice": "1d8",
+      "str_score": 8,
+      "dex_score": 14,
+      "con_score": 10
     },
     {
       "id": "animated_tome",
@@ -249,7 +357,13 @@
       "max_level": 7,
       "ai_type": "aggressive",
       "element": "dark",
-      "resistances": { "poison": 0.5 }
+      "resistances": { "poison": 0.5 },
+      "armor_class": 12,
+      "attack_bonus": 4,
+      "damage_dice": "1d10",
+      "str_score": 10,
+      "dex_score": 10,
+      "con_score": 12
     },
     {
       "id": "crystal_sentinel",
@@ -263,7 +377,13 @@
       "max_level": 8,
       "ai_type": "chase",
       "element": "lightning",
-      "resistances": { "ice": 0.25, "fire": 0.25 }
+      "resistances": { "ice": 0.25, "fire": 0.25 },
+      "armor_class": 15,
+      "attack_bonus": 5,
+      "damage_dice": "2d6",
+      "str_score": 16,
+      "dex_score": 8,
+      "con_score": 16
     },
     {
       "id": "shade",
@@ -277,7 +397,13 @@
       "max_level": 1,
       "ai_type": "stealth",
       "element": "dark",
-      "resistances": { "physical": 0.5 }
+      "resistances": { "physical": 0.5 },
+      "armor_class": 12,
+      "attack_bonus": 3,
+      "damage_dice": "1d6",
+      "str_score": 6,
+      "dex_score": 16,
+      "con_score": 8
     },
     {
       "id": "bile_lurker",
@@ -291,7 +417,13 @@
       "max_level": 2,
       "ai_type": "aggressive",
       "abilities": ["poison_spit"],
-      "resistances": { "poison": 1.0 }
+      "resistances": { "poison": 1.0 },
+      "armor_class": 11,
+      "attack_bonus": 2,
+      "damage_dice": "1d6",
+      "str_score": 12,
+      "dex_score": 8,
+      "con_score": 14
     },
     {
       "id": "thornling",
@@ -304,7 +436,13 @@
       "min_level": 3,
       "max_level": 3,
       "ai_type": "chase",
-      "abilities": ["thorn_burst"]
+      "abilities": ["thorn_burst"],
+      "armor_class": 13,
+      "attack_bonus": 3,
+      "damage_dice": "1d8",
+      "str_score": 10,
+      "dex_score": 12,
+      "con_score": 10
     },
     {
       "id": "doppelganger",
@@ -317,7 +455,13 @@
       "min_level": 4,
       "max_level": 4,
       "ai_type": "chase",
-      "element": "dark"
+      "element": "dark",
+      "armor_class": 14,
+      "attack_bonus": 4,
+      "damage_dice": "1d10",
+      "str_score": 12,
+      "dex_score": 14,
+      "con_score": 12
     },
     {
       "id": "frost_wisp",
@@ -332,7 +476,13 @@
       "ai_type": "ranged_kite",
       "element": "ice",
       "abilities": ["ice_shard"],
-      "resistances": { "ice": 1.0, "fire": -0.5 }
+      "resistances": { "ice": 1.0, "fire": -0.5 },
+      "armor_class": 13,
+      "attack_bonus": 4,
+      "damage_dice": "1d10",
+      "str_score": 6,
+      "dex_score": 16,
+      "con_score": 8
     },
     {
       "id": "ink_phantom",
@@ -346,7 +496,13 @@
       "max_level": 6,
       "ai_type": "stealth",
       "element": "dark",
-      "abilities": ["vanish"]
+      "abilities": ["vanish"],
+      "armor_class": 14,
+      "attack_bonus": 5,
+      "damage_dice": "1d12",
+      "str_score": 8,
+      "dex_score": 16,
+      "con_score": 10
     },
     {
       "id": "ember_sprite",
@@ -361,7 +517,13 @@
       "ai_type": "ranged_kite",
       "element": "fire",
       "abilities": ["fire_bolt"],
-      "resistances": { "fire": 1.0, "ice": -0.5 }
+      "resistances": { "fire": 1.0, "ice": -0.5 },
+      "armor_class": 14,
+      "attack_bonus": 5,
+      "damage_dice": "2d6",
+      "str_score": 8,
+      "dex_score": 16,
+      "con_score": 10
     },
     {
       "id": "prism_watcher",
@@ -376,7 +538,13 @@
       "ai_type": "elemental",
       "element": "lightning",
       "abilities": ["chain_lightning"],
-      "resistances": { "lightning": 0.75 }
+      "resistances": { "lightning": 0.75 },
+      "armor_class": 15,
+      "attack_bonus": 6,
+      "damage_dice": "2d6",
+      "str_score": 12,
+      "dex_score": 14,
+      "con_score": 14
     }
   ],
   "floor_pools": [

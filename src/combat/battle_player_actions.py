@@ -166,17 +166,27 @@ class PlayerActionHandler:
             player = self.engine.player
             if hasattr(player, 'ability_scores') and player.ability_scores:
                 use_dnd_combat = True
-                # Get attack modifier (DEX for finesse, STR otherwise)
-                attack_mod = player.get_attack_modifier()
-                damage_mod = player.get_damage_modifier()
                 luck_mod = player.get_luck_mod() * 0.05  # 5% per luck point above 10
 
-                # Get weapon damage dice from equipped weapon
-                if hasattr(player, 'equipment') and player.equipment:
-                    weapon = player.equipment.get('weapon')
-                    if weapon and hasattr(weapon, 'item_type'):
-                        weapon_type = weapon.item_type.lower() if hasattr(weapon.item_type, 'lower') else str(weapon.item_type).lower()
-                        weapon_dice = WEAPON_DAMAGE_DICE.get(weapon_type, "1d6")
+                # Get weapon and determine stat used
+                weapon = getattr(player, 'equipped_weapon', None)
+                if weapon:
+                    # Use weapon's damage dice if available
+                    weapon_dice = getattr(weapon, 'damage_dice', None) or "1d6"
+
+                    # Check stat_used for finesse weapons
+                    stat_used = getattr(weapon, 'stat_used', 'STR')
+                    if stat_used == "DEX":
+                        attack_mod = player.ability_scores.dex_mod
+                        damage_mod = player.ability_scores.dex_mod
+                    else:
+                        attack_mod = player.ability_scores.str_mod
+                        damage_mod = player.ability_scores.str_mod
+                else:
+                    # Unarmed attack (fist)
+                    weapon_dice = "1d4"
+                    attack_mod = player.ability_scores.str_mod
+                    damage_mod = player.ability_scores.str_mod
 
         if use_dnd_combat:
             # D&D-style attack: d20 + modifier vs AC
