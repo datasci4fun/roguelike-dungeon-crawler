@@ -86,11 +86,29 @@ export function Play() {
     const container = sceneContainerRef.current;
     if (!container) return;
 
+    let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+    let lastWidth = 0;
+    let lastHeight = 0;
+
     const updateSize = () => {
       const rect = container.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        setSceneSize({ width: rect.width, height: rect.height });
+      const newWidth = Math.floor(rect.width);
+      const newHeight = Math.floor(rect.height);
+
+      // Only update if size actually changed (prevents resize loops)
+      if (newWidth > 0 && newHeight > 0 &&
+          (newWidth !== lastWidth || newHeight !== lastHeight)) {
+        lastWidth = newWidth;
+        lastHeight = newHeight;
+        setSceneSize({ width: newWidth, height: newHeight });
       }
+    };
+
+    const debouncedUpdateSize = () => {
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      resizeTimeout = setTimeout(updateSize, 50);
     };
 
     // Initial size - use requestAnimationFrame to ensure layout is complete
@@ -98,11 +116,16 @@ export function Play() {
       updateSize();
     });
 
-    // Watch for resize
-    const observer = new ResizeObserver(updateSize);
+    // Watch for resize with debouncing
+    const observer = new ResizeObserver(debouncedUpdateSize);
     observer.observe(container);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+    };
   }, [showSceneView, showTerminal]);
 
   // Audio management
