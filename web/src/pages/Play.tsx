@@ -23,6 +23,7 @@ import { GameOver } from '../components/GameOver';
 import { GameOverCutscene, type DeathFateId } from '../components/GameOverCutscene';
 import { VictoryCutscene, type VictoryLegacyId } from '../components/VictoryCutscene';
 import { LoreCodex } from '../components/LoreCodex';
+import { LorePopup } from '../components/LorePopup';
 import { CharacterWindow } from '../components/CharacterWindow';
 import { BattleRenderer3D } from '../components/BattleRenderer3D';
 import { BattleHUD, type SelectedAction, type TileCoord } from '../components/BattleHUD';
@@ -57,6 +58,14 @@ export function Play() {
   const [victoryLegacy, setVictoryLegacy] = useState<VictoryLegacyId>('unknown');
   const [showLoreJournal, setShowLoreJournal] = useState(false);
   const [pendingNewLore, setPendingNewLore] = useState<{ lore_id: string; title: string } | null>(null);
+  // v7.0 Sprint 4: Lore popup for murals/inscriptions
+  const [activeLorePopup, setActiveLorePopup] = useState<{
+    loreId: string;
+    title: string;
+    content: string;
+    isNew: boolean;
+    sourceType: string;
+  } | null>(null);
   const [battleOverviewComplete, setBattleOverviewComplete] = useState(false);
   const [battleSelectedAction, setBattleSelectedAction] = useState<SelectedAction>(null);
   const [battleClickedTile, setBattleClickedTile] = useState<{ tile: TileCoord; hasEnemy: boolean } | null>(null);
@@ -130,7 +139,17 @@ export function Play() {
   const lastLevelRef = useRef<number | null>(null);
 
   // Sound effects
-  const { playMove, playMenuConfirm } = useSfxCommands();
+  const {
+    playMove,
+    playMenuConfirm,
+    playMuralExamine,
+    playInscriptionRead,
+    playSwitchFlip,
+    playLeverPull,
+    playPuzzleSolve,
+    playPressurePlate,
+    playHiddenDoorReveal,
+  } = useSfxCommands();
 
   // Game context (shared WebSocket)
   const {
@@ -424,8 +443,77 @@ export function Play() {
           luck_applied: data.luck_applied,
         }, data.attacker_name);
       }
+
+      // v7.0 Sprint 4: Process LORE_DISCOVERED events for popup
+      if (event.type === 'LORE_DISCOVERED') {
+        const data = event.data as {
+          lore_id: string;
+          title: string;
+          content: string;
+          is_new: boolean;
+          source_type: string;
+        };
+        setActiveLorePopup({
+          loreId: data.lore_id,
+          title: data.title,
+          content: data.content,
+          isNew: data.is_new,
+          sourceType: data.source_type,
+        });
+        // Play appropriate sound based on source type
+        if (data.source_type === 'mural') {
+          playMuralExamine();
+        } else {
+          playInscriptionRead();
+        }
+      }
+
+      // v7.0 Sprint 4: Process INTERACTION events for sounds
+      if (event.type === 'INTERACTION') {
+        const data = event.data as {
+          type: string;
+          result: string;
+        };
+        // Play sound based on interaction type
+        switch (data.type) {
+          case 'switch':
+            playSwitchFlip();
+            break;
+          case 'lever':
+            playLeverPull();
+            break;
+          case 'pressure_plate':
+            playPressurePlate();
+            break;
+          case 'hidden_door':
+            if (data.result === 'revealed' || data.result === 'opened') {
+              playHiddenDoorReveal();
+            }
+            break;
+        }
+      }
+
+      // v7.0 Sprint 4: Process PUZZLE_UPDATE events
+      if (event.type === 'PUZZLE_UPDATE') {
+        const data = event.data as {
+          new_state: string;
+        };
+        if (data.new_state === 'solved') {
+          playPuzzleSolve();
+        }
+      }
     }
-  }, [gameState?.events, gameState?.battle]);
+  }, [
+    gameState?.events,
+    gameState?.battle,
+    playMuralExamine,
+    playInscriptionRead,
+    playSwitchFlip,
+    playLeverPull,
+    playPressurePlate,
+    playHiddenDoorReveal,
+    playPuzzleSolve,
+  ]);
 
   // Lore Journal hotkey (J key)
   useEffect(() => {
@@ -930,7 +1018,7 @@ export function Play() {
       <DebugToast message={toastMessage} onDismiss={clearToast} />
 
       {/* New Lore Notification Bar */}
-      {pendingNewLore && !showLoreJournal && (
+      {pendingNewLore && !showLoreJournal && !activeLorePopup && (
         <div className="lore-notification">
           <span className="lore-notification-icon">?</span>
           <span className="lore-notification-text">
@@ -938,6 +1026,18 @@ export function Play() {
           </span>
           <span className="lore-notification-hint">Press [J] to read</span>
         </div>
+      )}
+
+      {/* v7.0 Sprint 4: Lore Popup for murals/inscriptions */}
+      {activeLorePopup && (
+        <LorePopup
+          loreId={activeLorePopup.loreId}
+          title={activeLorePopup.title}
+          content={activeLorePopup.content}
+          isNew={activeLorePopup.isNew}
+          sourceType={activeLorePopup.sourceType}
+          onClose={() => setActiveLorePopup(null)}
+        />
       )}
 
       {/* v6.5.1 med-06: Screen reader announcements */}

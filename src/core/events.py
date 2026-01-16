@@ -157,6 +157,7 @@ class EventType(Enum):
     # Interactive exploration events (v7.0)
     INTERACTION = auto()       # Player interacted with element (type, x, y, result)
     PUZZLE_UPDATE = auto()     # Puzzle state changed (puzzle_id, tile_x, tile_y, new_state)
+    LORE_DISCOVERED = auto()   # Player discovered lore (lore_id, title, content)
 
 
 @dataclass

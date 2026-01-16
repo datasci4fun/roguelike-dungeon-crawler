@@ -31,6 +31,14 @@ export type SfxId =
   | 'door_open'
   | 'stairs_descend'
   | 'trap_trigger'
+  // Interactions (v7.0)
+  | 'switch_flip'
+  | 'lever_pull'
+  | 'mural_examine'
+  | 'inscription_read'
+  | 'puzzle_solve'
+  | 'pressure_plate'
+  | 'hidden_door_reveal'
   // Abilities
   | 'ability_ready'
   | 'ability_use'
@@ -239,6 +247,60 @@ export const SFX_DEFINITIONS: Record<SfxId, SfxDefinition> = {
       { frequency: 150, type: 'square', duration: 0.15, delay: 0.08, envelope: PUNCH_ENV, pitchBend: -50 },
     ],
     volume: 0.7,
+  },
+
+  // Interactions (v7.0)
+  switch_flip: {
+    notes: [
+      { frequency: 180, type: 'square', duration: 0.08, envelope: PUNCH_ENV },
+      { frequency: 320, type: 'sine', duration: 0.1, delay: 0.06, envelope: QUICK_ENV },
+    ],
+    volume: 0.5,
+  },
+  lever_pull: {
+    notes: [
+      { frequency: 100, type: 'square', duration: 0.15, envelope: PUNCH_ENV, pitchBend: -40 },
+      { frequency: 200, type: 'sine', duration: 0.1, delay: 0.1, envelope: QUICK_ENV },
+    ],
+    volume: 0.5,
+  },
+  mural_examine: {
+    notes: [
+      { frequency: 400, type: 'sine', duration: 0.2, envelope: SOFT_ENV, pitchBend: 50 },
+      { frequency: 500, type: 'triangle', duration: 0.25, delay: 0.15, envelope: SOFT_ENV },
+    ],
+    volume: 0.4,
+  },
+  inscription_read: {
+    notes: [
+      { frequency: 350, type: 'sine', duration: 0.15, envelope: SOFT_ENV },
+      { frequency: 450, type: 'triangle', duration: 0.2, delay: 0.1, envelope: SOFT_ENV, pitchBend: 30 },
+    ],
+    volume: 0.35,
+  },
+  puzzle_solve: {
+    notes: [
+      { frequency: 440, type: 'sine', duration: 0.12, envelope: SOFT_ENV },
+      { frequency: 554, type: 'sine', duration: 0.12, delay: 0.1, envelope: SOFT_ENV },  // C#
+      { frequency: 659, type: 'sine', duration: 0.12, delay: 0.2, envelope: SOFT_ENV },  // E
+      { frequency: 880, type: 'sine', duration: 0.25, delay: 0.3, envelope: SOFT_ENV },  // A (major chord resolution)
+    ],
+    volume: 0.6,
+  },
+  pressure_plate: {
+    notes: [
+      { frequency: 150, type: 'sine', duration: 0.1, envelope: QUICK_ENV },
+      { frequency: 120, type: 'square', duration: 0.15, delay: 0.05, envelope: SOFT_ENV, pitchBend: -30 },
+    ],
+    volume: 0.4,
+  },
+  hidden_door_reveal: {
+    notes: [
+      { frequency: 80, type: 'square', duration: 0.3, envelope: SOFT_ENV, pitchBend: -20 },
+      { frequency: 150, type: 'sawtooth', duration: 0.2, delay: 0.2, envelope: PUNCH_ENV },
+      { frequency: 300, type: 'sine', duration: 0.15, delay: 0.35, envelope: SOFT_ENV, pitchBend: 50 },
+    ],
+    volume: 0.6,
   },
 
   // Abilities

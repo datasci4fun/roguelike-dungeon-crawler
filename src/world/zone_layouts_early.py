@@ -17,8 +17,13 @@ if TYPE_CHECKING:
 
 @register_layout(1, "cell_blocks")
 def layout_cell_blocks(dungeon: 'Dungeon', room: 'Room'):
-    """Create prison cells with interior walls and doors."""
-    from ..core.constants import TileType
+    """Create prison cells with interior walls and doors.
+
+    Features:
+    - Interior cell walls with doors
+    - Scratched tally marks on cell walls (environmental clue)
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
 
     if room.width < 8 or room.height < 6:
         return
@@ -76,6 +81,33 @@ def layout_cell_blocks(dungeon: 'Dungeon', room: 'Room'):
             if divider_y < room.y + room.height - 1:
                 for dx in range(right_wall_x + 1, room.x + room.width - 1):
                     dungeon.tiles[divider_y][dx] = TileType.WALL
+
+    # Add scratched tally marks on cell walls (environmental clue)
+    # Prisoners kept count of their days here
+    tally_messages = [
+        "Scratched into the stone: |||| |||| |||| |||| |||| |||| |||| ||",
+        "Faded marks count the days: |||| |||| |||| ... the count stops abruptly.",
+        "Desperate scratches: |||| |||| |||| |||| |||| |||| |||| |||| |||| ||||",
+        "A single mark, never continued.",
+        "Tallies with names: 'ALDRIC - |||| |||| ||' ... 'MAREN - |||| |'",
+    ]
+
+    # Place inscription on one of the outer walls
+    clue_candidates = []
+
+    # North wall candidates
+    for x in range(room.x + 2, room.x + room.width - 2):
+        if dungeon.tiles[room.y][x] == TileType.WALL:
+            clue_candidates.append((x, room.y, WallFace.SOUTH))
+
+    if clue_candidates and random.random() < 0.7:
+        cx, cy, face = random.choice(clue_candidates)
+        message = random.choice(tally_messages)
+        inscription = InteractiveTile.inscription(
+            wall_face=face,
+            examine_text=message,
+        )
+        dungeon.add_interactive(cx, cy, inscription)
 
 
 @register_layout(1, "wardens_office")
@@ -231,8 +263,13 @@ def layout_intake_hall(dungeon: 'Dungeon', room: 'Room'):
 
 @register_layout(2, "waste_channels")
 def layout_waste_channels(dungeon: 'Dungeon', room: 'Room'):
-    """Create water channel lanes with walkways."""
-    from ..core.constants import TileType
+    """Create water channel lanes with walkways.
+
+    Features:
+    - Water channels down the center
+    - Bloodstain inscription warning of danger
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
 
     if room.width < 6 and room.height < 6:
         return
@@ -253,6 +290,24 @@ def layout_waste_channels(dungeon: 'Dungeon', room: 'Room'):
                 if room.width >= 6 and random.random() < 0.5:
                     if channel_x + 1 < room.x + room.width - 2:
                         dungeon.tiles[y][channel_x + 1] = TileType.DEEP_WATER
+
+    # Add bloodstain warning inscription (environmental clue)
+    bloodstain_messages = [
+        "Dark stains on the stone. Something was dragged into the water here.",
+        "Claw marks and blood trail leading to the channel. Don't fall in.",
+        "A torn boot lies near the water's edge. The laces are still tied.",
+    ]
+
+    if random.random() < 0.5:
+        # Place on a wall near the water
+        wall_y = room.y
+        wall_x = room.x + room.width // 2
+        if 0 <= wall_x < dungeon.width and dungeon.tiles[wall_y][wall_x] == TileType.WALL:
+            inscription = InteractiveTile.inscription(
+                wall_face=WallFace.SOUTH,
+                examine_text=random.choice(bloodstain_messages),
+            )
+            dungeon.add_interactive(wall_x, wall_y, inscription)
 
 
 @register_layout(2, "colony_heart")
@@ -484,8 +539,13 @@ def layout_digestion_chambers(dungeon: 'Dungeon', room: 'Room'):
 
 @register_layout(3, "druid_ring")
 def layout_druid_ring(dungeon: 'Dungeon', room: 'Room'):
-    """Create druid ring anchor room."""
-    from ..core.constants import TileType
+    """Create druid ring anchor room.
+
+    Features:
+    - Ring of standing stones
+    - Broken weapon inscription (boss weakness clue)
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
     import math
 
     if room.width < 8 or room.height < 8:
@@ -503,6 +563,28 @@ def layout_druid_ring(dungeon: 'Dungeon', room: 'Room'):
             room.y + 1 <= ry < room.y + room.height - 1):
             if dungeon.tiles[ry][rx] == TileType.FLOOR:
                 dungeon.tiles[ry][rx] = TileType.DEEP_WATER
+
+    # Add broken weapon inscription (boss weakness clue)
+    weapon_messages = [
+        "A shattered silver blade lies among the roots. "
+        "The metal still gleams despite years of neglect. "
+        "Whatever broke it had tremendous strength.",
+        "Rusted armor pieces scattered here. The dents suggest "
+        "blunt force - swords were useless against this foe.",
+        "An adventurer's journal page: '...fire has no effect on the vines. "
+        "We need something to cut through, something sharp...'",
+    ]
+
+    # Place on north wall
+    wall_x = room.x + room.width // 2
+    wall_y = room.y
+    if 0 <= wall_x < dungeon.width and dungeon.tiles[wall_y][wall_x] == TileType.WALL:
+        if random.random() < 0.6:
+            inscription = InteractiveTile.inscription(
+                wall_face=WallFace.SOUTH,
+                examine_text=random.choice(weapon_messages),
+            )
+            dungeon.add_interactive(wall_x, wall_y, inscription)
 
 
 # =============================================================================
@@ -599,8 +681,13 @@ def layout_seal_chambers(dungeon: 'Dungeon', room: 'Room'):
 
 @register_layout(4, "record_vaults")
 def layout_record_vaults(dungeon: 'Dungeon', room: 'Room'):
-    """Create record vault archive room."""
-    from ..core.constants import TileType
+    """Create record vault archive room.
+
+    Features:
+    - Shelving walls
+    - Faded map inscription (secret room clue)
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
 
     if room.width < 6 or room.height < 6:
         return
@@ -615,6 +702,28 @@ def layout_record_vaults(dungeon: 'Dungeon', room: 'Room'):
             for x in range(room.x + 2, room.x + room.width - 2):
                 if random.random() < 0.4:
                     dungeon.tiles[y][x] = TileType.WALL
+
+    # Add faded map inscription (secret room clue)
+    map_messages = [
+        "A faded architectural drawing shows this level. "
+        "One room is marked with a red X - 'SEALED - DO NOT ENTER'.",
+        "Crumbling parchment depicts hidden passages. "
+        "Most are illegible, but you make out: 'East wall, third stone from floor'.",
+        "A ledger of confiscated items mentions a hidden vault. "
+        "'The Warden's private collection remains secure behind the false wall.'",
+    ]
+
+    # Place on east wall
+    wall_x = room.x + room.width - 1
+    wall_y = room.y + room.height // 2
+    if 0 <= wall_x < dungeon.width and 0 <= wall_y < dungeon.height:
+        if dungeon.tiles[wall_y][wall_x] == TileType.WALL:
+            if random.random() < 0.6:
+                inscription = InteractiveTile.inscription(
+                    wall_face=WallFace.WEST,
+                    examine_text=random.choice(map_messages),
+                )
+                dungeon.add_interactive(wall_x, wall_y, inscription)
 
 
 @register_layout(4, "parade_corridors")

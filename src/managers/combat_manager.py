@@ -173,6 +173,9 @@ class CombatManager:
                     )
                     for msg in messages:
                         self.game.add_message(msg, importance=MessageImportance.IMPORTANT)
+                    # v7.0: Record puzzle completion for achievement
+                    if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
+                        self.game.completion_ledger.record_puzzle_solved(interactive.puzzle_id)
 
     def _process_shadow_concealment(self, enemy):
         """

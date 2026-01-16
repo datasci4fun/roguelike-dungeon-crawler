@@ -653,13 +653,30 @@ class GameEngine(EnvironmentMixin, UICommandsMixin):
                 if interactive.lore_id and interactive.interactive_type in (
                     InteractiveType.MURAL, InteractiveType.INSCRIPTION
                 ):
-                    if self.story_manager.discover_lore(interactive.lore_id):
-                        from ..story.story_data import LORE_ENTRIES
-                        lore_entry = LORE_ENTRIES.get(interactive.lore_id, {})
-                        lore_title = lore_entry.get('title', 'ancient knowledge')
+                    is_new = self.story_manager.discover_lore(interactive.lore_id)
+                    from ..story.story_data import LORE_ENTRIES
+                    lore_entry = LORE_ENTRIES.get(interactive.lore_id, {})
+                    lore_title = lore_entry.get('title', 'ancient knowledge')
+                    lore_content = lore_entry.get('content', '')
+
+                    if is_new:
                         self.add_message(
                             f"You have discovered: {lore_title}",
                             MessageCategory.SYSTEM, MessageImportance.IMPORTANT
+                        )
+                        # v5.5: Track lore in completion ledger
+                        if hasattr(self, 'completion_ledger') and self.completion_ledger:
+                            self.completion_ledger.record_lore_found(interactive.lore_id)
+
+                    # v7.0 Sprint 4: Emit lore discovered event for popup display
+                    if self.event_queue:
+                        self.event_queue.emit(
+                            EventType.LORE_DISCOVERED,
+                            lore_id=interactive.lore_id,
+                            title=lore_title,
+                            content=lore_content,
+                            is_new=is_new,
+                            source_type=interactive.interactive_type.name.lower(),
                         )
             else:
                 self.add_message("You examine it closely but find nothing special.")
@@ -736,6 +753,9 @@ class GameEngine(EnvironmentMixin, UICommandsMixin):
                         messages = self.puzzle_manager.apply_reward(result['reward'], self.dungeon)
                         for msg in messages[1:]:  # Skip first (already shown)
                             self.add_message(msg, importance=MessageImportance.IMPORTANT)
+                        # v7.0: Record puzzle completion for achievement
+                        if hasattr(self, 'completion_ledger') and self.completion_ledger:
+                            self.completion_ledger.record_puzzle_solved(interactive.puzzle_id)
 
             # Emit event for puzzle tracking
             if interactive.puzzle_id:
@@ -778,6 +798,9 @@ class GameEngine(EnvironmentMixin, UICommandsMixin):
                         messages = self.puzzle_manager.apply_reward(result['reward'], self.dungeon)
                         for msg in messages[1:]:
                             self.add_message(msg, importance=MessageImportance.IMPORTANT)
+                        # v7.0: Record puzzle completion for achievement
+                        if hasattr(self, 'completion_ledger') and self.completion_ledger:
+                            self.completion_ledger.record_puzzle_solved(interactive.puzzle_id)
 
             if interactive.puzzle_id:
                 self.event_queue.emit(
