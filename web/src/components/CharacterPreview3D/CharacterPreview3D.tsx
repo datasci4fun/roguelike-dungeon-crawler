@@ -224,8 +224,6 @@ export function CharacterPreview3D({
     scene.add(ground);
     groundRef.current = ground;
 
-    // Note: Character creation is handled by the second useEffect
-    // which depends on [race, classId] to properly update when they change
     initializedRef.current = true;
 
     // Animation loop
@@ -306,32 +304,43 @@ export function CharacterPreview3D({
   // Update character when race or class changes (without recreating renderer)
   useEffect(() => {
     // Wait for scene to be initialized by the first effect
-    if (!sceneRef.current) {
-      return;
-    }
-
-    const scene = sceneRef.current;
-
-    // Remove old character if it exists
-    if (characterRef.current) {
-      scene.remove(characterRef.current);
-      characterRef.current.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-          obj.geometry.dispose();
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((m) => m.dispose());
-          } else {
-            obj.material.dispose();
-          }
+    if (!sceneRef.current || !initializedRef.current) {
+      // If not ready yet, try again after a short delay
+      const timer = setTimeout(() => {
+        if (sceneRef.current && initializedRef.current) {
+          updateCharacter();
         }
-      });
-      characterRef.current = null;
+      }, 100);
+      return () => clearTimeout(timer);
     }
 
-    // Create new character with current race and class
-    const character = createCharacter(race, classId);
-    scene.add(character);
-    characterRef.current = character;
+    updateCharacter();
+
+    function updateCharacter() {
+      const scene = sceneRef.current;
+      if (!scene) return;
+
+      // Remove old character if it exists
+      if (characterRef.current) {
+        scene.remove(characterRef.current);
+        characterRef.current.traverse((obj) => {
+          if (obj instanceof THREE.Mesh) {
+            obj.geometry.dispose();
+            if (Array.isArray(obj.material)) {
+              obj.material.forEach((m) => m.dispose());
+            } else {
+              obj.material.dispose();
+            }
+          }
+        });
+        characterRef.current = null;
+      }
+
+      // Create new character with current race and class
+      const character = createCharacter(race, classId);
+      scene.add(character);
+      characterRef.current = character;
+    }
   }, [race, classId]);
 
   return (
