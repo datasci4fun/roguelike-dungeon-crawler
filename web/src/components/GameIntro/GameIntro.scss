@@ -164,8 +164,8 @@
     white 100%
   );
   background-size: 200% 100%;
-  background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   animation:
     subtitleFade 2s ease-out 0.5s both,

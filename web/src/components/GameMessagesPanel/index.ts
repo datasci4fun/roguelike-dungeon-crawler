@@ -1,0 +1,1 @@
+export { GameMessagesPanel } from './GameMessagesPanel';

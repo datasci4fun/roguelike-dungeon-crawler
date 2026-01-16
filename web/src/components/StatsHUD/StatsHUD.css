@@ -1,0 +1,200 @@
+.stats-hud {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font-family: monospace;
+  min-width: 160px;
+  z-index: 10;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.stats-hud.compact {
+  min-width: auto;
+  padding: 6px 8px;
+  gap: 4px;
+}
+
+/* Level and Class Header */
+.stats-level {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.level-number {
+  color: #ffd700;
+  font-size: 14px;
+  font-weight: bold;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.class-name {
+  color: #e0e0e0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stats-hud.compact .level-number {
+  font-size: 12px;
+}
+
+.stats-hud.compact .class-name {
+  font-size: 10px;
+}
+
+/* Bar Styles */
+.stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bar-label {
+  font-size: 10px;
+  font-weight: bold;
+  color: #9ca3af;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.bar-container {
+  flex: 1;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  position: relative;
+  min-width: 80px;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+  position: relative;
+}
+
+.hp-fill {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.bar-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+  filter: blur(4px);
+  transition: opacity 0.3s ease;
+}
+
+.xp-fill {
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.bar-text {
+  font-size: 10px;
+  color: #e0e0e0;
+  white-space: nowrap;
+  min-width: 50px;
+  text-align: right;
+}
+
+.stats-hud.compact .bar-container {
+  height: 8px;
+  min-width: 60px;
+}
+
+.stats-hud.compact .bar-text {
+  font-size: 9px;
+  min-width: 40px;
+}
+
+/* Combat Stats Row */
+.stats-combat {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 2px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.stat-icon {
+  font-size: 12px;
+}
+
+.stat-value {
+  font-size: 12px;
+  font-weight: bold;
+  color: #e0e0e0;
+}
+
+.stats-hud.compact .stat-icon {
+  font-size: 10px;
+}
+
+.stats-hud.compact .stat-value {
+  font-size: 10px;
+}
+
+/* Low Health Warning Effects */
+.stats-hud.wounded .hp-bar .bar-glow {
+  opacity: 0.3;
+}
+
+.stats-hud.critical {
+  animation: critical-pulse 1.5s ease-in-out infinite;
+}
+
+.stats-hud.critical .hp-bar .bar-glow {
+  opacity: 0.5;
+}
+
+.stats-hud.critical .hp-bar .bar-container {
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+@keyframes critical-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 rgba(239, 68, 68, 0);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* Level-up ready glow (when XP bar is full or near full) */
+.stats-hud .xp-bar .bar-fill[style*="width: 100%"],
+.stats-hud .xp-bar .bar-fill[style*="width: 9"] {
+  animation: xp-glow 2s ease-in-out infinite;
+}
+
+@keyframes xp-glow {
+  0%, 100% {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                0 0 8px rgba(139, 92, 246, 0.6);
+  }
+}

@@ -86,15 +86,6 @@
   min-height: 0;
 }
 
-.terminal-wrapper {
-  flex: 0 0 500px;
-  min-height: 0;
-  border: 1px solid #333;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-}
-
 .scene-wrapper {
   flex: 1;
   min-width: 0;
@@ -207,32 +198,10 @@
   color: #aaa;
 }
 
-/* Focus indicator for accessibility */
-.terminal-wrapper:focus-within {
-  outline: 2px solid #6272a4;
-  outline-offset: 2px;
-}
-
 /* Responsive adjustments */
-@media (max-width: 1400px) {
-  .terminal-wrapper {
-    flex: 0 0 450px;
-  }
-}
-
-@media (max-width: 1200px) {
-  .terminal-wrapper {
-    flex: 0 0 400px;
-  }
-}
-
 @media (max-width: 1024px) {
   .game-views {
     flex-direction: column;
-  }
-
-  .terminal-wrapper {
-    flex: 0 0 350px;
   }
 
   .scene-wrapper {
@@ -258,17 +227,8 @@
     height: calc(100vh - 80px);
   }
 
-  /* Hide scene view on mobile */
-  .scene-wrapper {
-    display: none;
-  }
-
   .game-controls {
     display: none;
-  }
-
-  .terminal-wrapper {
-    flex: 1 1 auto;
   }
 
   .chat-container {
@@ -416,12 +376,6 @@
 
   .game-container {
     height: 100%;
-  }
-
-  .terminal-wrapper {
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
   }
 
   .game-status {

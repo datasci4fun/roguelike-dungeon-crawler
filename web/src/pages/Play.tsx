@@ -6,10 +6,14 @@ import { useChatSocket } from '../hooks/useChatSocket';
 import { useAudioManager } from '../hooks/useAudioManager';
 import { useSfxGameEvents, useSfxCommands } from '../hooks/useSfxGameEvents';
 import { useDebugRenderer } from '../hooks/useDebugRenderer';
-import { GameTerminal } from '../components/GameTerminal';
+import { mapKeyToCommand } from '../components/GameTerminal/keymap';
 import { FirstPersonRenderer, FirstPersonRenderer3D, type CorridorInfoEntry } from '../components/SceneRenderer';
-import { CharacterHUD } from '../components/CharacterHUD';
 import { StatusHUD } from '../components/StatusHUD';
+import { StatsHUD } from '../components/StatsHUD';
+import { GameMessagesPanel } from '../components/GameMessagesPanel';
+import { Minimap } from '../components/Minimap';
+import { HelpWindow } from '../components/HelpWindow';
+import { GameMenu } from '../components/GameMenu';
 import { ChatPanel } from '../components/ChatPanel';
 import { TouchControls } from '../components/TouchControls';
 import { AchievementToast } from '../components/AchievementToast';
@@ -32,6 +36,10 @@ export function Play() {
   const { isAuthenticated, isLoading, token } = useAuth();
   const navigate = useNavigate();
   const [isChatCollapsed, setIsChatCollapsed] = useState(false);
+  const [isGameMessagesCollapsed, setIsGameMessagesCollapsed] = useState(false);
+  const [isMinimapCollapsed, setIsMinimapCollapsed] = useState(false);
+  const [showHelpWindow, setShowHelpWindow] = useState(false);
+  const [showGameMenu, setShowGameMenu] = useState(false);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showSceneView, setShowSceneView] = useState(true);
@@ -74,21 +82,46 @@ export function Play() {
     const container = sceneContainerRef.current;
     if (!container) return;
 
+    let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
+    let lastWidth = 0;
+    let lastHeight = 0;
+
     const updateSize = () => {
       const rect = container.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        setSceneSize({ width: rect.width, height: rect.height });
+      const newWidth = Math.floor(rect.width);
+      const newHeight = Math.floor(rect.height);
+
+      // Only update if size actually changed (prevents resize loops)
+      if (newWidth > 0 && newHeight > 0 &&
+          (newWidth !== lastWidth || newHeight !== lastHeight)) {
+        lastWidth = newWidth;
+        lastHeight = newHeight;
+        setSceneSize({ width: newWidth, height: newHeight });
       }
     };
 
-    // Initial size
-    updateSize();
+    const debouncedUpdateSize = () => {
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      resizeTimeout = setTimeout(updateSize, 50);
+    };
 
-    // Watch for resize
-    const observer = new ResizeObserver(updateSize);
+    // Initial size - use requestAnimationFrame to ensure layout is complete
+    requestAnimationFrame(() => {
+      updateSize();
+    });
+
+    // Watch for resize with debouncing
+    const observer = new ResizeObserver(debouncedUpdateSize);
     observer.observe(container);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+    };
   }, [showSceneView]);
 
   // Audio management
@@ -215,7 +248,7 @@ export function Play() {
     }
   }, [gameState, navigate]);
 
-  // Handle command from terminal
+  // Handle command from touch controls
   const handleCommand = useCallback(
     (command: string) => {
       // If dead or victory, treat any key as new game request -> go to character creation
@@ -362,6 +395,87 @@ export function Play() {
     return () => window.removeEventListener('keydown', handleJournalKey);
   }, [gameState?.ui_mode, showLoreJournal]);
 
+  // Help window hotkey (? key)
+  useEffect(() => {
+    const handleHelpKey = (e: KeyboardEvent) => {
+      // Don't trigger when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      // Don't trigger when in a game UI mode (inventory, dialog, etc)
+      if (gameState?.ui_mode && gameState.ui_mode !== 'GAME') {
+        return;
+      }
+
+      if (e.key === '?') {
+        e.preventDefault();
+        setShowHelpWindow((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleHelpKey);
+    return () => window.removeEventListener('keydown', handleHelpKey);
+  }, [gameState?.ui_mode]);
+
+  // Game menu hotkey (Esc key when in game mode)
+  useEffect(() => {
+    const handleMenuKey = (e: KeyboardEvent) => {
+      // Don't trigger when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      // Only trigger in GAME mode (not in inventory, character screen, etc.)
+      if (gameState?.ui_mode && gameState.ui_mode !== 'GAME') {
+        return;
+      }
+      // Don't trigger if other modals are open
+      if (showLoreJournal || showHelpWindow) {
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowGameMenu((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleMenuKey);
+    return () => window.removeEventListener('keydown', handleMenuKey);
+  }, [gameState?.ui_mode, showLoreJournal, showHelpWindow]);
+
+  // Keyboard handler for game commands
+  useEffect(() => {
+    const handleGameKey = (e: KeyboardEvent) => {
+      // Don't trigger when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      // Don't trigger when modals are open
+      if (showLoreJournal || showHelpWindow || showGameMenu) {
+        return;
+      }
+      // Don't process if game is over
+      if (gameState?.game_state === 'DEAD' || gameState?.game_state === 'VICTORY') {
+        return;
+      }
+
+      const uiMode = gameState?.ui_mode || 'GAME';
+      const command = mapKeyToCommand(e.key, uiMode);
+
+      if (command) {
+        e.preventDefault();
+        // Play movement sound
+        if (command.startsWith('MOVE_')) {
+          playMove();
+        }
+        sendCommand(command);
+      }
+    };
+
+    window.addEventListener('keydown', handleGameKey);
+    return () => window.removeEventListener('keydown', handleGameKey);
+  }, [showLoreJournal, showHelpWindow, showGameMenu, gameState?.ui_mode, gameState?.game_state, sendCommand, playMove]);
+
   // Handler for closing lore journal (clears pending notification)
   const handleCloseLoreJournal = useCallback(() => {
     setShowLoreJournal(false);
@@ -430,16 +544,6 @@ export function Play() {
           )}
 
           <div className="game-views">
-            <div className="terminal-wrapper">
-              <GameTerminal
-                gameState={gameState}
-                onCommand={handleCommand}
-                onNewGame={handleNewGame}
-                onQuit={quit}
-                isConnected={gameStatus === 'connected'}
-              />
-            </div>
-
             {showSceneView && (
               <div className="scene-wrapper" ref={sceneContainerRef}>
                 {/* v6.3: Battle mode always uses Three.js renderer */}
@@ -490,17 +594,19 @@ export function Play() {
                     />
                   </Graphics3DErrorBoundary>
                 )}
-                {/* Character HUD overlay - hide during battle */}
-                {gameState?.player?.race && !gameState?.battle && (
-                  <CharacterHUD
-                    race={gameState.player.race}
-                    playerClass={gameState.player.class}
-                    abilities={gameState.player.abilities}
-                    passives={gameState.player.passives}
+                {/* Stats HUD overlay (top-left) - hide during battle */}
+                {gameState?.player && !gameState?.battle && (
+                  <StatsHUD
+                    level={gameState.player.level}
+                    raceName={gameState.player.race?.name}
+                    className={gameState.player.class?.name}
                     health={gameState.player.health}
                     maxHealth={gameState.player.max_health}
-                    showAbilities={true}
-                    compact={false}
+                    xp={gameState.player.xp}
+                    xpToLevel={gameState.player.xp_to_level}
+                    attack={gameState.player.attack}
+                    defense={gameState.player.defense}
+                    kills={gameState.player.kills}
                   />
                 )}
                 {/* Status HUD overlay (Field Pulse, Artifacts, Vows) - hide during battle */}
@@ -508,6 +614,24 @@ export function Play() {
                   <StatusHUD
                     fieldPulse={gameState?.field_pulse}
                     artifacts={gameState?.player?.artifacts}
+                  />
+                )}
+                {/* Game Messages Panel (bottom-left) - hide during battle */}
+                {gameState?.messages && !gameState?.battle && (
+                  <GameMessagesPanel
+                    messages={gameState.messages}
+                    isCollapsed={isGameMessagesCollapsed}
+                    onToggle={() => setIsGameMessagesCollapsed(prev => !prev)}
+                  />
+                )}
+                {/* Minimap (bottom-right) - hide during battle */}
+                {gameState?.first_person_view?.top_down_window && !gameState?.battle && (
+                  <Minimap
+                    tiles={gameState.first_person_view.top_down_window}
+                    playerFacing={gameState.first_person_view.facing}
+                    dungeonLevel={gameState.dungeon?.level || 1}
+                    isCollapsed={isMinimapCollapsed}
+                    onToggle={() => setIsMinimapCollapsed(prev => !prev)}
                   />
                 )}
                 {/* Character Window Modal (includes inventory tab) - inside scene container */}
@@ -536,6 +660,22 @@ export function Play() {
                     totalCount={gameState.lore_journal.total_count}
                     onClose={handleCloseLoreJournal}
                     initialEntryId={pendingNewLore?.lore_id}
+                  />
+                )}
+                {/* Help Window Modal - inside scene container */}
+                {showHelpWindow && (
+                  <HelpWindow onClose={() => setShowHelpWindow(false)} />
+                )}
+                {/* Game Menu Modal - inside scene container */}
+                {showGameMenu && (
+                  <GameMenu
+                    onClose={() => setShowGameMenu(false)}
+                    onQuit={quit}
+                    onOpenHelp={() => {
+                      setShowGameMenu(false);
+                      setShowHelpWindow(true);
+                    }}
+                    onQuitToTitle={() => navigate('/')}
                   />
                 )}
                 {/* v6.1: Transition Curtain - contained within scene view */}
@@ -587,9 +727,11 @@ export function Play() {
           </div>
 
           <div className="game-controls" role="group" aria-label="View settings">
-            <label className="scene-toggle">
+            <label className="scene-toggle" htmlFor="scene-view-toggle">
               <input
                 type="checkbox"
+                id="scene-view-toggle"
+                name="sceneView"
                 checked={showSceneView}
                 onChange={(e) => setShowSceneView(e.target.checked)}
                 aria-describedby="scene-view-desc"
@@ -600,9 +742,11 @@ export function Play() {
               </span>
             </label>
 
-            <label className="scene-toggle">
+            <label className="scene-toggle" htmlFor="tile-grid-toggle">
               <input
                 type="checkbox"
+                id="tile-grid-toggle"
+                name="tileGrid"
                 checked={useTileGrid}
                 onChange={(e) => setUseTileGrid(e.target.checked)}
                 disabled={!showSceneView}
@@ -614,9 +758,11 @@ export function Play() {
               </span>
             </label>
 
-            <label className="scene-toggle">
+            <label className="scene-toggle" htmlFor="3d-mode-toggle">
               <input
                 type="checkbox"
+                id="3d-mode-toggle"
+                name="use3DMode"
                 checked={use3DMode}
                 onChange={(e) => setUse3DMode(e.target.checked)}
                 disabled={!showSceneView}
@@ -627,7 +773,6 @@ export function Play() {
                 Use Three.js 3D rendering instead of canvas 2D
               </span>
             </label>
-
           </div>
 
           <div className="game-status">

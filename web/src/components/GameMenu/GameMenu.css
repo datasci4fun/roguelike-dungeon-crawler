@@ -1,0 +1,311 @@
+/**
+ * GameMenu.css - In-game pause menu styling
+ * Matching the traditional RPG aesthetic
+ */
+
+.game-menu-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.game-menu {
+  position: relative;
+  width: 380px;
+  max-width: 90%;
+
+  /* Classic RPG parchment/stone look */
+  background:
+    linear-gradient(135deg, rgba(45, 35, 25, 0.98) 0%, rgba(30, 25, 20, 0.98) 100%);
+
+  /* Ornate double border */
+  border: 3px solid #8b7355;
+  box-shadow:
+    inset 0 0 0 1px #5c4a3a,
+    inset 0 0 0 3px rgba(139, 115, 85, 0.3),
+    inset 0 0 40px rgba(0, 0, 0, 0.5),
+    0 0 60px rgba(0, 0, 0, 0.9),
+    0 0 2px #000;
+
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Georgia', serif;
+}
+
+/* Corner decorations */
+.game-menu::before,
+.game-menu::after {
+  content: '◆';
+  position: absolute;
+  font-size: 12px;
+  color: #a08060;
+  text-shadow: 0 0 4px rgba(160, 128, 96, 0.5);
+  z-index: 10;
+}
+
+.game-menu::before {
+  top: 6px;
+  left: 8px;
+}
+
+.game-menu::after {
+  top: 6px;
+  right: 8px;
+}
+
+/* ===================== HEADER ===================== */
+.gm-header {
+  text-align: center;
+  padding: 16px 24px;
+  background:
+    linear-gradient(180deg, rgba(100, 80, 60, 0.4) 0%, rgba(60, 50, 40, 0.2) 50%, transparent 100%);
+  border-bottom: 2px solid #5c4a3a;
+  position: relative;
+}
+
+.gm-header::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #a08060, transparent);
+}
+
+.gm-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #d4af37;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font-weight: bold;
+  text-shadow:
+    0 0 10px rgba(212, 175, 55, 0.5),
+    2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* ===================== OPTIONS ===================== */
+.gm-options {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gm-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(139, 115, 85, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-family: 'Georgia', serif;
+}
+
+.gm-option:hover,
+.gm-option.selected {
+  background: rgba(139, 115, 85, 0.2);
+  border-color: #8b7355;
+}
+
+.gm-option.selected {
+  box-shadow: inset 0 0 20px rgba(212, 175, 55, 0.1);
+}
+
+.gm-option.selected .option-label {
+  color: #d4af37;
+}
+
+.gm-option.danger:hover,
+.gm-option.danger.selected {
+  background: rgba(185, 28, 28, 0.15);
+  border-color: rgba(185, 28, 28, 0.5);
+}
+
+.gm-option.danger.selected .option-label {
+  color: #f87171;
+}
+
+.option-icon {
+  font-size: 1.4rem;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  color: #c4a777;
+}
+
+.gm-option.selected .option-icon {
+  color: #d4af37;
+}
+
+.gm-option.danger .option-icon {
+  color: #f87171;
+}
+
+.option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.option-label {
+  font-size: 1rem;
+  color: #c4a777;
+  font-weight: 500;
+}
+
+.option-description {
+  font-size: 0.75rem;
+  color: #7a6a50;
+}
+
+/* ===================== FOOTER ===================== */
+.gm-footer {
+  padding: 12px 24px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid #5c4a3a;
+  text-align: center;
+}
+
+.gm-hint {
+  color: #7a6a50;
+  font-size: 0.8rem;
+}
+
+.gm-hint kbd {
+  padding: 2px 6px;
+  background: rgba(74, 63, 48, 0.5);
+  border: 1px solid #5c4a3a;
+  border-radius: 3px;
+  color: #c4a777;
+  font-family: monospace;
+  font-size: 0.75rem;
+  margin: 0 2px;
+}
+
+/* ===================== CONFIRMATION DIALOG ===================== */
+.gm-confirm-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.gm-confirm {
+  background: linear-gradient(135deg, rgba(50, 35, 30, 0.98) 0%, rgba(35, 25, 22, 0.98) 100%);
+  border: 2px solid #8b5a5a;
+  border-radius: 6px;
+  padding: 24px;
+  text-align: center;
+  max-width: 320px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+.confirm-title {
+  margin: 0 0 12px 0;
+  font-size: 1.2rem;
+  color: #f87171;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.confirm-message {
+  margin: 0 0 20px 0;
+  color: #b8a888;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.confirm-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.confirm-btn {
+  padding: 10px 24px;
+  border-radius: 4px;
+  font-family: 'Georgia', serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.confirm-btn.cancel {
+  background: rgba(139, 115, 85, 0.2);
+  border: 1px solid #8b7355;
+  color: #c4a777;
+}
+
+.confirm-btn.cancel:hover {
+  background: rgba(139, 115, 85, 0.4);
+}
+
+.confirm-btn.confirm {
+  background: rgba(185, 28, 28, 0.3);
+  border: 1px solid #b91c1c;
+  color: #f87171;
+}
+
+.confirm-btn.confirm:hover {
+  background: rgba(185, 28, 28, 0.5);
+}
+
+.confirm-hint {
+  color: #7a6a50;
+  font-size: 0.75rem;
+}
+
+.confirm-hint kbd {
+  padding: 2px 5px;
+  background: rgba(74, 63, 48, 0.5);
+  border: 1px solid #5c4a3a;
+  border-radius: 3px;
+  color: #c4a777;
+  font-family: monospace;
+  font-size: 0.7rem;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 480px) {
+  .game-menu {
+    width: 100%;
+    max-width: none;
+    margin: 16px;
+  }
+
+  .gm-option {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .option-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1.2rem;
+  }
+}
