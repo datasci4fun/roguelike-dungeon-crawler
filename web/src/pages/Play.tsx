@@ -6,7 +6,6 @@ import { useChatSocket } from '../hooks/useChatSocket';
 import { useAudioManager } from '../hooks/useAudioManager';
 import { useSfxGameEvents, useSfxCommands } from '../hooks/useSfxGameEvents';
 import { useDebugRenderer } from '../hooks/useDebugRenderer';
-import { GameTerminal } from '../components/GameTerminal';
 import { mapKeyToCommand } from '../components/GameTerminal/keymap';
 import { FirstPersonRenderer, FirstPersonRenderer3D, type CorridorInfoEntry } from '../components/SceneRenderer';
 import { CharacterHUD } from '../components/CharacterHUD';
@@ -50,9 +49,6 @@ export function Play() {
   });
   const [use3DMode, setUse3DMode] = useState(() => {
     try { return localStorage.getItem('use3DMode') === '1'; } catch { return false; }
-  });
-  const [showTerminal, setShowTerminal] = useState(() => {
-    try { return localStorage.getItem('showTerminal') !== '0'; } catch { return true; }
   });
   const [showGameOver, setShowGameOver] = useState<'death' | 'victory' | null>(null);
   const [deathCutsceneComplete, setDeathCutsceneComplete] = useState(false);
@@ -127,7 +123,7 @@ export function Play() {
         clearTimeout(resizeTimeout);
       }
     };
-  }, [showSceneView, showTerminal]);
+  }, [showSceneView]);
 
   // Audio management
   const { crossfadeTo, isUnlocked, unlockAudio } = useAudioManager();
@@ -253,7 +249,7 @@ export function Play() {
     }
   }, [gameState, navigate]);
 
-  // Handle command from terminal
+  // Handle command from touch controls
   const handleCommand = useCallback(
     (command: string) => {
       // If dead or victory, treat any key as new game request -> go to character creation
@@ -312,11 +308,6 @@ export function Play() {
   useEffect(() => {
     try { localStorage.setItem('use3DMode', use3DMode ? '1' : '0'); } catch {}
   }, [use3DMode]);
-
-  // Persist terminal visibility preference
-  useEffect(() => {
-    try { localStorage.setItem('showTerminal', showTerminal ? '1' : '0'); } catch {}
-  }, [showTerminal]);
 
   // Debug hotkeys (F8: wireframe, F9: occluded, F10: snapshot)
   useEffect(() => {
@@ -453,10 +444,8 @@ export function Play() {
     return () => window.removeEventListener('keydown', handleMenuKey);
   }, [gameState?.ui_mode, showLoreJournal, showHelpWindow]);
 
-  // Keyboard handler when terminal is hidden - handles game commands
+  // Keyboard handler for game commands
   useEffect(() => {
-    if (showTerminal) return; // Terminal handles input when visible
-
     const handleGameKey = (e: KeyboardEvent) => {
       // Don't trigger when typing in input fields
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -486,7 +475,7 @@ export function Play() {
 
     window.addEventListener('keydown', handleGameKey);
     return () => window.removeEventListener('keydown', handleGameKey);
-  }, [showTerminal, showLoreJournal, showHelpWindow, showGameMenu, gameState?.ui_mode, gameState?.game_state, sendCommand, playMove]);
+  }, [showLoreJournal, showHelpWindow, showGameMenu, gameState?.ui_mode, gameState?.game_state, sendCommand, playMove]);
 
   // Handler for closing lore journal (clears pending notification)
   const handleCloseLoreJournal = useCallback(() => {
@@ -555,19 +544,7 @@ export function Play() {
             </div>
           )}
 
-          <div className={`game-views ${!showTerminal ? 'terminal-hidden' : ''}`}>
-            {showTerminal && (
-              <div className="terminal-wrapper">
-                <GameTerminal
-                  gameState={gameState}
-                  onCommand={handleCommand}
-                  onNewGame={handleNewGame}
-                  onQuit={quit}
-                  isConnected={gameStatus === 'connected'}
-                />
-              </div>
-            )}
-
+          <div className="game-views">
             {showSceneView && (
               <div className="scene-wrapper" ref={sceneContainerRef}>
                 {/* v6.3: Battle mode always uses Three.js renderer */}
@@ -803,20 +780,6 @@ export function Play() {
                 Use Three.js 3D rendering instead of canvas 2D
               </span>
             </label>
-
-            <label className="scene-toggle">
-              <input
-                type="checkbox"
-                checked={showTerminal}
-                onChange={(e) => setShowTerminal(e.target.checked)}
-                aria-describedby="terminal-desc"
-              />
-              Terminal
-              <span id="terminal-desc" className="visually-hidden">
-                Show or hide the terminal panel
-              </span>
-            </label>
-
           </div>
 
           <div className="game-status">
