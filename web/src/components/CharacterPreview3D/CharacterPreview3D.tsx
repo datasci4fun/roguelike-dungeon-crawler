@@ -150,7 +150,7 @@ export function CharacterPreview3D({
     isDraggingRef.current = false;
   }, []);
 
-  // Single effect that handles everything
+  // Initialize renderer once on mount
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -161,32 +161,6 @@ export function CharacterPreview3D({
     // Clear any existing canvases (handles React Strict Mode)
     while (container.firstChild) {
       container.removeChild(container.firstChild);
-    }
-
-    // Clean up previous renderer if exists
-    if (rendererRef.current) {
-      rendererRef.current.dispose();
-      rendererRef.current = null;
-    }
-
-    // Clean up previous scene
-    if (sceneRef.current) {
-      sceneRef.current.traverse((obj) => {
-        if (obj instanceof THREE.Mesh) {
-          obj.geometry.dispose();
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((m) => m.dispose());
-          } else {
-            obj.material.dispose();
-          }
-        }
-      });
-      sceneRef.current = null;
-    }
-
-    // Cancel previous animation
-    if (animationIdRef.current) {
-      cancelAnimationFrame(animationIdRef.current);
     }
 
     // Scene setup
@@ -238,11 +212,6 @@ export function CharacterPreview3D({
     ground.position.y = 0;
     scene.add(ground);
 
-    // Create character
-    const character = createCharacter(race, classId);
-    scene.add(character);
-    characterRef.current = character;
-
     // Animation loop
     let lastTime = performance.now();
 
@@ -287,7 +256,7 @@ export function CharacterPreview3D({
 
     window.addEventListener('resize', handleResize);
 
-    // Cleanup
+    // Cleanup only on unmount
     return () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationIdRef.current);
@@ -311,7 +280,34 @@ export function CharacterPreview3D({
         sceneRef.current = null;
       }
     };
-  }, [race, classId, height]);
+  }, [height]); // Only recreate renderer if height changes
+
+  // Update character when race or class changes (no renderer recreation)
+  useEffect(() => {
+    if (!sceneRef.current) return;
+
+    const scene = sceneRef.current;
+
+    // Remove old character
+    if (characterRef.current) {
+      scene.remove(characterRef.current);
+      characterRef.current.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry.dispose();
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((m) => m.dispose());
+          } else {
+            obj.material.dispose();
+          }
+        }
+      });
+    }
+
+    // Create new character
+    const character = createCharacter(race, classId);
+    scene.add(character);
+    characterRef.current = character;
+  }, [race, classId]);
 
   return (
     <div
