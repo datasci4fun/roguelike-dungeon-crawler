@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "updated_at": "2026-01-13T00:00:00Z",
+  "version": "1.1.0",
+  "updated_at": "2026-01-15T00:00:00Z",
   "data": [
     {
       "id": "human",
@@ -12,7 +12,15 @@
       "trait": "adaptive",
       "trait_name": "Adaptive",
       "trait_description": "+10% XP gain, +1 starting feat",
-      "starts_with_feat": true
+      "starts_with_feat": true,
+      "base_str": 10,
+      "base_dex": 10,
+      "base_con": 10,
+      "base_luck": 10,
+      "str_modifier": 0,
+      "dex_modifier": 0,
+      "con_modifier": 0,
+      "luck_modifier": 2
     },
     {
       "id": "elf",
@@ -24,7 +32,15 @@
       "trait": "keen_sight",
       "trait_name": "Keen Sight",
       "trait_description": "+2 vision range",
-      "starts_with_feat": false
+      "starts_with_feat": false,
+      "base_str": 8,
+      "base_dex": 12,
+      "base_con": 8,
+      "base_luck": 10,
+      "str_modifier": -1,
+      "dex_modifier": 2,
+      "con_modifier": 0,
+      "luck_modifier": 0
     },
     {
       "id": "dwarf",
@@ -36,7 +52,15 @@
       "trait": "poison_resist",
       "trait_name": "Poison Resistance",
       "trait_description": "50% poison resistance",
-      "starts_with_feat": false
+      "starts_with_feat": false,
+      "base_str": 12,
+      "base_dex": 8,
+      "base_con": 12,
+      "base_luck": 8,
+      "str_modifier": 1,
+      "dex_modifier": 0,
+      "con_modifier": 2,
+      "luck_modifier": -1
     },
     {
       "id": "halfling",
@@ -48,7 +72,15 @@
       "trait": "lucky",
       "trait_name": "Lucky",
       "trait_description": "15% dodge chance",
-      "starts_with_feat": false
+      "starts_with_feat": false,
+      "base_str": 6,
+      "base_dex": 14,
+      "base_con": 10,
+      "base_luck": 12,
+      "str_modifier": -2,
+      "dex_modifier": 2,
+      "con_modifier": 0,
+      "luck_modifier": 2
     },
     {
       "id": "orc",
@@ -60,7 +92,15 @@
       "trait": "rage",
       "trait_name": "Rage",
       "trait_description": "+50% damage below 25% HP",
-      "starts_with_feat": false
+      "starts_with_feat": false,
+      "base_str": 14,
+      "base_dex": 8,
+      "base_con": 12,
+      "base_luck": 6,
+      "str_modifier": 2,
+      "dex_modifier": 0,
+      "con_modifier": 1,
+      "luck_modifier": -1
     }
   ]
 }

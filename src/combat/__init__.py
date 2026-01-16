@@ -14,6 +14,13 @@ from .arena_templates import (
     ArenaTemplate, ArenaBucket, TEMPLATES,
     pick_template, compile_template, generate_deterministic_seed
 )
+from .dnd_combat import (
+    AttackRoll, DamageRoll, SavingThrow, CombatResult,
+    make_attack_roll, make_damage_roll, make_saving_throw,
+    resolve_attack, resolve_trap_save, resolve_poison_save,
+    calculate_ac, get_weapon_damage_dice, format_attack_message,
+    WEAPON_DAMAGE_DICE, TRAP_DCS
+)
 
 __all__ = [
     'BattleState', 'BattleOutcome', 'BattlePhase', 'BattleEntity',
@@ -25,4 +32,10 @@ __all__ = [
     'WARRIOR_ABILITIES', 'MAGE_ABILITIES', 'ROGUE_ABILITIES', 'CLERIC_ABILITIES', 'DEFAULT_ABILITIES',
     'ArenaTemplate', 'ArenaBucket', 'TEMPLATES',
     'pick_template', 'compile_template', 'generate_deterministic_seed',
+    # D&D combat system
+    'AttackRoll', 'DamageRoll', 'SavingThrow', 'CombatResult',
+    'make_attack_roll', 'make_damage_roll', 'make_saving_throw',
+    'resolve_attack', 'resolve_trap_save', 'resolve_poison_save',
+    'calculate_ac', 'get_weapon_damage_dice', 'format_attack_message',
+    'WEAPON_DAMAGE_DICE', 'TRAP_DCS',
 ]

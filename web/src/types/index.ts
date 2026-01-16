@@ -33,6 +33,77 @@ export interface RegisterData {
 export type RaceId = 'HUMAN' | 'ELF' | 'DWARF' | 'HALFLING' | 'ORC';
 export type ClassId = 'WARRIOR' | 'MAGE' | 'ROGUE' | 'CLERIC';
 
+// D&D-style ability scores
+export interface AbilityScores {
+  strength: number;
+  dexterity: number;
+  constitution: number;
+  luck: number;
+  str_mod?: number;
+  dex_mod?: number;
+  con_mod?: number;
+  luck_mod?: number;
+}
+
+// Ability score modifiers for races and classes
+export interface AbilityModifiers {
+  str: number;
+  dex: number;
+  con: number;
+  luck: number;
+}
+
+// Dice roll result for frontend display
+export type DiceRollType = 'attack' | 'damage' | 'saving_throw' | 'ability_check' | 'stat_roll';
+
+export interface DiceRollEvent {
+  type: DiceRollType;
+  dice_notation: string;  // e.g., "1d20+3", "2d6"
+  rolls: number[];        // Individual die results
+  modifier: number;
+  total: number;
+  is_critical?: boolean;
+  is_fumble?: boolean;
+  target_dc?: number;
+  target_ac?: number;
+  success?: boolean;
+  luck_applied?: boolean;
+}
+
+// Attack roll result
+export interface AttackRollResult {
+  d20_roll: number;
+  modifier: number;
+  total: number;
+  target_ac: number;
+  is_hit: boolean;
+  is_critical: boolean;
+  is_fumble: boolean;
+  luck_applied: boolean;
+}
+
+// Damage roll result
+export interface DamageRollResult {
+  dice_notation: string;
+  dice_rolls: number[];
+  modifier: number;
+  total: number;
+  damage_type: string;
+  is_critical: boolean;
+}
+
+// Combat result from backend
+export interface CombatResult {
+  attacker_id: string;
+  target_id: string;
+  attack_roll?: AttackRollResult;
+  damage_roll?: DamageRollResult;
+  damage_dealt: number;
+  target_hp_remaining: number;
+  is_kill: boolean;
+  message: string;
+}
+
 export interface RaceDefinition {
   id: RaceId;
   name: string;
@@ -44,6 +115,9 @@ export interface RaceDefinition {
   trait_name: string;
   trait_description: string;
   starts_with_feat?: boolean;
+  // D&D ability score modifiers
+  base_stats?: AbilityModifiers;
+  ability_modifiers?: AbilityModifiers;
 }
 
 export interface ClassDefinition {
@@ -55,6 +129,10 @@ export interface ClassDefinition {
   def_modifier: number;
   active_abilities: string[];
   passive_abilities: string[];
+  // D&D ability score modifiers
+  primary_stat?: 'STR' | 'DEX' | 'CON' | 'LUCK';
+  ability_modifiers?: AbilityModifiers;
+  hit_die?: string;
 }
 
 export interface PlayerAbility {
@@ -88,6 +166,7 @@ export interface PlayerFeat {
 export interface CharacterConfig {
   race: RaceId;
   class: ClassId;
+  ability_scores?: AbilityScores;
 }
 
 export interface PlayerRace {
@@ -124,6 +203,9 @@ export interface Player {
   feats?: PlayerFeat[];
   pending_feat_selection?: boolean;
   available_feats?: PlayerFeat[];
+  // D&D ability scores
+  ability_scores?: AbilityScores;
+  armor_class?: number;
 }
 
 export interface Enemy {

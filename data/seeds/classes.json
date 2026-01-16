@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "updated_at": "2026-01-13T00:00:00Z",
+  "version": "1.1.0",
+  "updated_at": "2026-01-15T00:00:00Z",
   "config": {
     "base_player_hp": 20,
     "base_attack_damage": 3,
@@ -19,7 +19,14 @@
       "atk_modifier": 1,
       "def_modifier": 1,
       "active_abilities": ["power_strike", "shield_wall"],
-      "passive_abilities": ["combat_mastery"]
+      "passive_abilities": ["combat_mastery"],
+      "str_modifier": 2,
+      "dex_modifier": 0,
+      "con_modifier": 1,
+      "luck_modifier": 0,
+      "hit_die": "d10",
+      "primary_stat": "STR",
+      "armor_proficiency": ["light", "medium", "heavy", "shields"]
     },
     {
       "id": "mage",
@@ -29,7 +36,14 @@
       "atk_modifier": -1,
       "def_modifier": 0,
       "active_abilities": ["fireball", "frost_nova"],
-      "passive_abilities": ["mana_shield"]
+      "passive_abilities": ["mana_shield"],
+      "str_modifier": -1,
+      "dex_modifier": 1,
+      "con_modifier": 0,
+      "luck_modifier": 2,
+      "hit_die": "d6",
+      "primary_stat": "DEX",
+      "armor_proficiency": ["light"]
     },
     {
       "id": "rogue",
@@ -39,7 +53,14 @@
       "atk_modifier": 2,
       "def_modifier": -1,
       "active_abilities": ["backstab", "smoke_bomb"],
-      "passive_abilities": ["critical_strike"]
+      "passive_abilities": ["critical_strike"],
+      "str_modifier": 0,
+      "dex_modifier": 2,
+      "con_modifier": 0,
+      "luck_modifier": 1,
+      "hit_die": "d8",
+      "primary_stat": "DEX",
+      "armor_proficiency": ["light"]
     },
     {
       "id": "cleric",
@@ -49,7 +70,14 @@
       "atk_modifier": 0,
       "def_modifier": 1,
       "active_abilities": ["heal", "smite"],
-      "passive_abilities": ["divine_protection"]
+      "passive_abilities": ["divine_protection"],
+      "str_modifier": 0,
+      "dex_modifier": 0,
+      "con_modifier": 2,
+      "luck_modifier": 1,
+      "hit_die": "d8",
+      "primary_stat": "CON",
+      "armor_proficiency": ["light", "medium", "shields"]
     }
   ]
 }

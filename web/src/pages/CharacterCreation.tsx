@@ -16,8 +16,10 @@ import { GameIntro } from '../components/GameIntroNew';
 import { AtmosphericPage } from '../components/AtmosphericPage';
 import { PhosphorHeader } from '../components/PhosphorHeader';
 import { CharacterPreview3D } from '../components/CharacterPreview3D';
+import { StatRoller } from '../components/StatRoller';
 import { RACE_LORE, CLASS_LORE, CHARACTER_CREATION } from '../data/loreSkyfall';
 import type { RaceId, ClassId } from '../hooks/useGameSocket';
+import type { AbilityScores } from '../types';
 import { ABILITY_DESCRIPTIONS, BASE_STATS } from '../data/characterData';
 import { useGameConstants } from '../hooks/useGameConstants';
 import './CharacterCreation.css';
@@ -30,6 +32,8 @@ export function CharacterCreation() {
   const [selectedClass, setSelectedClass] = useState<ClassId>('WARRIOR');
   const [isStarting, setIsStarting] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [showStatRoller, setShowStatRoller] = useState(false);
+  const [abilityScores, setAbilityScores] = useState<AbilityScores | null>(null);
 
   const { status, gameState, newGame } = useGame();
   const { crossfadeTo, isUnlocked } = useAudioManager();
@@ -100,18 +104,39 @@ export function CharacterCreation() {
     }
   }, [isStarting, gameState, navigate]);
 
+  // Show stat roller when user clicks "Roll Stats"
+  const handleRollStats = useCallback(() => {
+    if (status !== 'connected') return;
+    setShowStatRoller(true);
+  }, [status]);
+
+  // Handle stat roller completion
+  const handleStatsComplete = useCallback((scores: AbilityScores) => {
+    setAbilityScores(scores);
+    setShowStatRoller(false);
+  }, []);
+
   // Show intro when user clicks "Begin Adventure"
   const handleBeginAdventure = useCallback(() => {
     if (status !== 'connected') return;
+    if (!abilityScores) {
+      // If no stats rolled, show stat roller first
+      setShowStatRoller(true);
+      return;
+    }
     setShowIntro(true);
-  }, [status]);
+  }, [status, abilityScores]);
 
   // Start game after intro completes
   const handleIntroComplete = useCallback(() => {
     setShowIntro(false);
     setIsStarting(true);
-    newGame({ race: selectedRace, class: selectedClass });
-  }, [selectedRace, selectedClass, newGame]);
+    newGame({
+      race: selectedRace,
+      class: selectedClass,
+      ability_scores: abilityScores || undefined,
+    });
+  }, [selectedRace, selectedClass, abilityScores, newGame]);
 
   const stats = calculateStats(selectedRace, selectedClass);
   const race = RACES?.[selectedRace];
@@ -325,20 +350,94 @@ export function CharacterCreation() {
               })}
             </div>
 
+            {/* Ability Scores Preview (if rolled) */}
+            {abilityScores && (
+              <div className="ability-scores-preview">
+                <h3>Ability Scores</h3>
+                <div className="ability-grid">
+                  <div className="ability-item">
+                    <span className="ability-label">STR</span>
+                    <span className="ability-value">{abilityScores.strength}</span>
+                    <span className={`ability-mod ${(abilityScores.str_mod || 0) >= 0 ? 'positive' : 'negative'}`}>
+                      {(abilityScores.str_mod || 0) >= 0 ? '+' : ''}{abilityScores.str_mod || 0}
+                    </span>
+                  </div>
+                  <div className="ability-item">
+                    <span className="ability-label">DEX</span>
+                    <span className="ability-value">{abilityScores.dexterity}</span>
+                    <span className={`ability-mod ${(abilityScores.dex_mod || 0) >= 0 ? 'positive' : 'negative'}`}>
+                      {(abilityScores.dex_mod || 0) >= 0 ? '+' : ''}{abilityScores.dex_mod || 0}
+                    </span>
+                  </div>
+                  <div className="ability-item">
+                    <span className="ability-label">CON</span>
+                    <span className="ability-value">{abilityScores.constitution}</span>
+                    <span className={`ability-mod ${(abilityScores.con_mod || 0) >= 0 ? 'positive' : 'negative'}`}>
+                      {(abilityScores.con_mod || 0) >= 0 ? '+' : ''}{abilityScores.con_mod || 0}
+                    </span>
+                  </div>
+                  <div className="ability-item">
+                    <span className="ability-label">LUCK</span>
+                    <span className="ability-value">{abilityScores.luck}</span>
+                    <span className={`ability-mod ${(abilityScores.luck_mod || 0) >= 0 ? 'positive' : 'negative'}`}>
+                      {(abilityScores.luck_mod || 0) >= 0 ? '+' : ''}{abilityScores.luck_mod || 0}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  className="reroll-stats-button"
+                  onClick={handleRollStats}
+                  disabled={status !== 'connected'}
+                >
+                  Re-roll Stats
+                </button>
+              </div>
+            )}
+
             <div className="descent-warning">
               <span className="warning-icon">☠</span>
               <span>{CHARACTER_CREATION.warning}</span>
             </div>
 
-            <button
-              className="start-button"
-              onClick={handleBeginAdventure}
-              disabled={status !== 'connected'}
-            >
-              {status === 'connecting' ? 'Connecting...' : 'Begin Your Descent'}
-            </button>
+            {!abilityScores ? (
+              <button
+                className="roll-stats-button"
+                onClick={handleRollStats}
+                disabled={status !== 'connected'}
+              >
+                {status === 'connecting' ? 'Connecting...' : 'Roll Your Stats'}
+              </button>
+            ) : (
+              <button
+                className="start-button"
+                onClick={handleBeginAdventure}
+                disabled={status !== 'connected'}
+              >
+                {status === 'connecting' ? 'Connecting...' : 'Begin Your Descent'}
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Stat Roller Overlay */}
+        {showStatRoller && (
+          <div className="stat-roller-overlay">
+            <div className="stat-roller-modal">
+              <button
+                className="stat-roller-close"
+                onClick={() => setShowStatRoller(false)}
+              >
+                ×
+              </button>
+              <StatRoller
+                race={selectedRace}
+                playerClass={selectedClass}
+                onComplete={handleStatsComplete}
+                allowReroll={true}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Game Intro Overlay */}
         {showIntro && (

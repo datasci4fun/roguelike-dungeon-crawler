@@ -14,6 +14,10 @@ from ..player_abilities import (
     PlayerAbility, AbilityCategory, get_abilities_for_class, PLAYER_ABILITIES
 )
 from ..feats import Feat, FEATS, get_feat, get_available_feats, should_gain_feat_at_level, FEAT_LEVELS
+from ..ability_scores import (
+    AbilityScores, create_ability_scores, roll_ability_scores,
+    get_hit_die, get_primary_stat
+)
 from . import player_feats
 from .base import Entity
 
@@ -22,10 +26,25 @@ class Player(Entity):
     """The player character.
 
     Handles race/class stats, equipment, abilities, feats, and leveling.
+    Now includes D&D-style ability scores (STR, DEX, CON, LUCK).
     """
 
-    def __init__(self, x: int, y: int, race: Race = None, player_class: PlayerClass = None):
-        # Calculate stats from race + class, or use defaults
+    def __init__(self, x: int, y: int, race: Race = None, player_class: PlayerClass = None,
+                 ability_scores: AbilityScores = None):
+        # Initialize or generate ability scores
+        if ability_scores:
+            self.ability_scores = ability_scores
+        elif race and player_class:
+            # Generate ability scores with race/class modifiers
+            self.ability_scores = create_ability_scores(
+                race.name if hasattr(race, 'name') else str(race),
+                player_class.name if hasattr(player_class, 'name') else str(player_class)
+            )
+        else:
+            # Default ability scores for backward compatibility
+            self.ability_scores = AbilityScores()
+
+        # Calculate stats from race + class + ability scores
         if race and player_class:
             race_stats = RACE_STATS[race]
             class_stats = CLASS_STATS[player_class]
@@ -35,9 +54,16 @@ class Player(Entity):
             base_atk = 3
             base_def = 0
 
-            max_hp = base_hp + race_stats['hp_modifier'] + class_stats['hp_modifier']
-            attack = base_atk + race_stats['atk_modifier'] + class_stats['atk_modifier']
-            defense = max(0, base_def + race_stats['def_modifier'] + class_stats['def_modifier'])
+            # Apply CON modifier to HP (each point = +1 HP per level, minimum +1 at level 1)
+            con_hp_bonus = max(1, self.ability_scores.con_mod)
+
+            max_hp = base_hp + race_stats['hp_modifier'] + class_stats['hp_modifier'] + con_hp_bonus
+
+            # Apply STR modifier to base attack
+            attack = base_atk + race_stats['atk_modifier'] + class_stats['atk_modifier'] + self.ability_scores.str_mod
+
+            # Apply DEX modifier to defense (dodge/AC contribution)
+            defense = max(0, base_def + race_stats['def_modifier'] + class_stats['def_modifier'] + self.ability_scores.dex_mod)
         else:
             # Default stats for backward compatibility
             max_hp = PLAYER_MAX_HEALTH
@@ -566,3 +592,61 @@ class Player(Entity):
     def has_first_strike(self) -> bool:
         """Check if player has first strike feat."""
         return player_feats.has_first_strike(self.feats)
+
+    # ========== Ability Score Methods ==========
+
+    def get_str_mod(self) -> int:
+        """Get Strength modifier."""
+        return self.ability_scores.str_mod
+
+    def get_dex_mod(self) -> int:
+        """Get Dexterity modifier."""
+        return self.ability_scores.dex_mod
+
+    def get_con_mod(self) -> int:
+        """Get Constitution modifier."""
+        return self.ability_scores.con_mod
+
+    def get_luck_mod(self) -> int:
+        """Get Luck modifier."""
+        return self.ability_scores.luck_mod
+
+    @property
+    def armor_class(self) -> int:
+        """Calculate armor class (AC).
+
+        Base AC = 10 + DEX modifier + armor bonus + shield bonus
+        """
+        base_ac = 10 + self.ability_scores.dex_mod
+
+        # Add armor bonus
+        if self.equipped_armor:
+            base_ac += getattr(self.equipped_armor, 'armor_class_bonus', 0)
+
+        # Add shield bonus
+        if self.equipped_off_hand:
+            base_ac += getattr(self.equipped_off_hand, 'shield_ac_bonus', 0)
+
+        return base_ac
+
+    def get_attack_modifier(self) -> int:
+        """Get attack roll modifier based on weapon type.
+
+        Melee weapons use STR, ranged weapons use DEX.
+        """
+        if self.equipped_weapon and getattr(self.equipped_weapon, 'is_ranged', False):
+            return self.ability_scores.dex_mod
+        return self.ability_scores.str_mod
+
+    def get_damage_modifier(self) -> int:
+        """Get damage roll modifier based on weapon type.
+
+        Melee weapons use STR, ranged weapons use DEX.
+        """
+        if self.equipped_weapon and getattr(self.equipped_weapon, 'is_ranged', False):
+            return self.ability_scores.dex_mod
+        return self.ability_scores.str_mod
+
+    def get_ability_scores_info(self) -> dict:
+        """Get serializable info about player's ability scores for frontend."""
+        return self.ability_scores.to_dict()

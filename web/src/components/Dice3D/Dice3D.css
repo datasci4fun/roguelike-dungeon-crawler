@@ -1,0 +1,244 @@
+.dice3d {
+  --dice-size: 60px;
+  position: relative;
+  width: var(--dice-size);
+  height: var(--dice-size);
+  perspective: 300px;
+}
+
+.dice3d-scene {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.dice3d-cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease-out;
+}
+
+.dice3d.rolling .dice3d-cube {
+  transition: transform 0.1s linear;
+}
+
+/* D6 Cube */
+.dice3d-d6 {
+  transform-origin: center center;
+}
+
+.dice3d-d6 .dice3d-face {
+  position: absolute;
+  width: var(--dice-size);
+  height: var(--dice-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--dice-size) * 0.5);
+  font-weight: bold;
+  color: #1a1a2e;
+  background: linear-gradient(145deg, #f0f0f0 0%, #d4d4d4 100%);
+  border: 2px solid #888;
+  border-radius: 8px;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+  backface-visibility: hidden;
+}
+
+.dice3d-d6 .dice3d-face-1 { transform: rotateY(0deg) translateZ(calc(var(--dice-size) / 2)); }
+.dice3d-d6 .dice3d-face-2 { transform: rotateY(90deg) translateZ(calc(var(--dice-size) / 2)); }
+.dice3d-d6 .dice3d-face-3 { transform: rotateX(90deg) translateZ(calc(var(--dice-size) / 2)); }
+.dice3d-d6 .dice3d-face-4 { transform: rotateX(-90deg) translateZ(calc(var(--dice-size) / 2)); }
+.dice3d-d6 .dice3d-face-5 { transform: rotateY(-90deg) translateZ(calc(var(--dice-size) / 2)); }
+.dice3d-d6 .dice3d-face-6 { transform: rotateY(180deg) translateZ(calc(var(--dice-size) / 2)); }
+
+/* D20 Icosahedron - simplified visual representation */
+.dice3d-d20 .dice3d-face {
+  position: absolute;
+  width: var(--dice-size);
+  height: var(--dice-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--dice-size) * 0.35);
+  font-weight: bold;
+  color: #ffd700;
+  background: linear-gradient(145deg, #2e1a4a 0%, #1a0a2e 100%);
+  border: 2px solid #8b4fd4;
+  border-radius: 50%;
+  box-shadow: inset 0 0 15px rgba(139, 79, 212, 0.3);
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+/* D4 Tetrahedron */
+.dice3d-d4 .dice3d-face {
+  position: absolute;
+  width: var(--dice-size);
+  height: var(--dice-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--dice-size) * 0.4);
+  font-weight: bold;
+  color: #1a1a2e;
+  background: linear-gradient(145deg, #50fa7b 0%, #3dd668 100%);
+  border: 2px solid #2ecc71;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+/* D8 Octahedron */
+.dice3d-d8 .dice3d-face {
+  position: absolute;
+  width: var(--dice-size);
+  height: var(--dice-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--dice-size) * 0.35);
+  font-weight: bold;
+  color: #1a1a2e;
+  background: linear-gradient(145deg, #8be9fd 0%, #6bc5e0 100%);
+  border: 2px solid #5dade2;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+
+/* D10 Pentagonal trapezohedron */
+.dice3d-d10 .dice3d-face {
+  position: absolute;
+  width: var(--dice-size);
+  height: var(--dice-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--dice-size) * 0.4);
+  font-weight: bold;
+  color: #1a1a2e;
+  background: linear-gradient(145deg, #ff79c6 0%, #e066a0 100%);
+  border: 2px solid #e74c8c;
+  border-radius: 20%;
+}
+
+/* D12 Dodecahedron */
+.dice3d-d12 .dice3d-face {
+  position: absolute;
+  width: var(--dice-size);
+  height: var(--dice-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(var(--dice-size) * 0.35);
+  font-weight: bold;
+  color: #1a1a2e;
+  background: linear-gradient(145deg, #f1fa8c 0%, #d9e070 100%);
+  border: 2px solid #f1c40f;
+  clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+}
+
+/* Result overlay */
+.dice3d-result {
+  position: absolute;
+  bottom: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.dice3d-result-value {
+  font-size: calc(var(--dice-size) * 0.3);
+  font-weight: bold;
+  color: #f8f8f2;
+}
+
+.dice3d-result-value.critical {
+  color: #50fa7b;
+  text-shadow: 0 0 10px #50fa7b;
+  animation: criticalPulse 0.5s ease-in-out infinite alternate;
+}
+
+.dice3d-result-value.fumble {
+  color: #ff5555;
+  text-shadow: 0 0 10px #ff5555;
+}
+
+@keyframes criticalPulse {
+  from {
+    text-shadow: 0 0 10px #50fa7b;
+    transform: scale(1);
+  }
+  to {
+    text-shadow: 0 0 20px #50fa7b, 0 0 30px #50fa7b;
+    transform: scale(1.1);
+  }
+}
+
+/* Luck indicator */
+.dice3d-luck {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  font-size: calc(var(--dice-size) * 0.2);
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.dice3d-luck.positive {
+  color: #50fa7b;
+  border: 1px solid #50fa7b;
+}
+
+.dice3d-luck.negative {
+  color: #ff5555;
+  border: 1px solid #ff5555;
+}
+
+/* Critical/Fumble glow effects */
+.dice3d.critical .dice3d-cube {
+  filter: drop-shadow(0 0 15px #50fa7b) drop-shadow(0 0 25px #50fa7b);
+  animation: criticalGlow 0.5s ease-in-out infinite alternate;
+}
+
+.dice3d.fumble .dice3d-cube {
+  filter: drop-shadow(0 0 15px #ff5555);
+}
+
+@keyframes criticalGlow {
+  from {
+    filter: drop-shadow(0 0 15px #50fa7b);
+  }
+  to {
+    filter: drop-shadow(0 0 25px #50fa7b) drop-shadow(0 0 35px rgba(80, 250, 123, 0.5));
+  }
+}
+
+/* Rolling animation */
+.dice3d.rolling .dice3d-cube {
+  animation: diceShake 0.1s linear infinite;
+}
+
+@keyframes diceShake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 2px); }
+  50% { transform: translate(2px, -2px); }
+  75% { transform: translate(-2px, -2px); }
+}
+
+/* Luck influenced glow */
+.dice3d.luck-influenced .dice3d-cube {
+  animation: luckShimmer 2s ease-in-out infinite;
+}
+
+@keyframes luckShimmer {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.6));
+  }
+}
