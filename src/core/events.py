@@ -147,6 +147,9 @@ class EventType(Enum):
     PLAYER_TURN_START = auto() # Player turn started
     PLAYER_TURN_END = auto()   # Player turn ended
 
+    # D&D dice roll events (v6.10 - animated dice display)
+    DICE_ROLL = auto()         # Dice roll for combat (roll_type, dice_notation, rolls, modifier, total, etc.)
+
     # Transition events (v6.1)
     TRANSITION_START = auto()  # Transition began (kind in data)
     TRANSITION_END = auto()    # Transition completed or skipped

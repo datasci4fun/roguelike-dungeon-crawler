@@ -10,6 +10,7 @@ from .battle_actions import (
     get_class_abilities, get_valid_attack_targets,
     manhattan_distance, create_status_effect
 )
+from .dnd_combat import make_attack_roll, make_damage_roll, WEAPON_DAMAGE_DICE
 from ..core.events import EventType
 
 if TYPE_CHECKING:
@@ -150,26 +151,137 @@ class PlayerActionHandler:
     def execute_attack(self, battle: BattleState, attacker: BattleEntity,
                        target: BattleEntity, damage_mult: float,
                        end_turn_callback, entity_death_callback) -> bool:
-        """Execute a basic attack against a target."""
-        base_damage = attacker.attack
-        defense = target.get_effective_defense()
-        damage = max(1, int(base_damage * damage_mult) - defense)
+        """Execute a basic attack against a target using D&D dice mechanics."""
+        # Get attacker name for messages
+        attacker_name = "You" if attacker.is_player else getattr(attacker, 'name', 'Enemy')
 
-        target.hp -= damage
+        # Check if we should use D&D dice combat (player has ability scores)
+        use_dnd_combat = False
+        attack_mod = 0
+        damage_mod = 0
+        luck_mod = 0.0
+        weapon_dice = "1d6"
 
-        if self.events is not None:
-            self.events.emit(
-                EventType.DAMAGE_NUMBER,
-                x=target.arena_x,
-                y=target.arena_y,
-                amount=damage
+        if attacker.is_player and self.engine.player:
+            player = self.engine.player
+            if hasattr(player, 'ability_scores') and player.ability_scores:
+                use_dnd_combat = True
+                # Get attack modifier (DEX for finesse, STR otherwise)
+                attack_mod = player.get_attack_modifier()
+                damage_mod = player.get_damage_modifier()
+                luck_mod = player.get_luck_mod() * 0.05  # 5% per luck point above 10
+
+                # Get weapon damage dice from equipped weapon
+                if hasattr(player, 'equipment') and player.equipment:
+                    weapon = player.equipment.get('weapon')
+                    if weapon and hasattr(weapon, 'item_type'):
+                        weapon_type = weapon.item_type.lower() if hasattr(weapon.item_type, 'lower') else str(weapon.item_type).lower()
+                        weapon_dice = WEAPON_DAMAGE_DICE.get(weapon_type, "1d6")
+
+        if use_dnd_combat:
+            # D&D-style attack: d20 + modifier vs AC
+            target_ac = getattr(target, 'armor_class', 10 + target.get_effective_defense())
+
+            # Make attack roll
+            attack_roll = make_attack_roll(
+                attacker_attack_mod=attack_mod,
+                target_ac=target_ac,
+                luck_modifier=luck_mod,
+                proficiency_bonus=2
             )
-            self.events.emit(EventType.HIT_FLASH, entity=target)
 
-        if attacker.is_player:
-            self.engine.add_message(f"You hit for {damage} damage!")
+            # Emit DICE_ROLL event for attack
+            if self.events is not None:
+                self.events.emit(
+                    EventType.DICE_ROLL,
+                    roll_type='attack',
+                    dice_notation='1d20',
+                    rolls=[attack_roll.d20_roll],
+                    modifier=attack_roll.modifier,
+                    total=attack_roll.total,
+                    target_ac=target_ac,
+                    is_hit=attack_roll.is_hit,
+                    is_critical=attack_roll.is_critical,
+                    is_fumble=attack_roll.is_fumble,
+                    luck_applied=attack_roll.luck_applied,
+                    attacker_name=attacker_name
+                )
+
+            if attack_roll.is_fumble:
+                self.engine.add_message(f"{attacker_name} fumbled! (Natural 1)")
+                if end_turn_callback:
+                    end_turn_callback()
+                return True
+
+            if not attack_roll.is_hit:
+                self.engine.add_message(
+                    f"{attacker_name} missed! ({attack_roll.total} vs AC {target_ac})"
+                )
+                if end_turn_callback:
+                    end_turn_callback()
+                return True
+
+            # Hit! Roll damage
+            damage_roll = make_damage_roll(
+                weapon_dice=weapon_dice,
+                damage_mod=damage_mod,
+                is_critical=attack_roll.is_critical,
+                luck_modifier=luck_mod
+            )
+
+            # Apply damage multiplier from ability
+            damage = max(1, int(damage_roll.total * damage_mult))
+
+            # Emit DICE_ROLL event for damage
+            if self.events is not None:
+                self.events.emit(
+                    EventType.DICE_ROLL,
+                    roll_type='damage',
+                    dice_notation=damage_roll.dice_notation,
+                    rolls=damage_roll.dice_rolls,
+                    modifier=damage_roll.modifier,
+                    total=damage,
+                    is_critical=damage_roll.is_critical,
+                    luck_applied=damage_roll.luck_applied,
+                    attacker_name=attacker_name
+                )
+
+            target.hp -= damage
+
+            if self.events is not None:
+                self.events.emit(
+                    EventType.DAMAGE_NUMBER,
+                    x=target.arena_x,
+                    y=target.arena_y,
+                    amount=damage
+                )
+                self.events.emit(EventType.HIT_FLASH, entity=target)
+
+            if attack_roll.is_critical:
+                self.engine.add_message(f"CRITICAL HIT! {attacker_name} deals {damage} damage!")
+            else:
+                self.engine.add_message(f"{attacker_name} hit for {damage} damage!")
         else:
-            self.engine.add_message(f"Enemy hits you for {damage} damage!")
+            # Fallback: Original simple damage calculation
+            base_damage = attacker.attack
+            defense = target.get_effective_defense()
+            damage = max(1, int(base_damage * damage_mult) - defense)
+
+            target.hp -= damage
+
+            if self.events is not None:
+                self.events.emit(
+                    EventType.DAMAGE_NUMBER,
+                    x=target.arena_x,
+                    y=target.arena_y,
+                    amount=damage
+                )
+                self.events.emit(EventType.HIT_FLASH, entity=target)
+
+            if attacker.is_player:
+                self.engine.add_message(f"You hit for {damage} damage!")
+            else:
+                self.engine.add_message(f"Enemy hits you for {damage} damage!")
 
         if target.hp <= 0:
             entity_death_callback(target)
