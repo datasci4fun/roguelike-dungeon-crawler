@@ -338,3 +338,193 @@ Footer explaining color codes and status icons.
 - Progress history/changelog
 - Upvoting/community input
 - Estimated completion dates (if desired)
+
+---
+
+## Part 8: v7.X Development Roadmap
+
+This section tracks the planned v7.X feature releases building on the v7.0 Immersive Exploration System.
+
+### v7.0 Foundation (COMPLETE)
+
+The v7.0 release established:
+- Interactive tile system (switch, lever, mural, inscription, pressure plate, hidden door)
+- PuzzleManager with state tracking
+- TileVisual system (elevation, slopes, set pieces)
+- LorePopup component for discovery display
+- Interaction sound effects
+- Puzzle completion achievements (PUZZLE_SOLVER, PUZZLE_MASTER)
+- Environmental clues on all 8 floors
+
+---
+
+### v7.1: Expanded Puzzle Content
+
+**Goal:** Add exploration puzzles to all 8 floors (currently limited placement)
+
+| Floor | Zone | Puzzle Type | Mechanic |
+|-------|------|-------------|----------|
+| 1 | wardens_office | Switch Sequence | Activate 2 switches in order to open armory |
+| 2 | seal_drifts | Pressure Plate | Stand on correct plates to lower water gate |
+| 3 | webbed_gardens | Sequential Cut | Cut through web walls in correct order |
+| 4 | oath_chambers | Mirror Switches | Flip switches matching mirror reflection |
+| 5 | frozen_galleries | Ice Slide Puzzle | Slide across ice to reach pressure plates |
+| 6 | catalog_chambers | Inscription Riddle | Answer riddle to unlock forbidden stacks |
+| 7 | forge_halls | Lever Sequence | Pull levers in heat-resistant order |
+| 8 | geometry_wells | Crystal Alignment | Rotate crystals to focus light beam |
+
+**Effort:** Medium
+**Priority:** High
+**Dependencies:** v7.0 complete
+
+---
+
+### v7.2: First-Person Raycasting & Click Interaction
+
+**Goal:** Enable mouse-click interaction with walls in first-person view
+
+**Features:**
+- Port raycasting from BattleRenderer3D to FirstPersonRenderer3D
+- Click on interactive walls to trigger INTERACT command
+- Hover highlight for interactive elements
+- "Press E to interact" prompt when facing interactive tiles
+- Support for both mouse-click and keyboard interaction
+
+**Technical:**
+- Add `interactiveWallsRef` to track clickable meshes
+- Implement `handleClick` with THREE.Raycaster
+- Tag wall meshes with `userData.interactive` during generation
+- Connect to existing INTERACT command in engine
+
+**Effort:** Medium
+**Priority:** High
+**Dependencies:** v7.0 complete
+
+---
+
+### v7.3: Enhanced Set Pieces & 3D Props
+
+**Goal:** Add dramatic 3D elements to key locations
+
+| Set Piece | Location | Description |
+|-----------|----------|-------------|
+| Dungeon Entrance Doors | Floor 1 start | Massive iron-bound doors behind player at spawn |
+| Warden's Throne | wardens_office | Broken throne with lore mural above |
+| Seal Stone | seal_drifts | Ancient carved stone with glowing runes |
+| Great Web | webbed_gardens | Massive spider web spanning ceiling |
+| Mirror of Valdris | oath_chambers | Ornate mirror showing distorted reflection |
+| Frozen Waterfall | frozen_galleries | Ice cascade with trapped souls visible |
+| Forbidden Stacks | catalog_chambers | Towering bookshelves with floating books |
+| The Crucible | forge_halls | Massive forge with molten metal |
+| Crystal Nexus | geometry_wells | Central crystal formation |
+
+**Technical:**
+- Create GLTF models or procedural Three.js groups
+- Add `SetPiece` data structure to dungeon
+- Render set pieces in FirstPersonRenderer3D
+- Add examine interactions for lore
+
+**Effort:** Large
+**Priority:** Medium
+**Dependencies:** v7.2
+
+---
+
+### v7.4: Secret Room System
+
+**Goal:** Hidden areas rewarding thorough exploration
+
+**Features:**
+- Secret rooms accessible only through hidden doors
+- Require puzzle completion or specific actions to reveal
+- Contain bonus loot, lore, or shortcuts
+- Track discovery in CompletionLedger
+
+| Floor | Secret | Access Method |
+|-------|--------|---------------|
+| 1 | Guard's Cache | Find hidden switch behind pillar |
+| 3 | Druid's Sanctuary | Solve web puzzle to reveal passage |
+| 5 | Frozen Treasury | Ice slide to reach hidden alcove |
+| 6 | Archivist's Study | Answer inscription riddle correctly |
+| 8 | True Vault | Complete all floor puzzles |
+
+**Effort:** Medium
+**Priority:** Medium
+**Dependencies:** v7.1
+
+---
+
+### v7.5: Environmental Storytelling Expansion
+
+**Goal:** Deepen lore through environmental details
+
+**Features:**
+- More mural types with unique art per zone
+- Environmental clue chains (find multiple clues for full story)
+- NPC corpses with journals/notes
+- Evidence items that link to codex entries
+- Zone-specific visual storytelling elements
+
+**Content:**
+- 3-5 murals per floor (24-40 total)
+- Environmental clue chains per biome
+- 8 journal entries from fallen adventurers
+- Cross-floor story threads
+
+**Effort:** Large
+**Priority:** Low
+**Dependencies:** v7.0 complete
+
+---
+
+### v7.6: Puzzle-Environment Integration
+
+**Goal:** Puzzles affect the environment dynamically
+
+**Features:**
+- Solving puzzles changes dungeon layout (doors open, bridges extend)
+- Environmental hazards toggled by puzzle state
+- Multi-room puzzles spanning connected areas
+- Puzzle solutions visible in 3D (levers move, crystals light up)
+
+**Examples:**
+- Floor 2: Draining water reveals hidden path
+- Floor 5: Melting ice creates new routes
+- Floor 7: Cooling lava forms walkable bridges
+- Floor 8: Crystal alignment reveals boss weakness
+
+**Effort:** Large
+**Priority:** Low
+**Dependencies:** v7.3, v7.4
+
+---
+
+### v7.X Priority Summary
+
+| Version | Title | Priority | Effort | Status |
+|---------|-------|----------|--------|--------|
+| v7.0 | Immersive Exploration System | - | Epic | **COMPLETE** |
+| v7.1 | Expanded Puzzle Content | High | Medium | Planned |
+| v7.2 | First-Person Raycasting | High | Medium | Planned |
+| v7.3 | Enhanced Set Pieces | Medium | Large | Planned |
+| v7.4 | Secret Room System | Medium | Medium | Planned |
+| v7.5 | Environmental Storytelling | Low | Large | Planned |
+| v7.6 | Puzzle-Environment Integration | Low | Large | Planned |
+
+---
+
+### Content Pass Items (from FUTURE_TODO.md)
+
+These items are tracked in the main roadmap tables above:
+
+| Original TODO | Roadmap ID | Status |
+|---------------|------------|--------|
+| Field Pulse Micro-Events | `high-05` | Planned |
+| Micro-Event Codex Evidence | `med-01` | Planned |
+| Extra Thematic Enemies | `med-02` | Planned |
+| ICE Slide Mechanic | `low-01` | **COMPLETE** (v6.5.1) |
+| Secret Ending Hooks | `med-07` | Planned |
+
+---
+
+*Last updated: 2026-01-16*
