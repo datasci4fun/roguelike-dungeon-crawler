@@ -7,6 +7,7 @@ import { useAudioManager } from '../hooks/useAudioManager';
 import { useSfxGameEvents, useSfxCommands } from '../hooks/useSfxGameEvents';
 import { useDebugRenderer } from '../hooks/useDebugRenderer';
 import { GameTerminal } from '../components/GameTerminal';
+import { mapKeyToCommand } from '../components/GameTerminal/keymap';
 import { FirstPersonRenderer, FirstPersonRenderer3D, type CorridorInfoEntry } from '../components/SceneRenderer';
 import { CharacterHUD } from '../components/CharacterHUD';
 import { StatusHUD } from '../components/StatusHUD';
@@ -451,6 +452,41 @@ export function Play() {
     window.addEventListener('keydown', handleMenuKey);
     return () => window.removeEventListener('keydown', handleMenuKey);
   }, [gameState?.ui_mode, showLoreJournal, showHelpWindow]);
+
+  // Keyboard handler when terminal is hidden - handles game commands
+  useEffect(() => {
+    if (showTerminal) return; // Terminal handles input when visible
+
+    const handleGameKey = (e: KeyboardEvent) => {
+      // Don't trigger when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      // Don't trigger when modals are open
+      if (showLoreJournal || showHelpWindow || showGameMenu) {
+        return;
+      }
+      // Don't process if game is over
+      if (gameState?.game_state === 'DEAD' || gameState?.game_state === 'VICTORY') {
+        return;
+      }
+
+      const uiMode = gameState?.ui_mode || 'GAME';
+      const command = mapKeyToCommand(e.key, uiMode);
+
+      if (command) {
+        e.preventDefault();
+        // Play movement sound
+        if (command.startsWith('MOVE_')) {
+          playMove();
+        }
+        sendCommand(command);
+      }
+    };
+
+    window.addEventListener('keydown', handleGameKey);
+    return () => window.removeEventListener('keydown', handleGameKey);
+  }, [showTerminal, showLoreJournal, showHelpWindow, showGameMenu, gameState?.ui_mode, gameState?.game_state, sendCommand, playMove]);
 
   // Handler for closing lore journal (clears pending notification)
   const handleCloseLoreJournal = useCallback(() => {
