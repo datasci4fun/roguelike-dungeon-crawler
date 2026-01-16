@@ -154,6 +154,10 @@ class EventType(Enum):
     TRANSITION_START = auto()  # Transition began (kind in data)
     TRANSITION_END = auto()    # Transition completed or skipped
 
+    # Interactive exploration events (v7.0)
+    INTERACTION = auto()       # Player interacted with element (type, x, y, result)
+    PUZZLE_UPDATE = auto()     # Puzzle state changed (puzzle_id, tile_x, tile_y, new_state)
+
 
 @dataclass
 class GameEvent:

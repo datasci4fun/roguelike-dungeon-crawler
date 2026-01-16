@@ -176,6 +176,13 @@ class LevelManager:
                 self.game.player.y
             )
 
+        # v7.0: Generate test interactive elements for debugging (Floor 1 only)
+        if level == 1:
+            self.game.dungeon.generate_test_interactives(
+                self.game.player.x,
+                self.game.player.y
+            )
+
         # v5.4: Initialize field pulses for level
         if hasattr(self.game, 'field_pulse_manager') and self.game.field_pulse_manager:
             self.game.field_pulse_manager.initialize_floor(level)

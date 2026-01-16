@@ -11,7 +11,7 @@ from .messages import MessageLog, MessageCategory, MessageImportance
 from .events import EventType, EventQueue, TransitionState, TransitionKind
 from .commands import (
     Command, CommandType,
-    MOVEMENT_COMMANDS, ITEM_COMMANDS, SCROLL_COMMANDS,
+    MOVEMENT_COMMANDS, ITEM_COMMANDS, SCROLL_COMMANDS, INTERACTION_COMMANDS,
     get_movement_delta, get_item_index
 )
 
@@ -414,6 +414,18 @@ class GameEngine(EnvironmentMixin, UICommandsMixin):
                 return True
             return False
 
+        # Interaction commands (v7.0)
+        if cmd_type in INTERACTION_COMMANDS:
+            if self._handle_interact(cmd_type):
+                # Interacting costs a turn
+                self._process_field_pulse()
+                self._process_enemy_turns()
+                self._process_ghost_tick()
+                self._check_auto_save()
+                self._check_player_death()
+                return True
+            return False
+
         # Item use commands
         if cmd_type in ITEM_COMMANDS:
             item_index = get_item_index(cmd_type)
@@ -597,6 +609,201 @@ class GameEngine(EnvironmentMixin, UICommandsMixin):
             self.add_message("You search the area but find nothing.")
 
         return True
+
+    def _handle_interact(self, cmd_type: CommandType) -> bool:
+        """
+        Handle interaction commands (v7.0 Immersive Exploration).
+
+        INTERACT: Activate switches, levers, pressure plates, doors.
+        EXAMINE: View descriptions of murals, inscriptions, interactive elements.
+
+        Returns True if an action was taken (costs a turn).
+        """
+        from .constants import InteractiveType, InteractiveState
+
+        if not self.player or not self.dungeon:
+            return False
+
+        # Get tile in facing direction
+        fx, fy = self.player.facing
+        target_x = self.player.x + fx
+        target_y = self.player.y + fy
+
+        # Check for interactive element at target
+        interactive = self.dungeon.get_interactive_at(target_x, target_y)
+
+        if not interactive:
+            self.add_message("Nothing to interact with.")
+            return False
+
+        # Check if element is visible (not hidden)
+        if not interactive.is_visible():
+            self.add_message("Nothing to interact with.")
+            return False
+
+        # EXAMINE command - show description only
+        if cmd_type == CommandType.EXAMINE:
+            if interactive.examine_text:
+                self.add_message(interactive.examine_text, importance=MessageImportance.IMPORTANT)
+
+                # If it's a mural/inscription with lore, unlock it
+                if interactive.lore_id and interactive.interactive_type in (
+                    InteractiveType.MURAL, InteractiveType.INSCRIPTION
+                ):
+                    if self.story_manager.discover_lore(interactive.lore_id):
+                        from ..story.story_data import LORE_ENTRIES
+                        lore_entry = LORE_ENTRIES.get(interactive.lore_id, {})
+                        lore_title = lore_entry.get('title', 'ancient knowledge')
+                        self.add_message(
+                            f"You have discovered: {lore_title}",
+                            MessageCategory.SYSTEM, MessageImportance.IMPORTANT
+                        )
+            else:
+                self.add_message("You examine it closely but find nothing special.")
+            return True
+
+        # INTERACT command - activate the element
+        if cmd_type == CommandType.INTERACT:
+            if not interactive.can_interact():
+                if interactive.state == InteractiveState.LOCKED:
+                    if interactive.required_item:
+                        self.add_message(f"It's locked. Requires: {interactive.required_item}")
+                    else:
+                        self.add_message("It's locked.")
+                else:
+                    self.add_message("You can't interact with this.")
+                return False
+
+            # Handle different interactive types
+            if interactive.interactive_type == InteractiveType.SWITCH:
+                return self._activate_switch(target_x, target_y, interactive)
+            elif interactive.interactive_type == InteractiveType.LEVER:
+                return self._activate_lever(target_x, target_y, interactive)
+            elif interactive.interactive_type == InteractiveType.HIDDEN_DOOR:
+                return self._open_hidden_door(target_x, target_y, interactive)
+            elif interactive.interactive_type == InteractiveType.MURAL:
+                # Murals are examined, not activated
+                if interactive.examine_text:
+                    self.add_message(interactive.examine_text, importance=MessageImportance.IMPORTANT)
+                return True
+            elif interactive.interactive_type == InteractiveType.INSCRIPTION:
+                # Inscriptions are read
+                if interactive.examine_text:
+                    self.add_message(interactive.examine_text, importance=MessageImportance.IMPORTANT)
+                return True
+            elif interactive.interactive_type == InteractiveType.LOCKED_DOOR:
+                return self._try_unlock_door(target_x, target_y, interactive)
+            else:
+                self.add_message("You're not sure how to use this.")
+                return False
+
+        return False
+
+    def _activate_switch(self, x: int, y: int, interactive) -> bool:
+        """Activate a wall switch."""
+        from .constants import InteractiveState, TileType
+
+        # Toggle the switch state
+        if interactive.toggle():
+            if interactive.activate_text:
+                self.add_message(interactive.activate_text)
+            else:
+                self.add_message("You flip the switch.")
+
+            # If switch has a target, affect it
+            if interactive.target:
+                tx, ty = interactive.target
+                target_interactive = self.dungeon.get_interactive_at(tx, ty)
+
+                # Common target: hidden door
+                if target_interactive and target_interactive.interactive_type.name == 'HIDDEN_DOOR':
+                    if target_interactive.state.name == 'HIDDEN':
+                        target_interactive.reveal()
+                        self.add_message("A hidden passage is revealed!")
+                        # Make the hidden door walkable
+                        self.dungeon.tiles[ty][tx] = TileType.FLOOR
+
+            # Emit event for puzzle tracking
+            if interactive.puzzle_id:
+                self.event_queue.emit(
+                    EventType.PUZZLE_UPDATE,
+                    puzzle_id=interactive.puzzle_id,
+                    tile_x=x,
+                    tile_y=y,
+                    new_state=interactive.state.name.lower(),
+                )
+
+            return True
+        return False
+
+    def _activate_lever(self, x: int, y: int, interactive) -> bool:
+        """Activate a lever (similar to switch but toggleable)."""
+        from .constants import TileType
+
+        if interactive.toggle():
+            is_active = interactive.state.name == 'ACTIVE'
+            if interactive.activate_text:
+                self.add_message(interactive.activate_text)
+            else:
+                self.add_message(f"You pull the lever {'up' if is_active else 'down'}.")
+
+            # If lever has a target, toggle it
+            if interactive.target:
+                tx, ty = interactive.target
+                # Could open/close a door, lower/raise a portcullis, etc.
+                target_interactive = self.dungeon.get_interactive_at(tx, ty)
+                if target_interactive:
+                    target_interactive.toggle()
+
+            if interactive.puzzle_id:
+                self.event_queue.emit(
+                    EventType.PUZZLE_UPDATE,
+                    puzzle_id=interactive.puzzle_id,
+                    tile_x=x,
+                    tile_y=y,
+                    new_state=interactive.state.name.lower(),
+                )
+
+            return True
+        return False
+
+    def _open_hidden_door(self, x: int, y: int, interactive) -> bool:
+        """Open a hidden door that has been revealed."""
+        from .constants import InteractiveState, TileType
+
+        if interactive.state == InteractiveState.INACTIVE:
+            # Door is revealed but not opened - open it
+            interactive.state = InteractiveState.ACTIVE
+            self.dungeon.tiles[y][x] = TileType.FLOOR
+
+            if interactive.activate_text:
+                self.add_message(interactive.activate_text)
+            else:
+                self.add_message("The hidden door slides open!")
+
+            return True
+        return False
+
+    def _try_unlock_door(self, x: int, y: int, interactive) -> bool:
+        """Try to unlock a locked door."""
+        from .constants import InteractiveState, TileType
+
+        if interactive.required_item:
+            # Check if player has the key
+            if self.player.inventory.has_item(interactive.required_item):
+                # Consume the key
+                self.player.inventory.remove_by_name(interactive.required_item)
+                interactive.state = InteractiveState.INACTIVE
+                self.dungeon.tiles[y][x] = TileType.FLOOR
+
+                self.add_message(f"You use the {interactive.required_item} to unlock the door!")
+                return True
+            else:
+                self.add_message(f"This door requires: {interactive.required_item}")
+                return False
+        else:
+            self.add_message("The door won't budge.")
+            return False
 
     def _check_auto_save(self):
         """Check if auto-save should trigger."""

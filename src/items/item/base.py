@@ -66,3 +66,17 @@ class Inventory:
         if 0 <= index < len(self.items):
             return self.items[index]
         return None
+
+    def has_item(self, name: str) -> bool:
+        """Check if inventory contains an item with given name."""
+        return any(item.name == name for item in self.items)
+
+    def remove_by_name(self, name: str) -> Item:
+        """Remove and return first item with given name.
+
+        Returns None if no matching item found.
+        """
+        for i, item in enumerate(self.items):
+            if item.name == name:
+                return self.items.pop(i)
+        return None

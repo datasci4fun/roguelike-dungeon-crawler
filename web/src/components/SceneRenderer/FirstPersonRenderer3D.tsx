@@ -9,8 +9,16 @@
 
 import { useRef, useEffect, useMemo, useCallback } from 'react';
 import * as THREE from 'three';
-import type { FirstPersonView } from '../../hooks/useGameSocket';
+import type { FirstPersonView, InteractiveTileData } from '../../hooks/useGameSocket';
 import { getBiome, type BiomeId } from './biomes';
+
+// Interactive wall data structure for raycasting
+interface InteractiveWallUserData {
+  interactive: true;
+  tileX: number;
+  tileY: number;
+  data: InteractiveTileData;
+}
 
 const TILE_SIZE = 2;
 const WALL_HEIGHT = 2.5;
@@ -181,6 +189,9 @@ interface FirstPersonRenderer3DProps {
   deathCamActive?: boolean;
   fieldPulse?: FieldPulseState;
   zoneOverlay?: ZoneOverlay;
+  // v7.0: Interaction callbacks
+  onWallClick?: (tileX: number, tileY: number, interactive: InteractiveTileData) => void;
+  onWallHover?: (tileX: number, tileY: number, interactive: InteractiveTileData | null) => void;
 }
 
 // Check tile types
@@ -197,9 +208,21 @@ export function FirstPersonRenderer3D({
   deathCamActive = false,
   fieldPulse,
   zoneOverlay,
+  onWallClick,
+  onWallHover,
 }: FirstPersonRenderer3DProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const prevViewRef = useRef<{ rowsJson: string; facing: { dx: number; dy: number } } | null>(null);
+
+  // v7.0: Raycasting for wall interaction
+  const raycasterRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+  const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
+  const interactiveWallsRef = useRef<THREE.Mesh[]>([]);
+  const hoveredWallRef = useRef<THREE.Mesh | null>(null);
+  const onWallClickRef = useRef(onWallClick);
+  const onWallHoverRef = useRef(onWallHover);
+  onWallClickRef.current = onWallClick;
+  onWallHoverRef.current = onWallHover;
   const sceneRef = useRef<{
     scene: THREE.Scene;
     camera: THREE.PerspectiveCamera;
@@ -761,6 +784,9 @@ export function FirstPersonRenderer3D({
       geometryGroup.remove(child);
     }
 
+    // v7.0: Clear interactive walls list before rebuilding
+    interactiveWallsRef.current = [];
+
     const rows = view.rows;
     if (!rows || rows.length === 0) return;
 
@@ -854,8 +880,19 @@ export function FirstPersonRenderer3D({
           wall.position.set(x, WALL_HEIGHT / 2, z);
           geometryGroup.add(wall);
 
+          // v7.0: Tag interactive walls for raycasting
+          if (tile.interactive && isVisible) {
+            wall.userData = {
+              interactive: true,
+              tileX: tile.x,
+              tileY: tile.y,
+              data: tile.interactive,
+            } as InteractiveWallUserData;
+            interactiveWallsRef.current.push(wall);
+          }
+
           if (debugShowWallMarkers) {
-            console.log(`[3D] Wall ${tileChar} at depth=${depth} offset=${tileX} (x=${x}, z=${z}) visible=${isVisible}`);
+            console.log(`[3D] Wall ${tileChar} at depth=${depth} offset=${tileX} (x=${x}, z=${z}) visible=${isVisible} interactive=${!!tile.interactive}`);
           }
           continue;
         }
@@ -1046,17 +1083,92 @@ export function FirstPersonRenderer3D({
     e.preventDefault(); // Prevent context menu on right-click
   }, []);
 
+  // v7.0: Raycast to find interactive wall under cursor
+  const getInteractiveWallAtCursor = useCallback((clientX: number, clientY: number): { mesh: THREE.Mesh, data: InteractiveWallUserData } | null => {
+    if (!containerRef.current || !sceneRef.current) return null;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    mouseRef.current.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouseRef.current.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycasterRef.current.setFromCamera(mouseRef.current, sceneRef.current.camera);
+
+    // Check intersection with interactive walls
+    const intersects = raycasterRef.current.intersectObjects(interactiveWallsRef.current, false);
+
+    if (intersects.length > 0) {
+      const hit = intersects[0];
+      const userData = hit.object.userData as InteractiveWallUserData;
+      if (userData.interactive) {
+        return { mesh: hit.object as THREE.Mesh, data: userData };
+      }
+    }
+    return null;
+  }, []);
+
+  // v7.0: Handle click on interactive wall
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    // Only handle left click when not dragging
+    if (e.button !== 0) return;
+    if (sceneRef.current?.controls.isDragging) return;
+
+    const result = getInteractiveWallAtCursor(e.clientX, e.clientY);
+    if (result && onWallClickRef.current) {
+      onWallClickRef.current(result.data.tileX, result.data.tileY, result.data.data);
+    }
+  }, [getInteractiveWallAtCursor]);
+
+  // v7.0: Handle hover on interactive wall (updates cursor)
+  const handleHoverCheck = useCallback((e: React.MouseEvent) => {
+    const result = getInteractiveWallAtCursor(e.clientX, e.clientY);
+
+    // Update hover state
+    if (result) {
+      if (hoveredWallRef.current !== result.mesh) {
+        hoveredWallRef.current = result.mesh;
+        if (onWallHoverRef.current) {
+          onWallHoverRef.current(result.data.tileX, result.data.tileY, result.data.data);
+        }
+        // Change cursor to pointer for interactive walls
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'pointer';
+        }
+      }
+    } else {
+      if (hoveredWallRef.current !== null) {
+        hoveredWallRef.current = null;
+        if (onWallHoverRef.current) {
+          onWallHoverRef.current(0, 0, null);
+        }
+        // Reset cursor
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'grab';
+        }
+      }
+    }
+  }, []);
+
   // Calculate pulse overlay opacity based on amplification
   const pulseOverlayOpacity = fieldPulse?.active
     ? Math.min(0.15, (fieldPulse.amplification - 1.0) * 0.15)
     : 0;
 
+  // Combined mouse move handler for camera drag + hover check
+  const handleMouseMoveWithHover = useCallback((e: React.MouseEvent) => {
+    handleMouseMove(e);
+    // Only check hover when not dragging
+    if (!sceneRef.current?.controls.isDragging) {
+      handleHoverCheck(e);
+    }
+  }, [handleMouseMove, handleHoverCheck]);
+
   return (
     <div
       onMouseDown={handleMouseDown}
       onMouseUp={handleMouseUp}
-      onMouseMove={handleMouseMove}
+      onMouseMove={handleMouseMoveWithHover}
       onMouseLeave={handleMouseUp}
+      onClick={handleClick}
       onContextMenu={handleContextMenu}
       tabIndex={0}
       style={{

@@ -270,7 +270,13 @@ def serialize_first_person_view(engine, facing: tuple) -> dict:
                     if secret_door and secret_door.hidden:
                         has_secret = True
 
-                row.append({
+                # v7.0: Check for interactive element at this tile
+                interactive_data = None
+                interactive = dungeon.get_interactive_at(tile_x, tile_y)
+                if interactive and interactive.is_visible():
+                    interactive_data = interactive.to_dict()
+
+                tile_data = {
                     "tile": tile_char,
                     "tile_actual": tile_char,  # Same as tile when visible
                     "offset": w,  # Lateral offset from center (-left, +right)
@@ -280,7 +286,13 @@ def serialize_first_person_view(engine, facing: tuple) -> dict:
                     "walkable": dungeon.is_walkable(tile_x, tile_y),
                     "has_entity": entity_here is not None,
                     "has_secret": has_secret,
-                })
+                }
+
+                # Add interactive data if present (v7.0)
+                if interactive_data:
+                    tile_data["interactive"] = interactive_data
+
+                row.append(tile_data)
             elif in_bounds and dungeon.explored[tile_y][tile_x]:
                 # Get actual tile for geometry even though display shows fog
                 actual_tile = dungeon.tiles[tile_y][tile_x]

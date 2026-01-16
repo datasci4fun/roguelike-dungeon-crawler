@@ -71,6 +71,11 @@ from .ui_config import (
     ITEM_RARITY_COLORS,
 )
 
+# Interactive elements (v7.0)
+from .interactive import (
+    InteractiveType, InteractiveState, WallFace, InteractiveTile,
+)
+
 __all__ = [
     # Enums
     'TileType', 'GameState', 'UIMode', 'DungeonTheme', 'RoomType',
@@ -112,4 +117,6 @@ __all__ = [
     'BOX_TL_ASCII', 'BOX_TR_ASCII', 'BOX_BL_ASCII', 'BOX_BR_ASCII',
     'BOX_H_ASCII', 'BOX_V_ASCII', 'BOX_LEFT_ASCII', 'BOX_RIGHT_ASCII',
     'ITEM_RARITY_COLORS',
+    # Interactive elements (v7.0)
+    'InteractiveType', 'InteractiveState', 'WallFace', 'InteractiveTile',
 ]
