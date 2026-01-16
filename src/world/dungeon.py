@@ -28,7 +28,7 @@ from . import dungeon_visual
 class Dungeon:
     """Represents the game dungeon with procedural generation."""
 
-    def __init__(self, width: int = DUNGEON_WIDTH, height: int = DUNGEON_HEIGHT, seed: int = None, level: int = 1, has_stairs_up: bool = False):
+    def __init__(self, width: int = DUNGEON_WIDTH, height: int = DUNGEON_HEIGHT, seed: int = None, level: int = 1, has_stairs_up: bool = False, puzzle_manager=None):
         self.width = width
         self.height = height
         self.level = level
@@ -37,6 +37,9 @@ class Dungeon:
         self.stairs_up_pos = None
         self.stairs_down_pos = None
         self.has_stairs_up = has_stairs_up
+
+        # v7.0: Optional puzzle manager for zone layouts to register puzzles
+        self.puzzle_manager = puzzle_manager
 
         # Visual variety
         self.theme = LEVEL_THEMES.get(level, DungeonTheme.STONE)

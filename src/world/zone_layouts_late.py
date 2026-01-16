@@ -6,6 +6,7 @@ import random
 from typing import TYPE_CHECKING
 
 from .zone_layouts import register_layout
+from .puzzles import create_pressure_plate_puzzle
 
 if TYPE_CHECKING:
     from .dungeon import Dungeon, Room
@@ -17,12 +18,14 @@ if TYPE_CHECKING:
 
 @register_layout(5, "frozen_galleries")
 def layout_frozen_galleries(dungeon: 'Dungeon', room: 'Room'):
-    """Create frozen gallery with ICE lanes."""
+    """Create frozen gallery with ICE lanes and optional pressure plate puzzle."""
     from ..core.constants import TileType
+    from ..core.constants.interactive import InteractiveTile, WallFace, InteractiveState
 
     if room.width < 10 and room.height < 10:
         return
 
+    # Create ice lanes
     if room.width > room.height:
         lane_y = room.y + room.height // 2
         for x in range(room.x + 2, room.x + room.width - 2):
@@ -33,6 +36,81 @@ def layout_frozen_galleries(dungeon: 'Dungeon', room: 'Room'):
         for y in range(room.y + 2, room.y + room.height - 2):
             if dungeon.tiles[y][lane_x] == TileType.FLOOR:
                 dungeon.tiles[y][lane_x] = TileType.ICE
+
+    # Only add puzzle to larger rooms (need space for plates + hidden door)
+    if room.width < 12 or room.height < 8:
+        return
+
+    # Check if we already have puzzles on this floor (limit to 1 per floor)
+    if hasattr(dungeon, 'puzzle_manager') and dungeon.puzzle_manager:
+        existing = [p for p in dungeon.puzzle_manager.puzzles.values()
+                    if p.puzzle_id.startswith("ice_slide")]
+        if existing:
+            return
+
+    # Create ice slide pressure plate puzzle
+    # Place 3 pressure plates at ends of ice lanes
+    plate_positions = []
+    cx = room.x + room.width // 2
+    cy = room.y + room.height // 2
+
+    # Plate at far left of room
+    plate1 = (room.x + 2, cy)
+    # Plate at far right of room
+    plate2 = (room.x + room.width - 3, cy)
+    # Plate in center-north
+    plate3 = (cx, room.y + 2)
+
+    for pos in [plate1, plate2, plate3]:
+        px, py = pos
+        if (room.x + 1 <= px < room.x + room.width - 1 and
+            room.y + 1 <= py < room.y + room.height - 1):
+            if dungeon.tiles[py][px] in (TileType.FLOOR, TileType.ICE):
+                plate_positions.append(pos)
+
+    if len(plate_positions) < 3:
+        return  # Not enough valid positions
+
+    # Hidden door on south wall, center
+    door_x = cx
+    door_y = room.y + room.height - 1
+    if not (0 <= door_x < dungeon.width and 0 <= door_y < dungeon.height):
+        return
+
+    # Create the pressure plate puzzle
+    puzzle = create_pressure_plate_puzzle(
+        puzzle_id="ice_slide_gallery",
+        plate_positions=plate_positions,
+        required_plates=plate_positions,  # All plates required
+        door_position=(door_x, door_y),
+        hint="The frozen floor panels must all feel your weight...",
+    )
+
+    # Register puzzle with dungeon's puzzle manager
+    if hasattr(dungeon, 'puzzle_manager') and dungeon.puzzle_manager:
+        dungeon.puzzle_manager.add_puzzle(puzzle)
+
+    # Add interactive pressure plates
+    for i, (px, py) in enumerate(plate_positions):
+        # Mark the tile as ice if not already
+        dungeon.tiles[py][px] = TileType.ICE
+
+        # Add the interactive pressure plate
+        plate = InteractiveTile.pressure_plate(
+            target=(door_x, door_y),
+            examine_text=f"A pressure plate embedded in the ice. ({i+1}/3)",
+            activate_text="The frozen plate sinks with a crystalline click.",
+            puzzle_id="ice_slide_gallery",
+        )
+        dungeon.add_interactive(px, py, plate)
+
+    # Add hidden door
+    hidden_door = InteractiveTile.hidden_door(
+        wall_face=WallFace.SOUTH,
+        examine_text="The ice-covered wall seems thinner here...",
+    )
+    hidden_door.state = InteractiveState.HIDDEN
+    dungeon.add_interactive(door_x, door_y, hidden_door)
 
 
 @register_layout(5, "ice_tombs")
