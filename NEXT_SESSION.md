@@ -43,6 +43,19 @@ Full integration of D&D mechanics into database and game systems:
 | **Weapon Damage Dice** | Equipped weapon's dice used in combat | Complete |
 | **Finesse Weapons** | Daggers use DEX for attack/damage | Complete |
 
+### D&D System Enhancements (PR #77)
+
+Extended D&D mechanics with initiative, proficiency, and expanded saving throws:
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| **DEX Initiative** | Player/enemy initiative = d20 + DEX mod | Complete |
+| **Initiative Events** | DICE_ROLL events for initiative in HUD | Complete |
+| **Proficiency Bonus** | Level-scaling: 2 + (level-1)//4 | Complete |
+| **Hazard Saves** | DEX/CON saves for lava, ice, poison gas, water | Complete |
+| **Status Effect Saves** | CON saves to resist poison, burn, freeze, stun | Complete |
+| **Ability Check Foundation** | AbilityCheck dataclass + make_ability_check() | Complete |
+
 ---
 
 ## Backend Implementation
@@ -61,7 +74,9 @@ Full integration of D&D mechanics into database and game systems:
 - `make_attack_roll()` - 1d20 + modifier vs AC
 - `make_damage_roll()` - weapon dice + modifier
 - `make_saving_throw()` - 1d20 + ability mod vs DC
-- `AttackRoll`, `DamageRoll`, `SavingThrow` dataclasses
+- `make_ability_check()` - d20 + ability mod vs DC (v6.12)
+- `calculate_proficiency_bonus()` - level-based bonus (v6.12)
+- `AttackRoll`, `DamageRoll`, `SavingThrow`, `AbilityCheck` dataclasses
 
 **`src/core/events.py`** - Added `DICE_ROLL` event type
 
@@ -69,9 +84,15 @@ Full integration of D&D mechanics into database and game systems:
 - D20 attack roll vs target AC
 - Uses equipped weapon's damage_dice
 - Finesse weapons (daggers) use DEX
+- Level-based proficiency bonus (v6.12)
 - Emits DICE_ROLL events for HUD display
 - Critical hits (nat 20) double damage dice
 - Fumbles (nat 1) auto-miss
+
+**`src/combat/battle_manager.py`** - Battle orchestration (v6.12)
+- DEX-based initiative: d20 + DEX mod for player and enemies
+- Emits DICE_ROLL events for initiative rolls
+- Elite/boss enemies get initiative bonuses
 
 **`src/combat/enemy_turns.py`** - Enemy attack integration
 - D20 attack roll vs player AC
@@ -79,12 +100,22 @@ Full integration of D&D mechanics into database and game systems:
 - Emits DICE_ROLL events for enemy turns
 
 **`src/world/traps.py`** - Trap saving throws
-- DEX save vs trap detection_dc
-- Success = half damage
+- DEX save vs trap detection_dc for half damage
+- CON save to resist status effects (v6.12)
+- STATUS_EFFECT_DCS: Poison (12), Burn (10), Freeze (12), Stun (14)
 - Returns SavingThrow for event emission
 
-**`src/core/engine_environment.py`** - Trap event emission
-- Emits DICE_ROLL events for saving throws
+**`src/world/hazards.py`** - Hazard saving throws (v6.12)
+- HAZARD_SAVES config for each hazard type
+- Lava: DEX DC 15, half damage on success
+- Ice: DEX DC 10, prevent slide on success
+- Poison Gas: CON DC 12, prevent poison on success
+- Deep Water: CON DC 10, prevent drowning check on success
+
+**`src/core/engine_environment.py`** - Environment event emission
+- Emits DICE_ROLL events for trap saving throws
+- Emits DICE_ROLL events for status effect CON saves (v6.12)
+- Emits DICE_ROLL events for hazard saving throws (v6.12)
 
 **`src/items/item/equipment.py`** - Weapon damage dice
 - Added `damage_dice` and `stat_used` to Weapon class
@@ -176,7 +207,7 @@ Full integration of D&D mechanics into database and game systems:
 ### Event Data Structure
 ```python
 DICE_ROLL event:
-- roll_type: 'attack' | 'damage' | 'saving_throw'
+- roll_type: 'attack' | 'damage' | 'saving_throw' | 'initiative'
 - dice_notation: '1d20', '1d6', etc.
 - rolls: [int, ...]
 - modifier: int
@@ -187,22 +218,32 @@ DICE_ROLL event:
 - is_critical: bool
 - is_fumble: bool
 - is_success: bool (saving throw)
+- is_natural_20: bool (saving throw)
+- is_natural_1: bool (saving throw)
 - luck_applied: bool
 - attacker_name: str
+- entity_name: str (initiative)
 - ability: str (saving throw - 'DEX', 'CON', etc.)
-- source: str (saving throw - trap name)
+- source: str (saving throw - trap/hazard name)
 ```
 
 ---
 
 ## Next Tasks
 
-### Potential Improvements
-1. **Skill Checks** - Add ability-based skill checks
-2. **Status Effect Saves** - CON saves vs poison, etc.
-3. **Initiative System** - DEX-based turn order
-4. **Proficiency Bonus** - Level-based attack bonus
-5. **Hazard Saves** - Extend saving throws to environmental hazards
+### Completed in PR #77
+- ~~**Initiative System** - DEX-based turn order~~ ✓
+- ~~**Proficiency Bonus** - Level-based attack bonus~~ ✓
+- ~~**Hazard Saves** - Extend saving throws to environmental hazards~~ ✓
+- ~~**Status Effect Saves** - CON saves vs poison, etc.~~ ✓
+- ~~**Ability Check Foundation** - Basic ability check function~~ ✓
+
+### Potential Future Improvements
+1. **Skill Check Integration** - Use ability checks for doors, locks, hidden items
+2. **Death Saves** - D&D-style death saving throws at 0 HP
+3. **Advantage/Disadvantage** - Roll 2d20, take higher/lower in specific situations
+4. **Resistance/Vulnerability** - Damage type multipliers (fire, cold, poison)
+5. **Skill Proficiencies** - Class-based skill bonuses
 
 ---
 
@@ -234,6 +275,7 @@ curl -X POST http://localhost:8000/api/game-constants/cache/invalidate
 Branch: `develop`
 
 Recent merges:
+- PR #77 - D&D System Enhancements: Initiative, Proficiency, Saves
 - PR #76 - D&D Integration: Database, Saving Throws, and Weapon Dice
 - PR #75 - DICE_ROLL events for D&D combat dice HUD
 - PR #74 - D&D-style ability scores and dice rolling system
