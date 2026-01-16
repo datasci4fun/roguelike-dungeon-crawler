@@ -74,6 +74,8 @@ from .ui_config import (
 # Interactive elements (v7.0)
 from .interactive import (
     InteractiveType, InteractiveState, WallFace, InteractiveTile,
+    # Visual elevation (v7.0 Sprint 3)
+    SlopeDirection, SetPieceType, TileVisual,
 )
 
 __all__ = [
@@ -119,4 +121,6 @@ __all__ = [
     'ITEM_RARITY_COLORS',
     # Interactive elements (v7.0)
     'InteractiveType', 'InteractiveState', 'WallFace', 'InteractiveTile',
+    # Visual elevation (v7.0 Sprint 3)
+    'SlopeDirection', 'SetPieceType', 'TileVisual',
 ]

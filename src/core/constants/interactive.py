@@ -215,3 +215,88 @@ class InteractiveTile:
             activate_text="The lever grinds into a new position.",
             puzzle_id=puzzle_id,
         )
+
+
+# =============================================================================
+# Visual Elevation System (v7.0 Sprint 3)
+# =============================================================================
+
+class SlopeDirection(Enum):
+    """Direction a slope descends toward."""
+    NONE = auto()    # Flat tile
+    NORTH = auto()   # Slopes down toward north
+    SOUTH = auto()   # Slopes down toward south
+    EAST = auto()    # Slopes down toward east
+    WEST = auto()    # Slopes down toward west
+
+
+class SetPieceType(Enum):
+    """Types of 3D set pieces that can be placed in rooms."""
+    NONE = auto()
+    ENTRANCE_DOORS = auto()      # Massive doors behind player at start
+    BOSS_THRONE = auto()         # Throne/altar in boss rooms
+    STATUE = auto()              # Decorative statue
+    FOUNTAIN = auto()            # Water fountain centerpiece
+    ALTAR = auto()               # Sacrificial/prayer altar
+    PILLAR = auto()              # Structural pillar
+    COLLAPSED_PILLAR = auto()    # Broken pillar (debris)
+    STAIRCASE_DOWN = auto()      # Visual staircase leading down
+    ARCHWAY = auto()             # Decorative archway
+
+
+@dataclass
+class TileVisual:
+    """Visual properties for a tile beyond basic type.
+
+    Used to add visual depth like slopes, elevation changes, and set pieces
+    without affecting gameplay/pathfinding.
+
+    Attributes:
+        elevation: Height offset from base (0.0 = ground, -1.0 = descended)
+        slope_direction: Direction the tile slopes toward
+        slope_amount: Steepness of slope (0.0-1.0, default 0.3)
+        set_piece: Optional 3D set piece at this location
+        set_piece_rotation: Rotation in degrees (0, 90, 180, 270)
+        set_piece_scale: Scale multiplier for set piece
+    """
+    elevation: float = 0.0
+    slope_direction: SlopeDirection = SlopeDirection.NONE
+    slope_amount: float = 0.3
+    set_piece: SetPieceType = SetPieceType.NONE
+    set_piece_rotation: int = 0
+    set_piece_scale: float = 1.0
+
+    @classmethod
+    def flat(cls, elevation: float = 0.0) -> "TileVisual":
+        """Create a flat tile at given elevation."""
+        return cls(elevation=elevation)
+
+    @classmethod
+    def slope(
+        cls,
+        direction: SlopeDirection,
+        amount: float = 0.3,
+        base_elevation: float = 0.0
+    ) -> "TileVisual":
+        """Create a sloped tile."""
+        return cls(
+            elevation=base_elevation,
+            slope_direction=direction,
+            slope_amount=amount
+        )
+
+    @classmethod
+    def with_set_piece(
+        cls,
+        piece_type: SetPieceType,
+        rotation: int = 0,
+        scale: float = 1.0,
+        elevation: float = 0.0
+    ) -> "TileVisual":
+        """Create a tile with a set piece."""
+        return cls(
+            elevation=elevation,
+            set_piece=piece_type,
+            set_piece_rotation=rotation,
+            set_piece_scale=scale
+        )

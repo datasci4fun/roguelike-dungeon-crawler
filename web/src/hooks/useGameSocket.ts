@@ -196,6 +196,20 @@ export interface InteractiveTileData {
   can_interact: boolean;
 }
 
+// v7.0 Sprint 3: Tile visual data for elevation and set pieces
+export type SlopeDirection = 'north' | 'south' | 'east' | 'west' | null;
+export type SetPieceType = 'entrance_doors' | 'boss_throne' | 'statue' | 'fountain' |
+                           'altar' | 'pillar' | 'collapsed_pillar' | 'staircase_down' | 'archway' | null;
+
+export interface TileVisualData {
+  elevation: number;           // Height offset (0 = ground, -1 = descended)
+  slope_direction: SlopeDirection;  // Direction tile slopes toward
+  slope_amount: number;        // Steepness (0-1)
+  set_piece: SetPieceType;     // 3D set piece at this location
+  set_piece_rotation: number;  // Rotation in degrees
+  set_piece_scale: number;     // Scale multiplier
+}
+
 export interface FirstPersonTile {
   tile: string;           // Display character (~ for fog, # for unknown)
   tile_actual?: string;   // Actual map tile for geometry (even when fogged)
@@ -208,6 +222,7 @@ export interface FirstPersonTile {
   has_entity: boolean;
   has_secret?: boolean;   // Hidden secret door at this tile
   interactive?: InteractiveTileData;  // v7.0: Interactive element at this tile
+  visual?: TileVisualData;  // v7.0 Sprint 3: Elevation and set piece data
 }
 
 export interface FirstPersonEntity {

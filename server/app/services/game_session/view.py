@@ -276,6 +276,19 @@ def serialize_first_person_view(engine, facing: tuple) -> dict:
                 if interactive and interactive.is_visible():
                     interactive_data = interactive.to_dict()
 
+                # v7.0 Sprint 3: Check for tile visual (elevation/set piece)
+                visual_data = None
+                tile_visual = dungeon.get_tile_visual(tile_x, tile_y)
+                if tile_visual:
+                    visual_data = {
+                        "elevation": tile_visual.elevation,
+                        "slope_direction": tile_visual.slope_direction.name.lower() if tile_visual.slope_direction.name != "NONE" else None,
+                        "slope_amount": tile_visual.slope_amount if tile_visual.slope_direction.name != "NONE" else 0,
+                        "set_piece": tile_visual.set_piece.name.lower() if tile_visual.set_piece.name != "NONE" else None,
+                        "set_piece_rotation": tile_visual.set_piece_rotation,
+                        "set_piece_scale": tile_visual.set_piece_scale,
+                    }
+
                 tile_data = {
                     "tile": tile_char,
                     "tile_actual": tile_char,  # Same as tile when visible
@@ -291,6 +304,10 @@ def serialize_first_person_view(engine, facing: tuple) -> dict:
                 # Add interactive data if present (v7.0)
                 if interactive_data:
                     tile_data["interactive"] = interactive_data
+
+                # Add visual data if present (v7.0 Sprint 3)
+                if visual_data:
+                    tile_data["visual"] = visual_data
 
                 row.append(tile_data)
             elif in_bounds and dungeon.explored[tile_y][tile_x]:

@@ -133,6 +133,155 @@ function createSymbolSprite(symbol: string, bgColor: number): THREE.Sprite {
   return sprite;
 }
 
+/**
+ * v7.0 Sprint 3: Render a 3D set piece at the given position
+ * Set pieces are decorative 3D objects like entrance doors, thrones, etc.
+ */
+function renderSetPiece(
+  visual: { set_piece: string | null; set_piece_rotation: number; set_piece_scale: number },
+  x: number,
+  y: number,
+  z: number,
+  group: THREE.Group
+): void {
+  if (!visual.set_piece) return;
+
+  const TILE_SIZE = 1.0;
+  const WALL_HEIGHT = 2.5;
+  const scale = visual.set_piece_scale || 1.0;
+  const rotation = (visual.set_piece_rotation || 0) * Math.PI / 180;
+
+  switch (visual.set_piece) {
+    case 'entrance_doors': {
+      // Create massive double doors
+      const doorGroup = new THREE.Group();
+
+      // Door frame
+      const frameMaterial = new THREE.MeshStandardMaterial({
+        color: 0x2a1a0a,  // Dark wood
+        roughness: 0.8,
+        metalness: 0.2,
+      });
+
+      // Left door panel
+      const doorGeometry = new THREE.BoxGeometry(TILE_SIZE * 0.45 * scale, WALL_HEIGHT * 0.9 * scale, 0.1);
+      const leftDoor = new THREE.Mesh(doorGeometry, frameMaterial);
+      leftDoor.position.set(-TILE_SIZE * 0.25 * scale, WALL_HEIGHT * 0.45 * scale, 0);
+      doorGroup.add(leftDoor);
+
+      // Right door panel
+      const rightDoor = new THREE.Mesh(doorGeometry, frameMaterial);
+      rightDoor.position.set(TILE_SIZE * 0.25 * scale, WALL_HEIGHT * 0.45 * scale, 0);
+      doorGroup.add(rightDoor);
+
+      // Iron bands across doors
+      const bandMaterial = new THREE.MeshStandardMaterial({
+        color: 0x3a3a3a,
+        roughness: 0.4,
+        metalness: 0.8,
+      });
+      const bandGeometry = new THREE.BoxGeometry(TILE_SIZE * 0.9 * scale, 0.1, 0.15);
+      for (let i = 0; i < 3; i++) {
+        const band = new THREE.Mesh(bandGeometry, bandMaterial);
+        band.position.set(0, (0.3 + i * 0.8) * WALL_HEIGHT * scale, 0.05);
+        doorGroup.add(band);
+      }
+
+      // Large ring handles
+      const ringGeometry = new THREE.TorusGeometry(0.1 * scale, 0.02 * scale, 8, 16);
+      const leftRing = new THREE.Mesh(ringGeometry, bandMaterial);
+      leftRing.position.set(-TILE_SIZE * 0.15 * scale, WALL_HEIGHT * 0.4 * scale, 0.1);
+      leftRing.rotation.x = Math.PI / 2;
+      doorGroup.add(leftRing);
+
+      const rightRing = new THREE.Mesh(ringGeometry, bandMaterial);
+      rightRing.position.set(TILE_SIZE * 0.15 * scale, WALL_HEIGHT * 0.4 * scale, 0.1);
+      rightRing.rotation.x = Math.PI / 2;
+      doorGroup.add(rightRing);
+
+      doorGroup.position.set(x, y, z);
+      doorGroup.rotation.y = rotation;
+      group.add(doorGroup);
+      break;
+    }
+
+    case 'boss_throne': {
+      // Create an ornate throne
+      const throneGroup = new THREE.Group();
+      const throneMaterial = new THREE.MeshStandardMaterial({
+        color: 0x4a2a0a,
+        roughness: 0.6,
+        metalness: 0.3,
+      });
+
+      // Seat
+      const seatGeometry = new THREE.BoxGeometry(0.6 * scale, 0.4 * scale, 0.5 * scale);
+      const seat = new THREE.Mesh(seatGeometry, throneMaterial);
+      seat.position.set(0, 0.3 * scale, 0);
+      throneGroup.add(seat);
+
+      // Back
+      const backGeometry = new THREE.BoxGeometry(0.6 * scale, 1.2 * scale, 0.1 * scale);
+      const back = new THREE.Mesh(backGeometry, throneMaterial);
+      back.position.set(0, 0.9 * scale, -0.2 * scale);
+      throneGroup.add(back);
+
+      throneGroup.position.set(x, y, z);
+      throneGroup.rotation.y = rotation;
+      group.add(throneGroup);
+      break;
+    }
+
+    case 'pillar': {
+      // Create a stone pillar
+      const pillarMaterial = new THREE.MeshStandardMaterial({
+        color: 0x666666,
+        roughness: 0.7,
+        metalness: 0.1,
+      });
+      const pillarGeometry = new THREE.CylinderGeometry(
+        0.15 * scale, 0.18 * scale, WALL_HEIGHT * 0.95, 8
+      );
+      const pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+      pillar.position.set(x, WALL_HEIGHT * 0.475, z);
+      group.add(pillar);
+      break;
+    }
+
+    case 'statue': {
+      // Create a simple humanoid statue
+      const statueMaterial = new THREE.MeshStandardMaterial({
+        color: 0x888888,
+        roughness: 0.5,
+        metalness: 0.2,
+      });
+
+      const statueGroup = new THREE.Group();
+
+      // Body
+      const bodyGeometry = new THREE.BoxGeometry(0.3 * scale, 0.8 * scale, 0.2 * scale);
+      const body = new THREE.Mesh(bodyGeometry, statueMaterial);
+      body.position.set(0, 0.5 * scale, 0);
+      statueGroup.add(body);
+
+      // Head
+      const headGeometry = new THREE.SphereGeometry(0.12 * scale, 8, 8);
+      const head = new THREE.Mesh(headGeometry, statueMaterial);
+      head.position.set(0, 1.0 * scale, 0);
+      statueGroup.add(head);
+
+      statueGroup.position.set(x, y, z);
+      statueGroup.rotation.y = rotation;
+      group.add(statueGroup);
+      break;
+    }
+
+    // Default: skip unknown set pieces
+    default:
+      break;
+  }
+}
+
 // Dim explored-but-not-visible geometry (persistent map memory)
 const MEMORY_GEOMETRY_BRIGHTNESS = 0.65;
 
@@ -902,15 +1051,46 @@ export function FirstPersonRenderer3D({
 
         const floor = new THREE.Mesh(geometries.tilePlane, floorMat);
         floor.rotation.x = -Math.PI / 2;
-        floor.position.set(x, 0, z);
+
+        // v7.0 Sprint 3: Apply elevation and slope from tile visual data
+        let floorY = 0;
+        if (tile.visual) {
+          floorY = tile.visual.elevation * TILE_SIZE;
+
+          // Apply slope rotation based on direction
+          if (tile.visual.slope_direction && tile.visual.slope_amount > 0) {
+            const slopeAngle = tile.visual.slope_amount * Math.PI / 6; // Max ~30 degrees
+            switch (tile.visual.slope_direction) {
+              case 'north':
+                floor.rotation.z = slopeAngle;
+                break;
+              case 'south':
+                floor.rotation.z = -slopeAngle;
+                break;
+              case 'east':
+                floor.rotation.x = -Math.PI / 2 + slopeAngle;
+                break;
+              case 'west':
+                floor.rotation.x = -Math.PI / 2 - slopeAngle;
+                break;
+            }
+          }
+        }
+
+        floor.position.set(x, floorY, z);
         geometryGroup.add(floor);
+
+        // v7.0 Sprint 3: Render set pieces
+        if (tile.visual?.set_piece && isVisible) {
+          renderSetPiece(tile.visual, x, floorY, z, geometryGroup);
+        }
 
         // Only add ceiling if room has one (skip for open-air zones)
         if (hasCeiling) {
           const ceilMat = isVisible ? materials.ceiling : memoryMaterials.ceiling;
           const ceiling = new THREE.Mesh(geometries.tilePlane, ceilMat);
           ceiling.rotation.x = Math.PI / 2;
-          ceiling.position.set(x, WALL_HEIGHT, z);
+          ceiling.position.set(x, WALL_HEIGHT + floorY, z);
           geometryGroup.add(ceiling);
         }
       }

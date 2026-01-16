@@ -13,7 +13,7 @@ from ..core.constants import (
     TileType, DungeonTheme, RoomType,
     DUNGEON_WIDTH, DUNGEON_HEIGHT,
     LEVEL_THEMES, THEME_TILES, THEME_TILES_ASCII,
-    InteractiveTile,
+    InteractiveTile, TileVisual,
 )
 from .dungeon_bsp import Room, BSPNode
 from .traps import TrapManager
@@ -53,6 +53,9 @@ class Dungeon:
 
         # Interactive elements (v7.0 Immersive Exploration)
         self.interactive_tiles: dict[tuple[int, int], InteractiveTile] = {}
+
+        # Visual elevation data (v7.0 Sprint 3)
+        self.tile_visuals: dict[tuple[int, int], TileVisual] = {}
 
         if seed is not None:
             random.seed(seed)
@@ -359,6 +362,25 @@ class Dungeon:
         for (x, y), interactive in self.interactive_tiles.items():
             if self.visible[y][x] and interactive.is_visible():
                 results.append((x, y, interactive))
+        return results
+
+    # Tile visual methods (v7.0 Sprint 3)
+
+    def get_tile_visual(self, x: int, y: int) -> Optional[TileVisual]:
+        """Get the visual properties for a tile, if any."""
+        return self.tile_visuals.get((x, y))
+
+    def set_tile_visual(self, x: int, y: int, visual: TileVisual):
+        """Set visual properties for a tile."""
+        self.tile_visuals[(x, y)] = visual
+
+    def get_visible_tile_visuals(self) -> list[tuple[int, int, TileVisual]]:
+        """Get all tile visuals that are currently visible."""
+        results = []
+        for (x, y), visual in self.tile_visuals.items():
+            if 0 <= y < self.height and 0 <= x < self.width:
+                if self.visible[y][x]:
+                    results.append((x, y, visual))
         return results
 
     def generate_test_interactives(self, player_x: int, player_y: int):

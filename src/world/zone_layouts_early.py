@@ -158,9 +158,11 @@ def layout_intake_hall(dungeon: 'Dungeon', room: 'Room'):
     Features:
     - Open layout for easy navigation
     - Mural on wall with lore
-    - Visual marker for "entrance" behind player
+    - Entrance doors set piece on south wall (behind player start)
+    - Slight descent slope into the dungeon
     """
     from ..core.constants import TileType, InteractiveTile, WallFace
+    from ..core.constants.interactive import TileVisual, SetPieceType, SlopeDirection
 
     if room.width < 6 or room.height < 5:
         return
@@ -178,6 +180,49 @@ def layout_intake_hall(dungeon: 'Dungeon', room: 'Room'):
                             "Their faces are worn away, but determination shows in their posture.",
             )
             dungeon.add_interactive(mural_x, mural_y, mural)
+
+    # Add entrance doors set piece on south wall (behind where player starts)
+    entrance_x = room.x + room.width // 2
+    entrance_y = room.y + room.height - 1  # South wall
+
+    if 0 <= entrance_x < dungeon.width and 0 <= entrance_y < dungeon.height:
+        if dungeon.tiles[entrance_y][entrance_x] == TileType.WALL:
+            # Set piece: massive dungeon entrance doors
+            dungeon.set_tile_visual(
+                entrance_x, entrance_y,
+                TileVisual.with_set_piece(
+                    piece_type=SetPieceType.ENTRANCE_DOORS,
+                    rotation=0,  # Faces north (into room)
+                    scale=1.5
+                )
+            )
+
+            # Add an inscription on the doors
+            door_inscription = InteractiveTile.inscription(
+                wall_face=WallFace.NORTH,
+                examine_text="Massive iron-bound doors, sealed from the outside. "
+                            "Through the cracks, you see only darkness. "
+                            "There is no going back.",
+            )
+            dungeon.add_interactive(entrance_x, entrance_y, door_inscription)
+
+    # Add slight descent slope on tiles leading away from entrance
+    # Creates sense of descending into the dungeon
+    for dx in range(-1, 2):
+        slope_x = entrance_x + dx
+        slope_y = entrance_y - 1  # One tile north of entrance
+
+        if (room.x < slope_x < room.x + room.width - 1 and
+            room.y < slope_y < room.y + room.height - 1):
+            if dungeon.tiles[slope_y][slope_x] == TileType.FLOOR:
+                dungeon.set_tile_visual(
+                    slope_x, slope_y,
+                    TileVisual.slope(
+                        direction=SlopeDirection.NORTH,
+                        amount=0.2,
+                        base_elevation=-0.1
+                    )
+                )
 
 
 # =============================================================================
