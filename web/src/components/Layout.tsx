@@ -212,6 +212,10 @@ export function Layout() {
                     <span className="menu-icon">🎨</span>
                     Asset Viewer
                   </Link>
+                  <Link to="/level-editor" onClick={closeDropdown}>
+                    <span className="menu-icon">🗺️</span>
+                    Level Editor
+                  </Link>
                   <div className="menu-divider" />
                   <Link to="/db-explorer" onClick={closeDropdown}>
                     <span className="menu-icon">🗄️</span>
