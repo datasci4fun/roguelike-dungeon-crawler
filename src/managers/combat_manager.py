@@ -102,6 +102,9 @@ class CombatManager:
                 if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
                     self.game.completion_ledger.record_artifact_collected(picked_artifact.artifact_id.name)
 
+            # v7.0: Check for pressure plates at player's new position
+            self._check_pressure_plates(player.x, player.y)
+
             return True
 
         return False
@@ -129,6 +132,50 @@ class CombatManager:
                 )
                 # Only alert once per move (don't spam if multiple stealthed enemies)
                 return
+
+    def _check_pressure_plates(self, x: int, y: int):
+        """Check for pressure plates at player's position and trigger them.
+
+        v7.0: Pressure plates are interactive tiles that trigger when stepped on.
+        They can be part of puzzles that require stepping on specific plates.
+        """
+        from ..core.constants.interactive import InteractiveType, InteractiveState
+
+        # Get interactive tile at this position
+        interactive = self.game.dungeon.get_interactive_at(x, y)
+        if not interactive:
+            return
+
+        # Only handle pressure plates
+        if interactive.interactive_type != InteractiveType.PRESSURE_PLATE:
+            return
+
+        # Check if already activated (some plates stay down)
+        if interactive.state == InteractiveState.ACTIVE:
+            return
+
+        # Activate the plate
+        interactive.state = InteractiveState.ACTIVE
+        self.game.add_message(
+            interactive.activate_text or "The plate sinks under your weight.",
+            importance=MessageImportance.NORMAL
+        )
+
+        # Check puzzle state if this plate is part of a puzzle
+        if interactive.puzzle_id and hasattr(self.game, 'puzzle_manager') and self.game.puzzle_manager:
+            result = self.game.puzzle_manager.on_pressure_plate_step(x, y, stepped_on=True)
+            if result:
+                self.game.add_message(result['message'], importance=MessageImportance.IMPORTANT)
+                if result.get('solved') and result.get('reward'):
+                    # Apply puzzle reward
+                    messages = self.game.puzzle_manager.apply_reward(
+                        result['reward'], self.game.dungeon
+                    )
+                    for msg in messages:
+                        self.game.add_message(msg, importance=MessageImportance.IMPORTANT)
+                    # v7.0: Record puzzle completion for achievement
+                    if hasattr(self.game, 'completion_ledger') and self.game.completion_ledger:
+                        self.game.completion_ledger.record_puzzle_solved(interactive.puzzle_id)
 
     def _process_shadow_concealment(self, enemy):
         """

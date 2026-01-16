@@ -50,9 +50,18 @@ class LevelManager:
         if hasattr(self.game, 'story_manager') and self.game.story_manager:
             self.game.story_manager.visit_level(self.game.current_level)
 
-        # Generate new dungeon
+        # v7.0: Clear puzzle manager for new level
+        puzzle_manager = getattr(self.game, 'puzzle_manager', None)
+        if puzzle_manager:
+            puzzle_manager.clear()
+
+        # Generate new dungeon (pass puzzle_manager for zone layouts)
         has_up = self.game.current_level > 1
-        self.game.dungeon = Dungeon(level=self.game.current_level, has_stairs_up=has_up)
+        self.game.dungeon = Dungeon(
+            level=self.game.current_level,
+            has_stairs_up=has_up,
+            puzzle_manager=puzzle_manager
+        )
 
         # Place player at stairs up if they exist, otherwise random position
         if self.game.dungeon.stairs_up_pos:
@@ -136,9 +145,18 @@ class LevelManager:
         if hasattr(self.game, 'story_manager') and self.game.story_manager:
             self.game.story_manager.visit_level(level)
 
-        # Generate dungeon
+        # v7.0: Clear puzzle manager for new level
+        puzzle_manager = getattr(self.game, 'puzzle_manager', None)
+        if puzzle_manager:
+            puzzle_manager.clear()
+
+        # Generate dungeon (pass puzzle_manager for zone layouts)
         has_up = level > 1
-        self.game.dungeon = Dungeon(level=level, has_stairs_up=has_up)
+        self.game.dungeon = Dungeon(
+            level=level,
+            has_stairs_up=has_up,
+            puzzle_manager=puzzle_manager
+        )
 
         # Spawn player at random position
         player_pos = self.game.dungeon.get_random_floor_position()
@@ -172,6 +190,13 @@ class LevelManager:
             self.game.torch_manager.clear()
             self.game.dungeon.generate_torches(
                 self.game.torch_manager,
+                self.game.player.x,
+                self.game.player.y
+            )
+
+        # v7.0: Generate test interactive elements for debugging (Floor 1 only)
+        if level == 1:
+            self.game.dungeon.generate_test_interactives(
                 self.game.player.x,
                 self.game.player.y
             )

@@ -13,6 +13,7 @@ from ..core.constants import (
     TileType, DungeonTheme, RoomType,
     DUNGEON_WIDTH, DUNGEON_HEIGHT,
     LEVEL_THEMES, THEME_TILES, THEME_TILES_ASCII,
+    InteractiveTile, TileVisual,
 )
 from .dungeon_bsp import Room, BSPNode
 from .traps import TrapManager
@@ -27,7 +28,7 @@ from . import dungeon_visual
 class Dungeon:
     """Represents the game dungeon with procedural generation."""
 
-    def __init__(self, width: int = DUNGEON_WIDTH, height: int = DUNGEON_HEIGHT, seed: int = None, level: int = 1, has_stairs_up: bool = False):
+    def __init__(self, width: int = DUNGEON_WIDTH, height: int = DUNGEON_HEIGHT, seed: int = None, level: int = 1, has_stairs_up: bool = False, puzzle_manager=None):
         self.width = width
         self.height = height
         self.level = level
@@ -36,6 +37,9 @@ class Dungeon:
         self.stairs_up_pos = None
         self.stairs_down_pos = None
         self.has_stairs_up = has_stairs_up
+
+        # v7.0: Optional puzzle manager for zone layouts to register puzzles
+        self.puzzle_manager = puzzle_manager
 
         # Visual variety
         self.theme = LEVEL_THEMES.get(level, DungeonTheme.STONE)
@@ -46,6 +50,12 @@ class Dungeon:
         # FOV tracking arrays
         self.explored = [[False for _ in range(width)] for _ in range(height)]
         self.visible = [[False for _ in range(width)] for _ in range(height)]
+
+        # Interactive elements (v7.0 Immersive Exploration)
+        self.interactive_tiles: dict[tuple[int, int], InteractiveTile] = {}
+
+        # Visual elevation data (v7.0 Sprint 3)
+        self.tile_visuals: dict[tuple[int, int], TileVisual] = {}
 
         if seed is not None:
             random.seed(seed)
@@ -317,6 +327,160 @@ class Dungeon:
         if room:
             return room.zone
         return "corridor"  # Positions outside rooms are corridors
+
+    # Interactive tile methods (v7.0)
+
+    def get_interactive_at(self, x: int, y: int) -> Optional[InteractiveTile]:
+        """Get the interactive element at position (x, y), if any."""
+        return self.interactive_tiles.get((x, y))
+
+    def add_interactive(self, x: int, y: int, interactive: InteractiveTile) -> bool:
+        """Add an interactive element at position (x, y).
+
+        Returns True if added, False if position already has an interactive.
+        """
+        if (x, y) in self.interactive_tiles:
+            return False
+        self.interactive_tiles[(x, y)] = interactive
+        return True
+
+    def remove_interactive(self, x: int, y: int) -> Optional[InteractiveTile]:
+        """Remove and return the interactive element at position (x, y)."""
+        return self.interactive_tiles.pop((x, y), None)
+
+    def get_interactives_in_room(self, room: Room) -> list[tuple[int, int, InteractiveTile]]:
+        """Get all interactive elements within a room's bounds."""
+        results = []
+        for (x, y), interactive in self.interactive_tiles.items():
+            if room.x <= x < room.x + room.width and room.y <= y < room.y + room.height:
+                results.append((x, y, interactive))
+        return results
+
+    def get_visible_interactives(self) -> list[tuple[int, int, InteractiveTile]]:
+        """Get all interactive elements that are currently visible and not hidden."""
+        results = []
+        for (x, y), interactive in self.interactive_tiles.items():
+            if self.visible[y][x] and interactive.is_visible():
+                results.append((x, y, interactive))
+        return results
+
+    # Tile visual methods (v7.0 Sprint 3)
+
+    def get_tile_visual(self, x: int, y: int) -> Optional[TileVisual]:
+        """Get the visual properties for a tile, if any."""
+        return self.tile_visuals.get((x, y))
+
+    def set_tile_visual(self, x: int, y: int, visual: TileVisual):
+        """Set visual properties for a tile."""
+        self.tile_visuals[(x, y)] = visual
+
+    def get_visible_tile_visuals(self) -> list[tuple[int, int, TileVisual]]:
+        """Get all tile visuals that are currently visible."""
+        results = []
+        for (x, y), visual in self.tile_visuals.items():
+            if 0 <= y < self.height and 0 <= x < self.width:
+                if self.visible[y][x]:
+                    results.append((x, y, visual))
+        return results
+
+    def generate_test_interactives(self, player_x: int, player_y: int):
+        """Generate test interactive elements near the player for debugging v7.0.
+
+        Creates a switch and a hidden door that it activates.
+        """
+        from ..core.constants import InteractiveTile, InteractiveType, WallFace
+
+        # Find a wall tile 2-3 tiles in front of the player
+        for dy in range(-5, 6):
+            for dx in range(-5, 6):
+                test_x = player_x + dx
+                test_y = player_y + dy
+
+                # Skip if out of bounds
+                if not (0 <= test_x < self.width and 0 <= test_y < self.height):
+                    continue
+
+                # Skip if not a wall
+                if self.tiles[test_y][test_x] != TileType.WALL:
+                    continue
+
+                # Check if there's a floor tile adjacent (so we can see this wall)
+                adjacent_floor = False
+                for ay, ax in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                    adj_x = test_x + ax
+                    adj_y = test_y + ay
+                    if 0 <= adj_x < self.width and 0 <= adj_y < self.height:
+                        if self.tiles[adj_y][adj_x] == TileType.FLOOR:
+                            adjacent_floor = True
+                            break
+
+                if not adjacent_floor:
+                    continue
+
+                # Found a good wall - add a switch here
+                # First, find another wall nearby for the hidden door
+                door_x, door_y = None, None
+                for ddy in range(-3, 4):
+                    for ddx in range(-3, 4):
+                        candidate_x = test_x + ddx
+                        candidate_y = test_y + ddy
+                        if (candidate_x, candidate_y) == (test_x, test_y):
+                            continue
+                        if not (0 <= candidate_x < self.width and 0 <= candidate_y < self.height):
+                            continue
+                        if self.tiles[candidate_y][candidate_x] != TileType.WALL:
+                            continue
+                        # Check if has adjacent floor
+                        for ay, ax in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                            adj_x = candidate_x + ax
+                            adj_y = candidate_y + ay
+                            if 0 <= adj_x < self.width and 0 <= adj_y < self.height:
+                                if self.tiles[adj_y][adj_x] == TileType.FLOOR:
+                                    door_x, door_y = candidate_x, candidate_y
+                                    break
+                        if door_x is not None:
+                            break
+                    if door_x is not None:
+                        break
+
+                if door_x is None:
+                    # No suitable door location found, use the same wall
+                    door_x, door_y = test_x + 1, test_y
+
+                # Create hidden door
+                hidden_door = InteractiveTile.hidden_door(
+                    wall_face=WallFace.NORTH,
+                    examine_text="A section of wall that looks slightly different.",
+                )
+                self.add_interactive(door_x, door_y, hidden_door)
+
+                # Create switch that targets the hidden door
+                switch = InteractiveTile.switch(
+                    target=(door_x, door_y),
+                    wall_face=WallFace.SOUTH,
+                    examine_text="An ancient stone lever embedded in the wall.",
+                    activate_text="You hear a grinding sound as stone slides against stone!",
+                )
+                self.add_interactive(test_x, test_y, switch)
+
+                # Also add a mural for testing examine
+                for my in range(-2, 3):
+                    mural_x = test_x + my
+                    mural_y = test_y + 1
+                    if 0 <= mural_x < self.width and 0 <= mural_y < self.height:
+                        if self.tiles[mural_y][mural_x] == TileType.WALL:
+                            mural = InteractiveTile.mural(
+                                lore_id="LORE_FIRST_EXPEDITION",
+                                wall_face=WallFace.NORTH,
+                                examine_text="A faded fresco depicts armored figures descending into darkness.",
+                            )
+                            self.add_interactive(mural_x, mural_y, mural)
+                            break
+
+                print(f"[DEBUG] Generated test interactives: switch at ({test_x}, {test_y}), door at ({door_x}, {door_y})")
+                return
+
+        print("[DEBUG] Could not find suitable walls for test interactives")
 
     def get_zone_summary(self) -> str:
         """Return a debug summary of zone assignments for all rooms."""

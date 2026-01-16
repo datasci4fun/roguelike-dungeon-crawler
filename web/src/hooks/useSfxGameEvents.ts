@@ -127,5 +127,14 @@ export function useSfxCommands() {
     playMenuBack: () => play('menu_back'),
     playAbilityUse: () => play('ability_use'),
     playFeatUnlock: () => play('feat_unlock'),
+    // Interaction sounds (v7.0)
+    playSwitchFlip: () => play('switch_flip'),
+    playLeverPull: () => play('lever_pull'),
+    playMuralExamine: () => play('mural_examine'),
+    playInscriptionRead: () => play('inscription_read'),
+    playPuzzleSolve: () => play('puzzle_solve'),
+    playPressurePlate: () => play('pressure_plate'),
+    playHiddenDoorReveal: () => play('hidden_door_reveal'),
+    playDoorOpen: () => play('door_open'),
   };
 }

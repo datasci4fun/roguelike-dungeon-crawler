@@ -1,0 +1,127 @@
+/* LorePopup.css - v7.0 Sprint 4: Lore discovery popup */
+
+.lore-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.lore-popup {
+  background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f0f1a 100%);
+  border: 2px solid #4a4a6a;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 0 30px rgba(100, 100, 150, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.5);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.lore-popup-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #3a3a5a;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.lore-popup-title {
+  font-size: 1.4rem;
+  color: #d4af37;
+  font-family: 'Georgia', serif;
+  text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+  margin: 0;
+}
+
+.lore-popup-new-badge {
+  background: linear-gradient(135deg, #4a7c59 0%, #2d5a3d 100%);
+  color: #a8e6cf;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-left: 12px;
+}
+
+.lore-popup-close {
+  background: none;
+  border: 1px solid #5a5a7a;
+  color: #aaa;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.lore-popup-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-color: #8a8aaa;
+}
+
+.lore-popup-source {
+  padding: 8px 20px;
+  font-size: 0.8rem;
+  color: #888;
+  font-style: italic;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.lore-popup-content {
+  padding: 20px;
+  color: #c0c0d0;
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+.lore-popup-content p {
+  margin: 0 0 1em 0;
+}
+
+.lore-popup-content p:last-child {
+  margin-bottom: 0;
+}
+
+.lore-popup-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #3a3a5a;
+  text-align: center;
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.lore-popup-footer kbd {
+  background: #2a2a4a;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #4a4a6a;
+  font-family: monospace;
+}

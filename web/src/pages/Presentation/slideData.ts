@@ -251,6 +251,50 @@ export const SLIDES: Slide[] = [
     },
   },
   {
+    id: 'synthesis-theory',
+    type: 'story',
+    content: {
+      section: '6. Key Insight',
+      type: 'success',
+      title: 'AI as Synthesis Engine',
+      story: 'AI can synthesize entirely new approaches that don\'t exist in its training data — but only when guided by domain expertise. The AI\'s training data provides building blocks; the user\'s expertise provides the architectural blueprint. Neither alone produces novelty. Together, they can create tools and patterns that have never been built before.',
+      why: 'Code and programming are rule-based systems. If you can logically explain what you want — breaking down the problem into components that map to concepts the AI understands — it can generate working implementations of genuinely novel ideas. The constraint isn\'t the AI\'s capability; it\'s your ability to articulate the vision clearly enough for logical connections to form.',
+      lesson: 'In a world where everyone has AI access, the differentiator is domain expertise + communication skill. First-response AI output is what the training data suggests. Expert-guided AI output is what\'s actually needed but doesn\'t exist yet.',
+    },
+  },
+  {
+    id: 'level-editor',
+    type: 'usecase',
+    content: {
+      section: '6. Key Insight',
+      number: 4,
+      title: 'Zone Layout Designer — A Novel Tool',
+      task: 'Build a level editor for a procedurally generated dungeon game',
+      tool: 'Claude Opus 4.5 via Claude Code CLI',
+      asked: 'Initially asked for a traditional level editor with manual tile/object placement',
+      shipped: 'A rule-based Zone Layout Designer that generates Python code for the procedural generation pipeline. Users define placement rules (position strategy, count, rotation, scale) and export them as @register_layout functions.',
+      fixed: 'AI defaulted to WYSIWYG editors (training data bias). Corrected by explaining: "These maps are procedurally generated — we need rules, not placements." AI then researched the existing generation system and synthesized a novel approach.',
+      verified: 'Compared to existing tools: Houdini-style rules + code generation + zone-awareness = unique combination not found in any existing game dev tool.',
+      impact: 'Created a tool that doesn\'t exist in the market — a visual DSL editor for dungeon generation rules. Demonstrates AI can synthesize genuinely new solutions when properly guided.',
+    },
+  },
+  {
+    id: 'expertise-requirement',
+    type: 'twoColumn',
+    content: {
+      section: '6. Key Insight',
+      title: 'The Expertise Requirement',
+      left: {
+        label: 'Why Expertise Matters',
+        text: 'AI defaults to training data patterns. "Level editor" → manual placement tools. Without domain knowledge to recognize the mismatch, you get the wrong solution built correctly. Expertise enables course-correction.',
+      },
+      right: {
+        label: 'The Collaboration Model',
+        text: 'Human provides: vision, domain knowledge, quality judgment, course-correction. AI provides: implementation speed, pattern synthesis, technical breadth. Novel output emerges from the intersection.',
+      },
+    },
+  },
+  {
     id: 'recommendation-1',
     type: 'recommendation',
     content: {

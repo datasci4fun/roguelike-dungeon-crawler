@@ -6,6 +6,7 @@ import random
 from typing import TYPE_CHECKING
 
 from .zone_layouts import register_layout
+from .puzzles import create_pressure_plate_puzzle
 
 if TYPE_CHECKING:
     from .dungeon import Dungeon, Room
@@ -17,12 +18,14 @@ if TYPE_CHECKING:
 
 @register_layout(5, "frozen_galleries")
 def layout_frozen_galleries(dungeon: 'Dungeon', room: 'Room'):
-    """Create frozen gallery with ICE lanes."""
+    """Create frozen gallery with ICE lanes and optional pressure plate puzzle."""
     from ..core.constants import TileType
+    from ..core.constants.interactive import InteractiveTile, WallFace, InteractiveState
 
     if room.width < 10 and room.height < 10:
         return
 
+    # Create ice lanes
     if room.width > room.height:
         lane_y = room.y + room.height // 2
         for x in range(room.x + 2, room.x + room.width - 2):
@@ -34,11 +37,91 @@ def layout_frozen_galleries(dungeon: 'Dungeon', room: 'Room'):
             if dungeon.tiles[y][lane_x] == TileType.FLOOR:
                 dungeon.tiles[y][lane_x] = TileType.ICE
 
+    # Only add puzzle to larger rooms (need space for plates + hidden door)
+    if room.width < 12 or room.height < 8:
+        return
+
+    # Check if we already have puzzles on this floor (limit to 1 per floor)
+    if hasattr(dungeon, 'puzzle_manager') and dungeon.puzzle_manager:
+        existing = [p for p in dungeon.puzzle_manager.puzzles.values()
+                    if p.puzzle_id.startswith("ice_slide")]
+        if existing:
+            return
+
+    # Create ice slide pressure plate puzzle
+    # Place 3 pressure plates at ends of ice lanes
+    plate_positions = []
+    cx = room.x + room.width // 2
+    cy = room.y + room.height // 2
+
+    # Plate at far left of room
+    plate1 = (room.x + 2, cy)
+    # Plate at far right of room
+    plate2 = (room.x + room.width - 3, cy)
+    # Plate in center-north
+    plate3 = (cx, room.y + 2)
+
+    for pos in [plate1, plate2, plate3]:
+        px, py = pos
+        if (room.x + 1 <= px < room.x + room.width - 1 and
+            room.y + 1 <= py < room.y + room.height - 1):
+            if dungeon.tiles[py][px] in (TileType.FLOOR, TileType.ICE):
+                plate_positions.append(pos)
+
+    if len(plate_positions) < 3:
+        return  # Not enough valid positions
+
+    # Hidden door on south wall, center
+    door_x = cx
+    door_y = room.y + room.height - 1
+    if not (0 <= door_x < dungeon.width and 0 <= door_y < dungeon.height):
+        return
+
+    # Create the pressure plate puzzle
+    puzzle = create_pressure_plate_puzzle(
+        puzzle_id="ice_slide_gallery",
+        plate_positions=plate_positions,
+        required_plates=plate_positions,  # All plates required
+        door_position=(door_x, door_y),
+        hint="The frozen floor panels must all feel your weight...",
+    )
+
+    # Register puzzle with dungeon's puzzle manager
+    if hasattr(dungeon, 'puzzle_manager') and dungeon.puzzle_manager:
+        dungeon.puzzle_manager.add_puzzle(puzzle)
+
+    # Add interactive pressure plates
+    for i, (px, py) in enumerate(plate_positions):
+        # Mark the tile as ice if not already
+        dungeon.tiles[py][px] = TileType.ICE
+
+        # Add the interactive pressure plate
+        plate = InteractiveTile.pressure_plate(
+            target=(door_x, door_y),
+            examine_text=f"A pressure plate embedded in the ice. ({i+1}/3)",
+            activate_text="The frozen plate sinks with a crystalline click.",
+            puzzle_id="ice_slide_gallery",
+        )
+        dungeon.add_interactive(px, py, plate)
+
+    # Add hidden door
+    hidden_door = InteractiveTile.hidden_door(
+        wall_face=WallFace.SOUTH,
+        examine_text="The ice-covered wall seems thinner here...",
+    )
+    hidden_door.state = InteractiveState.HIDDEN
+    dungeon.add_interactive(door_x, door_y, hidden_door)
+
 
 @register_layout(5, "ice_tombs")
 def layout_ice_tombs(dungeon: 'Dungeon', room: 'Room'):
-    """Create ice tomb preservation room."""
-    from ..core.constants import TileType
+    """Create ice tomb preservation room.
+
+    Features:
+    - Ice patches in corners
+    - Frozen corpse inscription (survival clue)
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
 
     if room.width < 6 or room.height < 6:
         return
@@ -52,6 +135,28 @@ def layout_ice_tombs(dungeon: 'Dungeon', room: 'Room'):
     for x, y in random.sample(corners, min(2, len(corners))):
         if dungeon.tiles[y][x] == TileType.FLOOR:
             dungeon.tiles[y][x] = TileType.ICE
+
+    # Add frozen corpse inscription (environmental clue)
+    corpse_messages = [
+        "A figure frozen in ice. Their last expression is one of terror. "
+        "In their hand, a note: 'The cold ones move faster than you think...'",
+        "Preserved perfectly in the ice: an adventurer clutching a torch. "
+        "The ice around them is melted in a small circle. Fire helps here.",
+        "Frozen solid mid-stride. This one tried to run. "
+        "Their journal's final entry: 'Don't stop moving on the ice.'",
+    ]
+
+    # Place on east wall
+    wall_x = room.x + room.width - 1
+    wall_y = room.y + room.height // 2
+    if 0 <= wall_x < dungeon.width and 0 <= wall_y < dungeon.height:
+        if dungeon.tiles[wall_y][wall_x] == TileType.WALL:
+            if random.random() < 0.5:
+                inscription = InteractiveTile.inscription(
+                    wall_face=WallFace.WEST,
+                    examine_text=random.choice(corpse_messages),
+                )
+                dungeon.add_interactive(wall_x, wall_y, inscription)
 
 
 @register_layout(5, "crystal_grottos")
@@ -147,8 +252,13 @@ def layout_reading_halls(dungeon: 'Dungeon', room: 'Room'):
 
 @register_layout(6, "forbidden_stacks")
 def layout_forbidden_stacks(dungeon: 'Dungeon', room: 'Room'):
-    """Create forbidden stacks with interior partitions."""
-    from ..core.constants import TileType
+    """Create forbidden stacks with interior partitions.
+
+    Features:
+    - Interior shelving partitions
+    - Forbidden knowledge inscription (riddle clue)
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
 
     if room.width < 6 or room.height < 6:
         return
@@ -169,6 +279,28 @@ def layout_forbidden_stacks(dungeon: 'Dungeon', room: 'Room'):
             for y in range(start_y, start_y + length):
                 if dungeon.tiles[y][px] == TileType.FLOOR:
                     dungeon.tiles[y][px] = TileType.WALL
+
+    # Add forbidden knowledge inscription (riddle clue)
+    riddle_messages = [
+        "A tome lies open: 'The Keeper speaks only in silence. "
+        "To pass its test, bring no word to your lips, no sound to your feet.'",
+        "Scrawled in the margins: 'The Index demands tribute - "
+        "knowledge for knowledge. Bring a book from another floor.'",
+        "A warning placard: 'RESTRICTED SECTION - "
+        "Those who read aloud here are never seen again.'",
+    ]
+
+    # Place on north wall
+    wall_x = room.x + room.width // 2
+    wall_y = room.y
+    if 0 <= wall_x < dungeon.width and 0 <= wall_y < dungeon.height:
+        if dungeon.tiles[wall_y][wall_x] == TileType.WALL:
+            if random.random() < 0.6:
+                inscription = InteractiveTile.inscription(
+                    wall_face=WallFace.SOUTH,
+                    examine_text=random.choice(riddle_messages),
+                )
+                dungeon.add_interactive(wall_x, wall_y, inscription)
 
 
 @register_layout(6, "catalog_chambers")
@@ -247,8 +379,13 @@ def layout_boss_approach_library(dungeon: 'Dungeon', room: 'Room'):
 
 @register_layout(7, "forge_halls")
 def layout_forge_halls(dungeon: 'Dungeon', room: 'Room'):
-    """Create forge hall workshop."""
-    from ..core.constants import TileType
+    """Create forge hall workshop.
+
+    Features:
+    - Forge pillars
+    - Warning inscription about fire creatures
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
 
     if room.width < 7 or room.height < 7:
         return
@@ -264,6 +401,28 @@ def layout_forge_halls(dungeon: 'Dungeon', room: 'Room'):
             py = room.y + room.height // 3
             if dungeon.tiles[py][px] == TileType.FLOOR:
                 dungeon.tiles[py][px] = TileType.WALL
+
+    # Add warning inscription about fire creatures
+    forge_messages = [
+        "Etched in heat-resistant metal: 'The fire elementals reform unless "
+        "cooled. Seek the cooling chambers if you cannot destroy them quickly.'",
+        "A smith's final note: 'The molten ones fear nothing but water. "
+        "I should have led them to the cooling pools...'",
+        "Carved into the stone: 'TO SEAL THE CRUCIBLE - "
+        "Pull the three levers in order of the moon phases.'",
+    ]
+
+    # Place on west wall
+    wall_x = room.x
+    wall_y = room.y + room.height // 2
+    if 0 <= wall_x < dungeon.width and 0 <= wall_y < dungeon.height:
+        if dungeon.tiles[wall_y][wall_x] == TileType.WALL:
+            if random.random() < 0.6:
+                inscription = InteractiveTile.inscription(
+                    wall_face=WallFace.EAST,
+                    examine_text=random.choice(forge_messages),
+                )
+                dungeon.add_interactive(wall_x, wall_y, inscription)
 
 
 @register_layout(7, "magma_channels")
@@ -369,18 +528,41 @@ def layout_crucible_heart(dungeon: 'Dungeon', room: 'Room'):
 
 @register_layout(7, "boss_approach")
 def layout_boss_approach_volcanic(dungeon: 'Dungeon', room: 'Room'):
-    """Create volcanic boss approach room."""
+    """Create volcanic boss approach room with descent visuals."""
     from ..core.constants import TileType
+    from ..core.constants.interactive import TileVisual, SlopeDirection
 
     if room.width < 5 or room.height < 5:
         return
 
+    # Add lava hazards
     if random.random() < 0.5:
         wall_y = random.choice([room.y + 1, room.y + room.height - 2])
         for x in range(room.x + 2, room.x + room.width - 2, 3):
             if random.random() < 0.3:
                 if dungeon.tiles[wall_y][x] == TileType.FLOOR:
                     dungeon.tiles[wall_y][x] = TileType.LAVA
+
+    # v7.0 Sprint 3: Add descent visuals leading to boss area
+    # Create a sense of descending toward the boss lair
+    cx = room.x + room.width // 2
+    cy = room.y + room.height // 2
+
+    # Slope tiles on the approach path
+    for dy in range(-2, 3):
+        slope_y = cy + dy
+        if room.y + 1 < slope_y < room.y + room.height - 2:
+            if dungeon.tiles[slope_y][cx] == TileType.FLOOR:
+                # Progressive descent toward center
+                elevation = -0.1 * abs(dy - 1)
+                dungeon.set_tile_visual(
+                    cx, slope_y,
+                    TileVisual.slope(
+                        direction=SlopeDirection.SOUTH if dy < 0 else SlopeDirection.NORTH,
+                        amount=0.15,
+                        base_elevation=elevation
+                    )
+                )
 
 
 # =============================================================================
@@ -434,8 +616,37 @@ def layout_dragons_hoard(dungeon: 'Dungeon', room: 'Room'):
 
 @register_layout(8, "vault_antechamber")
 def layout_vault_antechamber(dungeon: 'Dungeon', room: 'Room'):
-    """Create vault antechamber threshold room."""
-    pass
+    """Create vault antechamber threshold room.
+
+    Features:
+    - Final warning inscription about the Crystal Guardian
+    """
+    from ..core.constants import TileType, InteractiveTile, WallFace
+
+    if room.width < 5 or room.height < 5:
+        return
+
+    # Add final boss warning inscription
+    boss_messages = [
+        "Ancient runes glow faintly: 'The Crystal Guardian has no weakness "
+        "save one - its own reflections. Turn its power against itself.'",
+        "A final testament: 'I reached the vault but could not enter. "
+        "The Guardian regenerates from the crystals. Shatter them first.'",
+        "Carved by a dying hand: 'VICTORY IS POSSIBLE. "
+        "The Guardian's heart is in the central crystal. "
+        "Destroy it, and the nightmare ends.'",
+    ]
+
+    # Place on south wall (facing the boss chamber beyond)
+    wall_x = room.x + room.width // 2
+    wall_y = room.y + room.height - 1
+    if 0 <= wall_x < dungeon.width and 0 <= wall_y < dungeon.height:
+        if dungeon.tiles[wall_y][wall_x] == TileType.WALL:
+            inscription = InteractiveTile.inscription(
+                wall_face=WallFace.NORTH,
+                examine_text=random.choice(boss_messages),
+            )
+            dungeon.add_interactive(wall_x, wall_y, inscription)
 
 
 @register_layout(8, "oath_interface")
@@ -461,8 +672,9 @@ def layout_oath_interface(dungeon: 'Dungeon', room: 'Room'):
 
 @register_layout(8, "boss_approach")
 def layout_boss_approach_crystal(dungeon: 'Dungeon', room: 'Room'):
-    """Create crystal boss approach room."""
+    """Create crystal boss approach room with geometric descent."""
     from ..core.constants import TileType
+    from ..core.constants.interactive import TileVisual, SlopeDirection, SetPieceType
 
     if room.width < 5 or room.height < 5:
         return
@@ -470,6 +682,7 @@ def layout_boss_approach_crystal(dungeon: 'Dungeon', room: 'Room'):
     cx = room.x + room.width // 2
     cy = room.y + room.height // 2
 
+    # Add water features
     if random.random() < 0.5:
         offsets = [(-2, 0), (2, 0), (0, -2), (0, 2)]
         for dx, dy in offsets:
@@ -479,3 +692,44 @@ def layout_boss_approach_crystal(dungeon: 'Dungeon', room: 'Room'):
                 if dungeon.tiles[py][px] == TileType.FLOOR:
                     if random.random() < 0.3:
                         dungeon.tiles[py][px] = TileType.DEEP_WATER
+
+    # v7.0 Sprint 3: Add descent toward crystal boss lair
+    # Center is lowered, edges slope inward
+    if dungeon.tiles[cy][cx] == TileType.FLOOR:
+        dungeon.set_tile_visual(
+            cx, cy,
+            TileVisual.flat(elevation=-0.3)
+        )
+
+    # Sloping tiles around center
+    for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+        slope_x, slope_y = cx + dx, cy + dy
+        if (room.x + 1 <= slope_x < room.x + room.width - 1 and
+            room.y + 1 <= slope_y < room.y + room.height - 1):
+            if dungeon.tiles[slope_y][slope_x] == TileType.FLOOR:
+                # Slope toward center
+                if dx < 0:
+                    direction = SlopeDirection.EAST
+                elif dx > 0:
+                    direction = SlopeDirection.WEST
+                elif dy < 0:
+                    direction = SlopeDirection.SOUTH
+                else:
+                    direction = SlopeDirection.NORTH
+                dungeon.set_tile_visual(
+                    slope_x, slope_y,
+                    TileVisual.slope(direction=direction, amount=0.2, base_elevation=-0.15)
+                )
+
+    # Add boss throne set piece if room is large enough
+    if room.width >= 7 and room.height >= 7:
+        throne_y = room.y + 2  # North side of room
+        if dungeon.tiles[throne_y][cx] == TileType.FLOOR:
+            dungeon.set_tile_visual(
+                cx, throne_y,
+                TileVisual.with_set_piece(
+                    piece_type=SetPieceType.BOSS_THRONE,
+                    rotation=180,  # Facing south toward entrance
+                    scale=1.2
+                )
+            )
