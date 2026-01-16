@@ -224,11 +224,8 @@ export function CharacterPreview3D({
     scene.add(ground);
     groundRef.current = ground;
 
-    // Initial character
-    const character = createCharacter(race, classId);
-    scene.add(character);
-    characterRef.current = character;
-
+    // Note: Character creation is handled by the second useEffect
+    // which depends on [race, classId] to properly update when they change
     initializedRef.current = true;
 
     // Animation loop
@@ -308,11 +305,14 @@ export function CharacterPreview3D({
 
   // Update character when race or class changes (without recreating renderer)
   useEffect(() => {
-    if (!sceneRef.current || !initializedRef.current) return;
+    // Wait for scene to be initialized by the first effect
+    if (!sceneRef.current) {
+      return;
+    }
 
     const scene = sceneRef.current;
 
-    // Remove old character
+    // Remove old character if it exists
     if (characterRef.current) {
       scene.remove(characterRef.current);
       characterRef.current.traverse((obj) => {
@@ -325,9 +325,10 @@ export function CharacterPreview3D({
           }
         }
       });
+      characterRef.current = null;
     }
 
-    // Create new character
+    // Create new character with current race and class
     const character = createCharacter(race, classId);
     scene.add(character);
     characterRef.current = character;
