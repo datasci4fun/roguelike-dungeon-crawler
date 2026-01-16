@@ -1115,3 +1115,180 @@
   background: #1f2937;
   border-color: #4a90d9;
 }
+
+/* ============================================
+   Resizable Panels
+   ============================================ */
+
+.editor-left-panel {
+  min-width: 200px;
+  max-width: 400px;
+  resize: horizontal;
+  overflow: auto;
+}
+
+.editor-right-panel {
+  min-width: 300px;
+  max-width: 600px;
+  resize: horizontal;
+  overflow: hidden;
+  direction: rtl; /* Makes resize handle appear on left */
+}
+
+.editor-right-panel > * {
+  direction: ltr; /* Reset text direction for content */
+}
+
+.editor-center {
+  min-width: 300px;
+}
+
+/* ============================================
+   Code Modal
+   ============================================ */
+
+.code-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.code-modal {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 70px rgba(0, 0, 0, 0.5);
+}
+
+.code-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #30363d;
+}
+
+.code-modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #fbbf24;
+}
+
+.code-modal-header .close-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  font-size: 1.5rem;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+
+.code-modal-header .close-btn:hover {
+  background: #21262d;
+  color: #f85149;
+}
+
+.code-modal-content {
+  flex: 1;
+  overflow: auto;
+  padding: 20px;
+  background: #161b22;
+}
+
+.code-modal-content pre {
+  margin: 0;
+  font-family: 'Fira Code', 'Consolas', 'Monaco', monospace;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #c9d1d9;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.code-modal-content code {
+  display: block;
+}
+
+.code-modal-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #30363d;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.code-modal-help {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #8b949e;
+}
+
+.code-modal-help code {
+  background: #21262d;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #79c0ff;
+}
+
+.code-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.code-modal-actions button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.code-modal-actions .secondary-btn {
+  background: transparent;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+}
+
+.code-modal-actions .secondary-btn:hover {
+  background: #21262d;
+  border-color: #8b949e;
+}
+
+.code-modal-actions .primary-btn {
+  background: #238636;
+  border: 1px solid #238636;
+  color: white;
+}
+
+.code-modal-actions .primary-btn:hover {
+  background: #2ea043;
+  border-color: #2ea043;
+}
+
+/* Resize handle styling (webkit browsers) */
+.editor-left-panel::-webkit-resizer,
+.editor-right-panel::-webkit-resizer {
+  background: linear-gradient(135deg, transparent 50%, #4a90d9 50%);
+  border-radius: 0 0 4px 0;
+}

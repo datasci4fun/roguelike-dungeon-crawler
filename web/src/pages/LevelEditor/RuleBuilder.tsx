@@ -20,6 +20,7 @@ import {
   PRESET_RULES,
 } from './placementRules';
 import { MODEL_LIBRARY } from '../../models';
+import { CodeModal } from './CodeModal';
 
 interface RuleBuilderProps {
   zoneId: string;
@@ -58,9 +59,18 @@ export function RuleBuilder({ zoneId, floor, onExport }: RuleBuilderProps) {
   const [rules, setRules] = useState<PlacementRule[]>([]);
   const [description, setDescription] = useState(`Layout for ${zoneId} zone`);
   const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const selectedRule = rules.find((r) => r.id === selectedRuleId);
+
+  // Generate the Python code
+  const generatedCode = generatePythonCode({
+    zoneId,
+    floor,
+    displayName: zoneId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+    description,
+    rules,
+  });
 
   // Add a new rule
   const handleAddRule = useCallback((assetId: string, assetName: string) => {
@@ -91,18 +101,11 @@ export function RuleBuilder({ zoneId, floor, onExport }: RuleBuilderProps) {
     updateRule(selectedRule.id, updated);
   }, [selectedRule, updateRule]);
 
-  // Generate and export Python code
-  const handleExport = useCallback(() => {
-    const config: ZoneLayoutConfig = {
-      zoneId,
-      floor,
-      displayName: zoneId.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-      description,
-      rules,
-    };
-    const code = generatePythonCode(config);
-    onExport(code);
-  }, [zoneId, floor, description, rules, onExport]);
+  // Copy code to clipboard
+  const handleCopyCode = useCallback(() => {
+    navigator.clipboard.writeText(generatedCode);
+    onExport(generatedCode);
+  }, [generatedCode, onExport]);
 
   return (
     <div className="rule-builder">
@@ -400,27 +403,29 @@ export function RuleBuilder({ zoneId, floor, onExport }: RuleBuilderProps) {
 
       {/* Footer Actions */}
       <div className="rule-builder-footer">
-        <button onClick={() => setShowPreview(!showPreview)} className="preview-btn">
-          {showPreview ? 'Hide' : 'Show'} Python Code
+        <button
+          onClick={() => setShowModal(true)}
+          className="preview-btn"
+          disabled={rules.length === 0}
+        >
+          View Python Code
         </button>
-        <button onClick={handleExport} className="export-btn" disabled={rules.length === 0}>
-          Export to Clipboard
+        <button
+          onClick={handleCopyCode}
+          className="export-btn"
+          disabled={rules.length === 0}
+        >
+          Copy to Clipboard
         </button>
       </div>
 
-      {/* Code Preview */}
-      {showPreview && (
-        <div className="code-preview">
-          <pre>
-            {generatePythonCode({
-              zoneId,
-              floor,
-              displayName: zoneId.replace(/_/g, ' '),
-              description,
-              rules,
-            })}
-          </pre>
-        </div>
+      {/* Code Modal */}
+      {showModal && (
+        <CodeModal
+          code={generatedCode}
+          onClose={() => setShowModal(false)}
+          onCopy={handleCopyCode}
+        />
       )}
     </div>
   );
