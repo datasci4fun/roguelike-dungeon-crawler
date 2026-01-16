@@ -1,14 +1,41 @@
 # Project State
 
-**Last Updated:** 2026-01-14
+**Last Updated:** 2026-01-16
 **Branch:** develop
-**Version:** v6.9.0 (3D Asset Database Storage)
+**Version:** v6.12.0 (D&D Combat System Complete)
 
 ---
 
-## Current Status: v6.9.0 - 3D Asset Database Storage
+## Current Status: v6.12.0 - D&D Combat System
 
-Assets and generation jobs now stored in PostgreSQL instead of static files.
+Full D&D-style ability scores, dice rolling, and combat mechanics integrated throughout the game.
+
+### D&D System (PRs #74-77)
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| **Dice Roller** | Core dice module with LUCK influence | ✅ Complete |
+| **Ability Scores** | STR, DEX, CON, LUCK system | ✅ Complete |
+| **D&D Combat** | Attack rolls vs AC, damage dice, saves | ✅ Complete |
+| **3D Dice** | Animated CSS 3D dice (d4-d20) | ✅ Complete |
+| **DiceRollHUD** | Battle dice display overlay | ✅ Complete |
+| **DEX Initiative** | d20 + DEX mod for turn order | ✅ Complete |
+| **Proficiency Bonus** | Level-scaling: 2 + (level-1)//4 | ✅ Complete |
+| **Saving Throws** | DEX/CON saves for traps and hazards | ✅ Complete |
+| **Status Effect Saves** | CON saves vs poison, burn, freeze, stun | ✅ Complete |
+
+### UI Migration (PRs #71-73)
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| **StatsHUD** | Player vitals overlay (HP, gold, level) | ✅ Complete |
+| **GameMessagesPanel** | Tabbed message log in 3D view | ✅ Complete |
+| **Minimap** | Dungeon overview in corner | ✅ Complete |
+| **CharacterWindow** | Equipment, inventory, journal tabs | ✅ Complete |
+| **HelpWindow** | Controls reference overlay | ✅ Complete |
+| **Terminal Toggle** | Hide/show terminal with Tab | ✅ Complete |
+
+---
 
 ### 3D Asset Pipeline (Completed)
 
@@ -114,6 +141,42 @@ docker compose up 3d-worker
 ---
 
 ## Recent Changes
+
+### v6.12.0 (2026-01-16) - D&D System Enhancements (PR #77)
+- New: DEX-based initiative (d20 + DEX mod) with DICE_ROLL events
+- New: Level-based proficiency bonus: 2 + (level-1)//4 (D&D 5e formula)
+- New: Hazard saving throws (DEX for lava/ice, CON for poison gas/water)
+- New: Status effect CON saves to resist poison, burn, freeze, stun
+- New: AbilityCheck dataclass and make_ability_check() function
+
+### v6.11.0 (2026-01-16) - D&D Integration (PR #76)
+- New: Alembic migration 005 for D&D columns on enemies
+- New: All 28 enemies have armor_class, attack_bonus, damage_dice
+- New: DEX saving throws for trap damage reduction
+- New: Weapon damage dice used in combat (daggers use DEX)
+- Changed: seed_database.py updated with D&D column mappers
+
+### v6.10.0 (2026-01-16) - D&D Dice Events (PRs #74-75)
+- New: Dice rolling module with LUCK-influenced rerolls
+- New: AbilityScores dataclass (STR, DEX, CON, LUCK)
+- New: D&D combat: attack rolls, damage rolls, saving throws
+- New: DICE_ROLL event type for frontend visualization
+- New: Dice3D component with CSS 3D transforms
+- New: DiceRollHUD overlay showing attack/damage/save results
+- New: StatRoller for character creation
+
+### v6.9.5 (2026-01-16) - UI Migration (PR #73)
+- New: StatsHUD component for player vitals
+- New: GameMessagesPanel with tabbed message filtering
+- New: Minimap component showing dungeon overview
+- New: HelpWindow with controls reference
+- New: Terminal toggle with Tab key
+- Changed: Terminal elements moved to 3D overlay
+
+### v6.9.2 (2026-01-15) - CharacterWindow & Combat Polish (PRs #70-71)
+- New: CharacterWindow with equipment, inventory, journal tabs
+- New: Enemy attack bump animation
+- Fix: Battle event bugs and state synchronization
 
 ### v6.9.0 (2026-01-14) - 3D Asset Database Storage
 - New: SQLAlchemy models for asset_3d and generation_job tables

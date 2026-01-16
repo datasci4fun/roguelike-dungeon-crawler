@@ -4,6 +4,149 @@ All notable changes to this project.
 
 ---
 
+## [6.12.0] - 2026-01-16 - D&D System Enhancements (PR #77)
+
+### Added
+- **DEX-Based Initiative**: d20 + DEX modifier for turn order
+  - Emits DICE_ROLL events for HUD visualization
+  - Elite/boss enemies get initiative bonuses
+- **Level-Based Proficiency Bonus**: 2 + (level-1)//4 (D&D 5e formula)
+  - Applied to attack rolls, scales with character level
+- **Hazard Saving Throws**: DEX/CON saves for environmental hazards
+  - Lava: DEX DC 15 (half damage on success)
+  - Ice: DEX DC 10 (prevent slide on success)
+  - Poison Gas: CON DC 12 (prevent poison on success)
+  - Deep Water: CON DC 10 (prevent drowning check on success)
+- **Status Effect CON Saves**: Resist trap status effects
+  - Poison: CON DC 12, Burn: CON DC 10
+  - Freeze: CON DC 12, Stun: CON DC 14
+- **AbilityCheck Foundation**: Dataclass and function for future skill checks
+
+### Technical
+- `src/combat/battle_manager.py`: DEX initiative rolls with DICE_ROLL events
+- `src/combat/dnd_combat.py`: `calculate_proficiency_bonus()`, `AbilityCheck`, `make_ability_check()`
+- `src/world/hazards.py`: `HAZARD_SAVES` config and saving throw logic
+- `src/world/traps.py`: `STATUS_EFFECT_DCS` and CON save logic
+- `src/core/engine_environment.py`: DICE_ROLL event emission for hazard saves
+
+---
+
+## [6.11.0] - 2026-01-16 - D&D Integration (PR #76)
+
+### Added
+- **Enemy D&D Stats**: All 28 enemies have armor_class, attack_bonus, damage_dice, ability scores
+- **Weapon Damage Dice**: Equipped weapon's dice used in combat
+- **Finesse Weapons**: Daggers use DEX for attack/damage instead of STR
+- **Trap Saving Throws**: DEX save for half damage on traps
+
+### Changed
+- `seed_database.py` updated with D&D column mappers
+- Alembic migration 005 adds D&D columns to enemies table
+
+### Technical
+- `data/seeds/enemies.json`: armor_class (10-16), attack_bonus (0-7), damage_dice (1d4-2d10)
+- `data/seeds/weapons.json`: 16 weapons with damage dice and stat_used
+- `src/items/item/equipment.py`: Weapon class with damage_dice and stat_used
+
+---
+
+## [6.10.0] - 2026-01-16 - D&D Dice Events (PRs #74-75)
+
+### Added
+- **Dice Rolling Module**: Core dice functions with LUCK influence
+  - `roll_die()`, `roll_dice()`, `roll_notation()`, `roll_d20()`
+  - LUCK modifier gives chance to reroll and take better result
+- **Ability Scores System**: STR, DEX, CON, LUCK
+  - Race base stats and modifiers
+  - Class modifiers
+- **D&D Combat**: Attack rolls vs AC, damage dice, saving throws
+  - `make_attack_roll()`: 1d20 + modifier vs target AC
+  - `make_damage_roll()`: weapon dice + modifier
+  - `make_saving_throw()`: 1d20 + ability mod vs DC
+  - Critical hits (nat 20) double damage dice
+  - Fumbles (nat 1) auto-miss
+- **DICE_ROLL Event Type**: Frontend receives dice roll data
+- **Dice3D Component**: CSS 3D animated dice (d4, d6, d8, d10, d12, d20)
+- **DiceRollHUD**: Battle overlay showing attack/damage/save rolls
+- **StatRoller**: Character creation 3d6 rolling UI
+
+### Technical
+- `src/core/dice.py`: Dice rolling with LUCK influence
+- `src/entities/ability_scores.py`: AbilityScores dataclass
+- `src/combat/dnd_combat.py`: AttackRoll, DamageRoll, SavingThrow dataclasses
+- `web/src/components/Dice3D/`: 3D animated dice
+- `web/src/components/DiceRollHUD/`: Combat dice overlay
+- `web/src/components/StatRoller/`: Character creation roller
+
+---
+
+## [6.9.5] - 2026-01-16 - UI Migration (PR #73)
+
+### Added
+- **StatsHUD Component**: Player vitals overlay (HP, gold, level, race)
+- **GameMessagesPanel**: Tabbed message log (All/Combat/System/Lore)
+- **Minimap Component**: Dungeon overview in corner
+- **HelpWindow**: Controls reference overlay (? key)
+- **Terminal Toggle**: Hide/show terminal with Tab key
+- **Keyboard Handler**: Works when terminal hidden
+
+### Changed
+- Terminal elements moved to 3D overlay
+- Play page layout restructured for overlay HUD
+
+### Technical
+- `web/src/components/StatsHUD/`: Player stats overlay
+- `web/src/components/GameMessagesPanel/`: Tabbed messages
+- `web/src/components/Minimap/`: Dungeon overview
+- `web/src/components/HelpWindow/`: Controls reference
+
+---
+
+## [6.9.2] - 2026-01-15 - CharacterWindow & Combat Polish (PRs #70-71)
+
+### Added
+- **CharacterWindow Component**: Equipment, inventory, journal tabs
+- **Enemy Attack Bump Animation**: Visual feedback for enemy attacks
+- **Battle Event Fixes**: State synchronization improvements
+
+### Technical
+- `web/src/components/CharacterWindow/`: Multi-tab character interface
+- `web/src/components/BattleRenderer3D/`: Bump animation system
+
+---
+
+## [6.9.0] - 2026-01-14 - 3D Asset Database Storage (PR #69)
+
+### Added
+- **3D Asset Models**: SQLAlchemy models for asset_3d and generation_job tables
+- **Asset REST API**: `/api/assets3d/*` for CRUD operations
+- **AssetsContext**: Frontend global asset state
+- **Seed Data**: 26 asset definitions from assetQueue.ts
+
+### Changed
+- JobsContext now uses database-backed API with fallback
+- assetQueue.ts provides API functions with static fallback
+
+---
+
+## [6.8.0] - 2026-01-14 - 3D Asset Generation Pipeline (PR #68)
+
+### Added
+- **Docker Container**: TripoSR + PyTorch CPU in isolated environment
+- **Job Queue System**: JSON file-based job storage
+- **Container Worker**: Polls queue, runs inference, exports GLB
+- **JobsPanel Component**: Real-time progress monitoring
+- **JobsContext**: Global React state for job management
+- **Asset Upload Workflow**: Concept art to GLB generation
+
+### Technical
+- `tools/3d-pipeline/Dockerfile`: TripoSR dependencies
+- `tools/3d-pipeline/container_worker.py`: Job processor
+- `web/src/components/JobsPanel.tsx`: Progress UI
+- `web/src/contexts/JobsContext.tsx`: Job state
+
+---
+
 ## [6.7.0] - 2026-01-13 - Data Persistence Migration
 
 ### Added

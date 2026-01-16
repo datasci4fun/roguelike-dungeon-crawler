@@ -69,18 +69,19 @@ Make the Field feel **alive** moment-to-moment (not just lore + systems) without
 
 ---
 
-## TODO 4 — ICE Slide Mechanic (deferred polish)
+## TODO 4 — ICE Slide Mechanic ✅ COMPLETE (v6.5.1)
 
-**Why:** You already place ICE lanes; slide would make Floor 5 feel unique.
+**Status:** Implemented in v6.5.1 (PR #21-24, Jan 12 2026)
 
-**Constraints**
+Ice slide mechanics are now live:
+* Player slides across ice tiles in movement direction
+* Stops on wall collision, enemy collision, or non-ice tile
+* Wall collision: "You slam into the wall!"
+* Enemy collision: 2 damage to both + stops
+* Respects hazard fairness system
+* Traps trigger at each slide position
 
-* Must not create unwinnable forced-slide into lava/water
-* Respect hazard fairness system
-
-**Done when**
-
-* Ice feels distinct, and fairness tests still pass
+**Files:** `src/core/engine_environment.py:_process_ice_slide()`
 
 ---
 
@@ -105,8 +106,8 @@ Make the Field feel **alive** moment-to-moment (not just lore + systems) without
 2. **TODO 2** (Codex Evidence) — natural extension of TODO 1
 3. **TODO 3** (Enemy Variety) — low effort, high flavor
 4. **TODO 5** (Secret Ending Hooks) — infrastructure for future content
-5. **TODO 4** (Ice Slide) — polish, requires careful fairness testing
+5. ~~**TODO 4** (Ice Slide)~~ — ✅ COMPLETE in v6.5.1
 
 ---
 
-*Last updated: 2025-01-11*
+*Last updated: 2026-01-16*

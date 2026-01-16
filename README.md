@@ -2,7 +2,7 @@
 
 A browser-based roguelike with procedural dungeons, first-person 3D exploration, tactical combat, and multiplayer features. Built entirely with AI assistance.
 
-**Current Version:** v6.4.0 (Frontend Lore Alignment)
+**Current Version:** v6.12.0 (D&D Combat System)
 
 ## Quick Start
 
@@ -24,11 +24,13 @@ python main.py
 | Category | Highlights |
 |----------|------------|
 | **Core** | Procedural dungeons (BSP), multiple themed floors, tactical combat, FOV |
+| **D&D Combat** | d20 attack rolls, armor class, saving throws, 3D animated dice |
 | **Battle** | Three.js tactical arena, smooth animations, floating damage numbers |
-| **Characters** | Multiple races and classes, feats, level-up progression |
+| **Characters** | Multiple races and classes, STR/DEX/CON/LUCK ability scores, feats |
 | **Enemies** | Varied enemy types per floor, unique bosses with signature abilities |
-| **Items** | Weapons, armor, shields, rings, amulets, potions, scrolls, artifacts |
+| **Items** | Weapons with damage dice, armor, shields, rings, amulets, potions, scrolls |
 | **Visuals** | Three.js 3D renderer, biome-specific themes, cinematic cutscenes |
+| **UI** | 3D overlay HUD, minimap, tabbed message panel, character window |
 | **Lore** | Codex system with bestiary, locations, scrolls, books |
 | **Multiplayer** | Accounts, leaderboards, ghost replays, real-time chat |
 | **Mobile** | Touch controls, PWA installable |
@@ -82,7 +84,7 @@ python main.py
 
 ## Built With AI
 
-v1.0 through v6.4.0 was built entirely with AI assistance in approximately two weeks (Dec 30, 2025 – Jan 12, 2026):
+v1.0 through v6.12.0 was built entirely with AI assistance over approximately three weeks (Dec 30, 2025 – Jan 16, 2026):
 
 - **Claude Opus 4.5** — Architecture, code, debugging
 - **ChatGPT 5.2** — Lore, writing, design

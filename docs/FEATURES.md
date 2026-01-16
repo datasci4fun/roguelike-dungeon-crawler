@@ -248,6 +248,113 @@ Common (white) → Uncommon (cyan) → Rare (blue) → Epic (magenta) → Legend
 
 ---
 
+## D&D Combat System (v6.10.0+)
+
+### Ability Scores
+Four core abilities affect combat and skill checks:
+
+| Ability | Abbr | Combat Effect |
+|---------|------|---------------|
+| Strength | STR | Melee attack/damage modifier |
+| Dexterity | DEX | Ranged attack/damage, initiative, finesse weapons, AC bonus |
+| Constitution | CON | Hit points, saving throws vs poison/disease |
+| Luck | LUCK | Chance to reroll dice and take better result |
+
+### Race Base Stats & Modifiers (v6.10.0)
+
+| Race | Base Stats | Modifiers |
+|------|------------|-----------|
+| Human | 10/10/10/10 | +2 LUCK |
+| Elf | 8/12/8/10 | -1 STR, +2 DEX |
+| Dwarf | 12/8/12/8 | +1 STR, +2 CON, -1 LUCK |
+| Halfling | 6/14/10/12 | -2 STR, +2 DEX, +2 LUCK |
+| Orc | 14/8/12/6 | +2 STR, +1 CON, -1 LUCK |
+
+### Class Modifiers (v6.10.0)
+
+| Class | Hit Die | Primary | Modifiers |
+|-------|---------|---------|-----------|
+| Warrior | d10 | STR | +2 STR, +1 CON |
+| Mage | d6 | DEX | -1 STR, +1 DEX, +2 LUCK |
+| Rogue | d8 | DEX | +2 DEX, +1 LUCK |
+| Cleric | d8 | CON | +2 CON, +1 LUCK |
+
+### Attack Rolls (v6.10.0)
+1. Roll 1d20 + attack modifier
+2. Compare to target's Armor Class (AC)
+3. Total ≥ AC = hit
+4. Natural 20 = critical hit (double damage dice)
+5. Natural 1 = automatic miss
+
+### Proficiency Bonus (v6.12.0)
+Level-based bonus added to attacks:
+- Level 1-4: +2
+- Level 5-8: +3
+- Level 9-12: +4
+- Level 13-16: +5
+- Level 17-20: +6
+
+Formula: `2 + (level - 1) // 4`
+
+### Damage Rolls (v6.11.0)
+- Weapon dice + ability modifier
+- Critical hits double the dice (not modifier)
+- **Finesse weapons** (daggers): Use DEX instead of STR
+
+### Weapon Damage Dice (v6.11.0)
+
+| Weapon | Dice | Stat |
+|--------|------|------|
+| Dagger | 1d4 | DEX |
+| Short Sword | 1d6 | STR |
+| Sword | 1d8 | STR |
+| Axe | 1d10 | STR |
+| Dragon Slayer | 2d8 | STR |
+
+### Saving Throws
+Roll 1d20 + ability modifier vs Difficulty Class (DC):
+
+**Traps (v6.11.0)**
+- DEX save vs trap detection DC
+- Success = half damage
+
+**Status Effects (v6.12.0)**
+| Effect | Save | DC |
+|--------|------|-----|
+| Poison | CON | 12 |
+| Burn | CON | 10 |
+| Freeze | CON | 12 |
+| Stun | CON | 14 |
+
+**Hazards (v6.12.0)**
+| Hazard | Save | DC | On Success |
+|--------|------|-----|------------|
+| Lava | DEX | 15 | Half damage |
+| Ice | DEX | 10 | Prevent slide |
+| Poison Gas | CON | 12 | Prevent poison |
+| Deep Water | CON | 10 | Prevent drowning check |
+
+### Initiative (v6.12.0)
+Turn order determined by d20 + DEX modifier:
+- Higher initiative acts first
+- Elite/boss enemies get initiative bonuses
+
+### LUCK System (v6.10.0)
+LUCK score affects dice rolling:
+- Higher LUCK = chance to roll twice and take better result
+- Lower LUCK = chance to roll twice and take worse result
+- Normalized as: `(LUCK - 10) / 20.0`
+
+### Dice HUD (v6.10.0)
+3D animated dice display in battle overlay:
+- Attack rolls: d20 vs AC
+- Damage rolls: weapon dice
+- Saving throws: d20 vs DC
+- Initiative rolls: d20 + DEX
+- Shows critical hits, fumbles, success/failure
+
+---
+
 ## Multiplayer (v3.0.0+)
 
 ### Backend Features
