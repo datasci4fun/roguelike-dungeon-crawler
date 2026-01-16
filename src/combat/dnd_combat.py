@@ -302,6 +302,126 @@ def calculate_ac(base_ac: int = 10, dex_mod: int = 0,
     return base_ac + dex_mod + armor_bonus + shield_bonus
 
 
+def calculate_proficiency_bonus(level: int) -> int:
+    """Calculate proficiency bonus based on character level.
+
+    Uses D&D 5e formula: starts at +2, increases by 1 every 4 levels.
+    Level 1-4: +2, Level 5-8: +3, Level 9-12: +4, etc.
+
+    Args:
+        level: Character level (1+)
+
+    Returns:
+        Proficiency bonus (2-6 typically)
+    """
+    if level < 1:
+        level = 1
+    return 2 + (level - 1) // 4
+
+
+@dataclass
+class AbilityCheck:
+    """Result of an ability check (d20 + ability modifier vs DC)."""
+    d20_roll: int = 0
+    ability: str = "STR"        # STR, DEX, CON, or LUCK
+    ability_mod: int = 0
+    total: int = 0
+    dc: int = 10                # Difficulty class
+    success: bool = False
+    is_natural_20: bool = False
+    is_natural_1: bool = False
+    luck_applied: bool = False
+    skill: str = ""             # Optional skill name (e.g., "Athletics", "Stealth")
+
+    def to_dict(self) -> dict:
+        """Serialize for frontend."""
+        return {
+            'd20_roll': self.d20_roll,
+            'ability': self.ability,
+            'ability_mod': self.ability_mod,
+            'total': self.total,
+            'dc': self.dc,
+            'success': self.success,
+            'is_natural_20': self.is_natural_20,
+            'is_natural_1': self.is_natural_1,
+            'luck_applied': self.luck_applied,
+            'skill': self.skill,
+        }
+
+
+def make_ability_check(
+    ability_score: int,
+    dc: int,
+    ability: str = "STR",
+    luck_modifier: float = 0.0,
+    advantage: bool = False,
+    disadvantage: bool = False,
+    skill: str = ""
+) -> AbilityCheck:
+    """Make an ability check (d20 + ability modifier vs DC).
+
+    This is the foundation for skill checks and other ability-based tests.
+    Similar to saving throws but used for active tasks like:
+    - STR check to break down a door
+    - DEX check to pick a lock
+    - CON check to resist exhaustion
+    - Perception check to find hidden items
+
+    Args:
+        ability_score: The ability score (e.g., 14 for STR)
+        dc: Difficulty class to beat
+        ability: Which ability (STR, DEX, CON, LUCK)
+        luck_modifier: LUCK stat modifier for reroll chance
+        advantage: Roll twice, take higher
+        disadvantage: Roll twice, take lower
+        skill: Optional skill name for display
+
+    Returns:
+        AbilityCheck with success/failure
+    """
+    # Calculate modifier from score
+    ability_mod = calculate_ability_modifier(ability_score)
+
+    # Advantage and disadvantage cancel out
+    if advantage and disadvantage:
+        advantage = disadvantage = False
+
+    roll_result = roll_d20(luck_modifier, advantage, disadvantage)
+
+    natural_roll = roll_result.rolls[0]
+    if len(roll_result.rolls) > 1:
+        if advantage:
+            natural_roll = max(roll_result.rolls)
+        else:
+            natural_roll = min(roll_result.rolls)
+
+    total = natural_roll + ability_mod
+
+    # Natural 20 always succeeds, natural 1 always fails (optional rule)
+    is_natural_20 = (natural_roll == 20)
+    is_natural_1 = (natural_roll == 1)
+
+    if is_natural_20:
+        success = True
+    elif is_natural_1:
+        success = False
+    else:
+        success = (total >= dc)
+
+    return AbilityCheck(
+        d20_roll=natural_roll,
+        ability=ability,
+        ability_mod=ability_mod,
+        total=total,
+        dc=dc,
+        success=success,
+        is_natural_20=is_natural_20,
+        is_natural_1=is_natural_1,
+        luck_applied=roll_result.luck_applied,
+        skill=skill,
+    )
+
+
 def resolve_attack(
     attacker_attack_mod: int,
     attacker_damage_mod: int,

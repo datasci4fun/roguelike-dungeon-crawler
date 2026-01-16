@@ -10,7 +10,7 @@ from .battle_actions import (
     get_class_abilities, get_valid_attack_targets,
     manhattan_distance, create_status_effect
 )
-from .dnd_combat import make_attack_roll, make_damage_roll, WEAPON_DAMAGE_DICE
+from .dnd_combat import make_attack_roll, make_damage_roll, calculate_proficiency_bonus, WEAPON_DAMAGE_DICE
 from ..core.events import EventType
 
 if TYPE_CHECKING:
@@ -192,12 +192,16 @@ class PlayerActionHandler:
             # D&D-style attack: d20 + modifier vs AC
             target_ac = getattr(target, 'armor_class', 10 + target.get_effective_defense())
 
+            # Calculate proficiency bonus based on player level
+            player_level = getattr(player, 'level', 1)
+            prof_bonus = calculate_proficiency_bonus(player_level)
+
             # Make attack roll
             attack_roll = make_attack_roll(
                 attacker_attack_mod=attack_mod,
                 target_ac=target_ac,
                 luck_modifier=luck_mod,
-                proficiency_bonus=2
+                proficiency_bonus=prof_bonus
             )
 
             # Emit DICE_ROLL event for attack

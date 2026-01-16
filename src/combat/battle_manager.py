@@ -24,6 +24,7 @@ from .round_processing import RoundProcessor
 from .battle_player_actions import PlayerActionHandler
 from ..core.constants import UIMode, DungeonTheme, LEVEL_THEMES
 from ..core.events import EventType, EventQueue, TransitionKind
+from ..core.dice import calculate_ability_modifier, roll_d20
 
 if TYPE_CHECKING:
     from ..core.engine import GameEngine
@@ -130,8 +131,29 @@ class BattleManager:
             px = compiled['width'] // 2
             py = compiled['height'] - 2
 
-        # v6.11: Roll player initiative (base 10 + random 1-20)
-        player_initiative = 10 + rng.randint(1, 20)
+        # v6.12: Roll player initiative with DEX modifier (d20 + DEX mod)
+        player_dex_mod = 0
+        player_luck_mod = 0.0
+        if hasattr(player, 'ability_scores') and player.ability_scores:
+            player_dex_mod = calculate_ability_modifier(player.ability_scores.dexterity)
+            player_luck_mod = (player.ability_scores.luck - 10) / 20.0
+
+        # Roll d20 for initiative with LUCK influence
+        init_roll = roll_d20(player_luck_mod)
+        player_initiative = init_roll.rolls[0] + player_dex_mod
+
+        # Emit DICE_ROLL event for initiative
+        if self.events is not None:
+            self.events.emit(
+                EventType.DICE_ROLL,
+                roll_type='initiative',
+                dice_notation='1d20',
+                rolls=init_roll.rolls,
+                modifier=player_dex_mod,
+                total=player_initiative,
+                luck_applied=init_roll.luck_applied,
+                entity_name='Hero'
+            )
 
         battle.player = BattleEntity(
             entity_id='player',
@@ -170,8 +192,18 @@ class BattleManager:
             enemy_name_counts[name_key] = enemy_name_counts.get(name_key, 0) + 1
             display_id = f"{enemy_name}_{enemy_name_counts[name_key]:02d}"
 
-            # v6.11: Roll enemy initiative (base 5 + random 1-20, elites/bosses get bonus)
-            enemy_initiative = 5 + rng.randint(1, 20)
+            # v6.12: Roll enemy initiative with DEX modifier (d20 + DEX mod)
+            enemy_dex_mod = 0
+            if hasattr(enemy, 'ability_scores') and enemy.ability_scores:
+                enemy_dex_mod = calculate_ability_modifier(enemy.ability_scores.dexterity)
+            elif hasattr(enemy, 'dex_score'):
+                # Fallback to dex_score attribute if no ability_scores
+                enemy_dex_mod = calculate_ability_modifier(getattr(enemy, 'dex_score', 10))
+
+            enemy_init_roll = roll_d20(0.0)  # Enemies don't get LUCK bonus
+            enemy_initiative = enemy_init_roll.rolls[0] + enemy_dex_mod
+
+            # Elite/boss bonus to initiative
             if getattr(enemy, 'is_elite', False):
                 enemy_initiative += 5
             if getattr(enemy, 'is_boss', False):

@@ -11,6 +11,15 @@ from ..core.constants import TrapType, TRAP_STATS, StatusEffectType
 from ..combat.dnd_combat import make_saving_throw, SavingThrow
 from ..core.dice import calculate_ability_modifier
 
+
+# Status effect saving throw DCs
+STATUS_EFFECT_DCS = {
+    StatusEffectType.POISON: 12,
+    StatusEffectType.BURN: 10,
+    StatusEffectType.FREEZE: 12,
+    StatusEffectType.STUN: 14,
+}
+
 if TYPE_CHECKING:
     from ..entities.entities import Entity, Player
 
@@ -122,11 +131,37 @@ class Trap:
         # Apply damage
         actual_damage = entity.take_damage(damage)
 
-        # Apply status effect if any (CON save could negate, but we'll keep simple for now)
+        # Apply status effect if any with CON save to resist
         effect = self.stats['effect']
         effect_msg = ''
+        effect_saving_throw = None
+        effect_applied = False
+
         if effect:
-            effect_msg = entity.apply_status_effect(effect, self.name)
+            # Check for CON saving throw to resist effect
+            apply_effect = True
+
+            if hasattr(entity, 'ability_scores') and entity.ability_scores:
+                effect_dc = STATUS_EFFECT_DCS.get(effect, 12)
+                con_score = entity.ability_scores.constitution
+                con_mod = calculate_ability_modifier(con_score)
+                luck_score = entity.ability_scores.luck
+                luck_mod = (luck_score - 10) / 20.0
+
+                effect_saving_throw = make_saving_throw(
+                    ability_mod=con_mod,
+                    dc=effect_dc,
+                    ability="CON",
+                    luck_modifier=luck_mod
+                )
+
+                if effect_saving_throw.success:
+                    apply_effect = False
+                    effect_msg = f"Resisted {effect.name.lower()}! (CON save {effect_saving_throw.total} vs DC {effect_dc})"
+
+            if apply_effect:
+                effect_msg = entity.apply_status_effect(effect, self.name)
+                effect_applied = True
 
         # Build message
         if saving_throw:
@@ -142,9 +177,10 @@ class Trap:
 
         return {
             'damage': actual_damage,
-            'effect': effect,
+            'effect': effect if effect_applied else None,
             'message': message,
-            'saving_throw': saving_throw
+            'saving_throw': saving_throw,
+            'effect_saving_throw': effect_saving_throw
         }
 
     def tick(self):

@@ -29,7 +29,7 @@ class EnvironmentMixin:
 
         result = trap.trigger(self.player)
         if result:
-            # Emit DICE_ROLL event for saving throw if one was made
+            # Emit DICE_ROLL event for DEX saving throw (damage reduction)
             saving_throw = result.get('saving_throw')
             if saving_throw and hasattr(self, 'event_queue') and self.event_queue:
                 self.event_queue.emit(
@@ -45,7 +45,26 @@ class EnvironmentMixin:
                     is_natural_1=saving_throw.is_natural_1,
                     luck_applied=saving_throw.luck_applied,
                     ability=saving_throw.ability,
-                    source=trap.name
+                    source=f"{trap.name} (damage)"
+                )
+
+            # Emit DICE_ROLL event for CON saving throw (status effect resistance)
+            effect_saving_throw = result.get('effect_saving_throw')
+            if effect_saving_throw and hasattr(self, 'event_queue') and self.event_queue:
+                self.event_queue.emit(
+                    EventType.DICE_ROLL,
+                    roll_type='saving_throw',
+                    dice_notation='1d20',
+                    rolls=[effect_saving_throw.d20_roll],
+                    modifier=effect_saving_throw.ability_mod,
+                    total=effect_saving_throw.total,
+                    target_dc=effect_saving_throw.dc,
+                    is_success=effect_saving_throw.success,
+                    is_natural_20=effect_saving_throw.is_natural_20,
+                    is_natural_1=effect_saving_throw.is_natural_1,
+                    luck_applied=effect_saving_throw.luck_applied,
+                    ability=effect_saving_throw.ability,
+                    source=f"{trap.name} (effect)"
                 )
 
             if result.get('message'):
@@ -63,16 +82,42 @@ class EnvironmentMixin:
     def _process_hazards(self) -> bool:
         """Process hazards at player's current position.
 
+        Uses D&D-style saving throws when player has ability scores.
+        Emits DICE_ROLL events for frontend dice visualization.
+
         Returns:
             True if player is on slow terrain (deep water), False otherwise.
         """
         if not self.player:
             return False
 
+        # Get hazard at position first to get its name for event
+        hazard = self.hazard_manager.get_hazard_at(self.player.x, self.player.y)
+
         result = self.hazard_manager.process_entity_at(
             self.player, self.player.x, self.player.y
         )
         if result:
+            # Emit DICE_ROLL event for saving throw if one was made
+            saving_throw = result.get('saving_throw')
+            if saving_throw and hasattr(self, 'event_queue') and self.event_queue:
+                hazard_name = hazard.name if hazard else "hazard"
+                self.event_queue.emit(
+                    EventType.DICE_ROLL,
+                    roll_type='saving_throw',
+                    dice_notation='1d20',
+                    rolls=[saving_throw.d20_roll],
+                    modifier=saving_throw.ability_mod,
+                    total=saving_throw.total,
+                    target_dc=saving_throw.dc,
+                    is_success=saving_throw.success,
+                    is_natural_20=saving_throw.is_natural_20,
+                    is_natural_1=saving_throw.is_natural_1,
+                    luck_applied=saving_throw.luck_applied,
+                    ability=saving_throw.ability,
+                    source=hazard_name
+                )
+
             if result.get('message'):
                 self.add_message(result['message'])
 
@@ -82,7 +127,8 @@ class EnvironmentMixin:
                 self.last_damage_taken = self.player.health
                 self.player.health = 0
             elif result.get('damage', 0) > 0:
-                self.last_attacker_name = "environmental hazard"
+                hazard_name = hazard.name if hazard and hasattr(hazard, 'name') else "environmental hazard"
+                self.last_attacker_name = f"the {hazard_name.lower()}"
                 self.last_damage_taken = result['damage']
 
         # Check if on slow terrain (deep water costs 2 turns)
