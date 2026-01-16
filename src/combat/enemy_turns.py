@@ -11,6 +11,7 @@ from .battle_types import BattleState, BattleEntity
 from .battle_actions import BattleAction, create_status_effect
 from .ai_scoring import choose_action, get_enemy_ai_type, execute_ai_action, CandidateType
 from .boss_heuristics import get_boss_action_with_fallback
+from .dnd_combat import make_attack_roll, make_damage_roll
 from ..core.constants import BossType
 from ..core.events import EventType
 
@@ -153,24 +154,118 @@ class EnemyTurnProcessor:
         enemy: BattleEntity,
         player: BattleEntity
     ) -> None:
-        """Execute an enemy's attack on the player (v6.2 extracted for clarity)."""
-        # v6.0.5: Pulse amplifies enemy damage
-        defense = player.get_effective_defense()
-        base_damage = max(1, enemy.attack - defense)
-        pulse_amp = self.get_pulse_amplification()
-        damage = int(base_damage * pulse_amp)
-        player.hp -= damage
+        """Execute an enemy's attack on the player using D&D dice mechanics."""
+        enemy_name = getattr(enemy, 'name', 'Enemy') or 'Enemy'
 
-        if self.events is not None:
-            self.events.emit(
-                EventType.DAMAGE_NUMBER,
-                x=player.arena_x,
-                y=player.arena_y,
-                amount=damage
+        # Check if player has ability scores (use D&D combat)
+        use_dnd_combat = False
+        player_ac = 10
+
+        if self.engine.player and hasattr(self.engine.player, 'ability_scores'):
+            if self.engine.player.ability_scores:
+                use_dnd_combat = True
+                player_ac = getattr(self.engine.player, 'armor_class', 10)
+
+        if use_dnd_combat:
+            # D&D-style attack: d20 + attack_bonus vs player AC
+            enemy_attack_bonus = getattr(enemy, 'attack_bonus', enemy.attack // 3)
+            enemy_damage_dice = getattr(enemy, 'damage_dice', '1d6')
+
+            # Make attack roll
+            attack_roll = make_attack_roll(
+                attacker_attack_mod=enemy_attack_bonus,
+                target_ac=player_ac,
+                luck_modifier=0.0,
+                proficiency_bonus=0
             )
-            self.events.emit(EventType.HIT_FLASH, entity=player)
 
-        self.engine.add_message(f"Enemy hits you for {damage}!")
+            # Emit DICE_ROLL event for attack
+            if self.events is not None:
+                self.events.emit(
+                    EventType.DICE_ROLL,
+                    roll_type='attack',
+                    dice_notation='1d20',
+                    rolls=[attack_roll.d20_roll],
+                    modifier=attack_roll.modifier,
+                    total=attack_roll.total,
+                    target_ac=player_ac,
+                    is_hit=attack_roll.is_hit,
+                    is_critical=attack_roll.is_critical,
+                    is_fumble=attack_roll.is_fumble,
+                    luck_applied=attack_roll.luck_applied,
+                    attacker_name=enemy_name
+                )
+
+            if attack_roll.is_fumble:
+                self.engine.add_message(f"{enemy_name} fumbled their attack!")
+                return
+
+            if not attack_roll.is_hit:
+                self.engine.add_message(
+                    f"{enemy_name} missed! ({attack_roll.total} vs AC {player_ac})"
+                )
+                return
+
+            # Hit! Roll damage
+            damage_mod = enemy.attack // 4  # Scale damage modifier with enemy attack
+            damage_roll = make_damage_roll(
+                weapon_dice=enemy_damage_dice,
+                damage_mod=damage_mod,
+                is_critical=attack_roll.is_critical,
+                luck_modifier=0.0
+            )
+
+            # v6.0.5: Pulse amplifies enemy damage
+            pulse_amp = self.get_pulse_amplification()
+            damage = max(1, int(damage_roll.total * pulse_amp))
+
+            # Emit DICE_ROLL event for damage
+            if self.events is not None:
+                self.events.emit(
+                    EventType.DICE_ROLL,
+                    roll_type='damage',
+                    dice_notation=damage_roll.dice_notation,
+                    rolls=damage_roll.dice_rolls,
+                    modifier=damage_roll.modifier,
+                    total=damage,
+                    is_critical=damage_roll.is_critical,
+                    luck_applied=damage_roll.luck_applied,
+                    attacker_name=enemy_name
+                )
+
+            player.hp -= damage
+
+            if self.events is not None:
+                self.events.emit(
+                    EventType.DAMAGE_NUMBER,
+                    x=player.arena_x,
+                    y=player.arena_y,
+                    amount=damage
+                )
+                self.events.emit(EventType.HIT_FLASH, entity=player)
+
+            if attack_roll.is_critical:
+                self.engine.add_message(f"CRITICAL! {enemy_name} hits you for {damage}!")
+            else:
+                self.engine.add_message(f"{enemy_name} hits you for {damage}!")
+        else:
+            # Fallback: Original simple damage calculation
+            defense = player.get_effective_defense()
+            base_damage = max(1, enemy.attack - defense)
+            pulse_amp = self.get_pulse_amplification()
+            damage = int(base_damage * pulse_amp)
+            player.hp -= damage
+
+            if self.events is not None:
+                self.events.emit(
+                    EventType.DAMAGE_NUMBER,
+                    x=player.arena_x,
+                    y=player.arena_y,
+                    amount=damage
+                )
+                self.events.emit(EventType.HIT_FLASH, entity=player)
+
+            self.engine.add_message(f"Enemy hits you for {damage}!")
 
         if player.hp <= 0:
             self.engine.add_message("You have fallen in battle!")
