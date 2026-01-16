@@ -882,7 +882,13 @@ export function FirstPersonRenderer3D({
     // Cleanup
     return () => {
       cancelAnimationFrame(sceneRef.current?.animationId || 0);
-      renderer.dispose();
+
+      // Remove DOM element first
+      if (containerRef.current?.contains(renderer.domElement)) {
+        containerRef.current.removeChild(renderer.domElement);
+      }
+
+      // Dispose materials and textures
       Object.values(materials).forEach(m => m.dispose());
       Object.values(memoryMaterials).forEach(m => m.dispose());
       Object.values(corridorWallMaterials).forEach(m => m.dispose());
@@ -893,9 +899,10 @@ export function FirstPersonRenderer3D({
       geometries.wallBox.dispose();
       for (const g of geometries.entitySpheres.values()) g.dispose();
 
-      if (containerRef.current?.contains(renderer.domElement)) {
-        containerRef.current.removeChild(renderer.domElement);
-      }
+      // Force release WebGL context to prevent context accumulation
+      renderer.forceContextLoss();
+      renderer.dispose();
+
       sceneRef.current = null;
     };
   }, [width, height, settings.biome, settings.brightness, settings.fogDensity, settings.torchIntensity, enableAnimations, biome]);

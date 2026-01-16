@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Dice3D, DieType } from '../Dice3D';
+import { Dice3D } from '../Dice3D';
+import type { DieType } from '../Dice3D';
 import type { DiceRollEvent, AttackRollResult, DamageRollResult } from '../../types';
 import './DiceRollHUD.css';
 

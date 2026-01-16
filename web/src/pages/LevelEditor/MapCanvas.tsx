@@ -316,7 +316,8 @@ export function MapCanvas({
     setIsDragging(false);
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
+  // Wheel handler for zoom - use native event to avoid passive listener warning
+  const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -326,16 +327,27 @@ export function MapCanvas({
 
     // Zoom toward mouse position
     const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.max(4, Math.min(40, scale * zoomFactor));
-
-    // Adjust offset to zoom toward mouse
-    const scaleRatio = newScale / scale;
-    setOffset({
-      x: mouseX - (mouseX - offset.x) * scaleRatio,
-      y: mouseY - (mouseY - offset.y) * scaleRatio,
+    setScale(prevScale => {
+      const newScale = Math.max(4, Math.min(40, prevScale * zoomFactor));
+      const scaleRatio = newScale / prevScale;
+      setOffset(prevOffset => ({
+        x: mouseX - (mouseX - prevOffset.x) * scaleRatio,
+        y: mouseY - (mouseY - prevOffset.y) * scaleRatio,
+      }));
+      return newScale;
     });
-    setScale(newScale);
-  };
+  }, []);
+
+  // Attach wheel event with { passive: false } to allow preventDefault
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => {
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleWheel]);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -380,7 +392,6 @@ export function MapCanvas({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        onWheel={handleWheel}
         onContextMenu={handleContextMenu}
       />
       <div className="map-canvas-help">

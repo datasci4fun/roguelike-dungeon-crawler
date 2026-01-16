@@ -3,13 +3,22 @@
  *
  * Creates a synthetic first-person view from dungeon tile data
  * and renders it using FirstPersonRenderer3D.
+ *
+ * NOTE: 3D preview is disabled by default to prevent WebGL context
+ * conflicts when navigating between pages. Click "Enable 3D" to activate.
  */
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, lazy, Suspense } from 'react';
 import type { GeneratedDungeon, Room, TileVisual } from '../../services/editorApi';
-import { FirstPersonRenderer3D } from '../../components/SceneRenderer/FirstPersonRenderer3D';
 import type { FirstPersonView, FirstPersonTile, FacingDirection } from '../../hooks/useGameSocket';
 import { ZONE_COLORS } from './types';
+
+// Lazy load the heavy 3D renderer to avoid immediate WebGL context creation
+const FirstPersonRenderer3D = lazy(() =>
+  import('../../components/SceneRenderer/FirstPersonRenderer3D').then(mod => ({
+    default: mod.FirstPersonRenderer3D
+  }))
+);
 
 interface Preview3DProps {
   dungeon: GeneratedDungeon | null;
@@ -136,6 +145,7 @@ function createViewFromDungeon(
 
 export function Preview3D({ dungeon, selectedTile, selectedRoom }: Preview3DProps) {
   const [facingKey, setFacingKey] = useState<string>('north');
+  const [enabled, setEnabled] = useState(false);
 
   const facing = DIRECTIONS[facingKey];
 
@@ -148,9 +158,42 @@ export function Preview3D({ dungeon, selectedTile, selectedRoom }: Preview3DProp
   // Zone color for current position
   const zoneColor = view?.zone_id ? ZONE_COLORS[view.zone_id] : undefined;
 
+  // Show toggle when 3D is disabled
+  if (!enabled) {
+    return (
+      <div className="preview-3d-panel">
+        <div className="preview-toolbar">
+          <span className="preview-title">3D Preview</span>
+          <button
+            className="preview-toggle"
+            onClick={() => setEnabled(true)}
+            title="Enable 3D preview (uses WebGL)"
+          >
+            Enable 3D
+          </button>
+        </div>
+        <div className="preview-placeholder">
+          <p>3D preview disabled to save resources.</p>
+          <button onClick={() => setEnabled(true)}>
+            Enable 3D Preview
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!dungeon) {
     return (
       <div className="preview-3d-panel">
+        <div className="preview-toolbar">
+          <span className="preview-title">3D Preview</span>
+          <button
+            className="preview-toggle active"
+            onClick={() => setEnabled(false)}
+          >
+            Disable 3D
+          </button>
+        </div>
         <div className="preview-placeholder">
           Generate a dungeon to see 3D preview
         </div>
@@ -161,6 +204,15 @@ export function Preview3D({ dungeon, selectedTile, selectedRoom }: Preview3DProp
   if (!selectedTile) {
     return (
       <div className="preview-3d-panel">
+        <div className="preview-toolbar">
+          <span className="preview-title">3D Preview</span>
+          <button
+            className="preview-toggle active"
+            onClick={() => setEnabled(false)}
+          >
+            Disable 3D
+          </button>
+        </div>
         <div className="preview-placeholder">
           Select a tile to see 3D preview
         </div>
@@ -172,6 +224,13 @@ export function Preview3D({ dungeon, selectedTile, selectedRoom }: Preview3DProp
     <div className="preview-3d-panel">
       <div className="preview-toolbar">
         <span className="preview-title">3D Preview</span>
+        <button
+          className="preview-toggle active"
+          onClick={() => setEnabled(false)}
+          title="Disable 3D to free WebGL context"
+        >
+          Disable 3D
+        </button>
         <div className="facing-controls">
           {Object.entries(DIRECTIONS).map(([key, dir]) => (
             <button
@@ -186,16 +245,18 @@ export function Preview3D({ dungeon, selectedTile, selectedRoom }: Preview3DProp
         </div>
       </div>
       <div className="preview-container">
-        <FirstPersonRenderer3D
-          view={view}
-          width={400}
-          height={300}
-          enableAnimations={false}
-          settings={{
-            gridLines: false,
-            showCoordinates: false,
-          }}
-        />
+        <Suspense fallback={<div className="preview-loading">Loading 3D renderer...</div>}>
+          <FirstPersonRenderer3D
+            view={view}
+            width={400}
+            height={300}
+            enableAnimations={false}
+            settings={{
+              gridLines: false,
+              showCoordinates: false,
+            }}
+          />
+        </Suspense>
       </div>
       <div className="preview-info">
         <span>

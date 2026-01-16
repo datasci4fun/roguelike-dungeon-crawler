@@ -557,6 +557,60 @@
 .preview-placeholder {
   height: 200px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #6b7280;
+  font-size: 0.875rem;
+  background: #0a0a0f;
+}
+
+.preview-placeholder p {
+  margin: 0;
+}
+
+.preview-placeholder button {
+  padding: 8px 16px;
+  border: 1px solid #4a90d9;
+  border-radius: 4px;
+  background: transparent;
+  color: #4a90d9;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.preview-placeholder button:hover {
+  background: #4a90d9;
+  color: white;
+}
+
+.preview-toggle {
+  padding: 4px 10px;
+  border: 1px solid #374151;
+  border-radius: 4px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all 0.2s;
+}
+
+.preview-toggle:hover {
+  border-color: #4a90d9;
+  color: #e2e8f0;
+}
+
+.preview-toggle.active {
+  background: rgba(74, 144, 217, 0.2);
+  border-color: #4a90d9;
+  color: #4a90d9;
+}
+
+.preview-loading {
+  height: 200px;
+  display: flex;
   align-items: center;
   justify-content: center;
   color: #6b7280;
