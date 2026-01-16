@@ -28,6 +28,16 @@ class Enemy(Base):
     min_level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     max_level: Mapped[int] = mapped_column(Integer, nullable=False, default=8)
 
+    # D&D-style combat stats
+    armor_class: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    attack_bonus: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    damage_dice: Mapped[str] = mapped_column(String(20), nullable=False, default="1d4")
+
+    # D&D-style ability scores (simplified for enemies)
+    str_score: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    dex_score: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    con_score: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+
     # Optional fields
     ai_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     element: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
@@ -99,6 +109,18 @@ class Race(Base):
     trait_description: Mapped[str] = mapped_column(Text, nullable=False)
     starts_with_feat: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # D&D-style ability score base stats (race starting values)
+    base_str: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    base_dex: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    base_con: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+    base_luck: Mapped[int] = mapped_column(Integer, nullable=False, default=10)
+
+    # D&D-style ability score modifiers (bonuses/penalties)
+    str_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    dex_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    con_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    luck_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def __repr__(self) -> str:
@@ -119,6 +141,17 @@ class PlayerClass(Base):
     def_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     active_abilities: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
     passive_abilities: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
+
+    # D&D-style ability score modifiers (bonuses/penalties from class)
+    str_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    dex_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    con_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    luck_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    # D&D-style hit die and primary stat
+    hit_die: Mapped[str] = mapped_column(String(10), nullable=False, default="d8")
+    primary_stat: Mapped[str] = mapped_column(String(10), nullable=False, default="STR")
+    armor_proficiency: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -268,6 +301,30 @@ class Item(Base):
 
     def __repr__(self) -> str:
         return f"<Item {self.item_id}: {self.name}>"
+
+
+class Weapon(Base):
+    """Weapon definition for D&D-style damage dice."""
+
+    __tablename__ = "game_weapons"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    weapon_id: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    damage_dice: Mapped[str] = mapped_column(String(20), nullable=False)
+    damage_type: Mapped[str] = mapped_column(String(30), nullable=False, default="slashing")
+    stat_used: Mapped[str] = mapped_column(String(10), nullable=False, default="STR")
+    is_ranged: Mapped[bool] = mapped_column(Boolean, default=False)
+    range: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    weight: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    rarity: Mapped[str] = mapped_column(String(20), nullable=False, default="common")
+    properties: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<Weapon {self.weapon_id}: {self.name}>"
 
 
 class GameConstantsMeta(Base):

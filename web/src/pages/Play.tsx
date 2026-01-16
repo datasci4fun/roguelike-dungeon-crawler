@@ -26,6 +26,7 @@ import { LoreCodex } from '../components/LoreCodex';
 import { CharacterWindow } from '../components/CharacterWindow';
 import { BattleRenderer3D } from '../components/BattleRenderer3D';
 import { BattleHUD, type SelectedAction, type TileCoord } from '../components/BattleHUD';
+import { DiceRollHUD } from '../components/DiceRollHUD';
 import { TransitionCurtain } from '../components/TransitionCurtain';
 import { Graphics3DErrorBoundary } from '../components/ErrorBoundary';
 import { GameAnnouncer } from '../components/GameAnnouncer';
@@ -370,6 +371,62 @@ export function Play() {
     }
   }, [gameState?.battle?.floor_level, gameState?.battle?.biome]);
 
+  // Process DICE_ROLL events and pass to DiceRollHUD
+  useEffect(() => {
+    if (!gameState?.events || !gameState.battle) return;
+
+    const diceHUD = (window as unknown as { diceRollHUD?: {
+      addDiceRollEvent: (event: {
+        type: string;
+        dice_notation: string;
+        rolls: number[];
+        modifier: number;
+        total: number;
+        target_ac?: number;
+        target_dc?: number;
+        is_critical?: boolean;
+        is_fumble?: boolean;
+        success?: boolean;
+        luck_applied?: boolean;
+      }, label?: string) => void;
+    } }).diceRollHUD;
+
+    if (!diceHUD) return;
+
+    for (const event of gameState.events) {
+      if (event.type === 'DICE_ROLL') {
+        const data = event.data as {
+          roll_type: string;
+          dice_notation: string;
+          rolls: number[];
+          modifier: number;
+          total: number;
+          target_ac?: number;
+          target_dc?: number;
+          is_critical?: boolean;
+          is_fumble?: boolean;
+          success?: boolean;
+          luck_applied?: boolean;
+          attacker_name?: string;
+        };
+
+        diceHUD.addDiceRollEvent({
+          type: data.roll_type,
+          dice_notation: data.dice_notation,
+          rolls: data.rolls,
+          modifier: data.modifier,
+          total: data.total,
+          target_ac: data.target_ac,
+          target_dc: data.target_dc,
+          is_critical: data.is_critical,
+          is_fumble: data.is_fumble,
+          success: data.success,
+          luck_applied: data.luck_applied,
+        }, data.attacker_name);
+      }
+    }
+  }, [gameState?.events, gameState?.battle]);
+
   // Lore Journal hotkey (J key)
   useEffect(() => {
     const handleJournalKey = (e: KeyboardEvent) => {
@@ -567,6 +624,8 @@ export function Play() {
                       onTileClickHandled={() => setBattleClickedTile(null)}
                       events={gameState.events}
                     />
+                    {/* D&D Dice Roll HUD - shows animated dice during combat */}
+                    <DiceRollHUD position="top-right" />
                   </>
                 ) : use3DMode ? (
                   <Graphics3DErrorBoundary name="FirstPersonRenderer3D">
