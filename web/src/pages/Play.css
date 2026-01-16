@@ -107,9 +107,15 @@
   position: relative; /* For CharacterHUD positioning */
 }
 
-/* When terminal is hidden, scene takes full width */
+/* When terminal is hidden, scene takes full space */
+.game-views.terminal-hidden {
+  /* Ensure the container takes full space */
+}
+
 .game-views.terminal-hidden .scene-wrapper {
   flex: 1 1 100%;
+  min-height: 100%;
+  height: 100%;
 }
 
 .scene-wrapper canvas {
@@ -243,6 +249,13 @@
   .scene-wrapper {
     flex: 1;
     min-height: 300px;
+  }
+
+  /* When terminal hidden in column layout, scene takes full height */
+  .game-views.terminal-hidden .scene-wrapper {
+    flex: 1 1 100%;
+    min-height: 100%;
+    height: 100%;
   }
 
   .play-layout {
