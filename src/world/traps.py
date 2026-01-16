@@ -1,12 +1,15 @@
 """Trap system for v4.0 dungeon mechanics.
 
 Traps can be hidden or visible, triggered by entities, and reset after cooldown.
+Integrates D&D-style saving throws for damage reduction (v6.10).
 """
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional, List, Tuple
 import random
 
 from ..core.constants import TrapType, TRAP_STATS, StatusEffectType
+from ..combat.dnd_combat import make_saving_throw, SavingThrow
+from ..core.dice import calculate_ability_modifier
 
 if TYPE_CHECKING:
     from ..entities.entities import Entity, Player
@@ -68,11 +71,14 @@ class Trap:
         """
         Trigger the trap on an entity.
 
+        Uses D&D-style DEX saving throws when entity has ability scores.
+        Successful save = half damage.
+
         Returns:
-            dict with 'damage', 'effect', 'message'
+            dict with 'damage', 'effect', 'message', 'saving_throw' (optional)
         """
         if not self.is_active:
-            return {'damage': 0, 'effect': None, 'message': ''}
+            return {'damage': 0, 'effect': None, 'message': '', 'saving_throw': None}
 
         self.triggered = True
         self.cooldown_remaining = self.stats['cooldown']
@@ -80,28 +86,65 @@ class Trap:
         # Reveal trap when triggered
         self.hidden = False
 
-        # Calculate damage
+        # Calculate base damage
         damage_min = self.stats['damage_min']
         damage_max = self.stats['damage_max']
-        damage = random.randint(damage_min, damage_max)
+        base_damage = random.randint(damage_min, damage_max)
+
+        # Check for D&D-style saving throw
+        saving_throw = None
+        damage = base_damage
+
+        if hasattr(entity, 'ability_scores') and entity.ability_scores:
+            # Use trap's detection_dc as the save DC
+            save_dc = self.stats.get('detection_dc', 12)
+
+            # Get DEX modifier
+            dex_score = entity.ability_scores.dexterity
+            dex_mod = calculate_ability_modifier(dex_score)
+
+            # Get LUCK modifier for reroll chance
+            luck_score = entity.ability_scores.luck
+            luck_mod = (luck_score - 10) / 20.0  # Normalize to 0-1 range
+
+            # Make the saving throw
+            saving_throw = make_saving_throw(
+                ability_mod=dex_mod,
+                dc=save_dc,
+                ability="DEX",
+                luck_modifier=luck_mod
+            )
+
+            if saving_throw.success:
+                # Half damage on successful save
+                damage = base_damage // 2
 
         # Apply damage
         actual_damage = entity.take_damage(damage)
 
-        # Apply status effect if any
+        # Apply status effect if any (CON save could negate, but we'll keep simple for now)
         effect = self.stats['effect']
         effect_msg = ''
         if effect:
             effect_msg = entity.apply_status_effect(effect, self.name)
 
-        message = f"Triggered {self.name}! Took {actual_damage} damage."
+        # Build message
+        if saving_throw:
+            if saving_throw.success:
+                message = f"Triggered {self.name}! DEX save {saving_throw.total} vs DC {saving_throw.dc} - SUCCESS! Half damage: {actual_damage}."
+            else:
+                message = f"Triggered {self.name}! DEX save {saving_throw.total} vs DC {saving_throw.dc} - FAILED! Took {actual_damage} damage."
+        else:
+            message = f"Triggered {self.name}! Took {actual_damage} damage."
+
         if effect_msg:
             message += f" {effect_msg}"
 
         return {
             'damage': actual_damage,
             'effect': effect,
-            'message': message
+            'message': message,
+            'saving_throw': saving_throw
         }
 
     def tick(self):

@@ -39,6 +39,7 @@ from app.models.game_constants import (
     Hazard,
     StatusEffect,
     Item,
+    Weapon,
     GameConstantsMeta,
 )
 from app.models.asset3d import Asset3D
@@ -103,6 +104,11 @@ SEED_CONFIG = {
         "model": Asset3D,
         "id_field": "asset_id",
     },
+    "weapons": {
+        "file": "weapons.json",
+        "model": Weapon,
+        "id_field": "weapon_id",
+    },
 }
 
 
@@ -132,6 +138,13 @@ def map_enemy_data(data: dict) -> dict:
         "element": data.get("element"),
         "abilities": data.get("abilities"),
         "resistances": data.get("resistances"),
+        # D&D-style combat stats
+        "armor_class": data.get("armor_class", 10),
+        "attack_bonus": data.get("attack_bonus", 0),
+        "damage_dice": data.get("damage_dice", "1d4"),
+        "str_score": data.get("str_score", 10),
+        "dex_score": data.get("dex_score", 10),
+        "con_score": data.get("con_score", 10),
         "created_at": datetime.utcnow(),
     }
 
@@ -167,6 +180,16 @@ def map_race_data(data: dict) -> dict:
         "trait_name": data["trait_name"],
         "trait_description": data["trait_description"],
         "starts_with_feat": data.get("starts_with_feat", False),
+        # D&D-style ability score base stats
+        "base_str": data.get("base_str", 10),
+        "base_dex": data.get("base_dex", 10),
+        "base_con": data.get("base_con", 10),
+        "base_luck": data.get("base_luck", 10),
+        # D&D-style ability score modifiers
+        "str_modifier": data.get("str_modifier", 0),
+        "dex_modifier": data.get("dex_modifier", 0),
+        "con_modifier": data.get("con_modifier", 0),
+        "luck_modifier": data.get("luck_modifier", 0),
         "created_at": datetime.utcnow(),
     }
 
@@ -182,6 +205,15 @@ def map_class_data(data: dict) -> dict:
         "def_modifier": data.get("def_modifier", 0),
         "active_abilities": data.get("active_abilities"),
         "passive_abilities": data.get("passive_abilities"),
+        # D&D-style ability score modifiers
+        "str_modifier": data.get("str_modifier", 0),
+        "dex_modifier": data.get("dex_modifier", 0),
+        "con_modifier": data.get("con_modifier", 0),
+        "luck_modifier": data.get("luck_modifier", 0),
+        # D&D-style hit die and primary stat
+        "hit_die": data.get("hit_die", "d8"),
+        "primary_stat": data.get("primary_stat", "STR"),
+        "armor_proficiency": data.get("armor_proficiency"),
         "created_at": datetime.utcnow(),
     }
 
@@ -299,6 +331,24 @@ def map_asset3d_data(data: dict) -> dict:
     }
 
 
+def map_weapon_data(data: dict) -> dict:
+    """Map weapon JSON data to model fields."""
+    return {
+        "weapon_id": data["id"],
+        "name": data["name"],
+        "description": data.get("description"),
+        "damage_dice": data["damage_dice"],
+        "damage_type": data.get("damage_type", "slashing"),
+        "stat_used": data.get("stat_used", "STR"),
+        "is_ranged": data.get("is_ranged", False),
+        "range": data.get("range"),
+        "weight": data.get("weight", 1.0),
+        "rarity": data.get("rarity", "common"),
+        "properties": data.get("properties"),
+        "created_at": datetime.utcnow(),
+    }
+
+
 # Mapping functions for each table
 DATA_MAPPERS = {
     "enemies": map_enemy_data,
@@ -311,6 +361,7 @@ DATA_MAPPERS = {
     "status_effects": map_status_effect_data,
     "items": map_item_data,
     "assets3d": map_asset3d_data,
+    "weapons": map_weapon_data,
 }
 
 

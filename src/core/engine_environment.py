@@ -2,16 +2,23 @@
 
 Handles traps, hazards, ice sliding, status effects, field pulses,
 and zone evidence discovery.
+
+Integrates D&D-style saving throws for traps (v6.10).
 """
 
 from .messages import MessageCategory, MessageImportance
+from .events import EventType
 
 
 class EnvironmentMixin:
     """Mixin providing environment processing methods for GameEngine."""
 
     def _process_traps(self):
-        """Process traps at player's current position."""
+        """Process traps at player's current position.
+
+        Uses D&D-style DEX saving throws when player has ability scores.
+        Emits DICE_ROLL events for frontend dice visualization.
+        """
         if not self.player:
             return
 
@@ -22,6 +29,25 @@ class EnvironmentMixin:
 
         result = trap.trigger(self.player)
         if result:
+            # Emit DICE_ROLL event for saving throw if one was made
+            saving_throw = result.get('saving_throw')
+            if saving_throw and hasattr(self, 'event_queue') and self.event_queue:
+                self.event_queue.emit(
+                    EventType.DICE_ROLL,
+                    roll_type='saving_throw',
+                    dice_notation='1d20',
+                    rolls=[saving_throw.d20_roll],
+                    modifier=saving_throw.ability_mod,
+                    total=saving_throw.total,
+                    target_dc=saving_throw.dc,
+                    is_success=saving_throw.success,
+                    is_natural_20=saving_throw.is_natural_20,
+                    is_natural_1=saving_throw.is_natural_1,
+                    luck_applied=saving_throw.luck_applied,
+                    ability=saving_throw.ability,
+                    source=trap.name
+                )
+
             if result.get('message'):
                 self.add_message(result['message'])
 
