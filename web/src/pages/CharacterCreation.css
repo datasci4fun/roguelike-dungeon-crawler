@@ -466,3 +466,194 @@
     gap: 0.25rem;
   }
 }
+
+/* ============================================
+   Ability Scores Preview
+   ============================================ */
+
+.ability-scores-preview {
+  background: rgba(80, 250, 123, 0.05);
+  border: 1px solid rgba(80, 250, 123, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ability-scores-preview h3 {
+  font-size: 0.9rem;
+  color: #8be9fd;
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.ability-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.ability-label {
+  font-size: 0.7rem;
+  color: #f1fa8c;
+  font-weight: 600;
+}
+
+.ability-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #f8f8f2;
+}
+
+.ability-mod {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.ability-mod.positive {
+  color: #50fa7b;
+}
+
+.ability-mod.negative {
+  color: #ff5555;
+}
+
+.reroll-stats-button {
+  margin-top: 0.75rem;
+  padding: 0.4rem 1rem;
+  background: transparent;
+  border: 1px solid #888;
+  border-radius: 4px;
+  color: #888;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: block;
+  width: 100%;
+}
+
+.reroll-stats-button:hover:not(:disabled) {
+  border-color: #f1fa8c;
+  color: #f1fa8c;
+}
+
+/* Roll Stats Button */
+.roll-stats-button {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(145deg, #8be9fd 0%, #6bc5e0 100%);
+  border: none;
+  border-radius: 8px;
+  color: #0a0a12;
+  font-size: 1rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.roll-stats-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(139, 233, 253, 0.4);
+}
+
+.roll-stats-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Stat Roller Overlay
+   ============================================ */
+
+.stat-roller-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.85);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: overlayFadeIn 0.3s ease;
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.stat-roller-modal {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.stat-roller-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 85, 85, 0.2);
+  border: 1px solid #ff5555;
+  border-radius: 50%;
+  color: #ff5555;
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-roller-close:hover {
+  background: #ff5555;
+  color: #1a1a2e;
+}
+
+/* Mobile responsiveness for ability grid */
+@media (max-width: 600px) {
+  .ability-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .stat-roller-modal {
+    max-width: 95vw;
+    padding: 0 0.5rem;
+  }
+
+  .stat-roller-close {
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+  }
+}

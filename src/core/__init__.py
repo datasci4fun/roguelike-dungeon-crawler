@@ -12,6 +12,13 @@ from .commands import (
     INVENTORY_COMMANDS, SCROLL_COMMANDS,
     get_movement_delta, get_item_index
 )
+from .dice import (
+    DiceRoll, DiceSpec,
+    roll_die, roll_dice, roll_notation, parse_dice_notation,
+    roll_d20, roll_d20_with_modifier, roll_stat,
+    roll_d4, roll_d6, roll_d8, roll_d10, roll_d12, roll_d100,
+    calculate_ability_modifier
+)
 from .constants import (
     TileType, GameState, UIMode, DungeonTheme, RoomType, EnemyType,
     ItemRarity, EquipmentSlot,
@@ -40,5 +47,7 @@ from .constants import (
 __all__ = [
     'Game', 'TileType', 'GameState', 'UIMode', 'DungeonTheme', 'RoomType', 'EnemyType',
     'EventType', 'GameEvent', 'EventQueue', 'get_event_queue', 'reset_event_queue',
-    'Command', 'CommandType', 'get_movement_delta', 'get_item_index'
+    'Command', 'CommandType', 'get_movement_delta', 'get_item_index',
+    'DiceRoll', 'DiceSpec', 'roll_die', 'roll_dice', 'roll_notation',
+    'roll_d20', 'roll_d20_with_modifier', 'calculate_ability_modifier'
 ]

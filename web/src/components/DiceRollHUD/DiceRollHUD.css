@@ -1,0 +1,186 @@
+.dice-roll-hud {
+  position: absolute;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+/* Position variants */
+.dice-roll-hud--top-left {
+  top: 16px;
+  left: 16px;
+}
+
+.dice-roll-hud--top-right {
+  top: 16px;
+  right: 16px;
+}
+
+.dice-roll-hud--bottom-left {
+  bottom: 16px;
+  left: 16px;
+}
+
+.dice-roll-hud--bottom-right {
+  bottom: 16px;
+  right: 16px;
+}
+
+/* Roll container */
+.dice-roll-hud__roll {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(26, 26, 46, 0.95);
+  border: 2px solid rgba(139, 233, 253, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  animation: rollSlideIn 0.3s ease-out;
+  min-width: 150px;
+}
+
+.dice-roll-hud__roll.critical {
+  border-color: #50fa7b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 20px rgba(80, 250, 123, 0.3);
+  animation: rollSlideIn 0.3s ease-out, criticalPulse 0.5s ease-in-out infinite alternate;
+}
+
+.dice-roll-hud__roll.fumble {
+  border-color: #ff5555;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 85, 85, 0.3);
+}
+
+@keyframes rollSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes criticalPulse {
+  from {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 20px rgba(80, 250, 123, 0.3);
+  }
+  to {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 35px rgba(80, 250, 123, 0.5);
+  }
+}
+
+/* Label */
+.dice-roll-hud__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #8be9fd;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Dice container */
+.dice-roll-hud__dice-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+}
+
+/* Result text */
+.dice-roll-hud__result {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #f8f8f2;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.dice-roll-hud__roll.critical .dice-roll-hud__result {
+  color: #50fa7b;
+  text-shadow: 0 0 8px rgba(80, 250, 123, 0.5);
+}
+
+.dice-roll-hud__roll.fumble .dice-roll-hud__result {
+  color: #ff5555;
+  text-shadow: 0 0 8px rgba(255, 85, 85, 0.5);
+}
+
+/* Luck indicator */
+.dice-roll-hud__luck-indicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(145deg, #ffd700 0%, #f1c40f 100%);
+  color: #1a1a2e;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+}
+
+/* Queue indicator */
+.dice-roll-hud__queue {
+  background: rgba(26, 26, 46, 0.8);
+  color: #888;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dice-roll-hud {
+    transform: scale(0.85);
+    transform-origin: top right;
+  }
+
+  .dice-roll-hud--top-left,
+  .dice-roll-hud--bottom-left {
+    transform-origin: top left;
+  }
+
+  .dice-roll-hud--bottom-left,
+  .dice-roll-hud--bottom-right {
+    transform-origin: bottom;
+  }
+}
+
+/* Multiple dice display (for damage rolls with multiple dice) */
+.dice-roll-hud__multi-dice {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 200px;
+}
+
+.dice-roll-hud__multi-dice .dice3d {
+  --dice-size: 45px;
+}
+
+/* Animation for result reveal */
+.dice-roll-hud__result-reveal {
+  animation: resultReveal 0.3s ease-out 0.5s both;
+}
+
+@keyframes resultReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
