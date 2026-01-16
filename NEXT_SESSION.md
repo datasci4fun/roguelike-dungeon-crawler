@@ -30,6 +30,19 @@ Connected D&D combat to frontend dice visualization:
 | **Enemy Attacks** | D20 attack roll + damage dice | Complete |
 | **Event Processing** | Frontend receives and displays rolls | Complete |
 
+### Database & Game Integration (PR #76)
+
+Full integration of D&D mechanics into database and game systems:
+
+| Component | Description | Status |
+|-----------|-------------|--------|
+| **Alembic Migration** | Migration 005 for D&D columns | Complete |
+| **Enemy D&D Stats** | All 28 enemies have AC, attack_bonus, damage_dice | Complete |
+| **Seed Sync** | Updated seed_database.py with D&D mappers | Complete |
+| **Trap Saving Throws** | DEX save for half damage on traps | Complete |
+| **Weapon Damage Dice** | Equipped weapon's dice used in combat | Complete |
+| **Finesse Weapons** | Daggers use DEX for attack/damage | Complete |
+
 ---
 
 ## Backend Implementation
@@ -47,13 +60,15 @@ Connected D&D combat to frontend dice visualization:
 **`src/combat/dnd_combat.py`** - D&D combat resolution
 - `make_attack_roll()` - 1d20 + modifier vs AC
 - `make_damage_roll()` - weapon dice + modifier
+- `make_saving_throw()` - 1d20 + ability mod vs DC
 - `AttackRoll`, `DamageRoll`, `SavingThrow` dataclasses
 
 **`src/core/events.py`** - Added `DICE_ROLL` event type
 
 **`src/combat/battle_player_actions.py`** - Player attack integration
 - D20 attack roll vs target AC
-- Weapon damage dice + STR/DEX modifier
+- Uses equipped weapon's damage_dice
+- Finesse weapons (daggers) use DEX
 - Emits DICE_ROLL events for HUD display
 - Critical hits (nat 20) double damage dice
 - Fumbles (nat 1) auto-miss
@@ -62,6 +77,21 @@ Connected D&D combat to frontend dice visualization:
 - D20 attack roll vs player AC
 - Enemy damage dice + modifier
 - Emits DICE_ROLL events for enemy turns
+
+**`src/world/traps.py`** - Trap saving throws
+- DEX save vs trap detection_dc
+- Success = half damage
+- Returns SavingThrow for event emission
+
+**`src/core/engine_environment.py`** - Trap event emission
+- Emits DICE_ROLL events for saving throws
+
+**`src/items/item/equipment.py`** - Weapon damage dice
+- Added `damage_dice` and `stat_used` to Weapon class
+- Dagger: 1d4, DEX (finesse)
+- Sword: 1d8, STR
+- Axe: 1d10, STR
+- Dragon Slayer: 2d8, STR
 
 ### Database Models
 
@@ -92,6 +122,12 @@ Connected D&D combat to frontend dice visualization:
 
 **`data/seeds/weapons.json`** (new) - 16 weapons with D&D damage dice
 
+**`data/seeds/enemies.json`** - All 28 enemies with D&D stats:
+- armor_class (10-16)
+- attack_bonus (0-7)
+- damage_dice (1d4 to 2d10)
+- str/dex/con_score (6-18)
+
 ---
 
 ## Frontend Implementation
@@ -106,6 +142,7 @@ Connected D&D combat to frontend dice visualization:
 **`web/src/components/DiceRollHUD/`** - Combat dice overlay
 - Queue system for multiple rolls
 - Shows attack vs AC, damage, critical/fumble
+- Shows saving throws for traps
 - Positioned top-right during battle
 
 **`web/src/components/StatRoller/`** - Character creation roller
@@ -129,37 +166,43 @@ Connected D&D combat to frontend dice visualization:
 4. **DICE_ROLL Event**: Emitted for frontend visualization
 5. **LUCK Influence**: Higher luck = chance to reroll and take better result
 
+### Trap Flow
+
+1. **Trigger**: Player steps on active trap
+2. **DEX Save**: 1d20 + DEX mod vs trap detection_dc
+3. **Damage**: Full damage on fail, half on success
+4. **DICE_ROLL Event**: Emitted with roll_type='saving_throw'
+
 ### Event Data Structure
 ```python
 DICE_ROLL event:
-- roll_type: 'attack' | 'damage'
+- roll_type: 'attack' | 'damage' | 'saving_throw'
 - dice_notation: '1d20', '1d6', etc.
 - rolls: [int, ...]
 - modifier: int
 - total: int
 - target_ac: int (attack only)
+- target_dc: int (saving throw only)
 - is_hit: bool
 - is_critical: bool
 - is_fumble: bool
+- is_success: bool (saving throw)
 - luck_applied: bool
 - attacker_name: str
+- ability: str (saving throw - 'DEX', 'CON', etc.)
+- source: str (saving throw - trap name)
 ```
 
 ---
 
 ## Next Tasks
 
-### Remaining Integration
-1. **Database Migration** - Create Alembic migration for new columns
-2. **Seed Data Sync** - Run seed sync to update database with new fields
-3. **Saving Throws** - Integrate with traps and hazards (DEX save to dodge)
-4. **Weapon Equipment** - Use equipped weapon's damage dice
-
 ### Potential Improvements
 1. **Skill Checks** - Add ability-based skill checks
 2. **Status Effect Saves** - CON saves vs poison, etc.
 3. **Initiative System** - DEX-based turn order
 4. **Proficiency Bonus** - Level-based attack bonus
+5. **Hazard Saves** - Extend saving throws to environmental hazards
 
 ---
 
@@ -169,15 +212,20 @@ DICE_ROLL event:
 # Using docker-compose (recommended)
 docker-compose up -d
 
-# Or manually:
-cd server && .venv/Scripts/python -m uvicorn app.main:app --reload --port 8000
-cd web && npm run dev
+# Run migration and seed sync
+docker exec roguelike_backend alembic upgrade head
+docker exec roguelike_backend python /app/seed_database.py --verbose
+
+# Invalidate cache
+curl -X POST http://localhost:8000/api/game-constants/cache/invalidate
 ```
 
 **Test the dice system:**
 1. Create new character - roll stats with 3D dice
 2. Enter battle - see dice rolls for attacks
 3. Watch for critical hits and fumbles
+4. Trigger a trap - see DEX saving throw
+5. Equip different weapons - see damage dice change
 
 ---
 
@@ -186,6 +234,7 @@ cd web && npm run dev
 Branch: `develop`
 
 Recent merges:
+- PR #76 - D&D Integration: Database, Saving Throws, and Weapon Dice
 - PR #75 - DICE_ROLL events for D&D combat dice HUD
 - PR #74 - D&D-style ability scores and dice rolling system
 - PR #73 - UI Migration (StatsHUD, GameMessagesPanel, Minimap, etc.)
