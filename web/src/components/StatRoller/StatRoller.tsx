@@ -254,8 +254,8 @@ export function StatRoller({ race, playerClass, onComplete, allowReroll = true }
                         />
                       ))
                     ) : (
-                      // Placeholder dice while rolling
-                      [1, 2, 3].map(i => (
+                      // Placeholder dice while rolling (use same keys 0,1,2 as actual dice)
+                      [0, 1, 2].map(i => (
                         <Dice3D
                           key={i}
                           dieType="d6"

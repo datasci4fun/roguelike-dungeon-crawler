@@ -162,6 +162,17 @@ export function Dice3D({
     }
   }, [rolling, isRolling, getResultRotation, onRollComplete]);
 
+  // Handle external rolling prop becoming false while still animating
+  // This can happen if the parent decides the roll is complete before our animation finishes
+  useEffect(() => {
+    if (!rolling && isRolling) {
+      // External says stop rolling - force stop the animation
+      setIsRolling(false);
+      setCurrentRotation(getResultRotation());
+      setShowResult(true);
+    }
+  }, [rolling, isRolling, getResultRotation]);
+
   // Set initial rotation when not rolling
   useEffect(() => {
     if (!rolling && !isRolling) {
