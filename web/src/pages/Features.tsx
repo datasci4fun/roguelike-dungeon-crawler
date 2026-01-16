@@ -61,7 +61,7 @@ const ACHIEVEMENT_CATEGORIES = [
   { name: 'Progression', count: 6, icon: '📈', examples: ['Champion', 'Deep Delver', 'Mighty Hero'] },
   { name: 'Efficiency', count: 7, icon: '⚡', examples: ['Speedrunner', 'Untouchable', 'Purist'] },
   { name: 'Collection', count: 4, icon: '💎', examples: ['Treasure Hunter', 'Collector', 'Hoarder'] },
-  { name: 'Special', count: 5, icon: '✨', examples: ['Comeback King', 'High Roller', '???'] },
+  { name: 'Special', count: 6, icon: '✨', examples: ['Comeback King', 'High Roller', '???'] },
 ];
 
 // Ending types
@@ -302,7 +302,7 @@ export function Features() {
         <section className="features-section achievements-section">
           <h2 className="section-title">
             <span className="title-decoration">═══</span>
-            33 Achievements to Unlock
+            34 Achievements to Unlock
             <span className="title-decoration">═══</span>
           </h2>
           <p className="section-intro">

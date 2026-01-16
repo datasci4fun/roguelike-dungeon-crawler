@@ -103,7 +103,7 @@ const PROJECT_STATS = [
   { label: 'Game Systems', value: '30+', icon: '⚙️' },
   { label: 'Dungeon Floors', value: '8', icon: '🏰' },
   { label: 'Unique Enemies', value: '28', icon: '👹' },
-  { label: 'Achievements', value: '33', icon: '🏆' },
+  { label: 'Achievements', value: '34', icon: '🏆' },
   { label: 'Lore Entries', value: '32', icon: '📜' },
   { label: 'Audio Files', value: '50+', icon: '🎼' },
   { label: 'Ending Variants', value: '6', icon: '🎭' },
