@@ -1,14 +1,14 @@
-# Next Session - v6.12.0 Released & Documented
+# Next Session - v6.12.0 Released & Fully Audited
 
-## Session Date: 2026-01-16
+## Session Date: 2026-01-15
 
 ## Release Complete
 
 **v6.12.0 - D&D Combat System** has been released and fully documented.
 
 - GitHub Release: https://github.com/datasci4fun/roguelike-dungeon-crawler/releases/tag/v6.12.0
-- Tag: `v6.12.0` at commit `ee3de1a`
-- Branch: `master` and `develop` synced at `8b99ca8`
+- Tag: `v6.12.0`
+- Branch: `master` and `develop` synced at `c5e64a4`
 
 ---
 
@@ -38,9 +38,13 @@
 | **HelpWindow** | Controls reference |
 | **Terminal Toggle** | Tab key to hide/show |
 
-### Documentation Updates
+---
 
-All documentation and frontend pages synced to v6.12.0:
+## Documentation Audit Complete
+
+All documentation and frontend pages audited and synced to v6.12.0:
+
+### Backend Documentation
 
 | File | Update |
 |------|--------|
@@ -49,11 +53,32 @@ All documentation and frontend pages synced to v6.12.0:
 | `FUTURE_TODO.md` | Year fix, TODO 4 complete |
 | `docs/CHANGELOG.md` | Added v6.8.0-v6.12.0 |
 | `docs/FEATURES.md` | Added D&D Combat section |
-| `web/src/data/changelogData.ts` | Regenerated |
-| `web/src/data/roadmapData.ts` | Added D&D + UI items |
-| `web/src/pages/Home.tsx` | v6.3 → v6.12 |
-| `web/src/pages/About.tsx` | 50k→112k, 80+→115+ |
-| `web/src/pages/Presentation/slideData.ts` | All stats updated |
+
+### Frontend Data Files
+
+| File | Update |
+|------|--------|
+| `web/src/data/changelogData.ts` | Regenerated from CHANGELOG.md |
+| `web/src/data/roadmapData.ts` | Added D&D + UI migration items |
+
+### Frontend Pages
+
+| File | Update |
+|------|--------|
+| `Home.tsx` | v6.3 → v6.12 footer |
+| `About.tsx` | 50k→112k lines, 80+→115+ components, 33→34 achievements |
+| `Features.tsx` | 33→34 achievements, Special category 5→6 |
+| `Presentation/slideData.ts` | All stats updated |
+
+### Pages Verified (No Updates Needed)
+
+| Page | Reason |
+|------|--------|
+| GameGuide.tsx | API-driven (dynamic) |
+| BuildInfo.tsx | API-driven (dynamic) |
+| LorePage.tsx | API-driven (dynamic) |
+| Bestiary.tsx | API-driven (dynamic) |
+| ItemCompendium.tsx | API-driven (dynamic) |
 
 ### New Skill Added
 
@@ -72,6 +97,7 @@ Locations:
 | Lines of Code | 112,000+ |
 | React Components | 115+ |
 | Python Modules | 213 |
+| Achievements | 34 |
 | Merged PRs | 76 |
 | Commits | 640+ |
 | Development Time | ~2.5 weeks |
@@ -127,15 +153,15 @@ curl -X POST http://localhost:8000/api/game-constants/cache/invalidate
 
 ```
 Branch: develop
-Latest: 8b99ca8
+Latest: c5e64a4
 Tag: v6.12.0
 Release: Published
 master: synced
 ```
 
 Recent commits:
+- `c5e64a4` - docs: fix achievement counts in Features and About pages
+- `2ddff2d` - docs: update NEXT_SESSION.md
 - `8b99ca8` - feat: add release-docs skill to repo
 - `88e55d3` - feat: add release-docs skill (.claude)
 - `d08c448` - docs: update roadmap
-- `ee3de1a` - docs: update About/Home pages
-- `0f177f4` - docs: update documentation for v6.12.0
