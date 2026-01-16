@@ -35,6 +35,8 @@ class SecretFlag(Enum):
     FULL_CODEX = auto()      # Found all codex evidence entries
     ALL_ARTIFACTS = auto()   # Collected all 5 artifacts in one run
     ALL_WARDENS = auto()     # Defeated all 8 wardens
+    PUZZLE_SOLVER = auto()   # Completed any exploration puzzle (v7.0)
+    PUZZLE_MASTER = auto()   # Completed all floor puzzles (v7.0)
 
     # Playstyle-based (behavior patterns)
     MERCIFUL_DESCENT = auto()   # Never killed on at least 3 floors
@@ -83,6 +85,9 @@ class SecretProgress:
     floors_with_zero_kills: Set[int] = field(default_factory=set)
     potions_ever_used: bool = False
 
+    # v7.0: Puzzle tracking
+    puzzles_solved: Set[str] = field(default_factory=set)  # puzzle_ids
+
     def trigger(self, flag: SecretFlag):
         """Silently trigger a secret flag."""
         self.triggered.add(flag.name)
@@ -113,6 +118,13 @@ class SecretProgress:
     def record_micro_event(self, floor: int):
         """Record witnessing a micro-event on a floor."""
         self.micro_events_witnessed.add(floor)
+
+    def record_puzzle_solved(self, puzzle_id: str):
+        """Record completing a puzzle (v7.0)."""
+        self.puzzles_solved.add(puzzle_id)
+        # First puzzle triggers PUZZLE_SOLVER
+        if len(self.puzzles_solved) == 1:
+            self.trigger(SecretFlag.PUZZLE_SOLVER)
 
     def evaluate_floor_sweep(self, floor: int, all_enemies_dead: bool):
         """Evaluate if floor was swept (all enemies killed)."""
@@ -173,6 +185,7 @@ class SecretProgress:
             'micro_events_witnessed': list(self.micro_events_witnessed),
             'floors_with_zero_kills': list(self.floors_with_zero_kills),
             'potions_ever_used': self.potions_ever_used,
+            'puzzles_solved': list(self.puzzles_solved),  # v7.0
         }
 
     @classmethod
@@ -185,6 +198,7 @@ class SecretProgress:
             micro_events_witnessed=set(data.get('micro_events_witnessed', [])),
             floors_with_zero_kills=set(data.get('floors_with_zero_kills', [])),
             potions_ever_used=data.get('potions_ever_used', False),
+            puzzles_solved=set(data.get('puzzles_solved', [])),  # v7.0
         )
 
 
@@ -293,6 +307,10 @@ class CompletionLedger:
     def record_battle_escaped(self):
         """Record fleeing from a battle (v6.0.5)."""
         self.battles_escaped += 1
+
+    def record_puzzle_solved(self, puzzle_id: str):
+        """Record completing an exploration puzzle (v7.0)."""
+        self.secret_progress.record_puzzle_solved(puzzle_id)
 
     @property
     def lore_count(self) -> int:

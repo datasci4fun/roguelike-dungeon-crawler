@@ -135,6 +135,14 @@ export function mapKeyToCommand(key: string, uiMode: string): string | null {
     case '/':
       return 'SEARCH';
 
+    // v7.0: Interaction with environment
+    case 'g':
+    case 'G':
+      return 'INTERACT';
+    case 'v':
+    case 'V':
+      return 'EXAMINE';
+
     // For "press any key" prompts
     case 'Enter':
     case ' ':

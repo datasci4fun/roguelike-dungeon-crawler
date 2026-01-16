@@ -86,6 +86,10 @@ class CommandType(Enum):
     # Searching
     SEARCH = auto()      # Search for hidden secrets (X key)
 
+    # Interaction (v7.0 Immersive Exploration)
+    INTERACT = auto()    # Interact with element in facing direction (E key)
+    EXAMINE = auto()     # Examine element for description (click or E on mural)
+
     # Special
     SKIP = auto()      # Skip intro/cutscene
     ANY_KEY = auto()   # Any key pressed (for "press any key" prompts)
@@ -184,6 +188,11 @@ SCROLL_COMMANDS = {
     CommandType.SCROLL_DOWN,
     CommandType.PAGE_UP,
     CommandType.PAGE_DOWN,
+}
+
+INTERACTION_COMMANDS = {
+    CommandType.INTERACT,
+    CommandType.EXAMINE,
 }
 
 
