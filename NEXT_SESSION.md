@@ -1,14 +1,14 @@
-# Next Session - v6.12.0 Released
+# Next Session - v6.12.0 Released & Documented
 
 ## Session Date: 2026-01-16
 
 ## Release Complete
 
-**v6.12.0 - D&D Combat System** has been released.
+**v6.12.0 - D&D Combat System** has been released and fully documented.
 
 - GitHub Release: https://github.com/datasci4fun/roguelike-dungeon-crawler/releases/tag/v6.12.0
 - Tag: `v6.12.0` at commit `ee3de1a`
-- Branch: `master` and `develop` are in sync
+- Branch: `master` and `develop` synced at `8b99ca8`
 
 ---
 
@@ -40,11 +40,28 @@
 
 ### Documentation Updates
 
-All documentation synced to v6.12.0:
-- README.md, STATE.md, FUTURE_TODO.md
-- docs/CHANGELOG.md, docs/FEATURES.md
-- Presentation slides (112k+ lines, 115+ components)
-- About page stats updated
+All documentation and frontend pages synced to v6.12.0:
+
+| File | Update |
+|------|--------|
+| `STATE.md` | v6.9.0 → v6.12.0 |
+| `README.md` | v6.4.0 → v6.12.0 |
+| `FUTURE_TODO.md` | Year fix, TODO 4 complete |
+| `docs/CHANGELOG.md` | Added v6.8.0-v6.12.0 |
+| `docs/FEATURES.md` | Added D&D Combat section |
+| `web/src/data/changelogData.ts` | Regenerated |
+| `web/src/data/roadmapData.ts` | Added D&D + UI items |
+| `web/src/pages/Home.tsx` | v6.3 → v6.12 |
+| `web/src/pages/About.tsx` | 50k→112k, 80+→115+ |
+| `web/src/pages/Presentation/slideData.ts` | All stats updated |
+
+### New Skill Added
+
+**`/release-docs`** - Documentation checklist for releases
+
+Locations:
+- `.claude/skills/release-docs/SKILL.md` (runtime)
+- `skills/release-docs/SKILL.md` (version controlled)
 
 ---
 
@@ -109,17 +126,16 @@ curl -X POST http://localhost:8000/api/game-constants/cache/invalidate
 ## Git Status
 
 ```
-Branch: develop (in sync with master)
+Branch: develop
+Latest: 8b99ca8
 Tag: v6.12.0
 Release: Published
+master: synced
 ```
 
-Recent PRs:
-- #77 - D&D System Enhancements
-- #76 - D&D Integration
-- #75 - DICE_ROLL Events
-- #74 - D&D Stats & Dice
-- #73 - UI Migration
-- #71 - CharacterWindow
-- #70 - Combat Polish
-- #68-69 - 3D Asset Pipeline
+Recent commits:
+- `8b99ca8` - feat: add release-docs skill to repo
+- `88e55d3` - feat: add release-docs skill (.claude)
+- `d08c448` - docs: update roadmap
+- `ee3de1a` - docs: update About/Home pages
+- `0f177f4` - docs: update documentation for v6.12.0
