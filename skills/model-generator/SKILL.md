@@ -52,15 +52,23 @@ Plan the model structure:
 3. Define material properties
 4. Calculate relative positions
 
-**Available Primitives:**
-| Primitive | Use Cases |
-|-----------|-----------|
-| `BoxGeometry` | Crates, walls, planks, books |
-| `CylinderGeometry` | Columns, barrels, candles, legs |
-| `SphereGeometry` | Orbs, heads, decorations |
-| `TorusGeometry` | Rings, handles, frames |
-| `ConeGeometry` | Spikes, roofs, flames |
-| `PlaneGeometry` | Signs, paintings, rugs |
+**⚠️ CRITICAL: Simplicity First**
+
+Keep models simple and use box-based geometry whenever possible:
+- **Target: ~100 lines of code** for simple props, ~150 for medium complexity
+- **Prefer BoxGeometry** for all rectangular/cubic shapes (chests, furniture, architectural elements)
+- **Avoid complex rotations** on cylinders - they cause alignment issues
+- **No ExtrudeGeometry or LatheGeometry** - too complex and error-prone
+
+**Available Primitives (in order of preference):**
+| Primitive | Use Cases | Notes |
+|-----------|-----------|-------|
+| `BoxGeometry` | **Use for most things** - crates, walls, planks, chests, furniture | Easiest to position and align |
+| `CylinderGeometry` | Columns, candles, legs | Avoid rotation.x/z - causes alignment issues |
+| `SphereGeometry` | Orbs, heads, decorations | Use sparingly |
+| `TorusGeometry` | Rings, handles | Simple use only - no complex positioning |
+| `ConeGeometry` | Spikes, roofs, flames | Keep upright (no rotation) |
+| `PlaneGeometry` | Signs, paintings, rugs | Flat surfaces only |
 
 ### Step 3: Generate the Model Code
 
@@ -128,9 +136,10 @@ Update `web/src/models/index.ts` to include the new model:
 
 After generating the model:
 1. Verify TypeScript compilation: `cd web && npx tsc --noEmit`
-2. Direct user to Level Editor at `/level-editor`
-3. They can click a tile and see the 3D preview
+2. Direct user to **Asset Viewer** at `/asset-viewer` → **Procedural tab**
+3. Select the new model from the list to see the 3D preview with auto-rotation
 4. Accept feedback for refinements
+5. Alternatively, preview in Level Editor at `/level-editor`
 
 ---
 
@@ -197,79 +206,127 @@ Tips:
 
 ---
 
-## Example: Creating a Wooden Barrel
+## Example: Creating a Treasure Chest
 
-User: "Create a wooden barrel with iron bands"
+User: "Create a treasure chest"
 
 1. **Design Plan:**
-   - Body: Cylinder (slightly wider in middle)
-   - Bands: 3 thin torus shapes
-   - Material: darkWood for body, iron for bands
+   - Base: Box for the main body
+   - Lid: Box (positioned on top, optionally tilted when open)
+   - Details: Boxes for bands, corners, and lock plate
+   - Materials: darkWood for body, bronze for bands, gold for lock
 
-2. **Generated Code:**
+2. **Generated Code (~100 lines, all BoxGeometry):**
 
 ```typescript
+/**
+ * Treasure Chest Model
+ * A simple wooden treasure chest with metal bands and gold lock
+ */
+
 import * as THREE from 'three';
 import { createMaterial } from './materials';
 
-export interface BarrelOptions {
+export interface TreasureChestOptions {
   scale?: number;
-  rotation?: number;
+  open?: boolean;
 }
 
-export function createBarrel(options: BarrelOptions = {}): THREE.Group {
-  const { scale = 1.0 } = options;
+export function createTreasureChest(options: TreasureChestOptions = {}): THREE.Group {
+  const { scale = 1.0, open = false } = options;
 
   const group = new THREE.Group();
 
-  // Wood body (wider in middle for barrel shape)
+  // Materials
   const woodMaterial = createMaterial('darkWood');
-  const bodyGeometry = new THREE.CylinderGeometry(
-    0.35 * scale,  // top radius
-    0.35 * scale,  // bottom radius
-    0.9 * scale,   // height
-    12             // segments
-  );
-  const body = new THREE.Mesh(bodyGeometry, woodMaterial);
-  body.position.y = 0.45 * scale;
-  group.add(body);
-
-  // Bulge in middle
-  const bulgeGeometry = new THREE.CylinderGeometry(
-    0.38 * scale,
-    0.38 * scale,
-    0.4 * scale,
-    12
-  );
-  const bulge = new THREE.Mesh(bulgeGeometry, woodMaterial);
-  bulge.position.y = 0.45 * scale;
-  group.add(bulge);
-
-  // Iron bands
+  const bronzeMaterial = createMaterial('bronze');
+  const goldMaterial = createMaterial('gold');
   const ironMaterial = createMaterial('iron');
-  const bandGeometry = new THREE.TorusGeometry(0.36 * scale, 0.02 * scale, 6, 16);
 
-  const bandPositions = [0.15, 0.45, 0.75];
-  for (const yPos of bandPositions) {
-    const band = new THREE.Mesh(bandGeometry, ironMaterial);
-    band.position.y = yPos * scale;
-    band.rotation.x = Math.PI / 2;
-    group.add(band);
+  // Dimensions
+  const w = 0.8 * scale;  // width (X)
+  const d = 0.5 * scale;  // depth (Z)
+  const h = 0.35 * scale; // base height (Y)
+  const lidH = 0.15 * scale; // lid height
+
+  // === BASE BOX ===
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(w, h, d),
+    woodMaterial
+  );
+  base.position.y = h / 2;
+  group.add(base);
+
+  // === LID (simple box) ===
+  const lid = new THREE.Mesh(
+    new THREE.BoxGeometry(w, lidH, d),
+    woodMaterial
+  );
+  if (open) {
+    lid.position.set(0, h + lidH / 2 + 0.1 * scale, -d / 2 + 0.05 * scale);
+    lid.rotation.x = -Math.PI / 3;
+  } else {
+    lid.position.y = h + lidH / 2;
   }
+  group.add(lid);
+
+  // === HORIZONTAL BANDS (bronze boxes) ===
+  const bandH = 0.04 * scale;
+  const bandT = 0.02 * scale;
+
+  const frontBand = new THREE.Mesh(
+    new THREE.BoxGeometry(w + 0.01, bandH, bandT),
+    bronzeMaterial
+  );
+  frontBand.position.set(0, h * 0.4, d / 2);
+  group.add(frontBand);
+
+  const backBand = frontBand.clone();
+  backBand.position.z = -d / 2;
+  group.add(backBand);
+
+  // === CORNER BRACKETS (iron boxes) ===
+  const bracketSize = 0.05 * scale;
+  const bracketGeo = new THREE.BoxGeometry(bracketSize, bracketSize, bracketSize);
+
+  const corners = [
+    [-w/2, 0, d/2], [w/2, 0, d/2],
+    [-w/2, 0, -d/2], [w/2, 0, -d/2]
+  ];
+  corners.forEach(([x, y, z]) => {
+    const bracket = new THREE.Mesh(bracketGeo, ironMaterial);
+    bracket.position.set(x, y + bracketSize/2, z);
+    group.add(bracket);
+  });
+
+  // === LOCK PLATE (gold box) ===
+  const lockPlate = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1 * scale, 0.08 * scale, 0.015 * scale),
+    goldMaterial
+  );
+  lockPlate.position.set(0, h * 0.7, d / 2 + 0.008 * scale);
+  group.add(lockPlate);
 
   return group;
 }
 
-export const BARREL_META = {
-  id: 'barrel',
-  name: 'Wooden Barrel',
-  category: 'prop' as const,
-  description: 'A wooden barrel with iron bands',
+export const TREASURE_CHEST_META = {
+  id: 'treasure_chest',
+  name: 'Treasure Chest',
+  category: 'interactive' as const,
+  description: 'A wooden treasure chest with bronze bands and gold lock',
   defaultScale: 1.0,
-  boundingBox: { x: 0.76, y: 0.9, z: 0.76 },
-  tags: ['barrel', 'wood', 'container', 'prop'],
+  boundingBox: { x: 0.8, y: 0.5, z: 0.5 },
+  tags: ['chest', 'treasure', 'container', 'loot', 'interactive', 'wood', 'gold'],
 };
 ```
+
+**Why this works well:**
+- Uses only BoxGeometry (easy to position, no alignment issues)
+- ~100 lines of code
+- Clear dimensions defined upfront
+- Simple Y-positioning (height / 2)
+- Minimal rotation (only lid when open, single axis)
 
 ---
 
@@ -282,10 +339,11 @@ After generating a model:
 3. Verify TypeScript compiles
 4. Provide instructions to preview:
    > Model created! To preview:
-   > 1. Navigate to http://localhost:5173/level-editor
-   > 2. Generate a dungeon
-   > 3. Select a floor tile
-   > 4. The 3D preview will show the area
+   > 1. Navigate to http://localhost:5173/asset-viewer
+   > 2. Click the **Procedural** tab
+   > 3. Select your new model from the list
+   > 4. View the 3D preview with auto-rotation
+   > 5. Click fullscreen icon for larger view
 
 ---
 
@@ -298,6 +356,46 @@ If the user requests changes:
 - "Make it metal" → Switch material preset
 
 Always update the model file and re-verify compilation.
+
+---
+
+## Common Pitfalls to Avoid
+
+**❌ DON'T do these:**
+
+1. **Don't use CylinderGeometry for curved surfaces that need rotation**
+   ```typescript
+   // BAD: Half-cylinder lid with rotation causes alignment nightmares
+   const lid = new THREE.CylinderGeometry(0.4, 0.4, 0.8, 16, 1, false, 0, Math.PI);
+   lid.rotation.z = Math.PI / 2;  // Now nothing aligns
+   ```
+
+2. **Don't use ExtrudeGeometry or complex shapes**
+   ```typescript
+   // BAD: Shape paths are error-prone and hard to debug
+   const shape = new THREE.Shape();
+   shape.moveTo(0, 0);
+   shape.lineTo(0.5, 0);
+   // ... 20 more lines of path coordinates that don't work
+   ```
+
+3. **Don't create overly complex "bulge" effects**
+   ```typescript
+   // BAD: Multiple overlapping cylinders for barrel bulge
+   const bulge = new THREE.CylinderGeometry(0.38, 0.38, 0.4, 12);
+   // Just use a box or simple cylinder
+   ```
+
+4. **Don't exceed ~150 lines for simple models**
+   - If your model needs more code, it's probably too complex
+   - Simplify the design instead of adding complexity
+
+**✅ DO these instead:**
+
+1. **Use boxes for rectangular shapes** (chests, crates, furniture)
+2. **Keep rotations to a single axis** when needed
+3. **Define dimensions as variables** at the top for easy adjustment
+4. **Position with simple formulas** like `height / 2` for Y centering
 
 ---
 
