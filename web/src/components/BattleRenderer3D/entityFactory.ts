@@ -6,6 +6,7 @@
 import * as THREE from 'three';
 import type { BattleEntity } from '../../types';
 import { getModelPathForEnemy } from '../../utils/enemyModels';
+import { createProceduralEnemy } from '../../models';
 import { ENTITY_MODEL_SCALE, ENTITY_MODEL_Y_OFFSET } from './constants';
 import { modelCache } from './modelLoader';
 
@@ -242,9 +243,27 @@ export function createEntity3D(
     cacheSize: modelCache.size
   });
 
+  // Try GLB model first, then procedural model, then sprite fallback
+  let model: THREE.Group | null = null;
+  let modelSource = 'none';
+
   if (cachedModel) {
-    // Use 3D model
-    const model = cachedModel.clone();
+    // Use cached GLB model
+    model = cachedModel.clone();
+    modelSource = 'glb';
+    console.log('[BattleRenderer3D] Using GLB model for:', entity.name);
+  } else if (entity.name) {
+    // Try procedural model from MODEL_LIBRARY
+    const proceduralModel = createProceduralEnemy(entity.name);
+    if (proceduralModel) {
+      model = proceduralModel;
+      modelSource = 'procedural';
+      console.log('[BattleRenderer3D] Using procedural model for:', entity.name);
+    }
+  }
+
+  if (model) {
+    // Use 3D model (either GLB or procedural)
     model.name = 'entityModel';
 
     // Apply scale and position offset
@@ -259,7 +278,7 @@ export function createEntity3D(
     // Add subtle idle animation rotation
     modelWrapper.userData.idleRotation = true;
 
-    console.log('[BattleRenderer3D] 3D model added with scale:', ENTITY_MODEL_SCALE, 'y-offset:', ENTITY_MODEL_Y_OFFSET);
+    console.log('[BattleRenderer3D] 3D model added:', modelSource, 'scale:', ENTITY_MODEL_SCALE, 'y-offset:', ENTITY_MODEL_Y_OFFSET);
   } else {
     // Fall back to sprite
     console.log('[BattleRenderer3D] Using sprite fallback for:', entity.name);

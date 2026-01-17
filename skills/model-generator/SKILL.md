@@ -203,6 +203,26 @@ Tips:
 | `decoration` | Visual props | Statues, paintings, plants |
 | `interactive` | Objects with behavior | Switches, levers, chests |
 | `prop` | Generic props | Barrels, crates, books |
+| `enemy` | Battle enemy models | Goblin, Skeleton, Bosses |
+
+### Enemy Models
+
+For enemy models, add an `enemyName` field that exactly matches the name from battle state:
+
+```typescript
+export const GOBLIN_META = {
+  id: 'goblin',
+  name: 'Goblin',
+  category: 'enemy' as const,
+  description: 'A small goblin enemy',
+  defaultScale: 1.0,
+  boundingBox: { x: 0.5, y: 0.7, z: 0.3 },
+  tags: ['goblin', 'enemy'],
+  enemyName: 'Goblin',  // Must match battle state exactly!
+};
+```
+
+The `enemyName` is used by the battle renderer to automatically display procedural models in combat.
 
 ---
 

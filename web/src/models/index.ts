@@ -13,6 +13,8 @@ import { createBossThrone, BOSS_THRONE_META } from './bossThrone';
 import { createPillar, createPillar as createCollapsedPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 import { createStatue, STATUE_META } from './statue';
 import { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
+import { createGoblin, GOBLIN_META } from './goblin';
+import { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
 
 // Re-export materials
 export * from './materials';
@@ -23,11 +25,13 @@ export { createBossThrone, BOSS_THRONE_META } from './bossThrone';
 export { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 export { createStatue, STATUE_META } from './statue';
 export { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
+export { createGoblin, GOBLIN_META } from './goblin';
+export { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
 
 /**
  * Model category types
  */
-export type ModelCategory = 'structure' | 'furniture' | 'decoration' | 'interactive' | 'prop';
+export type ModelCategory = 'structure' | 'furniture' | 'decoration' | 'interactive' | 'prop' | 'enemy';
 
 /**
  * Model definition interface
@@ -41,6 +45,8 @@ export interface ModelDefinition {
   boundingBox: { x: number; y: number; z: number };
   tags: string[];
   create: (options?: Record<string, unknown>) => THREE.Group;
+  /** For enemy models: the exact enemy name from battle state (e.g., "Goblin", "Goblin King") */
+  enemyName?: string;
 }
 
 /**
@@ -70,6 +76,14 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
   {
     ...TREASURE_CHEST_META,
     create: createTreasureChest,
+  },
+  {
+    ...GOBLIN_META,
+    create: createGoblin,
+  },
+  {
+    ...GOBLIN_KING_META,
+    create: createGoblinKing,
   },
 ];
 
@@ -138,4 +152,31 @@ export function getLibraryStats() {
     ),
     totalTags: getAllTags().length,
   };
+}
+
+/**
+ * Get a procedural enemy model by the enemy name from battle state
+ * Returns null if no procedural model exists for this enemy
+ */
+export function getProceduralEnemyModel(enemyName: string): ModelDefinition | null {
+  return MODEL_LIBRARY.find(
+    (m) => m.category === 'enemy' && m.enemyName === enemyName
+  ) || null;
+}
+
+/**
+ * Create a procedural enemy model instance by enemy name
+ * Returns null if no procedural model exists for this enemy
+ */
+export function createProceduralEnemy(enemyName: string, options?: Record<string, unknown>): THREE.Group | null {
+  const model = getProceduralEnemyModel(enemyName);
+  if (!model) return null;
+  return model.create(options);
+}
+
+/**
+ * Get all procedural enemy models
+ */
+export function getProceduralEnemies(): ModelDefinition[] {
+  return MODEL_LIBRARY.filter((m) => m.category === 'enemy');
 }
