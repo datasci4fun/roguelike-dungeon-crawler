@@ -82,54 +82,56 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
 
 ### 2.1 Critical Priority (Red)
 
-| ID | Title | Category | Effort | Description |
-|----|-------|----------|--------|-------------|
-| `crit-01` | Fix Missing Enum Values | backend | small | Add missing `CandidateType.SELF` and `KitingPhase.RETREAT` to prevent runtime errors |
-| `crit-02` | Ghost Victory Behaviors | backend, multiplayer | medium | Implement Beacon/Champion/Archivist ghost behaviors (UI promises them) |
+| ID | Title | Category | Effort | Status | Description |
+|----|-------|----------|--------|--------|-------------|
+| ~~`crit-01`~~ | ~~Fix Missing Enum Values~~ | backend | small | **REMOVED** | Not actually needed - kiting system works without these enums |
+| ~~`crit-02`~~ | ~~Ghost Victory Behaviors~~ | backend, multiplayer | medium | **COMPLETE** | Beacon/Champion/Archivist fully implemented in `src/entities/ghosts/` |
+
+**No open critical items.**
 
 ### 2.2 High Priority (Orange)
 
-| ID | Title | Category | Effort | Description |
-|----|-------|----------|--------|-------------|
-| `high-01` | Database Save System | backend | large | Persist game state to PostgreSQL with multiple save slots |
-| `high-02` | Complete STEALTH AI | backend, gameplay | medium | Finish stealth enemy behavior (ambush, concealment) |
-| `high-03` | Complete ELEMENTAL AI | backend, gameplay | medium | Finish elemental enemy behavior (resistance cycling) |
-| `high-04` | Missing Artifacts | content, lore | medium | Implement 2 remaining artifacts (5 in lore, 3 in code) |
-| `high-05` | Field Pulse Micro-Events | gameplay, lore | medium | Add 1 micro-event per floor during pulse windows |
-| `high-06` | Error Boundaries | frontend | small | Add React error boundaries for graceful failure handling |
+| ID | Title | Category | Effort | Status | Description |
+|----|-------|----------|--------|--------|-------------|
+| ~~`high-01`~~ | ~~Database Save System~~ | backend | large | **COMPLETE** | 3-slot save system in `server/app/models/game_save.py` |
+| `high-02` | Complete STEALTH AI | backend, gameplay | medium | **PARTIAL** | Framework exists, needs specialized ambush/concealment tactics |
+| `high-03` | Complete ELEMENTAL AI | backend, gameplay | medium | **PARTIAL** | Integrated with kiting, needs resistance cycling logic |
+| ~~`high-04`~~ | ~~Missing Artifacts~~ | content, lore | medium | **COMPLETE** | All 5 artifacts in `src/items/artifacts.py` |
+| ~~`high-05`~~ | ~~Field Pulse Micro-Events~~ | gameplay, lore | medium | **COMPLETE** | Full system in `src/world/micro_events_data.py` |
+| `high-06` | Error Boundaries | frontend | small | Planned | Add React error boundaries for graceful failure handling |
 
 ### 2.3 Medium Priority (Yellow)
 
-| ID | Title | Category | Effort | Description |
-|----|-------|----------|--------|-------------|
-| `med-01` | Micro-Event Codex Evidence | lore, gameplay | small | Each micro-event unlocks 1 codex entry |
-| `med-02` | Extra Enemy Variety | content | medium | Add 1 "spice" enemy per floor at low spawn weight |
-| `med-03` | Battle System Polish | gameplay, 3d | medium | Additional ability effects, arena templates, boss phases |
-| `med-04` | Performance Optimization | frontend, 3d | medium | Canvas texture caching, reduce re-renders |
-| `med-05` | Keyboard Navigation | accessibility, frontend | small | Full keyboard support for menus/inventory |
-| `med-06` | Screen Reader Labels | accessibility, frontend | small | ARIA labels for game elements |
-| `med-07` | Secret Ending Hooks | gameplay, lore | medium | Track conditions for secret ending (not revealed) |
-| `med-08` | Boss Documentation Sync | infrastructure | small | Update docs to match actual boss roster |
+| ID | Title | Category | Effort | Status | Description |
+|----|-------|----------|--------|--------|-------------|
+| `med-01` | Micro-Event Codex Evidence | lore, gameplay | small | **PARTIAL** | `evidence_id` field exists, codex integration incomplete |
+| ~~`med-02`~~ | ~~Extra Enemy Variety~~ | content | medium | **COMPLETE** | 8 spice enemies added (SHADE, BILE_LURKER, THORNLING, etc.) |
+| `med-03` | Battle System Polish | gameplay, 3d | medium | **PARTIAL** | Arena templates done, more ability effects possible |
+| `med-04` | Performance Optimization | frontend, 3d | medium | Planned | Canvas texture caching, reduce re-renders |
+| `med-05` | Keyboard Navigation | accessibility, frontend | small | Planned | Full keyboard support for menus/inventory |
+| `med-06` | Screen Reader Labels | accessibility, frontend | small | Planned | ARIA labels for game elements |
+| `med-07` | Secret Ending Hooks | gameplay, lore | medium | Planned | Track conditions for secret ending (not revealed) |
+| `med-08` | Boss Documentation Sync | infrastructure | small | Planned | Update docs to match actual boss roster |
 
 ### 2.4 Low Priority (Green)
 
-| ID | Title | Category | Effort | Description |
-|----|-------|----------|--------|-------------|
-| `low-01` | ICE Slide Mechanic | gameplay | medium | Floor 5 ice lanes cause sliding (fairness-tested) |
-| `low-02` | Floor Diorama 3D | frontend, 3d | large | Three.js cross-section visualization for Home page |
-| `low-03` | Character Preview 3D | frontend, 3d | medium | 3D character preview in creation screen |
-| `low-04` | Achievement System | gameplay, multiplayer | large | Track and display player achievements |
-| `low-05` | Daily Challenges | gameplay, multiplayer | large | Seeded daily runs with leaderboard |
-| `low-06` | Spectator Mode | multiplayer | large | Watch other players' runs in real-time |
+| ID | Title | Category | Effort | Status | Description |
+|----|-------|----------|--------|--------|-------------|
+| ~~`low-01`~~ | ~~ICE Slide Mechanic~~ | gameplay | medium | **COMPLETE** | Implemented in `src/world/hazards.py` (v6.5.1) |
+| ~~`low-02`~~ | ~~Floor Diorama 3D~~ | frontend, 3d | large | **COMPLETE** | `web/src/components/FloorDiorama3D/` with 8 floors |
+| ~~`low-03`~~ | ~~Character Preview 3D~~ | frontend, 3d | medium | **COMPLETE** | `web/src/components/CharacterPreview3D/` with race/class rendering |
+| ~~`low-04`~~ | ~~Achievement System~~ | gameplay, multiplayer | large | **COMPLETE** | Full backend in `server/app/services/achievement_service.py` |
+| ~~`low-05`~~ | ~~Daily Challenges~~ | gameplay, multiplayer | large | **COMPLETE** | `server/app/services/daily_service.py` with seeded runs |
+| `low-06` | Spectator Mode | multiplayer | large | **PARTIAL** | Ghost replays exist, real-time spectating not implemented |
 
 ### 2.5 Research Priority (Purple)
 
-| ID | Title | Category | Effort | Description |
-|----|-------|----------|--------|-------------|
-| `res-01` | 3D Asset Pipeline | 3d, infrastructure | epic | CLI workflow for AI-generated 3D models (Meshy/Tripo/Rodin) |
-| `res-02` | Mobile Performance | frontend, infrastructure | large | Profile and optimize for mobile devices |
-| `res-03` | WebGPU Migration | 3d | epic | Future-proof 3D rendering with WebGPU |
-| `res-04` | Procedural Music | audio | large | Generate music that responds to gameplay |
+| ID | Title | Category | Effort | Status | Description |
+|----|-------|----------|--------|--------|-------------|
+| ~~`res-01`~~ | ~~3D Asset Pipeline~~ | 3d, infrastructure | epic | **COMPLETE** | TripoSR worker in `tools/3d-pipeline/`, job queue API |
+| `res-02` | Mobile Performance | frontend, infrastructure | large | **PARTIAL** | Responsive layout exists, no profiling/optimization done |
+| `res-03` | WebGPU Migration | 3d | epic | Planned | Future-proof 3D rendering with WebGPU |
+| `res-04` | Procedural Music | audio | large | Planned | Generate music that responds to gameplay |
 
 ---
 
@@ -187,8 +189,8 @@ Quick summary bar showing:
 - Items in progress
 
 ```
-[ Critical: 2 ] [ High: 6 ] [ Medium: 8 ] [ Low: 6 ] [ Research: 4 ]
-Progress: 0/26 completed (0%)
+[ Critical: 0 ] [ High: 2 ] [ Medium: 6 ] [ Low: 1 ] [ Research: 2 ]
+Progress: 15/26 completed (58%) | 6 partial
 ```
 
 ### 3.5 Component: RoadmapTimeline
@@ -360,18 +362,19 @@ The v7.0 release established:
 
 ### v7.1: Expanded Puzzle Content
 
-**Goal:** Add exploration puzzles to all 8 floors (currently limited placement)
+**Status:** PARTIAL (2/8 floors have puzzles)
+**Goal:** Add exploration puzzles to all 8 floors
 
-| Floor | Zone | Puzzle Type | Mechanic |
-|-------|------|-------------|----------|
-| 1 | wardens_office | Switch Sequence | Activate 2 switches in order to open armory |
-| 2 | seal_drifts | Pressure Plate | Stand on correct plates to lower water gate |
-| 3 | webbed_gardens | Sequential Cut | Cut through web walls in correct order |
-| 4 | oath_chambers | Mirror Switches | Flip switches matching mirror reflection |
-| 5 | frozen_galleries | Ice Slide Puzzle | Slide across ice to reach pressure plates |
-| 6 | catalog_chambers | Inscription Riddle | Answer riddle to unlock forbidden stacks |
-| 7 | forge_halls | Lever Sequence | Pull levers in heat-resistant order |
-| 8 | geometry_wells | Crystal Alignment | Rotate crystals to focus light beam |
+| Floor | Zone | Puzzle Type | Mechanic | Status |
+|-------|------|-------------|----------|--------|
+| 1 | wardens_office | Switch Sequence | Activate 2 switches in order to open armory | **DONE** |
+| 2 | seal_drifts | Pressure Plate | Stand on correct plates to lower water gate | Planned |
+| 3 | webbed_gardens | Sequential Cut | Cut through web walls in correct order | Planned |
+| 4 | oath_chambers | Mirror Switches | Flip switches matching mirror reflection | Planned |
+| 5 | frozen_galleries | Ice Slide Puzzle | Slide across ice to reach pressure plates | **DONE** |
+| 6 | catalog_chambers | Inscription Riddle | Answer riddle to unlock forbidden stacks | Planned |
+| 7 | forge_halls | Lever Sequence | Pull levers in heat-resistant order | Planned |
+| 8 | geometry_wells | Crystal Alignment | Rotate crystals to focus light beam | Planned |
 
 **Effort:** Medium
 **Priority:** High
@@ -381,20 +384,21 @@ The v7.0 release established:
 
 ### v7.2: First-Person Raycasting & Click Interaction
 
+**Status:** COMPLETE
 **Goal:** Enable mouse-click interaction with walls in first-person view
 
-**Features:**
-- Port raycasting from BattleRenderer3D to FirstPersonRenderer3D
-- Click on interactive walls to trigger INTERACT command
-- Hover highlight for interactive elements
-- "Press E to interact" prompt when facing interactive tiles
-- Support for both mouse-click and keyboard interaction
+**Implemented Features:**
+- ✅ Raycasting in `FirstPersonRenderer3D.tsx` (line 1297+)
+- ✅ Click on interactive walls triggers INTERACT command
+- ✅ Hover highlight with cursor feedback
+- ✅ Interactive wall tagging via `InteractiveWallUserData`
+- ✅ Mouse-click and keyboard interaction support
 
-**Technical:**
-- Add `interactiveWallsRef` to track clickable meshes
-- Implement `handleClick` with THREE.Raycaster
-- Tag wall meshes with `userData.interactive` during generation
-- Connect to existing INTERACT command in engine
+**Technical (Completed):**
+- ✅ `interactiveWallsRef` tracks clickable meshes
+- ✅ `handleClick` with `THREE.Raycaster`
+- ✅ Wall meshes tagged with `userData.interactive`
+- ✅ Connected to INTERACT command in engine
 
 **Effort:** Medium
 **Priority:** High
@@ -504,11 +508,11 @@ The v7.0 release established:
 | Version | Title | Priority | Effort | Status |
 |---------|-------|----------|--------|--------|
 | v7.0 | Immersive Exploration System | - | Epic | **COMPLETE** |
-| v7.1 | Expanded Puzzle Content | High | Medium | Planned |
-| v7.2 | First-Person Raycasting | High | Medium | Planned |
-| v7.3 | Enhanced Set Pieces | Medium | Large | Planned |
+| v7.1 | Expanded Puzzle Content | High | Medium | **PARTIAL** (2/8 floors) |
+| v7.2 | First-Person Raycasting | High | Medium | **COMPLETE** |
+| v7.3 | Enhanced Set Pieces | Medium | Large | **PARTIAL** (framework exists) |
 | v7.4 | Secret Room System | Medium | Medium | Planned |
-| v7.5 | Environmental Storytelling | Low | Large | Planned |
+| v7.5 | Environmental Storytelling | Low | Large | **PARTIAL** (murals/inscriptions done) |
 | v7.6 | Puzzle-Environment Integration | Low | Large | Planned |
 
 ---
@@ -519,12 +523,12 @@ These items are tracked in the main roadmap tables above:
 
 | Original TODO | Roadmap ID | Status |
 |---------------|------------|--------|
-| Field Pulse Micro-Events | `high-05` | Planned |
-| Micro-Event Codex Evidence | `med-01` | Planned |
-| Extra Thematic Enemies | `med-02` | Planned |
+| Field Pulse Micro-Events | `high-05` | **COMPLETE** |
+| Micro-Event Codex Evidence | `med-01` | **PARTIAL** |
+| Extra Thematic Enemies | `med-02` | **COMPLETE** |
 | ICE Slide Mechanic | `low-01` | **COMPLETE** (v6.5.1) |
 | Secret Ending Hooks | `med-07` | Planned |
 
 ---
 
-*Last updated: 2026-01-16*
+*Last updated: 2026-01-17*

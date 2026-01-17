@@ -11,12 +11,19 @@ import {
   type Asset3D,
 } from '../data/assetQueue';
 import { ModelViewer } from '../components/ModelViewer';
+import { ProceduralModelViewer } from '../components/ProceduralModelViewer';
 import { useJobs } from '../contexts/JobsContext';
+import {
+  MODEL_LIBRARY,
+  type ModelDefinition,
+  type ModelCategory,
+} from '../models';
 
 const API_BASE = 'http://localhost:8000';
 
-type TabId = 'queue' | 'done' | 'all';
+type TabId = 'queue' | 'done' | 'all' | 'procedural';
 type CategoryFilter = 'all' | Asset3D['category'];
+type ProceduralCategoryFilter = 'all' | ModelCategory;
 
 const CATEGORY_COLORS: Record<Asset3D['category'], string> = {
   enemy: '#ff6b6b',
@@ -39,10 +46,20 @@ const PRIORITY_STYLES: Record<Asset3D['priority'], { color: string; icon: string
   low: { color: '#69db7c', icon: '!' },
 };
 
+const PROCEDURAL_CATEGORY_COLORS: Record<ModelCategory, string> = {
+  structure: '#4dabf7',
+  furniture: '#f59f00',
+  decoration: '#cc5de8',
+  interactive: '#69db7c',
+  prop: '#868e96',
+};
+
 export function AssetViewer() {
   const [tab, setTab] = useState<TabId>('queue');
   const [category, setCategory] = useState<CategoryFilter>('all');
+  const [proceduralCategory, setProceduralCategory] = useState<ProceduralCategoryFilter>('all');
   const [selectedAsset, setSelectedAsset] = useState<Asset3D | null>(null);
+  const [selectedProcedural, setSelectedProcedural] = useState<ModelDefinition | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -59,6 +76,13 @@ export function AssetViewer() {
     : null;
 
   const stats = useMemo(() => getAssetStats(), []);
+
+  const filteredProceduralModels = useMemo(() => {
+    if (proceduralCategory === 'all') {
+      return MODEL_LIBRARY;
+    }
+    return MODEL_LIBRARY.filter((m) => m.category === proceduralCategory);
+  }, [proceduralCategory]);
 
   const filteredAssets = useMemo(() => {
     let assets: Asset3D[];
@@ -236,7 +260,7 @@ export function AssetViewer() {
           {(['queue', 'done', 'all'] as TabId[]).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => { setTab(t); setSelectedProcedural(null); }}
               style={{
                 padding: '8px 16px',
                 background: tab === t ? '#4dabf7' : 'transparent',
@@ -252,29 +276,64 @@ export function AssetViewer() {
               {t === 'done' && ` (${stats.done})`}
             </button>
           ))}
+          <span style={{ color: '#444', margin: '0 5px' }}>|</span>
+          <button
+            onClick={() => { setTab('procedural'); setSelectedAsset(null); }}
+            style={{
+              padding: '8px 16px',
+              background: tab === 'procedural' ? '#cc5de8' : 'transparent',
+              color: tab === 'procedural' ? '#fff' : '#888',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Procedural ({MODEL_LIBRARY.length})
+          </button>
         </div>
 
         <span style={{ color: '#444' }}>|</span>
 
         {/* Category Filter */}
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as CategoryFilter)}
-          style={{
-            padding: '8px 12px',
-            background: '#2a2a4e',
-            color: '#fff',
-            border: '1px solid #444',
-            borderRadius: '4px',
-          }}
-        >
-          <option value="all">All Categories</option>
-          <option value="enemy">Enemies</option>
-          <option value="boss">Bosses</option>
-          <option value="item">Items</option>
-          <option value="prop">Props</option>
-          <option value="character">Characters</option>
-        </select>
+        {tab === 'procedural' ? (
+          <select
+            value={proceduralCategory}
+            onChange={(e) => setProceduralCategory(e.target.value as ProceduralCategoryFilter)}
+            style={{
+              padding: '8px 12px',
+              background: '#2a2a4e',
+              color: '#fff',
+              border: '1px solid #444',
+              borderRadius: '4px',
+            }}
+          >
+            <option value="all">All Categories</option>
+            <option value="structure">Structure</option>
+            <option value="furniture">Furniture</option>
+            <option value="decoration">Decoration</option>
+            <option value="interactive">Interactive</option>
+            <option value="prop">Props</option>
+          </select>
+        ) : (
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as CategoryFilter)}
+            style={{
+              padding: '8px 12px',
+              background: '#2a2a4e',
+              color: '#fff',
+              border: '1px solid #444',
+              borderRadius: '4px',
+            }}
+          >
+            <option value="all">All Categories</option>
+            <option value="enemy">Enemies</option>
+            <option value="boss">Bosses</option>
+            <option value="item">Items</option>
+            <option value="prop">Props</option>
+            <option value="character">Characters</option>
+          </select>
+        )}
 
         <div style={{ flex: 1 }} />
 
@@ -297,97 +356,210 @@ export function AssetViewer() {
         padding: '20px 40px',
         gap: '30px',
       }}>
-        {/* Asset List */}
+        {/* Asset/Model List */}
         <div style={{ flex: 1 }}>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
             gap: '15px',
           }}>
-            {filteredAssets.map((asset) => (
-              <div
-                key={asset.id}
-                onClick={() => setSelectedAsset(asset)}
-                style={{
-                  padding: '15px',
-                  background: selectedAsset?.id === asset.id ? '#2a3a5e' : '#232340',
-                  borderRadius: '8px',
-                  border: `1px solid ${selectedAsset?.id === asset.id ? '#4dabf7' : '#333'}`,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: '8px',
-                }}>
-                  <h3 style={{ margin: 0, color: '#fff' }}>{asset.name}</h3>
-                  <span style={{
-                    padding: '2px 8px',
-                    background: STATUS_BADGES[asset.status].bg,
-                    color: STATUS_BADGES[asset.status].text,
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    textTransform: 'uppercase',
-                  }}>
-                    {asset.status}
-                  </span>
-                </div>
+            {tab === 'procedural' ? (
+              /* Procedural Models List */
+              <>
+                {filteredProceduralModels.map((model) => (
+                  <div
+                    key={model.id}
+                    onClick={() => setSelectedProcedural(model)}
+                    style={{
+                      padding: '15px',
+                      background: selectedProcedural?.id === model.id ? '#3a2a5e' : '#232340',
+                      borderRadius: '8px',
+                      border: `1px solid ${selectedProcedural?.id === model.id ? '#cc5de8' : '#333'}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '8px',
+                    }}>
+                      <h3 style={{ margin: 0, color: '#fff' }}>{model.name}</h3>
+                      <span style={{
+                        padding: '2px 8px',
+                        background: '#cc5de822',
+                        color: '#cc5de8',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                      }}>
+                        Procedural
+                      </span>
+                    </div>
 
-                <div style={{
-                  display: 'flex',
-                  gap: '10px',
-                  alignItems: 'center',
-                  marginBottom: '8px',
-                }}>
-                  <span style={{
-                    padding: '2px 8px',
-                    background: CATEGORY_COLORS[asset.category] + '22',
-                    color: CATEGORY_COLORS[asset.category],
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    textTransform: 'capitalize',
-                  }}>
-                    {asset.category}
-                  </span>
+                    <div style={{
+                      display: 'flex',
+                      gap: '10px',
+                      alignItems: 'center',
+                      marginBottom: '8px',
+                    }}>
+                      <span style={{
+                        padding: '2px 8px',
+                        background: PROCEDURAL_CATEGORY_COLORS[model.category] + '22',
+                        color: PROCEDURAL_CATEGORY_COLORS[model.category],
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        textTransform: 'capitalize',
+                      }}>
+                        {model.category}
+                      </span>
 
-                  <span style={{
-                    color: PRIORITY_STYLES[asset.priority].color,
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                  }}>
-                    {PRIORITY_STYLES[asset.priority].icon}
-                  </span>
+                      <span style={{ color: '#666', fontSize: '12px', fontFamily: 'monospace' }}>
+                        {model.id}
+                      </span>
+                    </div>
 
-                  <span style={{ color: '#666', fontSize: '12px', fontFamily: 'monospace' }}>
-                    {asset.id}
-                  </span>
-                </div>
+                    <p style={{
+                      margin: 0,
+                      color: '#888',
+                      fontSize: '13px',
+                      lineHeight: '1.4',
+                    }}>
+                      {model.description}
+                    </p>
 
-                {asset.notes && (
-                  <p style={{
-                    margin: 0,
-                    color: '#888',
-                    fontSize: '13px',
-                    lineHeight: '1.4',
+                    {model.tags.length > 0 && (
+                      <div style={{
+                        marginTop: '8px',
+                        display: 'flex',
+                        gap: '4px',
+                        flexWrap: 'wrap',
+                      }}>
+                        {model.tags.slice(0, 4).map((tag) => (
+                          <span
+                            key={tag}
+                            style={{
+                              padding: '1px 6px',
+                              background: '#333',
+                              borderRadius: '3px',
+                              fontSize: '10px',
+                              color: '#888',
+                            }}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {model.tags.length > 4 && (
+                          <span style={{ fontSize: '10px', color: '#666' }}>
+                            +{model.tags.length - 4}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {filteredProceduralModels.length === 0 && (
+                  <div style={{
+                    gridColumn: '1 / -1',
+                    padding: '40px',
+                    textAlign: 'center',
+                    color: '#666',
                   }}>
-                    {asset.notes}
-                  </p>
+                    No procedural models found
+                  </div>
                 )}
-              </div>
-            ))}
+              </>
+            ) : (
+              /* Asset Queue List */
+              <>
+                {filteredAssets.map((asset) => (
+                  <div
+                    key={asset.id}
+                    onClick={() => setSelectedAsset(asset)}
+                    style={{
+                      padding: '15px',
+                      background: selectedAsset?.id === asset.id ? '#2a3a5e' : '#232340',
+                      borderRadius: '8px',
+                      border: `1px solid ${selectedAsset?.id === asset.id ? '#4dabf7' : '#333'}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '8px',
+                    }}>
+                      <h3 style={{ margin: 0, color: '#fff' }}>{asset.name}</h3>
+                      <span style={{
+                        padding: '2px 8px',
+                        background: STATUS_BADGES[asset.status].bg,
+                        color: STATUS_BADGES[asset.status].text,
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                      }}>
+                        {asset.status}
+                      </span>
+                    </div>
 
-            {filteredAssets.length === 0 && (
-              <div style={{
-                gridColumn: '1 / -1',
-                padding: '40px',
-                textAlign: 'center',
-                color: '#666',
-              }}>
-                No assets found
-              </div>
+                    <div style={{
+                      display: 'flex',
+                      gap: '10px',
+                      alignItems: 'center',
+                      marginBottom: '8px',
+                    }}>
+                      <span style={{
+                        padding: '2px 8px',
+                        background: CATEGORY_COLORS[asset.category] + '22',
+                        color: CATEGORY_COLORS[asset.category],
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        textTransform: 'capitalize',
+                      }}>
+                        {asset.category}
+                      </span>
+
+                      <span style={{
+                        color: PRIORITY_STYLES[asset.priority].color,
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                      }}>
+                        {PRIORITY_STYLES[asset.priority].icon}
+                      </span>
+
+                      <span style={{ color: '#666', fontSize: '12px', fontFamily: 'monospace' }}>
+                        {asset.id}
+                      </span>
+                    </div>
+
+                    {asset.notes && (
+                      <p style={{
+                        margin: 0,
+                        color: '#888',
+                        fontSize: '13px',
+                        lineHeight: '1.4',
+                      }}>
+                        {asset.notes}
+                      </p>
+                    )}
+                  </div>
+                ))}
+
+                {filteredAssets.length === 0 && (
+                  <div style={{
+                    gridColumn: '1 / -1',
+                    padding: '40px',
+                    textAlign: 'center',
+                    color: '#666',
+                  }}>
+                    No assets found
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -397,7 +569,142 @@ export function AssetViewer() {
           width: '350px',
           flexShrink: 0,
         }}>
-          {selectedAsset ? (
+          {/* Procedural Model Detail */}
+          {tab === 'procedural' && selectedProcedural ? (
+            <div style={{
+              background: '#232340',
+              borderRadius: '8px',
+              padding: '20px',
+              border: '1px solid #333',
+            }}>
+              <h2 style={{ margin: '0 0 15px', color: '#fff' }}>{selectedProcedural.name}</h2>
+
+              {/* 3D Preview */}
+              <div style={{
+                height: '250px',
+                background: '#1a1a2e',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '15px',
+                border: '1px solid #333',
+                overflow: 'hidden',
+                position: 'relative',
+              }}>
+                <Suspense fallback={<span style={{ color: '#888' }}>Loading model...</span>}>
+                  <ProceduralModelViewer
+                    createModel={selectedProcedural.create}
+                    modelId={selectedProcedural.id}
+                    width={310}
+                    height={250}
+                  />
+                </Suspense>
+                <button
+                  onClick={() => setFullscreen(true)}
+                  style={{
+                    position: 'absolute',
+                    top: '8px',
+                    right: '8px',
+                    padding: '6px 10px',
+                    background: 'rgba(0,0,0,0.6)',
+                    color: '#fff',
+                    border: '1px solid #555',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                  }}
+                  title="View fullscreen"
+                >
+                  ⛶ Fullscreen
+                </button>
+              </div>
+
+              {/* Details */}
+              <table style={{ width: '100%', fontSize: '14px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ color: '#888', padding: '5px 0' }}>ID</td>
+                    <td style={{ color: '#fff', fontFamily: 'monospace' }}>{selectedProcedural.id}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ color: '#888', padding: '5px 0' }}>Category</td>
+                    <td style={{ color: PROCEDURAL_CATEGORY_COLORS[selectedProcedural.category] }}>
+                      {selectedProcedural.category}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ color: '#888', padding: '5px 0' }}>Scale</td>
+                    <td style={{ color: '#fff' }}>{selectedProcedural.defaultScale}x</td>
+                  </tr>
+                  <tr>
+                    <td style={{ color: '#888', padding: '5px 0' }}>Bounding Box</td>
+                    <td style={{ color: '#fff', fontFamily: 'monospace', fontSize: '12px' }}>
+                      {selectedProcedural.boundingBox.x.toFixed(2)} x {selectedProcedural.boundingBox.y.toFixed(2)} x {selectedProcedural.boundingBox.z.toFixed(2)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style={{ marginTop: '15px' }}>
+                <div style={{ color: '#888', fontSize: '12px', marginBottom: '5px' }}>Description</div>
+                <p style={{ margin: 0, color: '#ccc', fontSize: '14px' }}>
+                  {selectedProcedural.description}
+                </p>
+              </div>
+
+              {selectedProcedural.tags.length > 0 && (
+                <div style={{ marginTop: '15px' }}>
+                  <div style={{ color: '#888', fontSize: '12px', marginBottom: '8px' }}>Tags</div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {selectedProcedural.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        style={{
+                          padding: '3px 8px',
+                          background: '#333',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          color: '#aaa',
+                        }}
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Usage code */}
+              <div style={{ marginTop: '20px' }}>
+                <div style={{ color: '#888', fontSize: '12px', marginBottom: '8px' }}>
+                  Usage
+                </div>
+                <div style={{
+                  padding: '10px',
+                  background: '#1a1a2e',
+                  borderRadius: '4px',
+                  fontFamily: 'monospace',
+                  fontSize: '11px',
+                  color: '#69db7c',
+                  wordBreak: 'break-all',
+                }}>
+                  {`import { create${selectedProcedural.id.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')} } from '../models';`}
+                </div>
+              </div>
+            </div>
+          ) : tab === 'procedural' ? (
+            <div style={{
+              background: '#232340',
+              borderRadius: '8px',
+              padding: '40px 20px',
+              border: '1px solid #333',
+              textAlign: 'center',
+              color: '#666',
+            }}>
+              Select a procedural model to view details
+            </div>
+          ) : selectedAsset ? (
             <div style={{
               background: '#232340',
               borderRadius: '8px',
@@ -732,31 +1039,48 @@ export function AssetViewer() {
             border: '1px solid #333',
           }}>
             <h4 style={{ margin: '0 0 10px', color: '#fff', fontSize: '14px' }}>
-              Workflow
+              {tab === 'procedural' ? 'Procedural Models' : 'AI Asset Workflow'}
             </h4>
-            <ol style={{ margin: 0, paddingLeft: '20px', color: '#888', fontSize: '13px' }}>
-              <li style={{ marginBottom: '8px' }}>
-                Select asset, click <strong style={{ color: '#4dabf7' }}>Upload Concept Art</strong>
-              </li>
-              <li style={{ marginBottom: '8px' }}>
-                Click <strong style={{ color: '#cc5de8' }}>Generate 3D Model</strong> to queue job
-              </li>
-              <li style={{ marginBottom: '8px' }}>
-                Run worker: <code style={{ color: '#69db7c' }}>python tools/3d-pipeline/job_worker.py</code>
-              </li>
-              <li style={{ marginBottom: '8px' }}>
-                Convert OBJ to GLB (trimesh or Blender)
-              </li>
-              <li>
-                Update <code style={{ color: '#69db7c' }}>assetQueue.ts</code> status
-              </li>
-            </ol>
+            {tab === 'procedural' ? (
+              <ol style={{ margin: 0, paddingLeft: '20px', color: '#888', fontSize: '13px' }}>
+                <li style={{ marginBottom: '8px' }}>
+                  Use <code style={{ color: '#cc5de8' }}>/model-generator</code> skill to create new models
+                </li>
+                <li style={{ marginBottom: '8px' }}>
+                  Models saved to <code style={{ color: '#69db7c' }}>web/src/models/</code>
+                </li>
+                <li style={{ marginBottom: '8px' }}>
+                  Register in <code style={{ color: '#69db7c' }}>models/index.ts</code>
+                </li>
+                <li>
+                  Use in Level Editor or game set pieces
+                </li>
+              </ol>
+            ) : (
+              <ol style={{ margin: 0, paddingLeft: '20px', color: '#888', fontSize: '13px' }}>
+                <li style={{ marginBottom: '8px' }}>
+                  Select asset, click <strong style={{ color: '#4dabf7' }}>Upload Concept Art</strong>
+                </li>
+                <li style={{ marginBottom: '8px' }}>
+                  Click <strong style={{ color: '#cc5de8' }}>Generate 3D Model</strong> to queue job
+                </li>
+                <li style={{ marginBottom: '8px' }}>
+                  Run worker: <code style={{ color: '#69db7c' }}>docker compose up 3d-worker</code>
+                </li>
+                <li style={{ marginBottom: '8px' }}>
+                  GLB output to <code style={{ color: '#69db7c' }}>web/public/assets/models/</code>
+                </li>
+                <li>
+                  Update <code style={{ color: '#69db7c' }}>assetQueue.ts</code> status
+                </li>
+              </ol>
+            )}
           </div>
         </div>
       </div>
 
       {/* Fullscreen Modal */}
-      {fullscreen && selectedAsset?.modelPath && (
+      {fullscreen && (selectedAsset?.modelPath || selectedProcedural) && (
         <div
           style={{
             position: 'fixed',
@@ -790,7 +1114,9 @@ export function AssetViewer() {
               alignItems: 'center',
               marginBottom: '15px',
             }}>
-              <h2 style={{ margin: 0, color: '#fff' }}>{selectedAsset.name}</h2>
+              <h2 style={{ margin: 0, color: '#fff' }}>
+                {selectedProcedural?.name || selectedAsset?.name}
+              </h2>
               <button
                 onClick={() => setFullscreen(false)}
                 style={{
@@ -807,11 +1133,20 @@ export function AssetViewer() {
               </button>
             </div>
             <Suspense fallback={<span style={{ color: '#888' }}>Loading model...</span>}>
-              <ModelViewer
-                modelPath={selectedAsset.modelPath}
-                width={800}
-                height={600}
-              />
+              {selectedProcedural ? (
+                <ProceduralModelViewer
+                  createModel={selectedProcedural.create}
+                  modelId={selectedProcedural.id}
+                  width={800}
+                  height={600}
+                />
+              ) : selectedAsset?.modelPath ? (
+                <ModelViewer
+                  modelPath={selectedAsset.modelPath}
+                  width={800}
+                  height={600}
+                />
+              ) : null}
             </Suspense>
             <div style={{
               marginTop: '10px',

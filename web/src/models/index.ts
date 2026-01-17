@@ -12,6 +12,7 @@ import { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
 import { createBossThrone, BOSS_THRONE_META } from './bossThrone';
 import { createPillar, createPillar as createCollapsedPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 import { createStatue, STATUE_META } from './statue';
+import { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
 
 // Re-export materials
 export * from './materials';
@@ -21,6 +22,7 @@ export { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
 export { createBossThrone, BOSS_THRONE_META } from './bossThrone';
 export { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 export { createStatue, STATUE_META } from './statue';
+export { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
 
 /**
  * Model category types
@@ -64,6 +66,10 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
   {
     ...STATUE_META,
     create: createStatue,
+  },
+  {
+    ...TREASURE_CHEST_META,
+    create: createTreasureChest,
   },
 ];
 

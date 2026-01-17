@@ -1,92 +1,88 @@
-# Next Session - v7.1.0 Released
+# Next Session - v7.1.0 Current
 
-## Session Date: 2026-01-16
+## Session Date: 2026-01-17
 
-## Release Complete
+## Current Status
 
-**v7.1.0 - Zone Layout Designer** has been merged to master and develop.
-
-- PR: #80
-- Branch: `master` / `develop` (synced)
-- Feature branch: `feature/level-editor` (deleted)
-- Hotfix branch: `hotfix/v7-verification` (merged & deleted)
+**Version:** v7.1.0 (Zone Layout Designer)
+**Branch:** `develop` (clean)
 
 ---
 
-## What Was Shipped
+## Recent Completed Work
 
 ### v7.1 Zone Layout Designer (PR #80)
+- Rule-based level editor at `/level-editor`
+- Model library with 4 extracted models
+- Python `@register_layout` code generation
 
-| Feature | Description |
-|---------|-------------|
-| **Zone Layout Designer** | Novel rule-based level editor at `/level-editor` |
-| **Rule Builder** | Visual interface for placement rules (position, count, rotation, scale) |
-| **Presets** | One-click patterns (corner pillars, center statue, wall torches) |
-| **Python Export** | Generates `@register_layout` code via modal popup |
-| **Model Library** | 4 extracted models with central registry |
-| **Model Generator Skill** | Claude skill for procedural Three.js models |
-| **Presentation Slides** | AI synthesis theory and Level Editor case study |
+### v7.0 Immersive Exploration (PR #78)
+- Interactive tiles (switches, levers, murals, inscriptions)
+- PuzzleManager with 2 puzzles (Floor 1 & 5)
+- LorePopup for environmental storytelling
+- Set pieces (entrance doors, boss throne)
 
-### Level Editor Position Strategies
+### v6.10-6.12 D&D Combat (PRs #74-77)
+- Ability scores (STR, DEX, CON, LUCK)
+- d20 attack rolls, AC, saving throws
+- 3D animated dice with DiceRollHUD
 
-| Strategy | Description |
-|----------|-------------|
-| `center` | Place at room center |
-| `corners` | Place in all 4 corners |
-| `along_north_wall` | Along the north wall |
-| `along_south_wall` | Along the south wall |
-| `along_east_wall` | Along the east wall |
-| `along_west_wall` | Along the west wall |
-| `along_any_wall` | Along any wall |
-| `at_entrances` | At room doorways |
-| `random_floor` | Random floor positions |
-| `perimeter` | Around room edge |
-
-### New Files
-
-| File | Purpose |
-|------|---------|
-| `web/src/pages/LevelEditor/LevelEditor.tsx` | Main editor page |
-| `web/src/pages/LevelEditor/RuleBuilder.tsx` | Rule configuration UI |
-| `web/src/pages/LevelEditor/MapCanvas.tsx` | 2D dungeon renderer |
-| `web/src/pages/LevelEditor/CodeModal.tsx` | Python code display |
-| `web/src/pages/LevelEditor/placementRules.ts` | Rule types and code generation |
-| `web/src/models/index.ts` | Model library registry |
-| `server/app/api/editor.py` | Backend editor API |
-| `.claude/skills/model-generator/SKILL.md` | Model generation skill |
-
-### Bug Fixes (hotfix/v7-verification)
-
-| Issue | Fix |
-|-------|-----|
-| DieType export error | Separated type-only exports |
-| WebGL context loss | Added forceContextLoss() cleanup |
-| Passive event listeners | Native addEventListener with passive: false |
-| CharacterPreview3D not loading | Rewrote with single useEffect approach |
-| Dice animation stuck | Fixed rolling state management |
+### Infrastructure
+- PostgreSQL + Redis data persistence
+- TripoSR 3D asset pipeline
+- UI migration (StatsHUD, Minimap, GameMessagesPanel)
 
 ---
 
-## v7.X Roadmap
+## v7.X Roadmap Status
 
-| Version | Title | Priority | Status |
-|---------|-------|----------|--------|
-| v7.1 | Zone Layout Designer | High | ✅ Complete |
-| v7.2 | First-Person Raycasting & Click Interaction | High | Planned |
-| v7.3 | Enhanced Set Pieces & 3D Props | Medium | Planned |
-| v7.4 | Secret Room System | Medium | Planned |
-| v7.5 | Environmental Storytelling Expansion | Low | Planned |
-| v7.6 | Puzzle-Environment Integration | Low | Planned |
+| Version | Title | Status |
+|---------|-------|--------|
+| v7.0 | Immersive Exploration System | **COMPLETE** |
+| v7.1 | Zone Layout Designer | **COMPLETE** |
+| v7.2 | First-Person Raycasting | **COMPLETE** |
+| v7.3 | Enhanced Set Pieces | **PARTIAL** (framework exists) |
+| v7.4 | Secret Room System | Planned |
+| v7.5 | Environmental Storytelling | **PARTIAL** (murals/inscriptions done) |
+| v7.6 | Puzzle-Environment Integration | Planned |
 
-### v7.2: First-Person Raycasting
-- Port raycasting from BattleRenderer3D to FirstPersonRenderer3D
-- Click-to-interact with walls
-- Hover highlight for interactive elements
+---
 
-### v7.3: Enhanced Set Pieces
-- Additional 3D models via Model Generator skill
-- GLTF loading or procedural Three.js groups
-- Examine interactions for lore
+## Recommended Next Steps
+
+### High Priority
+1. **Expand Puzzles (v7.1 content)** - Add puzzles to remaining 6 floors (only 2/8 have puzzles)
+2. **React Error Boundaries** - Add graceful failure handling (high-06)
+3. **Build Roadmap Page** - Implement `/roadmap` from ROADMAP_PLAN.md
+
+### Medium Priority
+4. **v7.3: Enhanced Set Pieces** - More 3D models via Model Generator skill
+5. **v7.4: Secret Room System** - Hidden exploration rewards
+6. **STEALTH/ELEMENTAL AI Polish** - Specialized tactics (high-02, high-03)
+
+### Low Priority
+7. **Accessibility** - Keyboard navigation (med-05), ARIA labels (med-06)
+8. **Performance** - Canvas texture caching (med-04)
+9. **v7.6: Puzzle-Environment Integration** - Dynamic environment changes
+
+---
+
+## Already Complete (Previously Listed as TODO)
+
+| Item | Evidence |
+|------|----------|
+| Ghost Victory Behaviors | `src/entities/ghosts/ghost_behaviors.py` |
+| Database Save System | `server/app/models/game_save.py` (3-slot) |
+| All 5 Artifacts | `src/items/artifacts.py` |
+| Field Pulse Micro-Events | `src/world/micro_events_data.py` |
+| Extra Enemy Variety | 8 spice enemies (SHADE, BILE_LURKER, etc.) |
+| ICE Slide Mechanic | `src/world/hazards.py` |
+| FloorDiorama3D | `web/src/components/FloorDiorama3D/` |
+| CharacterPreview3D | `web/src/components/CharacterPreview3D/` |
+| Achievement System | `server/app/services/achievement_service.py` |
+| Daily Challenges | `server/app/services/daily_service.py` |
+| 3D Asset Pipeline | `tools/3d-pipeline/container_worker.py` |
+| First-Person Raycasting | `FirstPersonRenderer3D.tsx:1297+` |
 
 ---
 
@@ -99,23 +95,7 @@
 | React Components | 55+ |
 | Python Modules | 216+ |
 | Merged PRs | 80 |
-| Commits | 694+ |
-
----
-
-## Recommended Next Steps
-
-### High Priority
-1. **v7.2: First-Person Raycasting** - Enable click interaction in 3D view
-2. **Use Level Editor** - Create zone layouts for remaining floors
-
-### Medium Priority
-3. **v7.3: Enhanced Set Pieces** - Generate more 3D models via skill
-4. **v7.4: Secret Room System** - Hidden exploration rewards
-
-### Content Pass
-5. **Field Pulse Micro-Events** - Narrative moments during pulses
-6. **Extra Thematic Enemies** - 1 "spice" enemy per floor
+| Branches | 2 (develop, master) |
 
 ---
 
@@ -136,11 +116,11 @@ docker-compose up -d
 ## Git Status
 
 ```
-Branch: master / develop (synced)
-Latest: v7.1.0 (PR #80)
-Commit: 0f13ea5
+Branch: develop
+Latest commit: 41a25fa (chore: remove outdated UI migration plan)
+Stale branches: Cleaned up (was 26, now 2)
 ```
 
 ---
 
-*Last updated: 2026-01-16*
+*Last updated: 2026-01-17*
