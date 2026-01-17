@@ -215,15 +215,74 @@ export const SLIDES: Slide[] = [
     },
   },
   {
+    id: 'audience-assumptions',
+    type: 'bullets',
+    content: {
+      section: '6. Key Insights',
+      title: 'Assumptions From Here On',
+      bullets: [
+        {
+          label: 'LLM Training',
+          text: 'How LLMs are trained and why they default to high-probability outputs',
+        },
+        {
+          label: 'Context Windows',
+          text: 'Context windows and attention trade-offs',
+        },
+        {
+          label: 'Generic Outputs',
+          text: 'Why first-response outputs tend to be generic',
+        },
+        {
+          label: 'Goal',
+          text: 'The goal is not to explain what AI is — but how to push it beyond baseline behavior.',
+        },
+      ],
+    },
+  },
+  {
     id: 'divergence',
     type: 'story',
     content: {
       section: '6. Key Insight',
       type: 'success',
       title: 'The Iterative Divergence Protocol',
-      story: 'LLMs are biased toward their training data — ask any question and the first answers will be grounded in what\'s already known. To get truly original output, you must guide the AI step-by-step through logical refinement until it drifts away from conventional knowledge. Only then do you see novel ideas that don\'t exist in the public domain.',
-      why: 'The Skyfall Seed lore started as generic fantasy. Through 10+ iterations of "make it weirder," "what if memories are the real target," and "connect this to the gameplay," we arrived at the Field concept — something that feels genuinely original.',
-      lesson: 'In a world where everyone has AI access, competitive advantage comes from pushing models beyond their training distribution. First-response AI output is commodity. Iteratively divergent output is differentiation.',
+      story: 'LLMs are biased toward high-probability patterns from their training data. First responses are usually correct, coherent — and generic. To produce non-commodity output, deliberately force the model to move away from training defaults through structured iteration: (1) Accept the first answer as a baseline, not a solution. (2) Apply directed pressure: "Make this more unusual," "Invert the core assumption," "Combine with an unrelated domain." (3) Introduce constraints tied to your problem space. (4) Repeat until the output no longer resembles common prior art.',
+      why: 'The Skyfall Seed lore began as standard fantasy. Through 10+ guided iterations — shifting focus from power to memory, from entities to systems, from narrative to mechanics — the concept diverged into the Field: a reality-editing structure tightly coupled to gameplay. This process consistently produced results I could not find close analogues for despite targeted searches.',
+      lesson: 'First-response AI output is commodity. Competitive advantage comes from how far — and how deliberately — you push beyond it. Novelty emerges after correctness — not instead of it.',
+      diagram: `┌──────────────────────┐
+│  Initial Prompt      │
+│  (Well-Formed)       │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ Training-Default     │
+│ Answer               │
+│ (Correct, Generic)   │
+└──────────┬───────────┘
+           │  ← most people stop here
+           │
+           ▼
+┌──────────────────────┐
+│ Directed Pressure    │
+│ • Make it weirder    │
+│ • Invert assumption  │
+│ • Cross domains      │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ Divergent Output     │
+│ (Low prior density)  │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ Project-Specific     │
+│ Novel Solution       │
+└──────────────────────┘`,
+      diagramCaption: 'Novelty emerges after correctness — not instead of it.',
     },
   },
   {
@@ -233,9 +292,28 @@ export const SLIDES: Slide[] = [
       section: '6. Key Insight',
       type: 'success',
       title: 'Contextual Displacement',
-      story: 'Deliberately saturating the AI\'s context window weakens its reliance on training data defaults. When attention must spread across rich, novel context, training priors get diluted. The AI\'s drive to be helpful causes it to prioritize your contextual signals over its defaults — creating a "local override" of conventional patterns.',
-      why: 'ChatGPT was overloaded with lore fragments, thematic constraints, and "make it weirder" iterations until the Field concept emerged from beyond generic fantasy. Claude was overloaded with gameplay references from different genres and eras — roguelikes, JRPGs, survival horror, classic dungeon crawlers — producing mechanical combinations never shipped together in a production game.',
-      lesson: 'Don\'t start fresh conversations unnecessarily. Long, context-rich sessions produce more tailored, original output than short, default-biased exchanges. Context saturation is a feature, not a limitation.',
+      story: 'LLMs rely on training priors most strongly when context is sparse or generic. By saturating the context window with rich, project-specific material, you dilute training defaults and force the model to prioritize local signals. Long, continuous sessions outperform short, isolated prompts. Repeated references to the same domain concepts reshape responses. Novel context acts as a local override on generic patterns.',
+      why: 'ChatGPT was saturated with lore fragments, themes, constraints, and iterative reframings until the Field concept emerged beyond generic fantasy tropes. Claude was saturated with mechanics from roguelikes, JRPGs, survival horror, and classic dungeon crawlers — producing hybrid systems I had not seen shipped together. This is not "confusing the model" — it is giving it more signal than its priors can dominate.',
+      lesson: 'Context saturation is a feature, not a limitation. Treat the context window as programmable state.',
+      diagram: `            Model Attention
+                  ▼
+┌────────────────────────────────────────┐
+│                                        │
+│  Training Priors        Your Context   │
+│  (Generic Patterns)     (Rich, Local)  │
+│                                        │
+│  ████████████████       █████████████  │
+│  ████████████████       █████████████  │
+│  ████████████████       █████████████  │
+│                                        │
+└────────────────────────────────────────┘
+
+Sparse Context               Saturated Context
+───────────────              ─────────────────
+Priors dominate              Local signals dominate
+Generic answers              Domain-shaped answers
+Default patterns             Custom synthesis`,
+      diagramCaption: 'The model isn\'t "confused" — it\'s being re-weighted.',
     },
   },
   {
@@ -245,9 +323,39 @@ export const SLIDES: Slide[] = [
       section: '6. Key Insight',
       type: 'success',
       title: 'Self-Improving Analysis Loop',
-      story: 'AI can bootstrap its own tools to production quality through recursive self-critique. Have AI generate code analysis recommendations, then ask it to analyze its own output for flaws — wrong information, missing context, false positives. It identifies issues, fixes the detection logic, regenerates, and repeats. Each iteration catches progressively subtler issues until quality plateaus.',
-      why: 'Built a codebase health scanner that initially produced generic recommendations. Through 4 iterations of self-analysis, it learned to: detect Python Enums vs classes, recognize inheritance patterns, identify base+subclass relationships, count imports for impact assessment, and generate context-aware refactoring techniques. The final tool exceeded what manual development would achieve.',
-      lesson: 'Traditional static analysis tools improve slowly through user bug reports. This pattern enables immediate feedback, comprehensive coverage, and rapid iteration — all in one session. The AI is both the tool and its own QA engineer. The ceiling isn\'t the initial implementation; it\'s how many iterations you run.',
+      story: 'Use the model as both the tool and its own QA system through recursive critique. The loop: (1) Generate an analysis or tool. (2) Ask the model to critique its own output for incorrect assumptions, missed edge cases, false positives/negatives. (3) Have it fix the underlying logic, not just the surface output. (4) Regenerate. (5) Repeat until improvements plateau. Important constraint: This works best in rule-based domains (code, logic, systems). It degrades rapidly without clear evaluation criteria.',
+      why: 'A codebase health scanner evolved over four iterations from generic advice into a context-aware tool that: distinguished Python Enums from classes, detected inheritance hierarchies, estimated change impact via import analysis, and generated refactoring advice tied to actual usage.',
+      lesson: 'The ceiling isn\'t the initial output — it\'s how many critique cycles you run.',
+      diagram: `┌──────────────┐
+│ Generate     │
+│ Tool / Logic │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Self-Critique│
+│ • Wrong?     │
+│ • Missing?   │
+│ • Fragile?   │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Fix Logic    │
+│ (Not Output) │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Regenerate   │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Quality      │
+│ Plateau      │
+└──────────────┘`,
+      diagramCaption: 'The limiting factor is iteration count, not initial quality.',
     },
   },
   {
@@ -257,9 +365,25 @@ export const SLIDES: Slide[] = [
       section: '6. Key Insight',
       type: 'success',
       title: 'AI as Synthesis Engine',
-      story: 'AI can synthesize entirely new approaches that don\'t exist in its training data — but only when guided by domain expertise. The AI\'s training data provides building blocks; the user\'s expertise provides the architectural blueprint. Neither alone produces novelty. Together, they can create tools and patterns that have never been built before.',
-      why: 'Code and programming are rule-based systems. If you can logically explain what you want — breaking down the problem into components that map to concepts the AI understands — it can generate working implementations of genuinely novel ideas. The constraint isn\'t the AI\'s capability; it\'s your ability to articulate the vision clearly enough for logical connections to form.',
-      lesson: 'In a world where everyone has AI access, the differentiator is domain expertise + communication skill. First-response AI output is what the training data suggests. Expert-guided AI output is what\'s actually needed but doesn\'t exist yet.',
+      story: 'LLMs do not invent from nothing — but they can synthesize novel systems when guided by domain expertise. Division of labor: AI provides pattern recall, breadth, rapid implementation. Human provides vision, constraints, correctness, judgment. Neither side alone produces novelty — AI alone defaults to training data, human alone is bottlenecked by time and execution.',
+      why: 'Programming is a rule-based domain. By decomposing ideas into logical components the model already understands, I could guide it toward implementations that met needs not addressed by existing tools. The constraint is not model capability — it is the human\'s ability to articulate intent precisely enough for synthesis to occur.',
+      lesson: 'In a world where everyone has access to AI, differentiation comes from domain expertise and communication skill. Novelty lives at the intersection, not on either side.',
+      diagram: `┌───────────────────┐      ┌───────────────────┐
+│      Human        │      │        AI         │
+│───────────────────│      │───────────────────│
+│ Vision            │      │ Pattern recall    │
+│ Domain expertise  │─────▶│ Breadth           │
+│ Constraints       │      │ Implementation    │
+│ Judgment          │      │ Speed             │
+└─────────┬─────────┘      └─────────┬─────────┘
+          │                          │
+          └──────────┬───────────────┘
+                     ▼
+           ┌───────────────────────┐
+           │   Synthesized System  │
+           │ (Novel + Functional)  │
+           └───────────────────────┘`,
+      diagramCaption: 'Novelty lives at the intersection, not on either side.',
     },
   },
   {
@@ -268,14 +392,14 @@ export const SLIDES: Slide[] = [
     content: {
       section: '6. Key Insight',
       number: 4,
-      title: 'Zone Layout Designer — A Novel Tool',
-      task: 'Build a level editor for a procedurally generated dungeon game',
+      title: 'Zone Layout Designer — A Rule-Based Editor',
+      task: 'Design a level authoring tool for a procedurally generated dungeon game',
       tool: 'Claude Opus 4.5 via Claude Code CLI',
-      asked: 'Initially asked for a traditional level editor with manual tile/object placement',
-      shipped: 'A rule-based Zone Layout Designer that generates Python code for the procedural generation pipeline. Users define placement rules (position strategy, count, rotation, scale) and export them as @register_layout functions.',
-      fixed: 'AI defaulted to WYSIWYG editors (training data bias). Corrected by explaining: "These maps are procedurally generated — we need rules, not placements." AI then researched the existing generation system and synthesized a novel approach.',
-      verified: 'Compared to existing tools: Houdini-style rules + code generation + zone-awareness = unique combination not found in any existing game dev tool.',
-      impact: 'Created a tool that doesn\'t exist in the market — a visual DSL editor for dungeon generation rules. Demonstrates AI can synthesize genuinely new solutions when properly guided.',
+      asked: 'AI defaulted to a WYSIWYG tile editor — a correct solution to the wrong problem, reflecting training bias',
+      shipped: 'A visual, rule-based Zone Layout Designer that exports Python functions used directly by the procedural generation pipeline. Designers define placement strategies, counts, rotation and scale. Rules are exported as @register_layout functions.',
+      fixed: 'Explicitly reframed the problem: "These maps are generated by rules. We need to author constraints, not layouts." AI then researched the existing generation system and synthesized a novel approach.',
+      verified: 'Could not find existing tools that act as a visual DSL for procedural dungeon rules rather than authored maps. Combination of Houdini-style rules + code generation + zone-awareness is unique.',
+      impact: 'Without domain expertise, AI will build the wrong thing perfectly. Expertise enables correction — and synthesis. The AI failed because the mental model was wrong — not the execution.',
     },
   },
   {
@@ -292,6 +416,26 @@ export const SLIDES: Slide[] = [
         label: 'The Collaboration Model',
         text: 'Human provides: vision, domain knowledge, quality judgment, course-correction. AI provides: implementation speed, pattern synthesis, technical breadth. Novel output emerges from the intersection.',
       },
+    },
+  },
+  {
+    id: 'visual-summary',
+    type: 'story',
+    content: {
+      section: '6. Key Insight',
+      type: 'success',
+      title: 'From Commodity to Differentiation',
+      story: 'The value is not access to AI — it\'s how you drive it. Everyone gets the same training-default outputs. Differentiation comes from applying iterative pressure, saturating context, and bringing domain expertise to guide synthesis.',
+      diagram: `Prompt
+  ↓
+Training-Default Output
+  ↓  (Iterative pressure)
+Divergent Constraints
+  ↓
+Context Saturation
+  ↓
+Synthesized, Project-Specific Output`,
+      diagramCaption: 'The value is not access to AI — it\'s how you drive it.',
     },
   },
   {

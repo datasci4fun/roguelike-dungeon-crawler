@@ -85,6 +85,8 @@ export interface StoryContent {
   story: string;
   why?: string;
   lesson?: string;
+  diagram?: string;
+  diagramCaption?: string;
 }
 
 export interface RecommendationItem {

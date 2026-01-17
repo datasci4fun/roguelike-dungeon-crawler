@@ -183,17 +183,29 @@ export function SlideRenderer({ slide }: { slide: Slide }) {
     case 'story': {
       const { content } = slide;
       return (
-        <div className={`slide slide-story ${content.type}`}>
+        <div className={`slide slide-story ${content.type} ${content.diagram ? 'with-diagram' : ''}`}>
           <span className="section-label">{content.section}</span>
           <div className="story-icon">{content.type === 'success' ? '✓' : '⚠'}</div>
           <h2>{content.title}</h2>
-          <p className="story-text">{content.story}</p>
-          {content.why && (
-            <p className="story-why"><strong>Why it worked:</strong> {content.why}</p>
-          )}
-          {content.lesson && (
-            <p className="story-lesson"><strong>Lesson:</strong> {content.lesson}</p>
-          )}
+          <div className="story-content">
+            <div className="story-text-column">
+              <p className="story-text">{content.story}</p>
+              {content.why && (
+                <p className="story-why"><strong>Why it worked:</strong> {content.why}</p>
+              )}
+              {content.lesson && (
+                <p className="story-lesson"><strong>Lesson:</strong> {content.lesson}</p>
+              )}
+            </div>
+            {content.diagram && (
+              <div className="story-diagram-column">
+                <pre className="story-diagram">{content.diagram}</pre>
+                {content.diagramCaption && (
+                  <p className="diagram-caption">{content.diagramCaption}</p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       );
     }
