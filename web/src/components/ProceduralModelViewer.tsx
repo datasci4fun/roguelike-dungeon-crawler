@@ -152,7 +152,7 @@ export function ProceduralModelViewer({
     try {
       const model = createModel(modelOptions);
 
-      // Center and scale model
+      // Center horizontally and place bottom on ground (y=0)
       const box = new THREE.Box3().setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
       const size = box.getSize(new THREE.Vector3());
@@ -161,16 +161,24 @@ export function ProceduralModelViewer({
       if (maxDim > 0) {
         const normalizedScale = 1.5 / maxDim;
         model.scale.setScalar(normalizedScale);
-        model.position.set(-center.x * normalizedScale, -center.y * normalizedScale + 0.5, -center.z * normalizedScale);
+
+        // Position: center X/Z, but place bottom of model at y=0
+        const bottomY = box.min.y * normalizedScale;
+        model.position.set(
+          -center.x * normalizedScale,
+          -bottomY,  // This puts the bottom at y=0
+          -center.z * normalizedScale
+        );
       }
 
       scene.add(model);
       modelRef.current = model;
 
-      // Set initial camera position
+      // Set initial camera position - look at model center height
+      const modelHeight = size.y * (1.5 / maxDim); // Scaled height
       const distance = Math.max(2, maxDim * 1.5);
-      camera.position.set(distance, distance, distance);
-      controls.target.set(0, 0.5, 0);
+      camera.position.set(distance, distance * 0.8, distance);
+      controls.target.set(0, modelHeight / 2, 0); // Look at vertical center of model
       controls.update();
     } catch (error) {
       console.error('Error creating procedural model:', error);

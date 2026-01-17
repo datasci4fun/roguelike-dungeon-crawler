@@ -15,6 +15,7 @@ import { ProceduralModelViewer } from '../components/ProceduralModelViewer';
 import { useJobs } from '../contexts/JobsContext';
 import {
   MODEL_LIBRARY,
+  getProceduralEnemyModel,
   type ModelDefinition,
   type ModelCategory,
 } from '../models';
@@ -52,6 +53,7 @@ const PROCEDURAL_CATEGORY_COLORS: Record<ModelCategory, string> = {
   decoration: '#cc5de8',
   interactive: '#69db7c',
   prop: '#868e96',
+  enemy: '#ff6b6b',
 };
 
 export function AssetViewer() {
@@ -308,6 +310,7 @@ export function AssetViewer() {
             }}
           >
             <option value="all">All Categories</option>
+            <option value="enemy">Enemies</option>
             <option value="structure">Structure</option>
             <option value="furniture">Furniture</option>
             <option value="decoration">Decoration</option>
@@ -474,7 +477,11 @@ export function AssetViewer() {
             ) : (
               /* Asset Queue List */
               <>
-                {filteredAssets.map((asset) => (
+                {filteredAssets.map((asset) => {
+                  // Check if a procedural alternative exists
+                  const proceduralAlt = getProceduralEnemyModel(asset.name);
+
+                  return (
                   <div
                     key={asset.id}
                     onClick={() => setSelectedAsset(asset)}
@@ -494,16 +501,40 @@ export function AssetViewer() {
                       marginBottom: '8px',
                     }}>
                       <h3 style={{ margin: 0, color: '#fff' }}>{asset.name}</h3>
-                      <span style={{
-                        padding: '2px 8px',
-                        background: STATUS_BADGES[asset.status].bg,
-                        color: STATUS_BADGES[asset.status].text,
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        textTransform: 'uppercase',
-                      }}>
-                        {asset.status}
-                      </span>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {proceduralAlt && (
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTab('procedural');
+                              setSelectedProcedural(proceduralAlt);
+                              setSelectedAsset(null);
+                            }}
+                            style={{
+                              padding: '2px 6px',
+                              background: '#cc5de822',
+                              color: '#cc5de8',
+                              borderRadius: '4px',
+                              fontSize: '10px',
+                              cursor: 'pointer',
+                              border: '1px solid #cc5de844',
+                            }}
+                            title="Click to view procedural version"
+                          >
+                            ✦ Procedural
+                          </span>
+                        )}
+                        <span style={{
+                          padding: '2px 8px',
+                          background: STATUS_BADGES[asset.status].bg,
+                          color: STATUS_BADGES[asset.status].text,
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          textTransform: 'uppercase',
+                        }}>
+                          {asset.status}
+                        </span>
+                      </div>
                     </div>
 
                     <div style={{
@@ -547,7 +578,8 @@ export function AssetViewer() {
                       </p>
                     )}
                   </div>
-                ))}
+                  );
+                })}
 
                 {filteredAssets.length === 0 && (
                   <div style={{
@@ -712,6 +744,50 @@ export function AssetViewer() {
               border: '1px solid #333',
             }}>
               <h2 style={{ margin: '0 0 15px', color: '#fff' }}>{selectedAsset.name}</h2>
+
+              {/* Procedural Alternative Notice */}
+              {(() => {
+                const procAlt = getProceduralEnemyModel(selectedAsset.name);
+                if (procAlt) {
+                  return (
+                    <div
+                      onClick={() => {
+                        setTab('procedural');
+                        setSelectedProcedural(procAlt);
+                        setSelectedAsset(null);
+                      }}
+                      style={{
+                        marginBottom: '15px',
+                        padding: '10px 12px',
+                        background: '#cc5de815',
+                        border: '1px solid #cc5de844',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: '#cc5de8',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                      }}>
+                        <span>✦</span>
+                        Procedural Version Available
+                      </div>
+                      <div style={{
+                        marginTop: '4px',
+                        color: '#999',
+                        fontSize: '12px',
+                      }}>
+                        This enemy has a procedural model that renders in battle automatically. Click to view.
+                      </div>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
 
               {/* 3D Preview */}
               <div style={{

@@ -15,6 +15,9 @@ import { createStatue, STATUE_META } from './statue';
 import { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
 import { createGoblin, GOBLIN_META } from './goblin';
 import { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
+import { createSkeleton, SKELETON_META } from './skeleton';
+import { createOrc, ORC_META } from './orc';
+import { createRat, RAT_META } from './rat';
 
 // Re-export materials
 export * from './materials';
@@ -27,6 +30,9 @@ export { createStatue, STATUE_META } from './statue';
 export { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
 export { createGoblin, GOBLIN_META } from './goblin';
 export { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
+export { createSkeleton, SKELETON_META } from './skeleton';
+export { createOrc, ORC_META } from './orc';
+export { createRat, RAT_META } from './rat';
 
 /**
  * Model category types
@@ -84,6 +90,18 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
   {
     ...GOBLIN_KING_META,
     create: createGoblinKing,
+  },
+  {
+    ...SKELETON_META,
+    create: createSkeleton,
+  },
+  {
+    ...ORC_META,
+    create: createOrc,
+  },
+  {
+    ...RAT_META,
+    create: createRat,
   },
 ];
 
