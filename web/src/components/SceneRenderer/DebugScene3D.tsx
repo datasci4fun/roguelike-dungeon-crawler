@@ -197,8 +197,32 @@ export function DebugScene3D({
     // Cleanup
     return () => {
       cancelAnimationFrame(sceneRef.current?.animationId || 0);
+
+      // Dispose all scene objects (geometries and materials)
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          child.geometry.dispose();
+          if (Array.isArray(child.material)) {
+            child.material.forEach((m) => m.dispose());
+          } else if (child.material) {
+            child.material.dispose();
+          }
+        }
+      });
+
+      // Dispose textures
+      floorTexture.dispose();
+      ceilingTexture.dispose();
+      wallTexture.dispose();
+
+      // Remove canvas from DOM
+      if (containerRef.current?.contains(renderer.domElement)) {
+        containerRef.current.removeChild(renderer.domElement);
+      }
+
+      // Force WebGL context release and dispose renderer
+      renderer.forceContextLoss();
       renderer.dispose();
-      containerRef.current?.removeChild(renderer.domElement);
       sceneRef.current = null;
     };
   }, [width, height, biome]);

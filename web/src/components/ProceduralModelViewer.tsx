@@ -107,13 +107,44 @@ export function ProceduralModelViewer({
 
     return () => {
       cancelAnimationFrame(animationIdRef.current);
+
+      // Dispose model resources
+      if (modelRef.current) {
+        modelRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry.dispose();
+            if (Array.isArray(child.material)) {
+              child.material.forEach((m) => m.dispose());
+            } else if (child.material) {
+              child.material.dispose();
+            }
+          }
+        });
+        modelRef.current = null;
+      }
+
+      // Dispose ground plane
+      ground.geometry.dispose();
+      groundMaterial.dispose();
+
+      // Dispose controls
+      if (controlsRef.current) {
+        controlsRef.current.dispose();
+        controlsRef.current = null;
+      }
+
+      // Remove canvas from DOM
+      if (container.contains(renderer.domElement)) {
+        container.removeChild(renderer.domElement);
+      }
+
+      // Force WebGL context release and dispose renderer
+      renderer.forceContextLoss();
       renderer.dispose();
-      container.removeChild(renderer.domElement);
+
       rendererRef.current = null;
       sceneRef.current = null;
       cameraRef.current = null;
-      controlsRef.current = null;
-      modelRef.current = null;
       lastModelIdRef.current = null;
     };
   }, [width, height, backgroundColor, autoRotate]);

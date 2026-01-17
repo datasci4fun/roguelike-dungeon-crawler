@@ -27,8 +27,9 @@ export function ModelViewer({
   const modelRef = useRef<THREE.Group | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const lightsAddedRef = useRef(false);
+  const animationIdRef = useRef<number>(0);
   const loadIdRef = useRef(0); // Track which load is current
+  const lightsAddedRef = useRef(false); // Track if lights have been added
 
   // Initialize renderer once
   useEffect(() => {
@@ -82,14 +83,49 @@ export function ModelViewer({
 
     // Animation loop
     const animate = () => {
-      requestAnimationFrame(animate);
+      animationIdRef.current = requestAnimationFrame(animate);
       controls.update();
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
-      // Don't dispose during StrictMode remount
+      // Cancel animation frame
+      cancelAnimationFrame(animationIdRef.current);
+
+      // Dispose of model resources
+      if (modelRef.current) {
+        modelRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry.dispose();
+            if (Array.isArray(child.material)) {
+              child.material.forEach((m) => m.dispose());
+            } else if (child.material) {
+              child.material.dispose();
+            }
+          }
+        });
+        modelRef.current = null;
+      }
+
+      // Dispose controls
+      if (controlsRef.current) {
+        controlsRef.current.dispose();
+        controlsRef.current = null;
+      }
+
+      // Remove DOM element and dispose renderer
+      if (rendererRef.current && container.contains(rendererRef.current.domElement)) {
+        container.removeChild(rendererRef.current.domElement);
+      }
+      if (rendererRef.current) {
+        rendererRef.current.forceContextLoss();
+        rendererRef.current.dispose();
+        rendererRef.current = null;
+      }
+
+      sceneRef.current = null;
+      cameraRef.current = null;
     };
   }, [width, height, backgroundColor]);
 
