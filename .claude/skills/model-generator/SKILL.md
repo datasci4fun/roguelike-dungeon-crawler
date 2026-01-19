@@ -38,8 +38,39 @@ node .claude/skills/model-generator/tools/analyze_repo.mjs
 This produces `.claude/skills/model-generator/out/repo_context.json` with:
 - available material preset names
 - categories
+- existing models and their versions
+- enemy models mapped to bestiary names
 
-### Step 2: Generate model file (creative)
+### Step 2: Fetch enemy data (REQUIRED for enemy models)
+
+**For enemy/boss models, you MUST fetch canonical data from the bestiary API:**
+
+```bash
+node .claude/skills/model-generator/tools/fetch_enemy.mjs --enemy-id <bestiary_id>
+```
+
+Examples:
+```bash
+node .claude/skills/model-generator/tools/fetch_enemy.mjs --enemy-id wraith
+node .claude/skills/model-generator/tools/fetch_enemy.mjs --enemy-id goblin_king
+node .claude/skills/model-generator/tools/fetch_enemy.mjs --enemy-id spider_queen
+```
+
+To see all available enemies:
+```bash
+node .claude/skills/model-generator/tools/fetch_enemy.mjs --list
+```
+
+This produces `.claude/skills/model-generator/out/enemy_data.json` with:
+- `name` - Display name (use for `enemyName` field)
+- `appearance` - **CANONICAL visual description - USE THIS for the 3D model**
+- `behavior` - Animation/pose hints
+- `abilities` - For effects and visual details
+- `weaknesses`/`resistances` - Color/material hints
+
+**IMPORTANT**: The `appearance` field is the authoritative description. Do NOT invent visual details - interpret this description into Three.js geometry.
+
+### Step 3: Generate model file (creative)
 Create a new file at:
 - `web/src/models/<modelFileStem>.ts`
 
@@ -53,9 +84,32 @@ Use:
 - Avoid `ConeGeometry` rotations when possible - use boxes/cylinders instead
 - Keep models simple - 100-300 lines is typical
 - Use material presets from `materials.ts` when possible
-- For enemies, include `enemyName` field matching the battle state name
+- For enemies, include `enemyName` field matching the bestiary `name` exactly
 
-### Step 3: Deterministic registration + validation
+**For Enemy Models - Interpreting Bestiary Data:**
+
+Read the `enemy_data.json` output and translate the canonical `appearance` field:
+
+| Appearance Text | Three.js Interpretation |
+|-----------------|------------------------|
+| "Small green-skinned humanoid" | Scale down, use green material |
+| "Translucent ghostly figure" | Use transparent/emissive material |
+| "Towering humanoid of ice" | Scale up, use crystal/ice materials |
+| "Robed figure with glowing eyes" | Cone/cylinder robe, emissive eye spheres |
+| "Massive spider with iridescent carapace" | Large scale, metallic sheen material |
+
+Use `weaknesses`/`resistances` for color hints:
+- Fire weakness → ice-blue colors
+- Ice weakness → warm/red colors
+- Fire resistance → red/orange accents
+- Dark element → purple/black tones
+
+Use `threat_level` for visual intensity:
+- Level 1-2: Simple geometry, muted colors
+- Level 3-4: More detail, glowing elements
+- Level 5: Complex, dramatic, emissive effects
+
+### Step 4: Deterministic registration + validation
 Run the driver:
 ```bash
 bash .claude/skills/model-generator/run.sh \
@@ -79,7 +133,7 @@ This will:
   - `.claude/skills/model-generator/out/result.json`
   - `.claude/skills/model-generator/out/log.txt`
 
-### Step 4: Output to user
+### Step 5: Output to user
 Only report:
 - files created/changed
 - model id/name/category

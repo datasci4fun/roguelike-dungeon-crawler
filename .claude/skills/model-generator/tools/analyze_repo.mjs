@@ -107,6 +107,54 @@ function getVersionInfo(models) {
   return byBase;
 }
 
+/**
+ * Extract enemyName fields from model files to map models to bestiary entries
+ */
+function extractEnemyNames(cfg) {
+  const indexSrc = readText(cfg.paths.models_index);
+  const enemyModels = {};
+
+  // Parse import statements to find model files
+  const importRegex = /import\s*\{[^}]*\}\s*from\s*'\.\/(\w+)'/g;
+  let match;
+
+  while ((match = importRegex.exec(indexSrc)) !== null) {
+    const fileName = match[1];
+    const filePath = `web/src/models/${fileName}.ts`;
+
+    try {
+      const modelSrc = readText(filePath);
+
+      // Extract enemyName field if present
+      const enemyNameMatch = modelSrc.match(/enemyName:\s*['"]([^'"]+)['"]/);
+      if (enemyNameMatch) {
+        const enemyName = enemyNameMatch[1];
+
+        // Extract isActive status
+        const isActiveMatch = modelSrc.match(/isActive:\s*(true|false)/);
+        const isActive = isActiveMatch ? isActiveMatch[1] === 'true' : true;
+
+        // Extract version
+        const versionMatch = modelSrc.match(/version:\s*(\d+)/);
+        const version = versionMatch ? parseInt(versionMatch[1], 10) : 1;
+
+        if (!enemyModels[enemyName]) {
+          enemyModels[enemyName] = [];
+        }
+        enemyModels[enemyName].push({
+          file: fileName,
+          isActive,
+          version,
+        });
+      }
+    } catch {
+      // File doesn't exist or can't be read, skip
+    }
+  }
+
+  return enemyModels;
+}
+
 function main() {
   const cfg = readJSON(".claude/skills/model-generator/config.json");
   const outDir = cfg.paths.out_dir;
@@ -121,6 +169,20 @@ function main() {
   // Group by base model ID for version tracking
   const versionInfo = getVersionInfo(existingModels);
 
+  // Extract enemy name mappings
+  const enemyModels = extractEnemyNames(cfg);
+
+  // Find enemy models specifically
+  const enemyModelsList = existingModels.filter(m =>
+    m.id.includes('goblin') ||
+    m.id.includes('skeleton') ||
+    m.id.includes('orc') ||
+    m.id.includes('rat') ||
+    m.id.includes('spider') ||
+    m.id.includes('king') ||
+    m.id.includes('queen')
+  );
+
   const categories = ["structure", "furniture", "decoration", "interactive", "prop", "enemy"];
 
   // Output context for Claude and other tools
@@ -129,10 +191,17 @@ function main() {
     categories,
     existingModels,
     versionInfo,
+    enemyModels,  // Maps enemy names to their procedural models
+    hint: "For enemy models, run: node .claude/skills/model-generator/tools/fetch_enemy.mjs --enemy-id <id>",
   });
 
   // If no result.json exists yet, create a minimal ok stub (other steps will overwrite)
-  writeJSON(resultPath, { ok: true, step: "analyze_repo", context_file: `${outDir}/repo_context.json` });
+  writeJSON(resultPath, {
+    ok: true,
+    step: "analyze_repo",
+    context_file: `${outDir}/repo_context.json`,
+    enemyModelCount: Object.keys(enemyModels).length,
+  });
 }
 
 main();
