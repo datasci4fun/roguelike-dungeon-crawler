@@ -238,6 +238,11 @@ export function Layout() {
                     <span className="menu-icon">🎵</span>
                     Audio Jukebox
                   </Link>
+                  <div className="menu-divider" />
+                  <Link to="/claude-skills" onClick={closeDropdown}>
+                    <span className="menu-icon">🤖</span>
+                    Claude Skills
+                  </Link>
                 </div>
               )}
             </div>

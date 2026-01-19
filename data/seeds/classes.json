@@ -1,6 +1,6 @@
 {
-  "version": "1.1.0",
-  "updated_at": "2026-01-15T00:00:00Z",
+  "version": "1.2.0",
+  "updated_at": "2026-01-19T00:00:00Z",
   "config": {
     "base_player_hp": 20,
     "base_attack_damage": 3,
@@ -14,7 +14,7 @@
     {
       "id": "warrior",
       "name": "Warrior",
-      "description": "Master of melee combat",
+      "description": "Master of melee combat, the warrior excels at direct confrontation.",
       "hp_modifier": 5,
       "atk_modifier": 1,
       "def_modifier": 1,
@@ -26,12 +26,43 @@
       "luck_modifier": 0,
       "hit_die": "d10",
       "primary_stat": "STR",
-      "armor_proficiency": ["light", "medium", "heavy", "shields"]
+      "armor_proficiency": ["light", "medium", "heavy", "shields"],
+      "playstyle": "Get in close and hit hard. Use Power Strike to burst down tough enemies and Shield Wall to survive dangerous situations. Your high health pool lets you trade blows favorably.",
+      "lore": "Warriors are the backbone of any army, trained from youth in the arts of sword and shield. They are found wherever conflict arises, from city guards to legendary champions. A warrior's strength comes not from magic, but from discipline, training, and sheer determination.",
+      "equipment_type": "sword_shield",
+      "starting_equipment": "Iron sword and wooden shield",
+      "primary_color": "#8b4513",
+      "secondary_color": "#696969",
+      "glow_color": "#ffaa44",
+      "icon": "\u2694\ufe0f",
+      "abilities": [
+        {
+          "name": "Power Strike",
+          "description": "A devastating overhead blow that deals double damage.",
+          "ability_type": "active",
+          "damage": 6,
+          "effect": "2x damage",
+          "cooldown": 3
+        },
+        {
+          "name": "Shield Wall",
+          "description": "Raise your shield to block all incoming damage.",
+          "ability_type": "active",
+          "effect": "Block all damage for 2 turns",
+          "cooldown": 5
+        },
+        {
+          "name": "Combat Mastery",
+          "description": "Years of training grant increased melee effectiveness.",
+          "ability_type": "passive",
+          "effect": "+15% melee damage"
+        }
+      ]
     },
     {
       "id": "mage",
       "name": "Mage",
-      "description": "Wielder of arcane power",
+      "description": "Wielder of arcane power, mages command devastating magical attacks.",
       "hp_modifier": -3,
       "atk_modifier": -1,
       "def_modifier": 0,
@@ -43,12 +74,44 @@
       "luck_modifier": 2,
       "hit_die": "d6",
       "primary_stat": "DEX",
-      "armor_proficiency": ["light"]
+      "armor_proficiency": ["light"],
+      "playstyle": "Keep your distance and rain destruction from afar. Fireball hits hard at range while Frost Nova helps when enemies get too close. Your Mana Shield provides some protection, but avoid prolonged melee combat.",
+      "lore": "Mages spend years studying the arcane arts in ancient towers and forbidden libraries. They learn to bend reality itself, channeling raw magical energy into destructive spells. Though physically frail, a mage's power can level armies.",
+      "equipment_type": "staff",
+      "starting_equipment": "Gnarled staff with glowing orb",
+      "primary_color": "#4a2a7a",
+      "secondary_color": "#8844cc",
+      "glow_color": "#aa66ff",
+      "icon": "\ud83d\udd2e",
+      "abilities": [
+        {
+          "name": "Fireball",
+          "description": "Hurl a ball of fire at a distant enemy.",
+          "ability_type": "active",
+          "damage": 8,
+          "effect": "Burns target for 2 additional damage over 2 turns",
+          "cooldown": 2
+        },
+        {
+          "name": "Frost Nova",
+          "description": "Release a wave of freezing cold around you.",
+          "ability_type": "active",
+          "damage": 4,
+          "effect": "Freezes nearby enemies for 1 turn",
+          "cooldown": 4
+        },
+        {
+          "name": "Mana Shield",
+          "description": "Arcane energy absorbs a portion of incoming damage.",
+          "ability_type": "passive",
+          "effect": "25% damage reduction"
+        }
+      ]
     },
     {
       "id": "rogue",
       "name": "Rogue",
-      "description": "Silent and deadly",
+      "description": "Silent and deadly, rogues strike from the shadows.",
       "hp_modifier": 0,
       "atk_modifier": 2,
       "def_modifier": -1,
@@ -60,12 +123,43 @@
       "luck_modifier": 1,
       "hit_die": "d8",
       "primary_stat": "DEX",
-      "armor_proficiency": ["light"]
+      "armor_proficiency": ["light"],
+      "playstyle": "Position yourself carefully for Backstab's massive damage bonus. Use Smoke Bomb to escape when overwhelmed or to set up another devastating strike. Your Critical Strike passive means every hit could be lethal.",
+      "lore": "Rogues operate in the spaces between law and chaos, using stealth and cunning where others rely on strength. They are assassins, thieves, and spies - though many put their skills to heroic use. Never underestimate the one who strikes from shadows.",
+      "equipment_type": "daggers",
+      "starting_equipment": "Twin daggers and hooded cloak",
+      "primary_color": "#2a2a2a",
+      "secondary_color": "#444444",
+      "glow_color": "#44aa44",
+      "icon": "\ud83d\udde1\ufe0f",
+      "abilities": [
+        {
+          "name": "Backstab",
+          "description": "Strike a vulnerable enemy for triple damage.",
+          "ability_type": "active",
+          "damage": 9,
+          "effect": "3x damage from behind or against unaware enemies",
+          "cooldown": 3
+        },
+        {
+          "name": "Smoke Bomb",
+          "description": "Vanish in a cloud of smoke.",
+          "ability_type": "active",
+          "effect": "Become invisible for 3 turns",
+          "cooldown": 5
+        },
+        {
+          "name": "Critical Strike",
+          "description": "Training allows for precise, devastating blows.",
+          "ability_type": "passive",
+          "effect": "20% chance for double damage on any attack"
+        }
+      ]
     },
     {
       "id": "cleric",
       "name": "Cleric",
-      "description": "Divine light in darkness",
+      "description": "Divine light in darkness, clerics heal and smite in equal measure.",
       "hp_modifier": 2,
       "atk_modifier": 0,
       "def_modifier": 1,
@@ -77,7 +171,38 @@
       "luck_modifier": 1,
       "hit_die": "d8",
       "primary_stat": "CON",
-      "armor_proficiency": ["light", "medium", "shields"]
+      "armor_proficiency": ["light", "medium", "shields"],
+      "playstyle": "Balance offense and support. Heal keeps you alive through tough fights while Smite deals extra damage to the undead horrors that fill the dungeon. Divine Protection helps you survive mistakes.",
+      "lore": "Clerics are servants of the divine, channeling holy power through prayer and faith. They stand against the forces of darkness, healing the wounded and smiting the wicked. In the depths of the dungeon, their light is a beacon of hope.",
+      "equipment_type": "holy",
+      "starting_equipment": "Holy symbol and blessed robes",
+      "primary_color": "#ffd700",
+      "secondary_color": "#f5f5dc",
+      "glow_color": "#ffffaa",
+      "icon": "\u271d\ufe0f",
+      "abilities": [
+        {
+          "name": "Heal",
+          "description": "Channel divine energy to restore health.",
+          "ability_type": "active",
+          "effect": "Restore 10 HP",
+          "cooldown": 3
+        },
+        {
+          "name": "Smite",
+          "description": "Strike with holy wrath.",
+          "ability_type": "active",
+          "damage": 6,
+          "effect": "Deals 2x damage to undead",
+          "cooldown": 2
+        },
+        {
+          "name": "Divine Protection",
+          "description": "The gods watch over their faithful.",
+          "ability_type": "passive",
+          "effect": "20% damage reduction"
+        }
+      ]
     }
   ]
 }

@@ -121,6 +121,14 @@ class Race(Base):
     con_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     luck_modifier: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
+    # Visual/model generation fields
+    appearance: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    lore: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    base_height: Mapped[float] = mapped_column(Float, nullable=False, default=1.8)
+    skin_color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    eye_color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    icon: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     def __repr__(self) -> str:
@@ -152,6 +160,19 @@ class PlayerClass(Base):
     hit_die: Mapped[str] = mapped_column(String(10), nullable=False, default="d8")
     primary_stat: Mapped[str] = mapped_column(String(10), nullable=False, default="STR")
     armor_proficiency: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
+
+    # Visual/model generation fields
+    playstyle: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    lore: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    equipment_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    starting_equipment: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    primary_color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    secondary_color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    glow_color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    icon: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
+
+    # Full ability definitions (JSON with detailed ability info)
+    abilities: Mapped[Optional[List[dict]]] = mapped_column(JSON, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

@@ -34,6 +34,7 @@ from .api.routes import router as routes_router
 from .api.metrics import router as metrics_router, MetricsMiddleware
 from .api.lore import router as lore_router
 from .api.bestiary import router as bestiary_router
+from .api.character_guide import router as character_guide_router
 from .api.items import router as items_router
 from .api.gameguide import router as gameguide_router
 from .api.game_constants import router as game_constants_router
@@ -131,6 +132,7 @@ def create_app() -> FastAPI:
     app.include_router(metrics_router, tags=["dev-tools"])
     app.include_router(lore_router, tags=["content"])
     app.include_router(bestiary_router, tags=["content"])
+    app.include_router(character_guide_router, tags=["content"])
     app.include_router(items_router, tags=["content"])
     app.include_router(gameguide_router, tags=["content"])
     app.include_router(game_constants_router, tags=["game-constants"])

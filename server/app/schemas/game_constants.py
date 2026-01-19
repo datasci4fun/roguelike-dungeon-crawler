@@ -113,6 +113,13 @@ class RaceResponse(BaseModel):
     trait_name: str = Field(..., description="Racial trait display name")
     trait_description: str = Field(..., description="Racial trait effect description")
     starts_with_feat: bool = Field(False, description="Whether race starts with a feat")
+    # Visual/model generation fields
+    appearance: Optional[str] = Field(None, description="Physical appearance description for 3D model generation")
+    lore: Optional[str] = Field(None, description="Race lore and background")
+    base_height: float = Field(1.8, description="Base height multiplier (1.0 = average human)")
+    skin_color: Optional[str] = Field(None, description="Default skin color hex code")
+    eye_color: Optional[str] = Field(None, description="Default eye color hex code")
+    icon: Optional[str] = Field(None, description="Emoji icon for UI display")
 
     class Config:
         json_schema_extra = {
@@ -126,9 +133,23 @@ class RaceResponse(BaseModel):
                 "trait": "adaptive",
                 "trait_name": "Adaptive",
                 "trait_description": "+10% XP gain, +1 starting feat",
-                "starts_with_feat": True
+                "starts_with_feat": True,
+                "appearance": "Medium build with varied skin tones",
+                "base_height": 1.8,
+                "skin_color": "#d4a574",
+                "icon": "\ud83d\udc64"
             }
         }
+
+
+class ClassAbilityResponse(BaseModel):
+    """Class ability definition."""
+    name: str = Field(..., description="Ability name")
+    description: str = Field(..., description="Ability description")
+    ability_type: str = Field(..., description="active or passive")
+    damage: Optional[int] = Field(None, description="Base damage if applicable")
+    effect: Optional[str] = Field(None, description="Special effect description")
+    cooldown: Optional[int] = Field(None, description="Cooldown in turns (active only)")
 
 
 class ClassResponse(BaseModel):
@@ -139,8 +160,18 @@ class ClassResponse(BaseModel):
     hp_modifier: int = Field(0, description="HP modifier from base")
     atk_modifier: int = Field(0, description="Attack modifier from base")
     def_modifier: int = Field(0, description="Defense modifier from base")
-    active_abilities: Optional[List[str]] = Field(None, description="Active abilities")
-    passive_abilities: Optional[List[str]] = Field(None, description="Passive abilities")
+    active_abilities: Optional[List[str]] = Field(None, description="Active ability identifiers")
+    passive_abilities: Optional[List[str]] = Field(None, description="Passive ability identifiers")
+    # Visual/model generation fields
+    playstyle: Optional[str] = Field(None, description="Gameplay tips and tactics")
+    lore: Optional[str] = Field(None, description="Class lore and background")
+    equipment_type: Optional[str] = Field(None, description="Default equipment style (sword_shield, staff, daggers, holy)")
+    starting_equipment: Optional[str] = Field(None, description="Description of starting gear")
+    primary_color: Optional[str] = Field(None, description="Main armor/clothing color hex code")
+    secondary_color: Optional[str] = Field(None, description="Accent/trim color hex code")
+    glow_color: Optional[str] = Field(None, description="Magic effect glow color hex code")
+    icon: Optional[str] = Field(None, description="Emoji icon for UI display")
+    abilities: Optional[List[Dict[str, Any]]] = Field(None, description="Full ability definitions with details")
 
     class Config:
         json_schema_extra = {
@@ -152,7 +183,11 @@ class ClassResponse(BaseModel):
                 "atk_modifier": 1,
                 "def_modifier": 1,
                 "active_abilities": ["power_strike", "shield_wall"],
-                "passive_abilities": ["combat_mastery"]
+                "passive_abilities": ["combat_mastery"],
+                "playstyle": "Get in close and hit hard",
+                "equipment_type": "sword_shield",
+                "primary_color": "#8b4513",
+                "icon": "\u2694\ufe0f"
             }
         }
 
