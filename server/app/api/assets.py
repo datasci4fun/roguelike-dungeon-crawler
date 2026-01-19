@@ -7,6 +7,7 @@ Handles file uploads and generation job queue for the 3D asset pipeline dev tool
 import json
 import os
 import shutil
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -380,3 +381,159 @@ async def get_worker_status():
         "pending_count": len(pending),
         "message": "Worker runs automatically via Docker container",
     }
+
+
+# =============================================================================
+# Procedural Model Version Management
+# =============================================================================
+
+
+def get_repo_root() -> Path:
+    """Get the repository root directory."""
+    # In Docker: we mount to /repo for scripts that need repo access
+    docker_repo = Path("/repo")
+    if docker_repo.exists() and (docker_repo / ".claude").exists():
+        return docker_repo
+    # Local development: server/ is inside repo root
+    return Path(__file__).parent.parent.parent.parent
+
+
+class SetActiveRequest(BaseModel):
+    """Request to set a model version as active."""
+    model_id: str
+
+
+@router.post("/procedural/set-active")
+async def set_procedural_model_active(request: SetActiveRequest):
+    """
+    Set a procedural model version as active (used in-game).
+
+    This updates web/src/models/index.ts to mark the specified model
+    as isActive: true and deactivate other versions with the same baseModelId.
+    """
+    import re
+
+    model_id = request.model_id
+
+    # Validate model_id (prevent injection)
+    if not model_id or "/" in model_id or "\\" in model_id or ".." in model_id:
+        raise HTTPException(status_code=400, detail="Invalid model ID")
+
+    repo_root = get_repo_root()
+    index_path = repo_root / "web" / "src" / "models" / "index.ts"
+
+    if not index_path.exists():
+        raise HTTPException(
+            status_code=500,
+            detail=f"index.ts not found at {index_path}"
+        )
+
+    try:
+        # Read the source file
+        src = index_path.read_text(encoding="utf-8")
+
+        # Find the library section
+        lib_start = src.find("// @model-generator:library:start")
+        lib_end = src.find("// @model-generator:library:end")
+
+        if lib_start == -1 or lib_end == -1:
+            raise HTTPException(
+                status_code=500,
+                detail="Could not find library markers in index.ts"
+            )
+
+        lib_content = src[lib_start:lib_end]
+
+        # Parse all entries
+        entries = []
+        entry_regex = re.compile(r'\{\s*\.\.\.([A-Z0-9_]+)\s*,([^}]*)\}', re.DOTALL)
+
+        for match in entry_regex.finditer(lib_content):
+            meta_name = match.group(1)
+            props_str = match.group(2)
+
+            # Extract properties
+            version_match = re.search(r'version:\s*(\d+)', props_str)
+            is_active_match = re.search(r'isActive:\s*(true|false)', props_str)
+            base_model_id_match = re.search(r"baseModelId:\s*['\"]([^'\"]+)['\"]", props_str)
+
+            # Infer ID from meta name (e.g., GOBLIN_V2_META -> goblin-v2)
+            inferred_id = re.sub(r'_META$', '', meta_name).lower().replace('_', '-')
+            inferred_id = re.sub(r'-v(\d+)$', r'-v\1', inferred_id)
+
+            entries.append({
+                'meta_name': meta_name,
+                'full_match': match.group(0),
+                'id': inferred_id,
+                'version': int(version_match.group(1)) if version_match else 1,
+                'is_active': is_active_match.group(1) == 'true' if is_active_match else True,
+                'base_model_id': base_model_id_match.group(1) if base_model_id_match else re.sub(r'-v\d+$', '', inferred_id),
+            })
+
+        # Find the target model
+        target = next((e for e in entries if e['id'] == model_id or e['meta_name'] == model_id), None)
+        if not target:
+            available = ', '.join(e['id'] for e in entries)
+            raise HTTPException(
+                status_code=400,
+                detail=f"Model not found: {model_id}. Available: {available}"
+            )
+
+        base_id = target['base_model_id']
+
+        # Find all versions of this model
+        versions = [e for e in entries if e['base_model_id'] == base_id]
+
+        # Update the source - set target to active, others to inactive
+        new_src = src
+        changes = []
+
+        for entry in versions:
+            is_target = entry['meta_name'] == target['meta_name']
+            new_is_active = is_target
+
+            # Build the replacement entry
+            # Find the create expression from original
+            create_match = re.search(r'create:\s*([^,}]+)', entry['full_match'])
+            create_expr = create_match.group(1).strip() if create_match else entry['meta_name'].replace('_META', '').lower()
+
+            new_entry = f"{{\n    ...{entry['meta_name']},\n    create: {create_expr},\n"
+
+            # Add version if > 1
+            if entry['version'] > 1:
+                new_entry += f"    version: {entry['version']},\n"
+
+            # Always add isActive for versioned models
+            if len(versions) > 1:
+                new_entry += f"    isActive: {'true' if new_is_active else 'false'},\n"
+
+            # Add baseModelId if needed
+            if len(versions) > 1:
+                new_entry += f"    baseModelId: '{base_id}',\n"
+
+            new_entry += "  }"
+
+            # Replace in source
+            new_src = new_src.replace(entry['full_match'], new_entry)
+
+            if is_target:
+                changes.append(f"{entry['meta_name']} -> active")
+            elif entry['is_active']:
+                changes.append(f"{entry['meta_name']} -> inactive")
+
+        # Write back
+        index_path.write_text(new_src, encoding="utf-8")
+
+        return {
+            "success": True,
+            "model_id": model_id,
+            "base_model_id": base_id,
+            "versions_found": len(versions),
+            "changes": changes,
+            "message": f"Model '{model_id}' is now the active version",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating index.ts: {str(e)}")

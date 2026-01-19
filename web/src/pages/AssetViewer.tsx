@@ -20,7 +20,7 @@ import {
   getModelVersion,
   isModelActive,
   getBaseModelId,
-  hasMultipleVersions,
+  getModelsGroupedByBase,
   type ModelDefinition,
   type ModelCategory,
 } from '../models';
@@ -72,6 +72,10 @@ export function AssetViewer() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
   const [generateError, setGenerateError] = useState<string | null>(null);
+  const [settingActive, setSettingActive] = useState<string | null>(null);
+  const [setActiveError, setSetActiveError] = useState<string | null>(null);
+  const [setActiveSuccess, setSetActiveSuccess] = useState<string | null>(null);
+  const [hideProceduralCovered, setHideProceduralCovered] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Use global jobs context
@@ -84,12 +88,47 @@ export function AssetViewer() {
 
   const stats = useMemo(() => getAssetStats(), []);
 
-  const filteredProceduralModels = useMemo(() => {
-    if (proceduralCategory === 'all') {
-      return MODEL_LIBRARY;
+  // Group models by baseModelId for cleaner display
+  const groupedProceduralModels = useMemo(() => {
+    const grouped = getModelsGroupedByBase();
+    const result: Array<{
+      baseId: string;
+      activeModel: ModelDefinition;
+      allVersions: ModelDefinition[];
+      versionCount: number;
+    }> = [];
+
+    for (const [baseId, versions] of grouped) {
+      // Find active version, or fall back to highest version
+      const active = versions.find(v => isModelActive(v)) || versions[versions.length - 1];
+
+      // Filter by category if needed
+      if (proceduralCategory !== 'all' && active.category !== proceduralCategory) {
+        continue;
+      }
+
+      result.push({
+        baseId,
+        activeModel: active,
+        allVersions: versions,
+        versionCount: versions.length,
+      });
     }
-    return MODEL_LIBRARY.filter((m) => m.category === proceduralCategory);
+
+    // Sort by name
+    return result.sort((a, b) => a.activeModel.name.localeCompare(b.activeModel.name));
   }, [proceduralCategory]);
+
+  // Get list of enemy names that have active procedural models
+  const proceduralCoveredEnemies = useMemo(() => {
+    const covered = new Set<string>();
+    for (const model of MODEL_LIBRARY) {
+      if (model.category === 'enemy' && model.enemyName && (model.isActive ?? true)) {
+        covered.add(model.enemyName);
+      }
+    }
+    return covered;
+  }, []);
 
   const filteredAssets = useMemo(() => {
     let assets: Asset3D[];
@@ -109,8 +148,20 @@ export function AssetViewer() {
       assets = assets.filter(a => a.category === category);
     }
 
+    // Filter out enemies/bosses that have procedural coverage
+    if (hideProceduralCovered && tab === 'queue') {
+      assets = assets.filter(a => {
+        // Only filter enemies and bosses
+        if (a.category !== 'enemy' && a.category !== 'boss') {
+          return true;
+        }
+        // Keep if no procedural version exists
+        return !proceduralCoveredEnemies.has(a.name);
+      });
+    }
+
     return assets;
-  }, [tab, category]);
+  }, [tab, category, hideProceduralCovered, proceduralCoveredEnemies]);
 
   // Handle escape key to close fullscreen
   useEffect(() => {
@@ -343,6 +394,43 @@ export function AssetViewer() {
           </select>
         )}
 
+        {/* Hide Procedural-Covered Toggle (only in queue tab) */}
+        {tab === 'queue' && (
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              cursor: 'pointer',
+              padding: '6px 12px',
+              background: hideProceduralCovered ? '#cc5de822' : 'transparent',
+              border: `1px solid ${hideProceduralCovered ? '#cc5de8' : '#444'}`,
+              borderRadius: '4px',
+              fontSize: '13px',
+              color: hideProceduralCovered ? '#cc5de8' : '#888',
+              transition: 'all 0.2s',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={hideProceduralCovered}
+              onChange={(e) => setHideProceduralCovered(e.target.checked)}
+              style={{ accentColor: '#cc5de8' }}
+            />
+            Hide Procedural-Covered
+            {proceduralCoveredEnemies.size > 0 && (
+              <span style={{
+                padding: '1px 6px',
+                background: '#cc5de844',
+                borderRadius: '10px',
+                fontSize: '11px',
+              }}>
+                {proceduralCoveredEnemies.size}
+              </span>
+            )}
+          </label>
+        )}
+
         <div style={{ flex: 1 }} />
 
         {/* Generate Command */}
@@ -372,144 +460,129 @@ export function AssetViewer() {
             gap: '15px',
           }}>
             {tab === 'procedural' ? (
-              /* Procedural Models List */
+              /* Procedural Models List - Grouped by baseModelId */
               <>
-                {filteredProceduralModels.map((model) => {
-                const modelVersion = getModelVersion(model);
-                const modelIsActive = isModelActive(model);
-                const baseId = getBaseModelId(model);
-                const hasVersions = hasMultipleVersions(baseId);
+                {groupedProceduralModels.map((group) => {
+                  const model = group.activeModel;
+                  const isSelected = selectedProcedural && group.allVersions.some(v => v.id === selectedProcedural.id);
 
-                return (
-                  <div
-                    key={model.id}
-                    onClick={() => setSelectedProcedural(model)}
-                    style={{
-                      padding: '15px',
-                      background: selectedProcedural?.id === model.id ? '#3a2a5e' : '#232340',
-                      borderRadius: '8px',
-                      border: `1px solid ${selectedProcedural?.id === model.id ? '#cc5de8' : !modelIsActive ? '#666' : '#333'}`,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      opacity: modelIsActive ? 1 : 0.7,
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      marginBottom: '8px',
-                    }}>
-                      <h3 style={{ margin: 0, color: '#fff' }}>
-                        {model.name}
-                        {hasVersions && (
-                          <span style={{ color: '#888', fontSize: '12px', fontWeight: 'normal', marginLeft: '6px' }}>
-                            v{modelVersion}
-                          </span>
-                        )}
-                      </h3>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        {modelIsActive && (
+                  return (
+                    <div
+                      key={group.baseId}
+                      onClick={() => setSelectedProcedural(model)}
+                      style={{
+                        padding: '15px',
+                        background: isSelected ? '#3a2a5e' : '#232340',
+                        borderRadius: '8px',
+                        border: `1px solid ${isSelected ? '#cc5de8' : '#333'}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: '8px',
+                      }}>
+                        <h3 style={{ margin: 0, color: '#fff' }}>
+                          {model.name}
+                        </h3>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          {group.versionCount > 1 && (
+                            <span style={{
+                              padding: '2px 6px',
+                              background: '#4dabf722',
+                              color: '#4dabf7',
+                              borderRadius: '4px',
+                              fontSize: '10px',
+                            }}>
+                              {group.versionCount} versions
+                            </span>
+                          )}
                           <span style={{
-                            padding: '2px 6px',
-                            background: '#37b24d22',
-                            color: '#37b24d',
+                            padding: '2px 8px',
+                            background: '#cc5de822',
+                            color: '#cc5de8',
                             borderRadius: '4px',
-                            fontSize: '10px',
+                            fontSize: '11px',
                             textTransform: 'uppercase',
                           }}>
-                            Active
+                            Procedural
                           </span>
-                        )}
-                        {!modelIsActive && (
-                          <span style={{
-                            padding: '2px 6px',
-                            background: '#86868622',
-                            color: '#868686',
-                            borderRadius: '4px',
-                            fontSize: '10px',
-                            textTransform: 'uppercase',
-                          }}>
-                            Archived
-                          </span>
-                        )}
+                        </div>
+                      </div>
+
+                      <div style={{
+                        display: 'flex',
+                        gap: '10px',
+                        alignItems: 'center',
+                        marginBottom: '8px',
+                      }}>
                         <span style={{
                           padding: '2px 8px',
-                          background: '#cc5de822',
-                          color: '#cc5de8',
+                          background: PROCEDURAL_CATEGORY_COLORS[model.category] + '22',
+                          color: PROCEDURAL_CATEGORY_COLORS[model.category],
                           borderRadius: '4px',
                           fontSize: '11px',
-                          textTransform: 'uppercase',
+                          textTransform: 'capitalize',
                         }}>
-                          Procedural
+                          {model.category}
                         </span>
-                      </div>
-                    </div>
 
-                    <div style={{
-                      display: 'flex',
-                      gap: '10px',
-                      alignItems: 'center',
-                      marginBottom: '8px',
-                    }}>
-                      <span style={{
-                        padding: '2px 8px',
-                        background: PROCEDURAL_CATEGORY_COLORS[model.category] + '22',
-                        color: PROCEDURAL_CATEGORY_COLORS[model.category],
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        textTransform: 'capitalize',
-                      }}>
-                        {model.category}
-                      </span>
+                        <span style={{ color: '#666', fontSize: '12px', fontFamily: 'monospace' }}>
+                          {group.baseId}
+                        </span>
 
-                      <span style={{ color: '#666', fontSize: '12px', fontFamily: 'monospace' }}>
-                        {model.id}
-                      </span>
-                    </div>
-
-                    <p style={{
-                      margin: 0,
-                      color: '#888',
-                      fontSize: '13px',
-                      lineHeight: '1.4',
-                    }}>
-                      {model.description}
-                    </p>
-
-                    {model.tags.length > 0 && (
-                      <div style={{
-                        marginTop: '8px',
-                        display: 'flex',
-                        gap: '4px',
-                        flexWrap: 'wrap',
-                      }}>
-                        {model.tags.slice(0, 4).map((tag) => (
-                          <span
-                            key={tag}
-                            style={{
-                              padding: '1px 6px',
-                              background: '#333',
-                              borderRadius: '3px',
-                              fontSize: '10px',
-                              color: '#888',
-                            }}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {model.tags.length > 4 && (
-                          <span style={{ fontSize: '10px', color: '#666' }}>
-                            +{model.tags.length - 4}
+                        {group.versionCount > 1 && (
+                          <span style={{ color: '#37b24d', fontSize: '11px' }}>
+                            v{getModelVersion(model)} active
                           </span>
                         )}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
 
-                {filteredProceduralModels.length === 0 && (
+                      <p style={{
+                        margin: 0,
+                        color: '#888',
+                        fontSize: '13px',
+                        lineHeight: '1.4',
+                      }}>
+                        {model.description}
+                      </p>
+
+                      {model.tags.length > 0 && (
+                        <div style={{
+                          marginTop: '8px',
+                          display: 'flex',
+                          gap: '4px',
+                          flexWrap: 'wrap',
+                        }}>
+                          {model.tags.slice(0, 4).map((tag) => (
+                            <span
+                              key={tag}
+                              style={{
+                                padding: '1px 6px',
+                                background: '#333',
+                                borderRadius: '3px',
+                                fontSize: '10px',
+                                color: '#888',
+                              }}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {model.tags.length > 4 && (
+                            <span style={{ fontSize: '10px', color: '#666' }}>
+                              +{model.tags.length - 4}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {groupedProceduralModels.length === 0 && (
                   <div style={{
                     gridColumn: '1 / -1',
                     padding: '40px',
@@ -652,7 +725,6 @@ export function AssetViewer() {
             (() => {
               const baseId = getBaseModelId(selectedProcedural);
               const versions = getModelVersions(baseId);
-              const currentVersion = getModelVersion(selectedProcedural);
               const currentIsActive = isModelActive(selectedProcedural);
 
               return (
@@ -679,7 +751,7 @@ export function AssetViewer() {
                     justifyContent: 'space-between',
                     marginBottom: '8px',
                   }}>
-                    <span style={{ color: '#888', fontSize: '12px' }}>Version</span>
+                    <span style={{ color: '#888', fontSize: '12px' }}>Version ({versions.length} total)</span>
                     <span style={{
                       padding: '2px 6px',
                       background: currentIsActive ? '#37b24d22' : '#86868622',
@@ -718,6 +790,75 @@ export function AssetViewer() {
                       );
                     })}
                   </select>
+
+                  {/* Set as Active button - only show for non-active versions */}
+                  {!currentIsActive && (
+                    <button
+                      onClick={async () => {
+                        setSettingActive(selectedProcedural.id);
+                        setSetActiveError(null);
+                        setSetActiveSuccess(null);
+                        try {
+                          const response = await fetch(`${API_BASE}/api/assets/procedural/set-active`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ model_id: selectedProcedural.id }),
+                          });
+                          if (!response.ok) {
+                            const err = await response.json();
+                            throw new Error(err.detail || 'Failed to set active');
+                          }
+                          setSetActiveSuccess(selectedProcedural.id);
+                          // Reload page to pick up changes
+                          setTimeout(() => window.location.reload(), 1000);
+                        } catch (err) {
+                          setSetActiveError(err instanceof Error ? err.message : 'Unknown error');
+                        } finally {
+                          setSettingActive(null);
+                        }
+                      }}
+                      disabled={settingActive === selectedProcedural.id}
+                      style={{
+                        marginTop: '10px',
+                        width: '100%',
+                        padding: '10px',
+                        background: setActiveSuccess === selectedProcedural.id
+                          ? '#37b24d'
+                          : settingActive === selectedProcedural.id
+                          ? '#666'
+                          : '#4dabf7',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: settingActive ? 'not-allowed' : 'pointer',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        transition: 'background 0.2s',
+                      }}
+                    >
+                      {setActiveSuccess === selectedProcedural.id ? (
+                        'Activated! Reloading...'
+                      ) : settingActive === selectedProcedural.id ? (
+                        'Setting Active...'
+                      ) : (
+                        'Set as Active'
+                      )}
+                    </button>
+                  )}
+
+                  {setActiveError && (
+                    <div style={{
+                      marginTop: '8px',
+                      padding: '8px',
+                      background: '#f03e3e22',
+                      border: '1px solid #f03e3e',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      color: '#f03e3e',
+                    }}>
+                      {setActiveError}
+                    </div>
+                  )}
                 </div>
               )}
 

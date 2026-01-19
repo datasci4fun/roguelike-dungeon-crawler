@@ -65,6 +65,8 @@ services:
       - ./jobs:/jobs  # Mount job queue for 3D generation
       - ./tools:/tools  # Mount tools for 3D pipeline worker
       - ./web/public/assets:/web_assets  # Mount output directory for generated models
+      - ./.claude:/repo/.claude  # Mount Claude skills for model management
+      - ./web/src/models:/repo/web/src/models  # Mount model library for set_active
     restart: unless-stopped
 
   # React Frontend (Vite dev server with HMR)

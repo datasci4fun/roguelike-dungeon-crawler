@@ -206,9 +206,13 @@ function main() {
   // If auto-version and this is a new version, mark old versions as inactive
   if (autoVersion && version > 1 && isActive && baseModelId) {
     for (const e of existing) {
-      // Find entries with same baseModelId (or matching meta pattern)
-      if (e.baseModelId === baseModelId ||
-          (e.baseModelId === null && e.meta.toLowerCase().includes(baseModelId.replace(/-/g, '_')))) {
+      // Find entries with same baseModelId (exact match only)
+      // Or entries where the meta name matches the baseModelId pattern exactly
+      // e.g., baseModelId='goblin' matches GOBLIN_META but NOT GOBLIN_KING_META
+      const metaBase = e.meta.replace(/_META$/, '').toLowerCase().replace(/_/g, '-');
+      const isExactMatch = e.baseModelId === baseModelId || metaBase === baseModelId;
+
+      if (isExactMatch && e.meta !== meta) {
         if (e.isActive !== false) {
           e.isActive = false;
           console.log(`Auto-version: marking ${e.meta} as inactive`);

@@ -13,6 +13,8 @@ import { createBossThrone, BOSS_THRONE_META } from './bossThrone';
 import { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
 import { createGoblin, GOBLIN_META } from './goblin';
 import { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
+import { createGoblinV2, GOBLIN_V2_META } from './goblinV2';
+import { createGoblinV3, GOBLIN_V3_META } from './goblinV3';
 import { createOrc, ORC_META } from './orc';
 import { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 import { createRat, RAT_META } from './rat';
@@ -32,6 +34,8 @@ export { createBossThrone, BOSS_THRONE_META } from './bossThrone';
 export { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
 export { createGoblin, GOBLIN_META } from './goblin';
 export { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
+export { createGoblinV2, GOBLIN_V2_META } from './goblinV2';
+export { createGoblinV3, GOBLIN_V3_META } from './goblinV3';
 export { createOrc, ORC_META } from './orc';
 export { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 export { createRat, RAT_META } from './rat';
@@ -79,10 +83,6 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
     create: createBossThrone,
   },
   {
-    ...COLLAPSED_PILLAR_META,
-    create: (options) => createPillar({ ...options, collapsed: true }),
-  },
-  {
     ...ENTRANCE_DOORS_META,
     create: createEntranceDoors,
   },
@@ -93,6 +93,22 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
   {
     ...GOBLIN_META,
     create: createGoblin,
+    isActive: false,
+    baseModelId: 'goblin',
+  },
+  {
+    ...GOBLIN_V2_META,
+    create: createGoblinV2,
+    version: 2,
+    isActive: true,
+    baseModelId: 'goblin',
+  },
+  {
+    ...GOBLIN_V3_META,
+    create: createGoblinV3,
+    version: 3,
+    isActive: false,
+    baseModelId: 'goblin',
   },
   {
     ...ORC_META,
@@ -126,7 +142,7 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
     ...WARDENS_CHAIR_META,
     create: createWardensChair,
   },
-  // @model-generator:library:end
+// @model-generator:library:end
 ];
 
 /**
