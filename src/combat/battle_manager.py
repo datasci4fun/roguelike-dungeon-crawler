@@ -23,6 +23,8 @@ from .enemy_turns import EnemyTurnProcessor
 from .round_processing import RoundProcessor
 from .battle_player_actions import PlayerActionHandler
 from ..core.constants import UIMode, DungeonTheme, LEVEL_THEMES
+from ..core.constants.boss_data import BOSS_STATS
+from ..core.constants.enemy_data import ENEMY_STATS
 from ..core.events import EventType, EventQueue, TransitionKind
 from ..core.dice import calculate_ability_modifier, roll_d20
 
@@ -209,6 +211,54 @@ class BattleManager:
             if getattr(enemy, 'is_boss', False):
                 enemy_initiative += 10
 
+            # Get entity size from boss_data or enemy_data
+            size_w, size_h = 1, 1
+            if getattr(enemy, 'is_boss', False) and hasattr(enemy, 'boss_type'):
+                # Boss: check BOSS_STATS
+                boss_type = enemy.boss_type
+                if boss_type in BOSS_STATS:
+                    size_w, size_h = BOSS_STATS[boss_type].get('size', (1, 1))
+            elif hasattr(enemy, 'enemy_type'):
+                # Regular enemy: check ENEMY_STATS
+                enemy_type = enemy.enemy_type
+                if enemy_type in ENEMY_STATS:
+                    size_w, size_h = ENEMY_STATS[enemy_type].get('size', (1, 1))
+
+            # For multi-tile entities, find a valid spawn position
+            if size_w > 1 or size_h > 1:
+                # Check if current position fits; if not, search for valid spot
+                valid_spawn = True
+                for dx in range(size_w):
+                    for dy in range(size_h):
+                        check_x, check_y = ex + dx, ey + dy
+                        if not (0 <= check_x < compiled['width'] and
+                                0 <= check_y < compiled['height']):
+                            valid_spawn = False
+                            break
+                        if compiled['tiles'][check_y][check_x] != '.':
+                            valid_spawn = False
+                            break
+                    if not valid_spawn:
+                        break
+
+                # If original spawn doesn't fit, find a valid position
+                if not valid_spawn:
+                    for cy in range(compiled['height'] - size_h + 1):
+                        for cx in range(compiled['width'] - size_w + 1):
+                            fits = True
+                            for dx in range(size_w):
+                                for dy in range(size_h):
+                                    if compiled['tiles'][cy + dy][cx + dx] != '.':
+                                        fits = False
+                                        break
+                                if not fits:
+                                    break
+                            if fits:
+                                ex, ey = cx, cy
+                                break
+                        if fits:
+                            break
+
             battle_enemy = BattleEntity(
                 entity_id=enemy_id,
                 is_player=False,
@@ -226,6 +276,8 @@ class BattleManager:
                 is_boss=getattr(enemy, 'is_boss', False),
                 display_id=display_id,
                 initiative=enemy_initiative,
+                size_width=size_w,
+                size_height=size_h,
             )
             battle.enemies.append(battle_enemy)
 

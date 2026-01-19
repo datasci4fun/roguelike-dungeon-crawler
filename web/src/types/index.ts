@@ -324,6 +324,9 @@ export interface BattleEntity {
   // v6.11: Initiative system
   display_id?: string;
   initiative?: number;
+  // v7.2: Multi-tile size (bosses occupy multiple tiles)
+  size_width?: number;  // 1 = normal, 2-3 = large boss
+  size_height?: number; // 1 = normal, 2-3 = large boss
 }
 
 // v6.11: Turn order entry for UI display
