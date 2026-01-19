@@ -59,6 +59,7 @@ const PROCEDURAL_CATEGORY_COLORS: Record<ModelCategory, string> = {
   interactive: '#69db7c',
   prop: '#868e96',
   enemy: '#ff6b6b',
+  player: '#74c0fc',
 };
 
 export function AssetViewer() {
@@ -367,6 +368,7 @@ export function AssetViewer() {
           >
             <option value="all">All Categories</option>
             <option value="enemy">Enemies</option>
+            <option value="player">Players</option>
             <option value="structure">Structure</option>
             <option value="furniture">Furniture</option>
             <option value="decoration">Decoration</option>

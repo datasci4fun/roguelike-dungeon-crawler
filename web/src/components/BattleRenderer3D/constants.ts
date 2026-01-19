@@ -16,7 +16,7 @@ export const BATTLE_FOG_FAR = 25;
 
 // Entity model scale (adjust to fit arena tiles)
 export const ENTITY_MODEL_SCALE = 1.4;
-export const ENTITY_MODEL_Y_OFFSET = 0.3;
+export const ENTITY_MODEL_Y_OFFSET = 0;  // Models sit directly on ground
 
 // Multi-tile entity size multipliers (v7.2)
 // Maps tile footprint to visual scale multiplier for 3D models
