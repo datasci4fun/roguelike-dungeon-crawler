@@ -21,6 +21,10 @@ META=""
 CATEGORY=""
 ENEMY_NAME=""
 CREATE_EXPR=""
+VERSION=""
+IS_ACTIVE=""
+BASE_MODEL_ID=""
+AUTO_VERSION=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -31,12 +35,18 @@ while [[ $# -gt 0 ]]; do
     --category) CATEGORY="$2"; shift 2;;
     --enemy-name) ENEMY_NAME="$2"; shift 2;;
     --create-expr) CREATE_EXPR="$2"; shift 2;;
+    --version) VERSION="$2"; shift 2;;
+    --is-active) IS_ACTIVE="$2"; shift 2;;
+    --base-model-id) BASE_MODEL_ID="$2"; shift 2;;
+    --auto-version) AUTO_VERSION="1"; shift 1;;
     *) echo "Unknown arg: $1" | tee -a "$LOG_FILE"; exit 2;;
   esac
 done
 
 if [[ -z "$MODEL_ID" || -z "$MODEL_FILE" || -z "$FACTORY" || -z "$META" ]]; then
-  echo "Usage: run.sh --model-id <id> --model-file <path> --factory <createFn> --meta <META_NAME> [--category <cat>] [--enemy-name <name>] [--create-expr \"<expr>\"]" | tee -a "$LOG_FILE"
+  echo "Usage: run.sh --model-id <id> --model-file <path> --factory <createFn> --meta <META_NAME>" | tee -a "$LOG_FILE"
+  echo "  Optional: [--category <cat>] [--enemy-name <name>] [--create-expr \"<expr>\"]" | tee -a "$LOG_FILE"
+  echo "  Versioning: [--version <num>] [--is-active true|false] [--base-model-id <id>] [--auto-version]" | tee -a "$LOG_FILE"
   exit 2
 fi
 
@@ -58,6 +68,10 @@ node "$TOOLS_DIR/register_model.mjs" \
   ${CATEGORY:+--category "$CATEGORY"} \
   ${ENEMY_NAME:+--enemy-name "$ENEMY_NAME"} \
   ${CREATE_EXPR:+--create-expr "$CREATE_EXPR"} \
+  ${VERSION:+--version "$VERSION"} \
+  ${IS_ACTIVE:+--is-active "$IS_ACTIVE"} \
+  ${BASE_MODEL_ID:+--base-model-id "$BASE_MODEL_ID"} \
+  ${AUTO_VERSION:+--auto-version} \
   >> "$LOG_FILE" 2>&1
 
 # 3) Validate TS compilation

@@ -65,7 +65,11 @@ bash .claude/skills/model-generator/run.sh \
   --meta <META_NAME> \
   [--category <cat>] \
   [--enemy-name <name>] \
-  [--create-expr "<expr>"]
+  [--create-expr "<expr>"] \
+  [--version <num>] \
+  [--is-active true|false] \
+  [--base-model-id <id>] \
+  [--auto-version]
 ```
 
 This will:
@@ -82,6 +86,83 @@ Only report:
 - preview instructions
 
 Do NOT dump logs. If errors exist, summarize from `out/result.json`.
+
+---
+
+## Model Versioning
+
+The model-generator supports multiple versions of the same model. This allows iterating on designs while preserving old versions for comparison in the Asset Viewer.
+
+### Version Fields
+
+Models can have these optional fields in their META export:
+- `version: number` - Version number (1, 2, 3, etc.) - defaults to 1
+- `isActive: boolean` - Whether this version is used in-game - defaults to true
+- `baseModelId: string` - Groups versions together (e.g., "goblin" for goblin-v1, goblin-v2)
+
+### Creating a New Model (v1)
+
+For brand new models, no version args are needed - they default to v1, active:
+```bash
+bash .claude/skills/model-generator/run.sh \
+  --model-id goblin \
+  --model-file web/src/models/goblin.ts \
+  --factory createGoblin \
+  --meta GOBLIN_META
+```
+
+### Creating a New Version (v2+)
+
+**Option A: Auto-version (recommended)**
+
+Use `--auto-version` to automatically detect existing versions and increment:
+```bash
+bash .claude/skills/model-generator/run.sh \
+  --model-id goblin-v2 \
+  --model-file web/src/models/goblinV2.ts \
+  --factory createGoblinV2 \
+  --meta GOBLIN_V2_META \
+  --base-model-id goblin \
+  --auto-version
+```
+
+This will:
+1. Detect that "goblin" exists at v1
+2. Set the new model to v2, active=true
+3. Mark the old goblin v1 as inactive
+
+**Option B: Manual version**
+
+Explicitly set version fields:
+```bash
+bash .claude/skills/model-generator/run.sh \
+  --model-id goblin-v2 \
+  --model-file web/src/models/goblinV2.ts \
+  --factory createGoblinV2 \
+  --meta GOBLIN_V2_META \
+  --version 2 \
+  --is-active true \
+  --base-model-id goblin
+```
+
+### Repo Context
+
+Run `analyze_repo.mjs` to see existing models and their versions:
+```bash
+node .claude/skills/model-generator/tools/analyze_repo.mjs
+cat .claude/skills/model-generator/out/repo_context.json
+```
+
+The output includes:
+- `existingModels`: List of all models with version info
+- `versionInfo`: Models grouped by baseModelId with highest version
+
+### Asset Viewer Integration
+
+The Asset Viewer automatically shows:
+- Version badges (v1, v2, etc.) when multiple versions exist
+- Active/Archived status badges
+- Version selector dropdown to switch between versions
 
 ---
 

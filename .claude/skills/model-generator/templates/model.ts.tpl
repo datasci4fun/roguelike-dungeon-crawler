@@ -39,4 +39,8 @@ export const {{META_NAME}} = {
   defaultScale: 1.0,
   boundingBox: { x: 1.0, y: 1.0, z: 1.0 },
   tags: {{TAGS_JSON}},
+  // Version fields (optional - uncomment if creating versioned model)
+  // version: 1,
+  // isActive: true,
+  // baseModelId: '{{BASE_MODEL_ID}}',
 };
