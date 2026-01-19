@@ -9,20 +9,54 @@ import * as THREE from 'three';
 
 // Import model factories and metadata
 // @model-generator:imports:start
+import { createAnimatedTome, ANIMATED_TOME_META } from './animatedTome';
+import { createArcaneKeeper, ARCANE_KEEPER_META } from './arcaneKeeper';
+import { createAssassin, ASSASSIN_META } from './assassin';
+import { createBileLurker, BILE_LURKER_META } from './bileLurker';
 import { createBossThrone, BOSS_THRONE_META } from './bossThrone';
+import { createCourtScribe, COURT_SCRIBE_META } from './courtScribe';
+import { createCrystalSentinel, CRYSTAL_SENTINEL_META } from './crystalSentinel';
+import { createDemon, DEMON_META } from './demon';
+import { createDoppelganger, DOPPELGANGER_META } from './doppelganger';
+import { createDragon, DRAGON_META } from './dragon';
+import { createDragonEmperor, DRAGON_EMPEROR_META } from './dragonEmperor';
+import { createEmberSprite, EMBER_SPRITE_META } from './emberSprite';
 import { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
+import { createFireElemental, FIRE_ELEMENTAL_META } from './fireElemental';
+import { createFlameLord, FLAME_LORD_META } from './flameLord';
+import { createFrostGiant, FROST_GIANT_META } from './frostGiant';
+import { createFrostWisp, FROST_WISP_META } from './frostWisp';
 import { createGoblin, GOBLIN_META } from './goblin';
 import { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
 import { createGoblinV2, GOBLIN_V2_META } from './goblinV2';
 import { createGoblinV3, GOBLIN_V3_META } from './goblinV3';
+import { createGoblinV4, GOBLIN_V4_META } from './goblinV4';
+import { createIceElemental, ICE_ELEMENTAL_META } from './iceElemental';
+import { createInkPhantom, INK_PHANTOM_META } from './inkPhantom';
+import { createLightningElemental, LIGHTNING_ELEMENTAL_META } from './lightningElemental';
+import { createNecromancer, NECROMANCER_META } from './necromancer';
+import { createOathboundGuard, OATHBOUND_GUARD_META } from './oathboundGuard';
 import { createOrc, ORC_META } from './orc';
+import { createOrcV2, ORC_V2_META } from './orcV2';
 import { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
+import { createPlagueRat, PLAGUE_RAT_META } from './plagueRat';
+import { createPrismWatcher, PRISM_WATCHER_META } from './prismWatcher';
 import { createRat, RAT_META } from './rat';
+import { createRatKing, RAT_KING_META } from './ratKing';
+import { createRatV2, RAT_V2_META } from './ratV2';
+import { createShade, SHADE_META } from './shade';
 import { createSkeleton, SKELETON_META } from './skeleton';
+import { createSkeletonV2, SKELETON_V2_META } from './skeletonV2';
 import { createSpiderQueen, SPIDER_QUEEN_META } from './spiderQueen';
+import { createSpiderling, SPIDERLING_META } from './spiderling';
 import { createStatue, STATUE_META } from './statue';
+import { createTheRegent, THE_REGENT_META } from './theRegent';
+import { createThornling, THORNLING_META } from './thornling';
 import { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
+import { createTroll, TROLL_META } from './troll';
 import { createWardensChair, WARDENS_CHAIR_META } from './wardensChair';
+import { createWebweaver, WEBWEAVER_META } from './webweaver';
+import { createWraith, WRAITH_META } from './wraith';
 // @model-generator:imports:end
 
 // Re-export materials
@@ -30,20 +64,54 @@ export * from './materials';
 
 // Re-export individual models
 // @model-generator:exports:start
+export { createAnimatedTome, ANIMATED_TOME_META } from './animatedTome';
+export { createArcaneKeeper, ARCANE_KEEPER_META } from './arcaneKeeper';
+export { createAssassin, ASSASSIN_META } from './assassin';
+export { createBileLurker, BILE_LURKER_META } from './bileLurker';
 export { createBossThrone, BOSS_THRONE_META } from './bossThrone';
+export { createCourtScribe, COURT_SCRIBE_META } from './courtScribe';
+export { createCrystalSentinel, CRYSTAL_SENTINEL_META } from './crystalSentinel';
+export { createDemon, DEMON_META } from './demon';
+export { createDoppelganger, DOPPELGANGER_META } from './doppelganger';
+export { createDragon, DRAGON_META } from './dragon';
+export { createDragonEmperor, DRAGON_EMPEROR_META } from './dragonEmperor';
+export { createEmberSprite, EMBER_SPRITE_META } from './emberSprite';
 export { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
+export { createFireElemental, FIRE_ELEMENTAL_META } from './fireElemental';
+export { createFlameLord, FLAME_LORD_META } from './flameLord';
+export { createFrostGiant, FROST_GIANT_META } from './frostGiant';
+export { createFrostWisp, FROST_WISP_META } from './frostWisp';
 export { createGoblin, GOBLIN_META } from './goblin';
 export { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
 export { createGoblinV2, GOBLIN_V2_META } from './goblinV2';
 export { createGoblinV3, GOBLIN_V3_META } from './goblinV3';
+export { createGoblinV4, GOBLIN_V4_META } from './goblinV4';
+export { createIceElemental, ICE_ELEMENTAL_META } from './iceElemental';
+export { createInkPhantom, INK_PHANTOM_META } from './inkPhantom';
+export { createLightningElemental, LIGHTNING_ELEMENTAL_META } from './lightningElemental';
+export { createNecromancer, NECROMANCER_META } from './necromancer';
+export { createOathboundGuard, OATHBOUND_GUARD_META } from './oathboundGuard';
 export { createOrc, ORC_META } from './orc';
+export { createOrcV2, ORC_V2_META } from './orcV2';
 export { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
+export { createPlagueRat, PLAGUE_RAT_META } from './plagueRat';
+export { createPrismWatcher, PRISM_WATCHER_META } from './prismWatcher';
 export { createRat, RAT_META } from './rat';
+export { createRatKing, RAT_KING_META } from './ratKing';
+export { createRatV2, RAT_V2_META } from './ratV2';
+export { createShade, SHADE_META } from './shade';
 export { createSkeleton, SKELETON_META } from './skeleton';
+export { createSkeletonV2, SKELETON_V2_META } from './skeletonV2';
 export { createSpiderQueen, SPIDER_QUEEN_META } from './spiderQueen';
+export { createSpiderling, SPIDERLING_META } from './spiderling';
 export { createStatue, STATUE_META } from './statue';
+export { createTheRegent, THE_REGENT_META } from './theRegent';
+export { createThornling, THORNLING_META } from './thornling';
 export { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
+export { createTroll, TROLL_META } from './troll';
 export { createWardensChair, WARDENS_CHAIR_META } from './wardensChair';
+export { createWebweaver, WEBWEAVER_META } from './webweaver';
+export { createWraith, WRAITH_META } from './wraith';
 // @model-generator:exports:end
 
 /**
@@ -79,12 +147,72 @@ export interface ModelDefinition {
 export const MODEL_LIBRARY: ModelDefinition[] = [
   // @model-generator:library:start
   {
+    ...ANIMATED_TOME_META,
+    create: createAnimatedTome,
+  },
+  {
+    ...ARCANE_KEEPER_META,
+    create: createArcaneKeeper,
+  },
+  {
+    ...ASSASSIN_META,
+    create: createAssassin,
+  },
+  {
+    ...BILE_LURKER_META,
+    create: createBileLurker,
+  },
+  {
     ...BOSS_THRONE_META,
     create: createBossThrone,
   },
   {
+    ...COURT_SCRIBE_META,
+    create: createCourtScribe,
+  },
+  {
+    ...CRYSTAL_SENTINEL_META,
+    create: createCrystalSentinel,
+  },
+  {
+    ...DEMON_META,
+    create: createDemon,
+  },
+  {
+    ...DOPPELGANGER_META,
+    create: createDoppelganger,
+  },
+  {
+    ...DRAGON_EMPEROR_META,
+    create: createDragonEmperor,
+  },
+  {
+    ...DRAGON_META,
+    create: createDragon,
+  },
+  {
+    ...EMBER_SPRITE_META,
+    create: createEmberSprite,
+  },
+  {
     ...ENTRANCE_DOORS_META,
     create: createEntranceDoors,
+  },
+  {
+    ...FIRE_ELEMENTAL_META,
+    create: createFireElemental,
+  },
+  {
+    ...FLAME_LORD_META,
+    create: createFlameLord,
+  },
+  {
+    ...FROST_GIANT_META,
+    create: createFrostGiant,
+  },
+  {
+    ...FROST_WISP_META,
+    create: createFrostWisp,
   },
   {
     ...GOBLIN_KING_META,
@@ -100,7 +228,7 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
     ...GOBLIN_V2_META,
     create: createGoblinV2,
     version: 2,
-    isActive: true,
+    isActive: false,
     baseModelId: 'goblin',
   },
   {
@@ -111,20 +239,92 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
     baseModelId: 'goblin',
   },
   {
+    ...GOBLIN_V4_META,
+    create: createGoblinV4,
+    version: 4,
+    isActive: true,
+    baseModelId: 'goblin',
+  },
+  {
+    ...ICE_ELEMENTAL_META,
+    create: createIceElemental,
+  },
+  {
+    ...INK_PHANTOM_META,
+    create: createInkPhantom,
+  },
+  {
+    ...LIGHTNING_ELEMENTAL_META,
+    create: createLightningElemental,
+  },
+  {
+    ...NECROMANCER_META,
+    create: createNecromancer,
+  },
+  {
+    ...OATHBOUND_GUARD_META,
+    create: createOathboundGuard,
+  },
+  {
     ...ORC_META,
     create: createOrc,
+    isActive: false,
+  },
+  {
+    ...ORC_V2_META,
+    create: createOrcV2,
+    version: 2,
+    isActive: true,
+    baseModelId: 'orc',
   },
   {
     ...PILLAR_META,
     create: createPillar,
   },
   {
+    ...PLAGUE_RAT_META,
+    create: createPlagueRat,
+  },
+  {
+    ...PRISM_WATCHER_META,
+    create: createPrismWatcher,
+  },
+  {
+    ...RAT_KING_META,
+    create: createRatKing,
+  },
+  {
     ...RAT_META,
     create: createRat,
+    isActive: false,
+  },
+  {
+    ...RAT_V2_META,
+    create: createRatV2,
+    version: 2,
+    isActive: true,
+    baseModelId: 'rat',
+  },
+  {
+    ...SHADE_META,
+    create: createShade,
   },
   {
     ...SKELETON_META,
     create: createSkeleton,
+    isActive: false,
+    baseModelId: 'skeleton',
+  },
+  {
+    ...SKELETON_V2_META,
+    create: createSkeletonV2,
+    version: 2,
+    isActive: true,
+    baseModelId: 'skeleton',
+  },
+  {
+    ...SPIDERLING_META,
+    create: createSpiderling,
   },
   {
     ...SPIDER_QUEEN_META,
@@ -135,12 +335,32 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
     create: createStatue,
   },
   {
+    ...THE_REGENT_META,
+    create: createTheRegent,
+  },
+  {
+    ...THORNLING_META,
+    create: createThornling,
+  },
+  {
     ...TREASURE_CHEST_META,
     create: createTreasureChest,
   },
   {
+    ...TROLL_META,
+    create: createTroll,
+  },
+  {
     ...WARDENS_CHAIR_META,
     create: createWardensChair,
+  },
+  {
+    ...WEBWEAVER_META,
+    create: createWebweaver,
+  },
+  {
+    ...WRAITH_META,
+    create: createWraith,
   },
 // @model-generator:library:end
 ];
