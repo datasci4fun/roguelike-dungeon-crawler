@@ -18,6 +18,8 @@ import { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
 import { createSkeleton, SKELETON_META } from './skeleton';
 import { createOrc, ORC_META } from './orc';
 import { createRat, RAT_META } from './rat';
+import { createSpiderQueen, SPIDER_QUEEN_META } from './spiderQueen';
+import { createWardensChair, WARDENS_CHAIR_META } from './wardensChair';
 
 // Re-export materials
 export * from './materials';
@@ -33,6 +35,8 @@ export { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
 export { createSkeleton, SKELETON_META } from './skeleton';
 export { createOrc, ORC_META } from './orc';
 export { createRat, RAT_META } from './rat';
+export { createSpiderQueen, SPIDER_QUEEN_META } from './spiderQueen';
+export { createWardensChair, WARDENS_CHAIR_META } from './wardensChair';
 
 /**
  * Model category types
@@ -102,6 +106,14 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
   {
     ...RAT_META,
     create: createRat,
+  },
+  {
+    ...SPIDER_QUEEN_META,
+    create: createSpiderQueen,
+  },
+  {
+    ...WARDENS_CHAIR_META,
+    create: createWardensChair,
   },
 ];
 
