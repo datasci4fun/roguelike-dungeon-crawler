@@ -41,7 +41,7 @@ This produces `.claude/skills/model-generator/out/repo_context.json` with:
 - existing models and their versions
 - enemy models mapped to bestiary names
 
-### Step 2: Fetch enemy data (REQUIRED for enemy models)
+### Step 2a: Fetch enemy data (REQUIRED for enemy models)
 
 **For enemy/boss models, you MUST fetch canonical data from the bestiary API:**
 
@@ -69,6 +69,50 @@ This produces `.claude/skills/model-generator/out/enemy_data.json` with:
 - `weaknesses`/`resistances` - Color/material hints
 
 **IMPORTANT**: The `appearance` field is the authoritative description. Do NOT invent visual details - interpret this description into Three.js geometry.
+
+### Step 2b: Fetch player data (REQUIRED for player models)
+
+**For player character models, you MUST fetch canonical data from the character guide API:**
+
+```bash
+node .claude/skills/model-generator/tools/fetch_player.mjs --race <race_id> --class <class_id>
+```
+
+Examples:
+```bash
+node .claude/skills/model-generator/tools/fetch_player.mjs --race DWARF --class CLERIC
+node .claude/skills/model-generator/tools/fetch_player.mjs --race ELF --class MAGE
+node .claude/skills/model-generator/tools/fetch_player.mjs --race ORC --class WARRIOR
+node .claude/skills/model-generator/tools/fetch_player.mjs --race HUMAN --class ROGUE
+node .claude/skills/model-generator/tools/fetch_player.mjs --race HALFLING --class WARRIOR
+```
+
+To see all available races and classes:
+```bash
+node .claude/skills/model-generator/tools/fetch_player.mjs --list
+node .claude/skills/model-generator/tools/fetch_player.mjs --list-races
+node .claude/skills/model-generator/tools/fetch_player.mjs --list-classes
+```
+
+This produces `.claude/skills/model-generator/out/player_data.json` with:
+
+**Race data:**
+- `race.appearance` - **CANONICAL body description - USE THIS for body shape/proportions**
+- `race.base_height` - Scale multiplier (1.0 = human, 0.6 = halfling, 1.2 = orc)
+- `race.skin_color` - Skin tone (e.g., "tan", "pale green", "earthy brown")
+- `race.eye_color` - Eye color for glow/detail
+- `race.racial_trait` - Special trait that may have visual effects
+
+**Class data:**
+- `class.equipment_type` - Weapon/armor style (sword_shield, staff, daggers, mace_shield)
+- `class.starting_equipment` - Specific equipment names
+- `class.primary_color` - Main armor/clothing color (hex)
+- `class.secondary_color` - Accent color (hex)
+- `class.glow_color` - Magic/effect glow color (hex)
+- `class.abilities` - Skills that may inform pose or effects
+- `class.playstyle` - Stance/pose hints
+
+**IMPORTANT**: Use `race.appearance` for body shape and `class.primary_color`/`class.secondary_color` for clothing. The model ID should be `player-{race}-{class}` in lowercase.
 
 ### Step 3: Generate model file (creative)
 Create a new file at:
@@ -108,6 +152,41 @@ Use `threat_level` for visual intensity:
 - Level 1-2: Simple geometry, muted colors
 - Level 3-4: More detail, glowing elements
 - Level 5: Complex, dramatic, emissive effects
+
+**For Player Models - Interpreting Character Guide Data:**
+
+Read the `player_data.json` output and translate race + class data:
+
+| Race | Key Visual Traits |
+|------|-------------------|
+| HUMAN | base_height: 1.0, balanced proportions, tan/varied skin |
+| ELF | base_height: 1.1, slender/tall, pointed ears, pale skin |
+| DWARF | base_height: 0.7, stocky/broad, thick limbs, braided beard |
+| HALFLING | base_height: 0.6, small/nimble, large feet, cheerful |
+| ORC | base_height: 1.2, muscular/hulking, tusks, green skin |
+
+| Class | Equipment & Colors |
+|-------|-------------------|
+| WARRIOR | Sword + Shield, red/silver armor, sturdy stance |
+| MAGE | Staff, purple/blue robes, magical glow effects |
+| ROGUE | Twin daggers, dark leather, hooded, stealthy pose |
+| CLERIC | Mace + Shield, white/gold robes, holy glow |
+
+**Combining Race + Class:**
+1. Use `race.appearance` for body proportions and skin
+2. Use `race.base_height` for scale multiplier
+3. Use `class.primary_color` for main armor/clothing color
+4. Use `class.secondary_color` for trim/accents
+5. Use `class.glow_color` for magical effects
+6. Use `class.equipment_type` to determine weapon/armor style
+7. Reference `class.playstyle` for stance/pose hints
+
+**Example - Dwarf Cleric:**
+- Body: Stocky, broad-shouldered (race.appearance)
+- Scale: 0.7x human height (race.base_height)
+- Skin: Earthy brown (race.skin_color)
+- Armor: White/gold robes with mace and shield (class colors + equipment)
+- Effect: Subtle holy glow (class.glow_color)
 
 ### Step 4: Deterministic registration + validation
 Run the driver:
@@ -265,6 +344,7 @@ Use materials from `web/src/models/materials.ts`:
 | `interactive` | Objects with behavior | Switches, levers, chests |
 | `prop` | Generic props | Barrels, crates, books |
 | `enemy` | Enemy/boss models | Goblin, Skeleton, Spider Queen |
+| `player` | Player character models | Human Warrior, Elf Mage, Dwarf Cleric |
 
 ---
 

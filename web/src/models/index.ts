@@ -41,6 +41,7 @@ import { createOrc, ORC_META } from './orc';
 import { createOrcV2, ORC_V2_META } from './orcV2';
 import { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 import { createPlagueRat, PLAGUE_RAT_META } from './plagueRat';
+import { createDwarfCleric, DWARF_CLERIC_META } from './playerDwarfCleric';
 import { createPrismWatcher, PRISM_WATCHER_META } from './prismWatcher';
 import { createRat, RAT_META } from './rat';
 import { createRatKing, RAT_KING_META } from './ratKing';
@@ -61,6 +62,23 @@ import { createWardensChair, WARDENS_CHAIR_META } from './wardensChair';
 import { createWebweaver, WEBWEAVER_META } from './webweaver';
 import { createWraith, WRAITH_META } from './wraith';
 // @model-generator:imports:end
+
+// Player character model (manual import - not auto-generated)
+import {
+  createPlayerCharacter,
+  PLAYER_CHARACTER_META,
+  RACE_CONFIG,
+  CLASS_CONFIG,
+  PLAYER_RACES,
+  PLAYER_CLASSES,
+  getRaceDisplayName,
+  getClassDisplayName,
+  getRaceHeight,
+  getClassGlowColor,
+  type RaceConfig,
+  type ClassConfig,
+  type PlayerModelOptions,
+} from './playerCharacter';
 
 // Re-export materials
 export * from './materials';
@@ -99,6 +117,7 @@ export { createOrc, ORC_META } from './orc';
 export { createOrcV2, ORC_V2_META } from './orcV2';
 export { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 export { createPlagueRat, PLAGUE_RAT_META } from './plagueRat';
+export { createDwarfCleric, DWARF_CLERIC_META } from './playerDwarfCleric';
 export { createPrismWatcher, PRISM_WATCHER_META } from './prismWatcher';
 export { createRat, RAT_META } from './rat';
 export { createRatKing, RAT_KING_META } from './ratKing';
@@ -120,10 +139,27 @@ export { createWebweaver, WEBWEAVER_META } from './webweaver';
 export { createWraith, WRAITH_META } from './wraith';
 // @model-generator:exports:end
 
+// Player character exports (manual - not auto-generated)
+export {
+  createPlayerCharacter,
+  PLAYER_CHARACTER_META,
+  RACE_CONFIG,
+  CLASS_CONFIG,
+  PLAYER_RACES,
+  PLAYER_CLASSES,
+  getRaceDisplayName,
+  getClassDisplayName,
+  getRaceHeight,
+  getClassGlowColor,
+  type RaceConfig,
+  type ClassConfig,
+  type PlayerModelOptions,
+} from './playerCharacter';
+
 /**
  * Model category types
  */
-export type ModelCategory = 'structure' | 'furniture' | 'decoration' | 'interactive' | 'prop' | 'enemy';
+export type ModelCategory = 'structure' | 'furniture' | 'decoration' | 'interactive' | 'prop' | 'enemy' | 'player';
 
 /**
  * Model definition interface
@@ -195,6 +231,10 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
   {
     ...DRAGON_META,
     create: createDragon,
+  },
+  {
+    ...DWARF_CLERIC_META,
+    create: createDwarfCleric,
   },
   {
     ...EMBER_SPRITE_META,
@@ -393,6 +433,226 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
     create: createWraith,
   },
 // @model-generator:library:end
+
+  // Player character base (manual entry - not auto-generated)
+  {
+    ...PLAYER_CHARACTER_META,
+    create: createPlayerCharacter,
+  },
+
+  // ============================================================================
+  // All 20 Player Race/Class Combinations for Asset Viewer
+  // ============================================================================
+
+  // Human combinations
+  {
+    id: 'player-human-warrior',
+    name: 'Human Warrior',
+    category: 'player' as const,
+    description: 'Versatile human warrior with sword and shield',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.4, y: 2.0, z: 0.8 },
+    tags: ['player', 'human', 'warrior', 'melee'],
+    create: () => createPlayerCharacter({ race: 'HUMAN', classId: 'WARRIOR' }),
+  },
+  {
+    id: 'player-human-mage',
+    name: 'Human Mage',
+    category: 'player' as const,
+    description: 'Adaptable human mage wielding arcane magic',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.4, y: 2.0, z: 0.8 },
+    tags: ['player', 'human', 'mage', 'magic'],
+    create: () => createPlayerCharacter({ race: 'HUMAN', classId: 'MAGE' }),
+  },
+  {
+    id: 'player-human-rogue',
+    name: 'Human Rogue',
+    category: 'player' as const,
+    description: 'Cunning human rogue with quick daggers',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.4, y: 2.0, z: 0.8 },
+    tags: ['player', 'human', 'rogue', 'stealth'],
+    create: () => createPlayerCharacter({ race: 'HUMAN', classId: 'ROGUE' }),
+  },
+  {
+    id: 'player-human-cleric',
+    name: 'Human Cleric',
+    category: 'player' as const,
+    description: 'Devout human cleric with divine healing',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.4, y: 2.0, z: 0.8 },
+    tags: ['player', 'human', 'cleric', 'healer'],
+    create: () => createPlayerCharacter({ race: 'HUMAN', classId: 'CLERIC' }),
+  },
+
+  // Elf combinations
+  {
+    id: 'player-elf-warrior',
+    name: 'Elf Warrior',
+    category: 'player' as const,
+    description: 'Graceful elven warrior with elegant blade',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.2, y: 2.2, z: 0.7 },
+    tags: ['player', 'elf', 'warrior', 'melee'],
+    create: () => createPlayerCharacter({ race: 'ELF', classId: 'WARRIOR' }),
+  },
+  {
+    id: 'player-elf-mage',
+    name: 'Elf Mage',
+    category: 'player' as const,
+    description: 'Ancient elven mage with powerful arcane mastery',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.2, y: 2.2, z: 0.7 },
+    tags: ['player', 'elf', 'mage', 'magic'],
+    create: () => createPlayerCharacter({ race: 'ELF', classId: 'MAGE' }),
+  },
+  {
+    id: 'player-elf-rogue',
+    name: 'Elf Rogue',
+    category: 'player' as const,
+    description: 'Silent elven rogue moving like shadow',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.2, y: 2.2, z: 0.7 },
+    tags: ['player', 'elf', 'rogue', 'stealth'],
+    create: () => createPlayerCharacter({ race: 'ELF', classId: 'ROGUE' }),
+  },
+  {
+    id: 'player-elf-cleric',
+    name: 'Elf Cleric',
+    category: 'player' as const,
+    description: 'Wise elven cleric channeling nature and light',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.2, y: 2.2, z: 0.7 },
+    tags: ['player', 'elf', 'cleric', 'healer'],
+    create: () => createPlayerCharacter({ race: 'ELF', classId: 'CLERIC' }),
+  },
+
+  // Dwarf combinations
+  {
+    id: 'player-dwarf-warrior',
+    name: 'Dwarf Warrior',
+    category: 'player' as const,
+    description: 'Stalwart dwarven warrior with axe and shield',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.6, y: 1.5, z: 0.9 },
+    tags: ['player', 'dwarf', 'warrior', 'melee'],
+    create: () => createPlayerCharacter({ race: 'DWARF', classId: 'WARRIOR' }),
+  },
+  {
+    id: 'player-dwarf-mage',
+    name: 'Dwarf Mage',
+    category: 'player' as const,
+    description: 'Runesmith dwarf mage with earth magic',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.6, y: 1.5, z: 0.9 },
+    tags: ['player', 'dwarf', 'mage', 'magic'],
+    create: () => createPlayerCharacter({ race: 'DWARF', classId: 'MAGE' }),
+  },
+  {
+    id: 'player-dwarf-rogue',
+    name: 'Dwarf Rogue',
+    category: 'player' as const,
+    description: 'Stealthy dwarven rogue from the deep tunnels',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.6, y: 1.5, z: 0.9 },
+    tags: ['player', 'dwarf', 'rogue', 'stealth'],
+    create: () => createPlayerCharacter({ race: 'DWARF', classId: 'ROGUE' }),
+  },
+  {
+    id: 'player-dwarf-cleric',
+    name: 'Dwarf Cleric',
+    category: 'player' as const,
+    description: 'Sturdy dwarven cleric with ancestral blessings',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.6, y: 1.5, z: 0.9 },
+    tags: ['player', 'dwarf', 'cleric', 'healer'],
+    create: () => createPlayerCharacter({ race: 'DWARF', classId: 'CLERIC' }),
+  },
+
+  // Halfling combinations
+  {
+    id: 'player-halfling-warrior',
+    name: 'Halfling Warrior',
+    category: 'player' as const,
+    description: 'Brave halfling warrior with surprising strength',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.0, y: 1.2, z: 0.6 },
+    tags: ['player', 'halfling', 'warrior', 'melee'],
+    create: () => createPlayerCharacter({ race: 'HALFLING', classId: 'WARRIOR' }),
+  },
+  {
+    id: 'player-halfling-mage',
+    name: 'Halfling Mage',
+    category: 'player' as const,
+    description: 'Clever halfling mage with tricky spells',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.0, y: 1.2, z: 0.6 },
+    tags: ['player', 'halfling', 'mage', 'magic'],
+    create: () => createPlayerCharacter({ race: 'HALFLING', classId: 'MAGE' }),
+  },
+  {
+    id: 'player-halfling-rogue',
+    name: 'Halfling Rogue',
+    category: 'player' as const,
+    description: 'Nimble halfling rogue with twin daggers',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.0, y: 1.2, z: 0.6 },
+    tags: ['player', 'halfling', 'rogue', 'stealth'],
+    create: () => createPlayerCharacter({ race: 'HALFLING', classId: 'ROGUE' }),
+  },
+  {
+    id: 'player-halfling-cleric',
+    name: 'Halfling Cleric',
+    category: 'player' as const,
+    description: 'Kind halfling cleric spreading warmth and healing',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.0, y: 1.2, z: 0.6 },
+    tags: ['player', 'halfling', 'cleric', 'healer'],
+    create: () => createPlayerCharacter({ race: 'HALFLING', classId: 'CLERIC' }),
+  },
+
+  // Orc combinations
+  {
+    id: 'player-orc-warrior',
+    name: 'Orc Warrior',
+    category: 'player' as const,
+    description: 'Powerful orc warrior with berserker rage',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.8, y: 2.3, z: 1.0 },
+    tags: ['player', 'orc', 'warrior', 'berserker'],
+    create: () => createPlayerCharacter({ race: 'ORC', classId: 'WARRIOR' }),
+  },
+  {
+    id: 'player-orc-mage',
+    name: 'Orc Mage',
+    category: 'player' as const,
+    description: 'Shamanistic orc mage with primal magic',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.8, y: 2.3, z: 1.0 },
+    tags: ['player', 'orc', 'mage', 'magic'],
+    create: () => createPlayerCharacter({ race: 'ORC', classId: 'MAGE' }),
+  },
+  {
+    id: 'player-orc-rogue',
+    name: 'Orc Rogue',
+    category: 'player' as const,
+    description: 'Cunning orc rogue striking from the shadows',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.8, y: 2.3, z: 1.0 },
+    tags: ['player', 'orc', 'rogue', 'stealth'],
+    create: () => createPlayerCharacter({ race: 'ORC', classId: 'ROGUE' }),
+  },
+  {
+    id: 'player-orc-cleric',
+    name: 'Orc Cleric',
+    category: 'player' as const,
+    description: 'Spiritual orc cleric with ancestral power',
+    defaultScale: 1.0,
+    boundingBox: { x: 1.8, y: 2.3, z: 1.0 },
+    tags: ['player', 'orc', 'cleric', 'healer'],
+    create: () => createPlayerCharacter({ race: 'ORC', classId: 'CLERIC' }),
+  },
 ];
 
 /**
@@ -593,4 +853,37 @@ export function getActiveProceduralEnemyModel(enemyName: string): ModelDefinitio
   return MODEL_LIBRARY.find(
     (m) => m.category === 'enemy' && m.enemyName === enemyName && isModelActive(m)
   ) || null;
+}
+
+// ============================================================================
+// Player Model Helpers
+// ============================================================================
+
+// Import types for player model creation
+import type { RaceId, ClassId } from '../types';
+
+/**
+ * Create a procedural player model based on race and class
+ * This is the main entry point for creating player 3D models
+ */
+export function createProceduralPlayer(
+  race: RaceId,
+  classId: ClassId,
+  options?: Omit<PlayerModelOptions, 'race' | 'classId'>
+): THREE.Group {
+  return createPlayerCharacter({ race, classId, ...options });
+}
+
+/**
+ * Get the player model definition from the library
+ */
+export function getPlayerModelDefinition(): ModelDefinition | undefined {
+  return MODEL_LIBRARY.find((m) => m.category === 'player');
+}
+
+/**
+ * Get all player-related models (for UI/editor use)
+ */
+export function getPlayerModels(): ModelDefinition[] {
+  return MODEL_LIBRARY.filter((m) => m.category === 'player');
 }
