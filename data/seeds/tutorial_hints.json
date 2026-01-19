@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {
+      "hint_id": "first_move",
+      "message": "Tip: Use WASD or Arrow keys to move around.",
+      "trigger_condition": "player_moved",
+      "priority": 100
+    },
+    {
+      "hint_id": "first_enemy_seen",
+      "message": "Tip: Walk into enemies to attack them.",
+      "trigger_condition": "enemy_visible",
+      "priority": 90
+    },
+    {
+      "hint_id": "first_item",
+      "message": "Tip: Walk over items to pick them up automatically.",
+      "trigger_condition": "item_nearby",
+      "priority": 80
+    },
+    {
+      "hint_id": "first_combat",
+      "message": "Tip: Watch your HP! Use potions (I key) to heal.",
+      "trigger_condition": "combat_started",
+      "priority": 85
+    },
+    {
+      "hint_id": "first_level_up",
+      "message": "Tip: Leveling up increases your max HP and attack damage.",
+      "trigger_condition": "level_up",
+      "priority": 70
+    },
+    {
+      "hint_id": "first_stairs",
+      "message": "Tip: Step on stairs (>) and move to descend deeper.",
+      "trigger_condition": "stairs_visible",
+      "priority": 75
+    },
+    {
+      "hint_id": "inventory_hint",
+      "message": "Tip: Press I for inventory, C for character stats, M for message log.",
+      "trigger_condition": "inventory_opened",
+      "priority": 60
+    },
+    {
+      "hint_id": "first_elite",
+      "message": "Tip: Elite enemies (bright red) are tougher but give more XP!",
+      "trigger_condition": "elite_visible",
+      "priority": 65
+    },
+    {
+      "hint_id": "first_lore",
+      "message": "Tip: Lore items reveal the story. Read them from your inventory.",
+      "trigger_condition": "lore_found",
+      "priority": 55
+    },
+    {
+      "hint_id": "first_boss",
+      "message": "Tip: BOSS FIGHT! These powerful foes have special abilities and drop rare loot!",
+      "trigger_condition": "boss_visible",
+      "priority": 95
+    }
+  ]
+}

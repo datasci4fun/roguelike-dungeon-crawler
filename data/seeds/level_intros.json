@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {
+      "floor": 1,
+      "message": "You descend into the Stone Dungeon. Ancient torches flicker with unnatural light."
+    },
+    {
+      "floor": 2,
+      "message": "The stench hits you first. The Sewers of Valdris stretch endlessly into darkness."
+    },
+    {
+      "floor": 3,
+      "message": "Roots and vines consume the walls. You have entered the Forest Depths, where nature claims all."
+    },
+    {
+      "floor": 4,
+      "message": "Familiar architecture, yet wrong. Mirror Valdris - a palace rebuilt from memory, imperfectly."
+    },
+    {
+      "floor": 5,
+      "message": "A biting cold grips you as you enter the Ice Cavern. Frost clings to every surface."
+    },
+    {
+      "floor": 6,
+      "message": "Dust motes dance in pale light. You have found the Ancient Library. Knowledge... and danger."
+    },
+    {
+      "floor": 7,
+      "message": "Heat radiates from below. The Volcanic Depths glow with rivers of molten rock."
+    },
+    {
+      "floor": 8,
+      "message": "Brilliant light refracts through countless crystals. The Crystal Cave holds the dragon's lair."
+    }
+  ]
+}

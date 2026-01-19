@@ -1,0 +1,83 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {
+      "artifact_id": "duplicate_seal",
+      "name": "The Duplicate Seal",
+      "description": "The next scroll or consumable you use will be duplicated.",
+      "lore": "A bureaucratic seal that somehow gained the power to reproduce documents - and their contents - perfectly.",
+      "effect": {
+        "type": "duplicate_consumable",
+        "target": "next_consumable"
+      },
+      "cost": {
+        "type": "spawn_enemy",
+        "enemy": "oath_bound_witness"
+      },
+      "unlock_condition": null
+    },
+    {
+      "artifact_id": "woundglass_shard",
+      "name": "Woundglass Shard",
+      "description": "Reveals a room that should not exist. (1 use per floor)",
+      "lore": "A fragment of a mirror that shows not what is, but what should have been hidden.",
+      "effect": {
+        "type": "reveal_path",
+        "target": "stairs"
+      },
+      "cost": {
+        "type": "boost_pulse",
+        "description": "Increases next Field Pulse intensity"
+      },
+      "unlock_condition": null
+    },
+    {
+      "artifact_id": "oathstone",
+      "name": "Oathstone",
+      "description": "Take a vow for this floor. Keep it for rewards, break it for consequences.",
+      "lore": "A stone that binds words to reality. Oaths sworn upon it cannot be forgotten.",
+      "effect": {
+        "type": "vow_binding",
+        "available_vows": ["no_potions", "no_backtrack", "slay_warden"]
+      },
+      "cost": {
+        "type": "vow_penalty",
+        "description": "Breaking the vow applies stun and penalties"
+      },
+      "unlock_condition": null
+    },
+    {
+      "artifact_id": "crown_splinter",
+      "name": "Crown-Splinter",
+      "description": "See through walls briefly. The longer held, the more your vision fractures.",
+      "lore": "A shard of the Last King's crown, granting insight at the cost of clarity.",
+      "effect": {
+        "type": "x_ray_vision",
+        "radius": 12
+      },
+      "cost": {
+        "type": "vision_penalty",
+        "amount": 1,
+        "description": "Permanently reduces vision range on this floor"
+      },
+      "unlock_condition": null
+    },
+    {
+      "artifact_id": "ledger_of_unborn",
+      "name": "Ledger of the Unborn",
+      "description": "Summon a phantom ally. A name is added, another forgotten.",
+      "lore": "A book containing the names of those who were never born. Write one name, erase another.",
+      "effect": {
+        "type": "summon_ally",
+        "ally_type": "phantom",
+        "duration": "floor"
+      },
+      "cost": {
+        "type": "max_hp_reduction",
+        "amount": 2,
+        "description": "Lose 2 max HP permanently"
+      },
+      "unlock_condition": null
+    }
+  ]
+}

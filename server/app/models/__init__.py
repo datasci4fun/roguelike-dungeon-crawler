@@ -16,15 +16,32 @@ from .game_constants import (
     Hazard,
     StatusEffect,
     Item,
+    Weapon,
     GameConstantsMeta,
+)
+from .narrative_data import (
+    BossAbility,
+    Feat,
+    Artifact,
+    Vow,
+    LoreEntry,
+    EncounterMessage,
+    LevelIntroMessage,
+    TutorialHint,
+    MicroEvent,
+    FloorDescription,
+    LoreQuote,
 )
 from .asset3d import (
     Asset3D,
     GenerationJob,
+    ProceduralModel,
     AssetCategory,
     AssetStatus,
     AssetPriority,
     JobStatus,
+    ProceduralModelCategory,
+    ProceduralModelStatus,
 )
 
 __all__ = [
@@ -47,12 +64,28 @@ __all__ = [
     "Hazard",
     "StatusEffect",
     "Item",
+    "Weapon",
     "GameConstantsMeta",
     # 3D Assets
     "Asset3D",
     "GenerationJob",
+    "ProceduralModel",
     "AssetCategory",
     "AssetStatus",
     "AssetPriority",
     "JobStatus",
+    "ProceduralModelCategory",
+    "ProceduralModelStatus",
+    # Narrative data
+    "BossAbility",
+    "Feat",
+    "Artifact",
+    "Vow",
+    "LoreEntry",
+    "EncounterMessage",
+    "LevelIntroMessage",
+    "TutorialHint",
+    "MicroEvent",
+    "FloorDescription",
+    "LoreQuote",
 ]
