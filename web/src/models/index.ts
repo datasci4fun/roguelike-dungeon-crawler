@@ -8,35 +8,39 @@
 import * as THREE from 'three';
 
 // Import model factories and metadata
-import { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
+// @model-generator:imports:start
 import { createBossThrone, BOSS_THRONE_META } from './bossThrone';
-import { createPillar, createPillar as createCollapsedPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
-import { createStatue, STATUE_META } from './statue';
-import { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
+import { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
 import { createGoblin, GOBLIN_META } from './goblin';
 import { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
-import { createSkeleton, SKELETON_META } from './skeleton';
 import { createOrc, ORC_META } from './orc';
+import { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 import { createRat, RAT_META } from './rat';
+import { createSkeleton, SKELETON_META } from './skeleton';
 import { createSpiderQueen, SPIDER_QUEEN_META } from './spiderQueen';
+import { createStatue, STATUE_META } from './statue';
+import { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
 import { createWardensChair, WARDENS_CHAIR_META } from './wardensChair';
+// @model-generator:imports:end
 
 // Re-export materials
 export * from './materials';
 
 // Re-export individual models
-export { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
+// @model-generator:exports:start
 export { createBossThrone, BOSS_THRONE_META } from './bossThrone';
-export { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
-export { createStatue, STATUE_META } from './statue';
-export { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
+export { createEntranceDoors, ENTRANCE_DOORS_META } from './entranceDoors';
 export { createGoblin, GOBLIN_META } from './goblin';
 export { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
-export { createSkeleton, SKELETON_META } from './skeleton';
 export { createOrc, ORC_META } from './orc';
+export { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
 export { createRat, RAT_META } from './rat';
+export { createSkeleton, SKELETON_META } from './skeleton';
 export { createSpiderQueen, SPIDER_QUEEN_META } from './spiderQueen';
+export { createStatue, STATUE_META } from './statue';
+export { createTreasureChest, TREASURE_CHEST_META } from './treasureChest';
 export { createWardensChair, WARDENS_CHAIR_META } from './wardensChair';
+// @model-generator:exports:end
 
 /**
  * Model category types
@@ -63,21 +67,46 @@ export interface ModelDefinition {
  * The complete model library
  */
 export const MODEL_LIBRARY: ModelDefinition[] = [
+  // @model-generator:library:start
+  {
+    ...BOSS_THRONE_META,
+    create: createBossThrone,
+  },
+  {
+    ...COLLAPSED_PILLAR_META,
+    create: (options) => createPillar({ ...options, collapsed: true }),
+  },
   {
     ...ENTRANCE_DOORS_META,
     create: createEntranceDoors,
   },
   {
-    ...BOSS_THRONE_META,
-    create: createBossThrone,
+    ...GOBLIN_KING_META,
+    create: createGoblinKing,
+  },
+  {
+    ...GOBLIN_META,
+    create: createGoblin,
+  },
+  {
+    ...ORC_META,
+    create: createOrc,
   },
   {
     ...PILLAR_META,
     create: createPillar,
   },
   {
-    ...COLLAPSED_PILLAR_META,
-    create: (options) => createCollapsedPillar({ ...options, collapsed: true }),
+    ...RAT_META,
+    create: createRat,
+  },
+  {
+    ...SKELETON_META,
+    create: createSkeleton,
+  },
+  {
+    ...SPIDER_QUEEN_META,
+    create: createSpiderQueen,
   },
   {
     ...STATUE_META,
@@ -88,33 +117,10 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
     create: createTreasureChest,
   },
   {
-    ...GOBLIN_META,
-    create: createGoblin,
-  },
-  {
-    ...GOBLIN_KING_META,
-    create: createGoblinKing,
-  },
-  {
-    ...SKELETON_META,
-    create: createSkeleton,
-  },
-  {
-    ...ORC_META,
-    create: createOrc,
-  },
-  {
-    ...RAT_META,
-    create: createRat,
-  },
-  {
-    ...SPIDER_QUEEN_META,
-    create: createSpiderQueen,
-  },
-  {
     ...WARDENS_CHAIR_META,
     create: createWardensChair,
   },
+  // @model-generator:library:end
 ];
 
 /**
