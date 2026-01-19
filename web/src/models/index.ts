@@ -28,6 +28,7 @@ import { createFrostGiant, FROST_GIANT_META } from './frostGiant';
 import { createFrostWisp, FROST_WISP_META } from './frostWisp';
 import { createGoblin, GOBLIN_META } from './goblin';
 import { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
+import { createGoblinKingV2, GOBLIN_KING_V2_META } from './goblinKingV2';
 import { createGoblinV2, GOBLIN_V2_META } from './goblinV2';
 import { createGoblinV3, GOBLIN_V3_META } from './goblinV3';
 import { createGoblinV4, GOBLIN_V4_META } from './goblinV4';
@@ -43,11 +44,13 @@ import { createPlagueRat, PLAGUE_RAT_META } from './plagueRat';
 import { createPrismWatcher, PRISM_WATCHER_META } from './prismWatcher';
 import { createRat, RAT_META } from './rat';
 import { createRatKing, RAT_KING_META } from './ratKing';
+import { createRatKingV2, RAT_KING_V2_META } from './ratKingV2';
 import { createRatV2, RAT_V2_META } from './ratV2';
 import { createShade, SHADE_META } from './shade';
 import { createSkeleton, SKELETON_META } from './skeleton';
 import { createSkeletonV2, SKELETON_V2_META } from './skeletonV2';
 import { createSpiderQueen, SPIDER_QUEEN_META } from './spiderQueen';
+import { createSpiderQueenV2, SPIDER_QUEEN_V2_META } from './spiderQueenV2';
 import { createSpiderling, SPIDERLING_META } from './spiderling';
 import { createStatue, STATUE_META } from './statue';
 import { createTheRegent, THE_REGENT_META } from './theRegent';
@@ -83,6 +86,7 @@ export { createFrostGiant, FROST_GIANT_META } from './frostGiant';
 export { createFrostWisp, FROST_WISP_META } from './frostWisp';
 export { createGoblin, GOBLIN_META } from './goblin';
 export { createGoblinKing, GOBLIN_KING_META } from './goblinKing';
+export { createGoblinKingV2, GOBLIN_KING_V2_META } from './goblinKingV2';
 export { createGoblinV2, GOBLIN_V2_META } from './goblinV2';
 export { createGoblinV3, GOBLIN_V3_META } from './goblinV3';
 export { createGoblinV4, GOBLIN_V4_META } from './goblinV4';
@@ -98,11 +102,13 @@ export { createPlagueRat, PLAGUE_RAT_META } from './plagueRat';
 export { createPrismWatcher, PRISM_WATCHER_META } from './prismWatcher';
 export { createRat, RAT_META } from './rat';
 export { createRatKing, RAT_KING_META } from './ratKing';
+export { createRatKingV2, RAT_KING_V2_META } from './ratKingV2';
 export { createRatV2, RAT_V2_META } from './ratV2';
 export { createShade, SHADE_META } from './shade';
 export { createSkeleton, SKELETON_META } from './skeleton';
 export { createSkeletonV2, SKELETON_V2_META } from './skeletonV2';
 export { createSpiderQueen, SPIDER_QUEEN_META } from './spiderQueen';
+export { createSpiderQueenV2, SPIDER_QUEEN_V2_META } from './spiderQueenV2';
 export { createSpiderling, SPIDERLING_META } from './spiderling';
 export { createStatue, STATUE_META } from './statue';
 export { createTheRegent, THE_REGENT_META } from './theRegent';
@@ -217,6 +223,14 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
   {
     ...GOBLIN_KING_META,
     create: createGoblinKing,
+    isActive: false,
+  },
+  {
+    ...GOBLIN_KING_V2_META,
+    create: createGoblinKingV2,
+    version: 2,
+    isActive: true,
+    baseModelId: 'goblin-king',
   },
   {
     ...GOBLIN_META,
@@ -292,6 +306,14 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
   {
     ...RAT_KING_META,
     create: createRatKing,
+    isActive: false,
+  },
+  {
+    ...RAT_KING_V2_META,
+    create: createRatKingV2,
+    version: 2,
+    isActive: true,
+    baseModelId: 'rat-king',
   },
   {
     ...RAT_META,
@@ -329,6 +351,14 @@ export const MODEL_LIBRARY: ModelDefinition[] = [
   {
     ...SPIDER_QUEEN_META,
     create: createSpiderQueen,
+    isActive: false,
+  },
+  {
+    ...SPIDER_QUEEN_V2_META,
+    create: createSpiderQueenV2,
+    version: 2,
+    isActive: true,
+    baseModelId: 'spider-queen',
   },
   {
     ...STATUE_META,
