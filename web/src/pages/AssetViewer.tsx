@@ -16,6 +16,11 @@ import { useJobs } from '../contexts/JobsContext';
 import {
   MODEL_LIBRARY,
   getProceduralEnemyModel,
+  getModelVersions,
+  getModelVersion,
+  isModelActive,
+  getBaseModelId,
+  hasMultipleVersions,
   type ModelDefinition,
   type ModelCategory,
 } from '../models';
@@ -369,7 +374,13 @@ export function AssetViewer() {
             {tab === 'procedural' ? (
               /* Procedural Models List */
               <>
-                {filteredProceduralModels.map((model) => (
+                {filteredProceduralModels.map((model) => {
+                const modelVersion = getModelVersion(model);
+                const modelIsActive = isModelActive(model);
+                const baseId = getBaseModelId(model);
+                const hasVersions = hasMultipleVersions(baseId);
+
+                return (
                   <div
                     key={model.id}
                     onClick={() => setSelectedProcedural(model)}
@@ -377,9 +388,10 @@ export function AssetViewer() {
                       padding: '15px',
                       background: selectedProcedural?.id === model.id ? '#3a2a5e' : '#232340',
                       borderRadius: '8px',
-                      border: `1px solid ${selectedProcedural?.id === model.id ? '#cc5de8' : '#333'}`,
+                      border: `1px solid ${selectedProcedural?.id === model.id ? '#cc5de8' : !modelIsActive ? '#666' : '#333'}`,
                       cursor: 'pointer',
                       transition: 'all 0.2s',
+                      opacity: modelIsActive ? 1 : 0.7,
                     }}
                   >
                     <div style={{
@@ -388,17 +400,50 @@ export function AssetViewer() {
                       alignItems: 'flex-start',
                       marginBottom: '8px',
                     }}>
-                      <h3 style={{ margin: 0, color: '#fff' }}>{model.name}</h3>
-                      <span style={{
-                        padding: '2px 8px',
-                        background: '#cc5de822',
-                        color: '#cc5de8',
-                        borderRadius: '4px',
-                        fontSize: '11px',
-                        textTransform: 'uppercase',
-                      }}>
-                        Procedural
-                      </span>
+                      <h3 style={{ margin: 0, color: '#fff' }}>
+                        {model.name}
+                        {hasVersions && (
+                          <span style={{ color: '#888', fontSize: '12px', fontWeight: 'normal', marginLeft: '6px' }}>
+                            v{modelVersion}
+                          </span>
+                        )}
+                      </h3>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {modelIsActive && (
+                          <span style={{
+                            padding: '2px 6px',
+                            background: '#37b24d22',
+                            color: '#37b24d',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            textTransform: 'uppercase',
+                          }}>
+                            Active
+                          </span>
+                        )}
+                        {!modelIsActive && (
+                          <span style={{
+                            padding: '2px 6px',
+                            background: '#86868622',
+                            color: '#868686',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            textTransform: 'uppercase',
+                          }}>
+                            Archived
+                          </span>
+                        )}
+                        <span style={{
+                          padding: '2px 8px',
+                          background: '#cc5de822',
+                          color: '#cc5de8',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          textTransform: 'uppercase',
+                        }}>
+                          Procedural
+                        </span>
+                      </div>
                     </div>
 
                     <div style={{
@@ -461,7 +506,8 @@ export function AssetViewer() {
                       </div>
                     )}
                   </div>
-                ))}
+                );
+              })}
 
                 {filteredProceduralModels.length === 0 && (
                   <div style={{
@@ -603,6 +649,13 @@ export function AssetViewer() {
         }}>
           {/* Procedural Model Detail */}
           {tab === 'procedural' && selectedProcedural ? (
+            (() => {
+              const baseId = getBaseModelId(selectedProcedural);
+              const versions = getModelVersions(baseId);
+              const currentVersion = getModelVersion(selectedProcedural);
+              const currentIsActive = isModelActive(selectedProcedural);
+
+              return (
             <div style={{
               background: '#232340',
               borderRadius: '8px',
@@ -610,6 +663,63 @@ export function AssetViewer() {
               border: '1px solid #333',
             }}>
               <h2 style={{ margin: '0 0 15px', color: '#fff' }}>{selectedProcedural.name}</h2>
+
+              {/* Version Selector - only show if multiple versions exist */}
+              {versions.length > 1 && (
+                <div style={{
+                  marginBottom: '15px',
+                  padding: '12px',
+                  background: '#1a1a2e',
+                  borderRadius: '6px',
+                  border: '1px solid #444',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '8px',
+                  }}>
+                    <span style={{ color: '#888', fontSize: '12px' }}>Version</span>
+                    <span style={{
+                      padding: '2px 6px',
+                      background: currentIsActive ? '#37b24d22' : '#86868622',
+                      color: currentIsActive ? '#37b24d' : '#868686',
+                      borderRadius: '4px',
+                      fontSize: '10px',
+                      textTransform: 'uppercase',
+                    }}>
+                      {currentIsActive ? 'Active (used in-game)' : 'Archived'}
+                    </span>
+                  </div>
+                  <select
+                    value={selectedProcedural.id}
+                    onChange={(e) => {
+                      const newModel = versions.find(v => v.id === e.target.value);
+                      if (newModel) setSelectedProcedural(newModel);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      background: '#2a2a4e',
+                      color: '#fff',
+                      border: '1px solid #555',
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {versions.map((v) => {
+                      const vNum = getModelVersion(v);
+                      const vActive = isModelActive(v);
+                      return (
+                        <option key={v.id} value={v.id}>
+                          v{vNum} - {v.id} {vActive ? '(Active)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
 
               {/* 3D Preview */}
               <div style={{
@@ -725,6 +835,8 @@ export function AssetViewer() {
                 </div>
               </div>
             </div>
+              );
+            })()
           ) : tab === 'procedural' ? (
             <div style={{
               background: '#232340',

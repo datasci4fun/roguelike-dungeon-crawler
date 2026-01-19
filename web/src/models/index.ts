@@ -61,6 +61,12 @@ export interface ModelDefinition {
   create: (options?: Record<string, unknown>) => THREE.Group;
   /** For enemy models: the exact enemy name from battle state (e.g., "Goblin", "Goblin King") */
   enemyName?: string;
+  /** Version number (1, 2, 3, etc.) - defaults to 1 if not specified */
+  version?: number;
+  /** Whether this version is active/used in-game - defaults to true if not specified */
+  isActive?: boolean;
+  /** Base model ID for grouping versions (e.g., "goblin" groups goblin-v1, goblin-v2) */
+  baseModelId?: string;
 }
 
 /**
@@ -192,9 +198,15 @@ export function getLibraryStats() {
 
 /**
  * Get a procedural enemy model by the enemy name from battle state
- * Returns null if no procedural model exists for this enemy
+ * Returns the active version, or null if no procedural model exists
  */
 export function getProceduralEnemyModel(enemyName: string): ModelDefinition | null {
+  // Prefer active version, fall back to any version
+  const active = MODEL_LIBRARY.find(
+    (m) => m.category === 'enemy' && m.enemyName === enemyName && (m.isActive ?? true)
+  );
+  if (active) return active;
+
   return MODEL_LIBRARY.find(
     (m) => m.category === 'enemy' && m.enemyName === enemyName
   ) || null;
@@ -215,4 +227,104 @@ export function createProceduralEnemy(enemyName: string, options?: Record<string
  */
 export function getProceduralEnemies(): ModelDefinition[] {
   return MODEL_LIBRARY.filter((m) => m.category === 'enemy');
+}
+
+// ============================================================================
+// Version Management
+// ============================================================================
+
+/**
+ * Get the effective version number for a model (defaults to 1)
+ */
+export function getModelVersion(model: ModelDefinition): number {
+  return model.version ?? 1;
+}
+
+/**
+ * Check if a model is active (defaults to true)
+ */
+export function isModelActive(model: ModelDefinition): boolean {
+  return model.isActive ?? true;
+}
+
+/**
+ * Get the base model ID for grouping versions
+ * If not specified, uses the model's own ID
+ */
+export function getBaseModelId(model: ModelDefinition): string {
+  return model.baseModelId ?? model.id;
+}
+
+/**
+ * Get all versions of a model by its base ID
+ * Returns models sorted by version number (ascending)
+ */
+export function getModelVersions(baseId: string): ModelDefinition[] {
+  return MODEL_LIBRARY
+    .filter((m) => getBaseModelId(m) === baseId)
+    .sort((a, b) => getModelVersion(a) - getModelVersion(b));
+}
+
+/**
+ * Get only active models (for game use)
+ * This filters out inactive/archived versions
+ */
+export function getActiveModels(): ModelDefinition[] {
+  return MODEL_LIBRARY.filter((m) => isModelActive(m));
+}
+
+/**
+ * Get the active version of a model by its base ID
+ * Returns undefined if no active version exists
+ */
+export function getActiveVersion(baseId: string): ModelDefinition | undefined {
+  return MODEL_LIBRARY.find(
+    (m) => getBaseModelId(m) === baseId && isModelActive(m)
+  );
+}
+
+/**
+ * Get all unique base model IDs (for grouping in UI)
+ */
+export function getUniqueBaseModelIds(): string[] {
+  const baseIds = new Set<string>();
+  MODEL_LIBRARY.forEach((m) => baseIds.add(getBaseModelId(m)));
+  return [...baseIds].sort();
+}
+
+/**
+ * Get models grouped by their base ID
+ * Useful for version selector UI
+ */
+export function getModelsGroupedByBase(): Map<string, ModelDefinition[]> {
+  const groups = new Map<string, ModelDefinition[]>();
+  for (const model of MODEL_LIBRARY) {
+    const baseId = getBaseModelId(model);
+    if (!groups.has(baseId)) {
+      groups.set(baseId, []);
+    }
+    groups.get(baseId)!.push(model);
+  }
+  // Sort each group by version
+  for (const [, models] of groups) {
+    models.sort((a, b) => getModelVersion(a) - getModelVersion(b));
+  }
+  return groups;
+}
+
+/**
+ * Check if a model has multiple versions
+ */
+export function hasMultipleVersions(baseId: string): boolean {
+  return getModelVersions(baseId).length > 1;
+}
+
+/**
+ * Get active procedural enemy model by name
+ * Only returns the active version
+ */
+export function getActiveProceduralEnemyModel(enemyName: string): ModelDefinition | null {
+  return MODEL_LIBRARY.find(
+    (m) => m.category === 'enemy' && m.enemyName === enemyName && isModelActive(m)
+  ) || null;
 }
