@@ -304,6 +304,35 @@ def manhattan_distance(x1: int, y1: int, x2: int, y2: int) -> int:
     return abs(x1 - x2) + abs(y1 - y2)
 
 
+def distance_to_entity(x: int, y: int, target: 'BattleEntity') -> int:
+    """Calculate minimum Manhattan distance from point to any tile occupied by entity.
+
+    For multi-tile entities, returns distance to the nearest occupied tile.
+    This is used for attack range checks against large bosses.
+    """
+    min_dist = float('inf')
+    for tile_x, tile_y in target.get_occupied_tiles():
+        dist = manhattan_distance(x, y, tile_x, tile_y)
+        if dist < min_dist:
+            min_dist = dist
+    return int(min_dist)
+
+
+def distance_between_entities(attacker: 'BattleEntity', target: 'BattleEntity') -> int:
+    """Calculate minimum Manhattan distance between two entities (edge-to-edge).
+
+    For multi-tile entities, returns the minimum distance between any pair of
+    occupied tiles from each entity.
+    """
+    min_dist = float('inf')
+    for ax, ay in attacker.get_occupied_tiles():
+        for tx, ty in target.get_occupied_tiles():
+            dist = manhattan_distance(ax, ay, tx, ty)
+            if dist < min_dist:
+                min_dist = dist
+    return int(min_dist)
+
+
 def get_tiles_in_range(
     center_x: int,
     center_y: int,
@@ -324,7 +353,7 @@ def get_valid_move_tiles(
     battle: 'BattleState',
     max_range: int = BATTLE_MOVE_RANGE
 ) -> List[Tuple[int, int]]:
-    """Get all tiles an entity can move to."""
+    """Get all tiles an entity can move to (supports multi-tile entities)."""
     valid = []
 
     # Check speed modifier from status effects
@@ -348,13 +377,16 @@ def get_valid_move_tiles(
             if manhattan_distance(entity.arena_x, entity.arena_y, nx, ny) > effective_range:
                 continue
 
-            # Check bounds and walkability
-            if not battle.is_tile_walkable(nx, ny):
-                continue
-
-            # Check not occupied
-            if battle.get_entity_at(nx, ny) is not None:
-                continue
+            # For multi-tile entities, check if full footprint fits
+            if entity.size_width > 1 or entity.size_height > 1:
+                if not battle.is_position_valid_for_entity(nx, ny, entity, exclude_self=True):
+                    continue
+            else:
+                # Single-tile: simple check
+                if not battle.is_tile_walkable(nx, ny):
+                    continue
+                if battle.get_entity_at(nx, ny) is not None:
+                    continue
 
             valid.append((nx, ny))
 
@@ -366,7 +398,7 @@ def get_valid_attack_targets(
     battle: 'BattleState',
     ability: AbilityDef
 ) -> List['BattleEntity']:
-    """Get all valid targets for an attack ability."""
+    """Get all valid targets for an attack ability (supports multi-tile entities)."""
     targets = []
 
     # Self-buff abilities target self
@@ -380,10 +412,8 @@ def get_valid_attack_targets(
         potential = [battle.player] if battle.player and battle.player.hp > 0 else []
 
     for target in potential:
-        dist = manhattan_distance(
-            attacker.arena_x, attacker.arena_y,
-            target.arena_x, target.arena_y
-        )
+        # Use edge-to-edge distance for multi-tile entities
+        dist = distance_between_entities(attacker, target)
         if dist <= ability.range:
             targets.append(target)
 

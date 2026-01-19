@@ -49,3 +49,7 @@ class Creature(BaseModel):
     # Visual
     icon: str
     threat_level: int  # 1-5 skulls
+
+    # Size (for multi-tile entities like bosses)
+    size_width: int = 1   # Tiles wide (1 = normal, 2-3 = large boss)
+    size_height: int = 1  # Tiles tall (1 = normal, 2-3 = large boss)

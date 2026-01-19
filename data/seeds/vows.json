@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {
+      "vow_id": "no_potions",
+      "name": "Vow of Abstinence",
+      "description": "No potions this floor",
+      "restriction_type": "item_usage",
+      "xp_multiplier": 1.0,
+      "reward": {
+        "type": "max_hp",
+        "amount": 2,
+        "description": "+2 max HP permanently"
+      }
+    },
+    {
+      "vow_id": "no_backtrack",
+      "name": "Vow of Progress",
+      "description": "Never revisit a room",
+      "restriction_type": "movement",
+      "xp_multiplier": 1.0,
+      "reward": {
+        "type": "attack",
+        "amount": 1,
+        "description": "+1 attack permanently"
+      }
+    },
+    {
+      "vow_id": "slay_warden",
+      "name": "Vow of Confrontation",
+      "description": "Defeat the Warden without fleeing",
+      "restriction_type": "combat",
+      "xp_multiplier": 1.0,
+      "reward": {
+        "type": "guaranteed_loot",
+        "rarity": "rare",
+        "description": "Guaranteed rare loot from boss"
+      }
+    }
+  ]
+}

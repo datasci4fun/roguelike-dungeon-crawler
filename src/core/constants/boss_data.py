@@ -12,6 +12,7 @@ BOSS_STATS = {
         'level': 1,  # Stone Dungeon
         'abilities': ['summon_goblins', 'war_cry'],
         'description': 'A crowned goblin wielding a bloodied mace',
+        'size': (1, 1),  # 1x1 tiles
     },
     BossType.FROST_GIANT: {
         'symbol': 'F',
@@ -22,6 +23,7 @@ BOSS_STATS = {
         'level': 5,  # Ice Cavern
         'abilities': ['ice_blast', 'freeze_ground'],
         'description': 'A towering giant encased in eternal ice',
+        'size': (3, 3),  # 3x3 tiles - twenty-foot humanoid
     },
     BossType.SPIDER_QUEEN: {
         'symbol': 'S',
@@ -32,6 +34,7 @@ BOSS_STATS = {
         'level': 3,  # Forest Depths
         'abilities': ['web_trap', 'poison_bite', 'summon_spiders'],
         'description': 'A massive arachnid matriarch dripping with venom',
+        'size': (2, 2),  # 2x2 tiles - elephant-sized spider
     },
     BossType.FLAME_LORD: {
         'symbol': 'Φ',
@@ -42,6 +45,7 @@ BOSS_STATS = {
         'level': 7,  # Volcanic Depths
         'abilities': ['fire_breath', 'lava_pool', 'inferno'],
         'description': 'A being of pure fire born from the volcanic depths',
+        'size': (2, 2),  # 2x2 tiles - towering humanoid of magma
     },
     BossType.REGENT: {
         'symbol': 'R',
@@ -52,6 +56,7 @@ BOSS_STATS = {
         'level': 4,  # Mirror Valdris
         'abilities': ['royal_decree', 'summon_guard', 'counterfeit_crown'],
         'description': 'A monarch who never was, wearing a crown of stolen memories',
+        'size': (1, 1),  # 1x1 tiles - spectral human-sized
     },
     BossType.RAT_KING: {
         'symbol': 'r',  # Lowercase to distinguish from Goblin King's 'K'
@@ -62,6 +67,7 @@ BOSS_STATS = {
         'level': 2,  # Sewers
         'abilities': ['summon_swarm', 'plague_bite', 'burrow'],
         'description': 'A grotesque fusion of rats bound by diseased flesh',
+        'size': (2, 2),  # 2x2 tiles - mass of intertwined rats
     },
     BossType.ARCANE_KEEPER: {
         'symbol': 'A',
@@ -72,6 +78,7 @@ BOSS_STATS = {
         'level': 6,  # Ancient Library
         'abilities': ['arcane_bolt', 'teleport'],
         'description': 'A spectral guardian of forbidden knowledge',
+        'size': (1, 1),  # 1x1 tiles - floating specter
     },
     BossType.DRAGON_EMPEROR: {
         'symbol': 'E',
@@ -82,6 +89,7 @@ BOSS_STATS = {
         'level': 8,  # Crystal Cave
         'abilities': ['fire_breath', 'tail_sweep', 'dragon_fear'],
         'description': 'The ancient dragon lord guarding the ultimate treasure',
+        'size': (3, 3),  # 3x3 tiles - massive dragon
     },
 }
 

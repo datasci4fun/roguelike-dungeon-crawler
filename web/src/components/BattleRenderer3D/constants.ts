@@ -16,7 +16,21 @@ export const BATTLE_FOG_FAR = 25;
 
 // Entity model scale (adjust to fit arena tiles)
 export const ENTITY_MODEL_SCALE = 1.4;
-export const ENTITY_MODEL_Y_OFFSET = 0.3;
+export const ENTITY_MODEL_Y_OFFSET = 0;  // Models sit directly on ground
+
+// Multi-tile entity size multipliers (v7.2)
+// Maps tile footprint to visual scale multiplier for 3D models
+export const SIZE_SCALE_MULTIPLIERS: Record<string, number> = {
+  '1x1': 1.0,
+  '2x2': 1.6,  // Bosses like Rat King, Spider Queen, Flame Lord
+  '3x3': 2.2,  // Massive bosses like Frost Giant, Dragon Emperor
+};
+
+// Helper to get scale multiplier from entity size
+export function getSizeScaleMultiplier(sizeWidth: number, sizeHeight: number): number {
+  const key = `${sizeWidth}x${sizeHeight}`;
+  return SIZE_SCALE_MULTIPLIERS[key] ?? 1.0;
+}
 
 // Third-person camera settings
 export const THIRD_PERSON_DISTANCE = 12;  // Units behind player

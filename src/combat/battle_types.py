@@ -54,6 +54,10 @@ class BattleEntity:
     # Initiative system (v6.11)
     initiative: int = 0               # Turn order priority (higher = earlier)
 
+    # Multi-tile size (v7.2 - bosses occupy multiple tiles)
+    size_width: int = 1               # Tiles wide (1=normal, 2-3=boss)
+    size_height: int = 1              # Tiles tall (1=normal, 2-3=boss)
+
     # Battle-specific state
     has_acted: bool = False           # Has taken action this turn
     status_effects: List[Dict[str, Any]] = field(default_factory=list)  # [{name, duration, ...}]
@@ -81,6 +85,8 @@ class BattleEntity:
             'has_acted': self.has_acted,
             'status_effects': [e.copy() for e in self.status_effects],
             'cooldowns': self.cooldowns.copy(),
+            'size_width': self.size_width,
+            'size_height': self.size_height,
         }
 
     @classmethod
@@ -104,6 +110,8 @@ class BattleEntity:
             display_id=data.get('display_id', ''),
             initiative=data.get('initiative', 0),
             has_acted=data.get('has_acted', False),
+            size_width=data.get('size_width', 1),
+            size_height=data.get('size_height', 1),
         )
         entity.status_effects = [e.copy() for e in data.get('status_effects', [])]
         entity.cooldowns = data.get('cooldowns', {}).copy()
@@ -141,6 +149,19 @@ class BattleEntity:
     def is_hidden(self) -> bool:
         """Check if entity is hidden/invisible."""
         return any(e.get('is_hidden', False) for e in self.status_effects)
+
+    def occupies_tile(self, x: int, y: int) -> bool:
+        """Check if this entity occupies a specific tile (multi-tile support)."""
+        return (self.arena_x <= x < self.arena_x + self.size_width and
+                self.arena_y <= y < self.arena_y + self.size_height)
+
+    def get_occupied_tiles(self) -> List[Tuple[int, int]]:
+        """Get all tiles this entity occupies (multi-tile support)."""
+        tiles = []
+        for dx in range(self.size_width):
+            for dy in range(self.size_height):
+                tiles.append((self.arena_x + dx, self.arena_y + dy))
+        return tiles
 
 
 @dataclass
@@ -335,13 +356,37 @@ class BattleState:
         return tile in ('.', '>', '<')  # Floor, stairs
 
     def get_entity_at(self, x: int, y: int) -> Optional[BattleEntity]:
-        """Get entity at arena position, if any."""
-        if self.player and self.player.arena_x == x and self.player.arena_y == y:
+        """Get entity at arena position, if any (supports multi-tile entities)."""
+        if self.player and self.player.occupies_tile(x, y):
             return self.player
         for enemy in self.enemies:
-            if enemy.hp > 0 and enemy.arena_x == x and enemy.arena_y == y:
+            if enemy.hp > 0 and enemy.occupies_tile(x, y):
                 return enemy
         return None
+
+    def is_position_valid_for_entity(self, x: int, y: int, entity: BattleEntity,
+                                      exclude_self: bool = True) -> bool:
+        """Check if position is valid for entity's full footprint (multi-tile support).
+
+        Args:
+            x, y: Target position (top-left corner of entity footprint)
+            entity: The entity to check placement for
+            exclude_self: If True, don't count self as blocking
+
+        Returns:
+            True if all tiles in footprint are walkable and unoccupied
+        """
+        for dx in range(entity.size_width):
+            for dy in range(entity.size_height):
+                check_x, check_y = x + dx, y + dy
+                # Check walkability
+                if not self.is_tile_walkable(check_x, check_y):
+                    return False
+                # Check for other entities
+                occupant = self.get_entity_at(check_x, check_y)
+                if occupant and (not exclude_self or occupant.entity_id != entity.entity_id):
+                    return False
+        return True
 
     def get_entity_by_id(self, entity_id: str) -> Optional[BattleEntity]:
         """Get entity by entity_id."""

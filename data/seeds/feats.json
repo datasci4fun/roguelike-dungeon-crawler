@@ -1,0 +1,163 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {
+      "feat_id": "mighty_blow",
+      "name": "Mighty Blow",
+      "description": "+2 Attack damage",
+      "category": "combat",
+      "atk_bonus": 2,
+      "level_required": 1
+    },
+    {
+      "feat_id": "weapon_master",
+      "name": "Weapon Master",
+      "description": "+15% damage with all attacks",
+      "category": "combat",
+      "damage_bonus": 0.15,
+      "level_required": 1
+    },
+    {
+      "feat_id": "deadly_precision",
+      "name": "Deadly Precision",
+      "description": "+10% critical hit chance",
+      "category": "combat",
+      "crit_chance_bonus": 0.10,
+      "level_required": 1
+    },
+    {
+      "feat_id": "berserker",
+      "name": "Berserker",
+      "description": "+25% damage, but -1 Defense",
+      "category": "combat",
+      "damage_bonus": 0.25,
+      "def_bonus": -1,
+      "level_required": 1
+    },
+    {
+      "feat_id": "life_leech",
+      "name": "Life Leech",
+      "description": "Heal 10% of damage dealt",
+      "category": "combat",
+      "effects": {"life_steal": 0.10},
+      "level_required": 1
+    },
+    {
+      "feat_id": "quick_strike",
+      "name": "Quick Strike",
+      "description": "Always attack before enemies",
+      "category": "combat",
+      "effects": {"first_strike": true},
+      "level_required": 1
+    },
+    {
+      "feat_id": "tough",
+      "name": "Tough",
+      "description": "+5 Maximum HP",
+      "category": "defense",
+      "hp_bonus": 5,
+      "level_required": 1
+    },
+    {
+      "feat_id": "iron_skin",
+      "name": "Iron Skin",
+      "description": "+2 Defense",
+      "category": "defense",
+      "def_bonus": 2,
+      "level_required": 1
+    },
+    {
+      "feat_id": "evasion",
+      "name": "Evasion",
+      "description": "+8% dodge chance",
+      "category": "defense",
+      "dodge_bonus": 0.08,
+      "level_required": 1
+    },
+    {
+      "feat_id": "shield_expert",
+      "name": "Shield Expert",
+      "description": "+15% block chance with shields",
+      "category": "defense",
+      "effects": {"block_bonus": 0.15},
+      "level_required": 1
+    },
+    {
+      "feat_id": "resilient",
+      "name": "Resilient",
+      "description": "Take 10% less damage from all sources",
+      "category": "defense",
+      "effects": {"resistance_all": 0.10},
+      "level_required": 1
+    },
+    {
+      "feat_id": "thorns",
+      "name": "Thorns",
+      "description": "Reflect 25% of melee damage back to attackers",
+      "category": "defense",
+      "effects": {"thorns": 0.25},
+      "level_required": 1
+    },
+    {
+      "feat_id": "fast_learner",
+      "name": "Fast Learner",
+      "description": "+20% XP gain",
+      "category": "utility",
+      "effects": {"xp_bonus": 0.20},
+      "level_required": 1
+    },
+    {
+      "feat_id": "eagle_eye",
+      "name": "Eagle Eye",
+      "description": "+1 vision range",
+      "category": "utility",
+      "effects": {"vision_bonus": 1},
+      "level_required": 1
+    },
+    {
+      "feat_id": "healer",
+      "name": "Healer",
+      "description": "Potions heal 50% more",
+      "category": "utility",
+      "effects": {"heal_bonus": 0.50},
+      "level_required": 1
+    },
+    {
+      "feat_id": "second_wind",
+      "name": "Second Wind",
+      "description": "Gain +3 HP when leveling up (in addition to normal)",
+      "category": "utility",
+      "effects": {"second_wind": true},
+      "level_required": 1
+    },
+    {
+      "feat_id": "survivor",
+      "name": "Survivor",
+      "description": "+3 HP, +1 Defense, +5% dodge",
+      "category": "special",
+      "hp_bonus": 3,
+      "def_bonus": 1,
+      "dodge_bonus": 0.05,
+      "level_required": 1
+    },
+    {
+      "feat_id": "warrior_spirit",
+      "name": "Warrior Spirit",
+      "description": "+1 Attack, +1 Defense, +2 HP",
+      "category": "special",
+      "hp_bonus": 2,
+      "atk_bonus": 1,
+      "def_bonus": 1,
+      "level_required": 1
+    },
+    {
+      "feat_id": "glass_cannon",
+      "name": "Glass Cannon",
+      "description": "+3 Attack, but -3 HP",
+      "category": "special",
+      "atk_bonus": 3,
+      "hp_bonus": -3,
+      "level_required": 1
+    }
+  ]
+}

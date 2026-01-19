@@ -7,10 +7,13 @@
  * - Abilities and loot information
  * - Search and filter functionality
  * - Threat level indicators
+ * - Procedural 3D model preview
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import './Bestiary.css';
+import { ProceduralModelViewer } from '../components/ProceduralModelViewer';
+import { getProceduralEnemyModel } from '../models';
 
 const API_BASE = 'http://localhost:8000/api/bestiary';
 
@@ -24,6 +27,23 @@ interface Ability {
 interface LootDrop {
   item: string;
   chance: string;
+}
+
+interface ProceduralModelInfo {
+  hasModel: boolean;
+  activeModel: {
+    modelId: string;
+    version: number;
+    isActive: boolean;
+    baseModelId: string;
+  } | null;
+  allVersions: Array<{
+    modelId: string;
+    version: number;
+    isActive: boolean;
+    baseModelId: string;
+  }>;
+  versionCount: number;
 }
 
 interface Creature {
@@ -45,6 +65,7 @@ interface Creature {
   loot: LootDrop[];
   icon: string;
   threat_level: number;
+  proceduralModel?: ProceduralModelInfo;
 }
 
 interface Category {
@@ -216,7 +237,7 @@ export function Bestiary() {
             filteredCreatures.map((creature) => (
               <button
                 key={creature.id}
-                className={`creature-card ${selectedCreature?.id === creature.id ? 'selected' : ''}`}
+                className={`creature-card ${selectedCreature?.id === creature.id ? 'selected' : ''} ${creature.proceduralModel?.hasModel ? 'has-model' : ''}`}
                 onClick={() => setSelectedCreature(creature)}
                 style={{
                   '--card-color': CATEGORY_COLORS[creature.category],
@@ -225,7 +246,12 @@ export function Bestiary() {
                 <div className="creature-card-header">
                   <span className="creature-icon">{creature.icon}</span>
                   <div className="creature-info">
-                    <h3>{creature.name}</h3>
+                    <h3>
+                      {creature.name}
+                      {creature.proceduralModel?.hasModel && (
+                        <span className="model-indicator" title="Has 3D model">🎭</span>
+                      )}
+                    </h3>
                     {creature.title && <p className="creature-title">{creature.title}</p>}
                   </div>
                   <div className="creature-threat">
@@ -278,6 +304,56 @@ export function Bestiary() {
                   </div>
                 </div>
               </header>
+
+              {/* 3D Model Preview */}
+              {(() => {
+                const modelDef = getProceduralEnemyModel(selectedCreature.name);
+                const modelInfo = selectedCreature.proceduralModel;
+
+                if (modelDef) {
+                  return (
+                    <section className="model-section">
+                      <div className="model-header">
+                        <h2>3D Model</h2>
+                        {modelInfo && modelInfo.versionCount > 1 && (
+                          <span className="model-version-badge">
+                            v{modelInfo.activeModel?.version} of {modelInfo.versionCount}
+                          </span>
+                        )}
+                      </div>
+                      <div className="model-preview">
+                        <Suspense fallback={<div className="model-loading">Loading model...</div>}>
+                          <ProceduralModelViewer
+                            createModel={modelDef.create}
+                            modelId={modelDef.id}
+                            width={300}
+                            height={250}
+                          />
+                        </Suspense>
+                      </div>
+                      <div className="model-info">
+                        <span className="model-id">{modelDef.id}</span>
+                        {modelInfo?.activeModel && (
+                          <span className="model-active-badge">Active</span>
+                        )}
+                      </div>
+                    </section>
+                  );
+                } else {
+                  return (
+                    <section className="model-section model-missing">
+                      <h2>3D Model</h2>
+                      <div className="model-placeholder">
+                        <span className="placeholder-icon">🎨</span>
+                        <p>No procedural model yet</p>
+                        <p className="placeholder-hint">
+                          Use <code>/model-generator {selectedCreature.id}</code> to create one
+                        </p>
+                      </div>
+                    </section>
+                  );
+                }
+              })()}
 
               {/* Stats */}
               <section className="stats-section">

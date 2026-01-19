@@ -8,7 +8,7 @@ from datetime import datetime
 from typing import Optional, List
 import enum
 
-from sqlalchemy import String, Integer, DateTime, Text, JSON, ForeignKey
+from sqlalchemy import String, Integer, Boolean, Float, DateTime, Text, JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..core.database import Base
@@ -82,6 +82,64 @@ class Asset3D(Base):
 
     def __repr__(self) -> str:
         return f"<Asset3D {self.asset_id}: {self.name}>"
+
+
+class ProceduralModelCategory(str, enum.Enum):
+    """Procedural model category types."""
+    STRUCTURE = "structure"
+    FURNITURE = "furniture"
+    DECORATION = "decoration"
+    INTERACTIVE = "interactive"
+    PROP = "prop"
+    ENEMY = "enemy"
+    PLAYER = "player"
+
+
+class ProceduralModelStatus(str, enum.Enum):
+    """Procedural model status."""
+    ACTIVE = "active"
+    DEPRECATED = "deprecated"
+    WIP = "wip"
+
+
+class ProceduralModel(Base):
+    """Procedural 3D model registry (code-generated Three.js models)."""
+
+    __tablename__ = "procedural_model"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    model_id: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    category: Mapped[str] = mapped_column(String(30), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="active", index=True)
+
+    # Versioning support
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    base_model_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
+
+    # Source file info
+    file_path: Mapped[str] = mapped_column(String(255), nullable=False)
+    factory_function: Mapped[str] = mapped_column(String(100), nullable=False)
+    meta_export: Mapped[str] = mapped_column(String(100), nullable=False)
+
+    # Linked game entity (for enemy/player models)
+    enemy_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    race_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    class_id: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+
+    # Model metadata
+    tags: Mapped[Optional[List[str]]] = mapped_column(JSON, nullable=True)
+    bounding_box: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    default_scale: Mapped[Optional[float]] = mapped_column(nullable=True, default=1.0)
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<ProceduralModel {self.model_id} v{self.version}>"
 
 
 class GenerationJob(Base):

@@ -173,6 +173,8 @@ CREATURES: list[Creature] = [
         ],
         icon="T",
         threat_level=3,
+        size_width=2,
+        size_height=2,
     ),
 
     # === ELITE ENEMIES (v4.0 advanced enemies) ===
@@ -202,6 +204,8 @@ CREATURES: list[Creature] = [
         ],
         icon="D",
         threat_level=5,
+        size_width=2,
+        size_height=2,
     ),
     Creature(
         id="necromancer",
@@ -601,6 +605,8 @@ CREATURES: list[Creature] = [
         ],
         icon="B",
         threat_level=2,
+        size_width=2,
+        size_height=2,
     ),
     Creature(
         id="thornling",
@@ -780,6 +786,8 @@ CREATURES: list[Creature] = [
         ],
         icon="K",
         threat_level=3,
+        size_width=1,
+        size_height=1,
     ),
     Creature(
         id="rat_king",
@@ -808,6 +816,8 @@ CREATURES: list[Creature] = [
         ],
         icon="r",
         threat_level=3,
+        size_width=2,
+        size_height=2,
     ),
     Creature(
         id="spider_queen",
@@ -836,6 +846,8 @@ CREATURES: list[Creature] = [
         ],
         icon="S",
         threat_level=4,
+        size_width=2,
+        size_height=2,
     ),
     Creature(
         id="the_regent",
@@ -864,6 +876,8 @@ CREATURES: list[Creature] = [
         ],
         icon="R",
         threat_level=4,
+        size_width=1,
+        size_height=1,
     ),
     Creature(
         id="frost_giant",
@@ -891,6 +905,8 @@ CREATURES: list[Creature] = [
         ],
         icon="F",
         threat_level=4,
+        size_width=3,
+        size_height=3,
     ),
     Creature(
         id="arcane_keeper",
@@ -919,6 +935,8 @@ CREATURES: list[Creature] = [
         ],
         icon="A",
         threat_level=4,
+        size_width=1,
+        size_height=1,
     ),
     Creature(
         id="flame_lord",
@@ -947,6 +965,8 @@ CREATURES: list[Creature] = [
         ],
         icon="Φ",
         threat_level=5,
+        size_width=2,
+        size_height=2,
     ),
     Creature(
         id="dragon_emperor",
@@ -975,5 +995,7 @@ CREATURES: list[Creature] = [
         ],
         icon="E",
         threat_level=5,
+        size_width=3,
+        size_height=3,
     ),
 ]

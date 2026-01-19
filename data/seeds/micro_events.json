@@ -1,0 +1,101 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {
+      "event_id": "micro_f1_echo",
+      "floor": 1,
+      "title": "Echo of the Fall",
+      "messages": [
+        "The walls seem to breathe with ancient memory...",
+        "You feel a whisper of those who fell before you."
+      ],
+      "effect_type": "reveal_tiles",
+      "effect_value": 4,
+      "evidence_id": "evidence_echo_of_fall"
+    },
+    {
+      "event_id": "micro_f2_drowned",
+      "floor": 2,
+      "title": "Drowned Voices",
+      "messages": [
+        "Bubbles rise from cracks in the stone, carrying whispers...",
+        "The water pulses with a faint, cold light."
+      ],
+      "effect_type": "lore_hint",
+      "effect_value": 0,
+      "evidence_id": "evidence_drowned_voices"
+    },
+    {
+      "event_id": "micro_f3_spores",
+      "floor": 3,
+      "title": "Spore Memory",
+      "messages": [
+        "The fungi release a cloud of luminescent spores...",
+        "For a moment, you see through the eyes of the colony."
+      ],
+      "effect_type": "boost_vision",
+      "effect_value": 3,
+      "evidence_id": "evidence_spore_memory"
+    },
+    {
+      "event_id": "micro_f4_ember",
+      "floor": 4,
+      "title": "Ember Sigh",
+      "messages": [
+        "The flames flicker in unison, then briefly dim...",
+        "In the sudden coolness, you catch your breath."
+      ],
+      "effect_type": "heal_minor",
+      "effect_value": 3,
+      "evidence_id": "evidence_ember_sigh"
+    },
+    {
+      "event_id": "micro_f5_glacial",
+      "floor": 5,
+      "title": "Glacial Pause",
+      "messages": [
+        "Time seems to crystallize around you...",
+        "The cold holds its breath."
+      ],
+      "effect_type": "calm_enemies",
+      "effect_value": 1,
+      "evidence_id": "evidence_glacial_pause"
+    },
+    {
+      "event_id": "micro_f6_void",
+      "floor": 6,
+      "title": "Void Glimpse",
+      "messages": [
+        "The shadows part, revealing what should not be seen...",
+        "You glimpse the spaces between spaces."
+      ],
+      "effect_type": "reveal_tiles",
+      "effect_value": 6,
+      "evidence_id": "evidence_void_glimpse"
+    },
+    {
+      "event_id": "micro_f7_royal",
+      "floor": 7,
+      "title": "Royal Echo",
+      "messages": [
+        "A spectral crown flickers into existence above you...",
+        "The ancient king's blessing lingers, faint but real."
+      ],
+      "effect_type": "heal_minor",
+      "effect_value": 5,
+      "evidence_id": "evidence_royal_echo"
+    },
+    {
+      "event_id": "micro_f8_watching",
+      "floor": 8,
+      "title": "The Watching",
+      "messages": [
+        "Something ancient turns its attention toward you...",
+        "It sees. It knows. And for this moment, it waits."
+      ],
+      "effect_type": "glow_items",
+      "effect_value": 8,
+      "evidence_id": "evidence_the_watching"
+    }
+  ]
+}

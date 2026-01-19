@@ -1,11 +1,11 @@
 {
-  "version": "1.1.0",
-  "updated_at": "2026-01-15T00:00:00Z",
+  "version": "1.2.0",
+  "updated_at": "2026-01-19T00:00:00Z",
   "data": [
     {
       "id": "human",
       "name": "Human",
-      "description": "Balanced and adaptable",
+      "description": "Balanced and adaptable, humans are the most versatile of all races.",
       "hp_modifier": 0,
       "atk_modifier": 0,
       "def_modifier": 0,
@@ -20,12 +20,18 @@
       "str_modifier": 0,
       "dex_modifier": 0,
       "con_modifier": 0,
-      "luck_modifier": 2
+      "luck_modifier": 2,
+      "appearance": "Medium build with varied skin tones ranging from pale to dark. Hair colors span black, brown, blonde, and red. Average height around 5'8\" to 6'.",
+      "lore": "Humans are the most numerous race in the realm, known for their ambition and adaptability. They founded the great cities and have produced heroes of every calling. Their short lifespans drive them to achieve greatness quickly.",
+      "base_height": 1.8,
+      "skin_color": "#d4a574",
+      "eye_color": "#4488cc",
+      "icon": "\ud83d\udc64"
     },
     {
       "id": "elf",
       "name": "Elf",
-      "description": "Agile and perceptive",
+      "description": "Agile and perceptive, elves are natural hunters and archers.",
       "hp_modifier": -2,
       "atk_modifier": 1,
       "def_modifier": 0,
@@ -40,12 +46,18 @@
       "str_modifier": -1,
       "dex_modifier": 2,
       "con_modifier": 0,
-      "luck_modifier": 0
+      "luck_modifier": 0,
+      "appearance": "Tall and slender with pointed ears and angular features. Skin is pale with an almost luminescent quality. Eyes are large and often green or silver. Hair is typically long, ranging from silver to black.",
+      "lore": "The eldest of the mortal races, elves have watched civilizations rise and fall. They are deeply connected to nature and magic, preferring forests and ancient places. Their long lives grant them patience but also a certain detachment from the urgency of other races.",
+      "base_height": 2.0,
+      "skin_color": "#e8d4b8",
+      "eye_color": "#88dd88",
+      "icon": "\ud83e\udddd"
     },
     {
       "id": "dwarf",
       "name": "Dwarf",
-      "description": "Sturdy and resilient",
+      "description": "Sturdy and resilient, dwarves are born warriors and craftsmen.",
       "hp_modifier": 4,
       "atk_modifier": -1,
       "def_modifier": 2,
@@ -60,12 +72,18 @@
       "str_modifier": 1,
       "dex_modifier": 0,
       "con_modifier": 2,
-      "luck_modifier": -1
+      "luck_modifier": -1,
+      "appearance": "Short and stocky with broad shoulders and thick limbs. Skin is ruddy and weathered. All dwarves sport magnificent beards, often braided and adorned. Eyes are typically brown or amber.",
+      "lore": "Dwarves carved their first homes deep within mountains before humans learned to walk. They are master smiths and miners, their halls filled with treasures of their own making. Stubborn and proud, they hold grudges for generations but their loyalty, once earned, is unshakeable.",
+      "base_height": 1.3,
+      "skin_color": "#c9a87c",
+      "eye_color": "#8866aa",
+      "icon": "\u26cf\ufe0f"
     },
     {
       "id": "halfling",
       "name": "Halfling",
-      "description": "Lucky and nimble",
+      "description": "Lucky and nimble, halflings rely on wit over strength.",
       "hp_modifier": -4,
       "atk_modifier": 0,
       "def_modifier": 0,
@@ -80,12 +98,18 @@
       "str_modifier": -2,
       "dex_modifier": 2,
       "con_modifier": 0,
-      "luck_modifier": 2
+      "luck_modifier": 2,
+      "appearance": "Small and slight, barely reaching 3 feet tall. Round faces with rosy cheeks and curly hair, usually brown or auburn. Large, expressive eyes and pointed ears smaller than elves. Notably large, hairy feet.",
+      "lore": "Halflings are wanderers and homebodies in equal measure. They value comfort, good food, and better company. Despite their small stature, they possess an uncanny knack for avoiding danger and finding fortune where others find only peril.",
+      "base_height": 1.0,
+      "skin_color": "#dec4a4",
+      "eye_color": "#886633",
+      "icon": "\ud83c\udf40"
     },
     {
       "id": "orc",
       "name": "Orc",
-      "description": "Powerful but reckless",
+      "description": "Powerful but reckless, orcs are fearsome in battle.",
       "hp_modifier": 6,
       "atk_modifier": 2,
       "def_modifier": -1,
@@ -100,7 +124,13 @@
       "str_modifier": 2,
       "dex_modifier": 0,
       "con_modifier": 1,
-      "luck_modifier": -1
+      "luck_modifier": -1,
+      "appearance": "Large and muscular with green to gray skin. Prominent lower tusks jut from their jaws. Small, deep-set eyes glow red or yellow. Coarse black hair, often worn in topknots or braids. Stand over 6 feet tall.",
+      "lore": "Once feared as mindless raiders, orcs have since forged their own civilization. They value strength and honor in combat above all else. An orc's rage is legendary, but so is their loyalty to those who prove themselves worthy allies.",
+      "base_height": 2.1,
+      "skin_color": "#5a8a5a",
+      "eye_color": "#cc4444",
+      "icon": "\ud83d\udc79"
     }
   ]
 }

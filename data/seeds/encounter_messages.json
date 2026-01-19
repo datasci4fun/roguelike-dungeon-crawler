@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {"enemy_id": "goblin", "message": "A goblin! Small but vicious, they hunt in packs."},
+    {"enemy_id": "skeleton", "message": "The bones rattle to life. An ancient guardian, bound by dark magic."},
+    {"enemy_id": "orc", "message": "A brutish orc blocks your path. These warriors know no fear."},
+    {"enemy_id": "wraith", "message": "A wraith materializes from the shadows. Your weapons may not harm it fully."},
+    {"enemy_id": "troll", "message": "The ground shakes. A troll emerges, its regeneration legendary."},
+    {"enemy_id": "dragon", "message": "Ancient scales gleam in the darkness. You have found the dragon."},
+    {"enemy_id": "necromancer", "message": "Dark robes flutter as the necromancer raises its staff. The dead stir nearby."},
+    {"enemy_id": "demon", "message": "Flames dance across obsidian skin. A demon from the volcanic depths."},
+    {"enemy_id": "assassin", "message": "A shadow detaches from the wall. The assassin was waiting for you."},
+    {"enemy_id": "fire_elemental", "message": "Living flame coalesces before you, heat distorting the air."},
+    {"enemy_id": "ice_elemental", "message": "Frost spreads across the floor as the ice elemental manifests."},
+    {"enemy_id": "lightning_elemental", "message": "Static crackles. The lightning elemental arcs between surfaces."},
+    {"enemy_id": "rat", "message": "A rat darts from the filth. Too bold. Too deliberate."},
+    {"enemy_id": "plague_rat", "message": "A swollen rat shambles forward, coughing wetly. The air around it feels wrong."},
+    {"enemy_id": "spiderling", "message": "A spiderling skitters across the roots. The walls themselves seem to watch with it."},
+    {"enemy_id": "webweaver", "message": "A webweaver emerges - patient, intelligent, already measuring you in silk."},
+    {"enemy_id": "oathbound_guard", "message": "An oathbound guard stands at attention. It does not ask who you are. It only asks who you serve."},
+    {"enemy_id": "court_scribe", "message": "A court scribe glides near the shadows, quill scratching without ink. Its records feel heavier than steel."},
+    {"enemy_id": "animated_tome", "message": "A book snaps open like a mouth. Letters spill out, rearranging into a threat."},
+    {"enemy_id": "crystal_sentinel", "message": "A crystal sentinel turns with a grinding hymn. Its facets reflect you... and a version that never blinked."},
+    {"enemy_id": "shade", "message": "A shade coalesces from the prison walls. The hatred of a forgotten prisoner given ephemeral form."},
+    {"enemy_id": "bile_lurker", "message": "Toxic ooze bubbles up from a drain. The Bile Lurker is the sewers' revenge made manifest."},
+    {"enemy_id": "thornling", "message": "Roots twist into a hunched form. The Thornling watches with berry-red eyes, thorns bristling."},
+    {"enemy_id": "doppelganger", "message": "Your reflection steps out of a mirror. The Doppelganger wears your face, but its smile is wrong."},
+    {"enemy_id": "frost_wisp", "message": "A pale blue light drifts through the frozen air. The Frost Wisp trails ice crystals like tears."},
+    {"enemy_id": "ink_phantom", "message": "Words lift off a page and swirl into shape. The Ink Phantom speaks in stolen sentences."},
+    {"enemy_id": "ember_sprite", "message": "A giggling spark dances between lava flows. The Ember Sprite's playfulness masks its danger."},
+    {"enemy_id": "prism_watcher", "message": "A crystalline eye opens in the cavern wall. The Prism Watcher sees all your possible futures."}
+  ]
+}

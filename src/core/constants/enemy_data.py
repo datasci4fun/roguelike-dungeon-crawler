@@ -60,6 +60,7 @@ ENEMY_STATS = {
         'weight': 5,
         'min_level': 5,
         'max_level': 8,  # Late floors only
+        'size': (2, 2),  # Towering humanoid
     },
     EnemyType.DRAGON: {
         'symbol': 'D',
@@ -70,6 +71,7 @@ ENEMY_STATS = {
         'weight': 2,
         'min_level': 8,
         'max_level': 8,  # Final floor only
+        'size': (2, 2),  # Massive scaled reptile
     },
     # v4.0 new enemies
     EnemyType.NECROMANCER: {
@@ -275,6 +277,7 @@ ENEMY_STATS = {
         'ai_type': AIBehavior.AGGRESSIVE,
         'abilities': ['poison_spit'],
         'resistances': {'poison': 1.0},  # Immune to poison
+        'size': (2, 2),  # Amorphous blob
     },
     EnemyType.THORNLING: {
         'symbol': 'h',

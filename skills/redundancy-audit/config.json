@@ -1,0 +1,22 @@
+{
+  "paths": {
+    "out_dir": ".claude/skills/redundancy-audit/out",
+    "tmp_dir": ".claude/skills/redundancy-audit/out/tmp"
+  },
+  "include_ext": [".py", ".ts", ".tsx"],
+  "exclude_dirs": [
+    ".git", "node_modules", "dist", "build", "coverage", ".venv",
+    "__pycache__", ".mypy_cache", ".pytest_cache", ".tox"
+  ],
+  "token_clone": {
+    "k": 35,
+    "w": 8,
+    "min_tokens": 60
+  },
+  "ast_clone": {
+    "min_nodes": 28
+  },
+  "maximality": {
+    "drop_contained": true
+  }
+}

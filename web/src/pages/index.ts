@@ -34,5 +34,7 @@ export { RouteExplorer } from './RouteExplorer';
 export { MetricsDashboard } from './MetricsDashboard';
 export { LorePage } from './LorePage';
 export { Bestiary } from './Bestiary';
+export { CharacterGuide } from './CharacterGuide';
 export { ItemCompendium } from './ItemCompendium';
 export { GameGuide } from './GameGuide';
+export { ClaudeSkills } from './ClaudeSkills';
