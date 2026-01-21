@@ -1,0 +1,27 @@
+{
+  "name": "ast-chain-skill",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AST Chain dependency analysis + latency dashboard (Claude Skill)",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "ast-chain": "./dist/cli.cjs"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "express": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.13.1",
+    "tsup": "^8.3.5",
+    "tsx": "^4.19.2"
+  }
+}
