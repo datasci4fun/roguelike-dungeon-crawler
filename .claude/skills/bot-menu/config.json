@@ -1,0 +1,6 @@
+{
+  "name": "bot-menu",
+  "description": "Interactive menu for Claude Repo Bot actions with state tracking",
+  "user_invocable": true,
+  "triggers": ["/bot-menu", "/bot", "/menu"]
+}
