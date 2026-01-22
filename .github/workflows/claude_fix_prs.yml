@@ -1,0 +1,39 @@
+name: Claude Bot - Nightly Fix (Open PRs)
+
+on:
+  schedule:
+    - cron: "10 0 * * *"   # 00:10 UTC (about 1h after discover)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Install Python deps
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install -r scripts/claude-bot/requirements.txt
+
+      - name: Install Claude Code
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+
+      - name: Fix queued issues and open PRs
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git config user.email "claude-bot@users.noreply.github.com"
+          git config user.name "claude-bot"
+          python3 scripts/claude-bot/bot.py fix all
