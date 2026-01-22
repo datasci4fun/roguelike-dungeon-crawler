@@ -1,0 +1,5 @@
+# Dependencies (install via npm install)
+node_modules/
+
+# Build output (regenerate via npm run build)
+dist/

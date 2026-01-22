@@ -1,0 +1,8 @@
+{
+  "name": "model-generator-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "typescript": "5.5.4"
+  }
+}

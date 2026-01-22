@@ -1,0 +1,69 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {
+      "floor": 1,
+      "name": "Stone Dungeon",
+      "aspect": "MEMORY",
+      "hint": "Where reality first cracked open...",
+      "warden": "Goblin King",
+      "warden_symbol": "K"
+    },
+    {
+      "floor": 2,
+      "name": "Sewers of Valdris",
+      "aspect": "CIRCULATION",
+      "hint": "What flows between carries edits...",
+      "warden": "Rat King",
+      "warden_symbol": "r"
+    },
+    {
+      "floor": 3,
+      "name": "Forest Depths",
+      "aspect": "GROWTH",
+      "hint": "Nature consumes all boundaries...",
+      "warden": "Spider Queen",
+      "warden_symbol": "S"
+    },
+    {
+      "floor": 4,
+      "name": "Mirror Valdris",
+      "aspect": "LEGITIMACY",
+      "hint": "The counterfeit court awaits...",
+      "warden": "The Regent",
+      "warden_symbol": "R"
+    },
+    {
+      "floor": 5,
+      "name": "Ice Cavern",
+      "aspect": "STASIS",
+      "hint": "Nothing may change here...",
+      "warden": "Frost Giant",
+      "warden_symbol": "F"
+    },
+    {
+      "floor": 6,
+      "name": "Ancient Library",
+      "aspect": "COGNITION",
+      "hint": "Knowledge at terrible cost...",
+      "warden": "Arcane Keeper",
+      "warden_symbol": "A"
+    },
+    {
+      "floor": 7,
+      "name": "Volcanic Depths",
+      "aspect": "TRANSFORMATION",
+      "hint": "What enters fire becomes fire...",
+      "warden": "Flame Lord",
+      "warden_symbol": "\u03a6"
+    },
+    {
+      "floor": 8,
+      "name": "Crystal Cave",
+      "aspect": "INTEGRATION",
+      "hint": "???",
+      "warden": "Dragon Emperor",
+      "warden_symbol": "E"
+    }
+  ]
+}

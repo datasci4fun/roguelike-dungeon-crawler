@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AST Chain Dashboard</title>
+    <style>
+      :root {
+        --bg: #0b0c10;
+        --panel: #11141a;
+        --text: #e7e7e7;
+        --muted: #a0a6b2;
+        --border: #20252f;
+      }
+      html, body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+          "Segoe UI Emoji";
+        background: var(--bg);
+        color: var(--text);
+      }
+      header {
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: space-between;
+      }
+      header h1 {
+        font-size: 16px;
+        margin: 0;
+        letter-spacing: 0.2px;
+      }
+      header .meta {
+        font-size: 12px;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 60vw;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        height: calc(100vh - 52px);
+      }
+      #graph {
+        border-right: 1px solid var(--border);
+        overflow: hidden;
+        position: relative;
+      }
+      .side {
+        background: var(--panel);
+        padding: 12px;
+        overflow: auto;
+      }
+      .card {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      .card h2 {
+        font-size: 13px;
+        margin: 0 0 10px 0;
+        color: #ffffff;
+      }
+      .kv {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 6px 10px;
+        font-size: 12px;
+      }
+      .kv div:nth-child(odd) {
+        color: var(--muted);
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+      .list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 11px;
+        color: var(--muted);
+        margin-left: 8px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+      input[type='search'] {
+        background: #0f1117;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 6px 10px;
+        border-radius: 10px;
+        width: 260px;
+        outline: none;
+      }
+      button {
+        background: #0f1117;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 6px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: #2d3442;
+      }
+      .hint {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 8px;
+        line-height: 1.4;
+      }
+      select {
+        background: #0f1117;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 6px 10px;
+        border-radius: 10px;
+        outline: none;
+        min-width: 140px;
+      }
+      .pill.warning {
+        background: rgba(255, 150, 50, 0.15);
+        border-color: #ff9632;
+        color: #ff9632;
+      }
+      .pill.danger {
+        background: rgba(255, 80, 80, 0.15);
+        border-color: #ff5050;
+        color: #ff5050;
+      }
+      .pill.info {
+        background: rgba(80, 150, 255, 0.15);
+        border-color: #5096ff;
+        color: #5096ff;
+      }
+      .clickable {
+        cursor: pointer;
+      }
+      .clickable:hover {
+        color: #ffffff;
+      }
+      .impact-btn {
+        font-size: 10px;
+        padding: 3px 8px;
+        margin-left: 8px;
+      }
+      .legend {
+        display: flex;
+        gap: 12px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .sublist {
+        margin: 4px 0 0 0;
+        padding-left: 14px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .pill.muted {
+        background: rgba(160, 166, 178, 0.1);
+        border-color: var(--muted);
+        color: var(--muted);
+      }
+      .path-finder {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .path-finder select {
+        min-width: 120px;
+        max-width: 180px;
+        font-size: 11px;
+        padding: 4px 6px;
+      }
+      .path-finder button {
+        font-size: 11px;
+        padding: 4px 8px;
+      }
+      .path-result {
+        font-size: 11px;
+        margin-top: 8px;
+        padding: 8px;
+        background: rgba(80, 150, 255, 0.1);
+        border-radius: 6px;
+        display: none;
+      }
+      .path-result .path-arrow {
+        color: var(--muted);
+        margin: 0 4px;
+      }
+      .external-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2px 0;
+      }
+      .external-count {
+        color: var(--muted);
+        font-size: 10px;
+      }
+      .kbd {
+        display: inline-block;
+        padding: 2px 6px;
+        background: #1a1d24;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 10px;
+        font-family: monospace;
+        color: var(--muted);
+      }
+      .shortcuts {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .shortcut-item {
+        font-size: 11px;
+        color: var(--muted);
+      }
+    </style>
+
+    <!-- vis-network via CDN (simple & zero-build). If you want fully offline, vendor this library. -->
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  </head>
+
+  <body>
+    <header>
+      <div>
+        <h1>AST Chain Dashboard</h1>
+        <div class="meta" id="meta"></div>
+      </div>
+      <div class="controls">
+        <select id="dir-filter">
+          <option value="">All directories</option>
+        </select>
+        <input id="search" type="search" placeholder="Filter (/) …" />
+        <button id="show-chain">Show Chain</button>
+        <button id="fit">Fit</button>
+        <button id="reset">Reset (Esc)</button>
+        <button id="export-png">PNG</button>
+        <button id="export-csv">CSV</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <div id="graph"></div>
+
+      <div class="side">
+        <div class="card" id="summary">
+          <h2>Summary</h2>
+          <div class="kv" id="summary-kv"></div>
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background: hsl(210, 45%, 50%)"></div> Normal</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #ff9632"></div> In cycle</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #ff5050"></div> Hub (high fan-in)</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #b050ff"></div> Orphan</div>
+          </div>
+          <div class="shortcuts">
+            <span class="shortcut-item"><span class="kbd">/</span> Search</span>
+            <span class="shortcut-item"><span class="kbd">Esc</span> Reset</span>
+            <span class="shortcut-item"><span class="kbd">C</span> Chain</span>
+          </div>
+        </div>
+
+        <div class="card" id="selected">
+          <h2>Selected node <button class="impact-btn" id="show-impact" style="display:none">Show Impact</button></h2>
+          <div class="kv" id="selected-kv">
+            <div class="muted">Click a node</div>
+          </div>
+          <div id="impact-info" class="hint" style="display:none"></div>
+        </div>
+
+        <div class="card" id="issues">
+          <h2>Issues</h2>
+          <div class="row" style="margin-bottom: 8px">
+            <span class="pill warning" id="pill-cycles"></span>
+            <span class="pill danger" id="pill-hubs"></span>
+            <span class="pill muted" id="pill-orphans"></span>
+          </div>
+          <h3 style="font-size: 12px; margin: 8px 0 6px 0">Circular dependencies</h3>
+          <div id="cycles-list" class="hint">None detected</div>
+          <h3 style="font-size: 12px; margin: 12px 0 6px 0">Hub files (≥10 dependents)</h3>
+          <ol class="list" id="hubs-list"></ol>
+          <h3 style="font-size: 12px; margin: 12px 0 6px 0">Potential dead code (0 dependents)</h3>
+          <ol class="list" id="orphans-list"></ol>
+        </div>
+
+        <div class="card" id="path-card">
+          <h2>Path Finder</h2>
+          <div class="path-finder">
+            <select id="path-from"><option value="">From...</option></select>
+            <span style="color: var(--muted)">→</span>
+            <select id="path-to"><option value="">To...</option></select>
+            <button id="find-path">Find</button>
+          </div>
+          <div class="path-result" id="path-result"></div>
+        </div>
+
+        <div class="card" id="external-card">
+          <h2>External Dependencies</h2>
+          <div id="external-list"></div>
+        </div>
+
+        <div class="card" id="rankings">
+          <h2>Rankings</h2>
+          <div class="row">
+            <span class="pill" id="pill-depth"></span>
+            <span class="pill" id="pill-lat"></span>
+          </div>
+          <h3 style="font-size: 12px; margin: 12px 0 6px 0">Deepest files</h3>
+          <ol class="list" id="deepest"></ol>
+          <h3 style="font-size: 12px; margin: 12px 0 6px 0">Slowest files</h3>
+          <ol class="list" id="slowest"></ol>
+        </div>
+
+        <div class="card" id="chain">
+          <h2>Representative longest chain</h2>
+          <ol class="list" id="chain-list"></ol>
+          <div class="hint" id="chain-hint"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const el = (id) => document.getElementById(id);
+
+      const fmtMs = (ms) => (typeof ms === 'number' ? `${ms.toFixed(2)} ms` : '—');
+
+      function clamp01(x) {
+        return Math.max(0, Math.min(1, x));
+      }
+
+      function depthColor(depth, maxDepth) {
+        // Map depth to a blue-ish HSL. Deeper => higher saturation, lower lightness.
+        const t = maxDepth === 0 ? 0 : depth / maxDepth;
+        const sat = Math.floor(30 + 60 * t);
+        const light = Math.floor(60 - 25 * t);
+        return `hsl(210, ${sat}%, ${light}%)`;
+      }
+
+      function sizeFromLatency(lat, p95) {
+        if (typeof lat !== 'number' || !isFinite(lat)) return 10;
+        const t = clamp01(lat / (p95 || 1));
+        return 10 + 24 * t;
+      }
+
+      function percentile(values, p) {
+        if (!values.length) return 0;
+        const sorted = [...values].sort((a, b) => a - b);
+        const idx = Math.floor((p / 100) * (sorted.length - 1));
+        return sorted[idx];
+      }
+
+      function setKv(container, items) {
+        container.innerHTML = '';
+        for (const [k, v] of items) {
+          const dk = document.createElement('div');
+          dk.textContent = k;
+          const dv = document.createElement('div');
+          dv.textContent = v;
+          container.appendChild(dk);
+          container.appendChild(dv);
+        }
+      }
+
+      function setList(container, items) {
+        container.innerHTML = '';
+        for (const item of items) {
+          const li = document.createElement('li');
+          li.textContent = item;
+          container.appendChild(li);
+        }
+      }
+
+      function setClickableList(container, items, onClick) {
+        container.innerHTML = '';
+        for (const { text, id } of items) {
+          const li = document.createElement('li');
+          li.textContent = text;
+          li.className = 'clickable';
+          li.addEventListener('click', () => onClick(id));
+          container.appendChild(li);
+        }
+      }
+
+      function getDirectories(nodes) {
+        const dirs = new Set();
+        for (const n of nodes) {
+          const parts = n.id.split('/');
+          if (parts.length > 1) {
+            // Add first two levels of directories
+            dirs.add(parts[0]);
+            if (parts.length > 2) dirs.add(parts.slice(0, 2).join('/'));
+            if (parts.length > 3) dirs.add(parts.slice(0, 3).join('/'));
+          }
+        }
+        return [...dirs].sort();
+      }
+
+      function findCycles(nodes, sccs) {
+        // Group nodes by SCC, find SCCs with >1 member
+        const sccGroups = new Map();
+        for (const n of nodes) {
+          if (!sccGroups.has(n.scc)) sccGroups.set(n.scc, []);
+          sccGroups.get(n.scc).push(n);
+        }
+        const cycles = [];
+        for (const [sccId, members] of sccGroups) {
+          if (members.length > 1) {
+            cycles.push({ sccId, members });
+          }
+        }
+        return cycles;
+      }
+
+      function findHubs(nodes, threshold = 10) {
+        return nodes.filter(n => n.inDegree >= threshold)
+          .sort((a, b) => b.inDegree - a.inDegree);
+      }
+
+      function getDownstreamDependents(nodeId, edges, visited = new Set()) {
+        // Find all files that depend on this file (transitively)
+        if (visited.has(nodeId)) return visited;
+        visited.add(nodeId);
+        const dependents = edges.filter(e => e.to === nodeId);
+        for (const dep of dependents) {
+          getDownstreamDependents(dep.from, edges, visited);
+        }
+        return visited;
+      }
+
+      function findOrphans(nodes, entryPatterns = ['main.tsx', 'index.ts', 'index.tsx', 'App.tsx', 'vite-env.d.ts']) {
+        // Files with 0 in-degree that aren't likely entry points
+        return nodes.filter(n => {
+          if (n.inDegree > 0) return false;
+          // Exclude likely entry points
+          const filename = n.id.split('/').pop();
+          if (entryPatterns.some(p => filename === p || filename?.endsWith('.d.ts'))) return false;
+          // Exclude node_modules
+          if (n.id.includes('node_modules')) return false;
+          return true;
+        });
+      }
+
+      function findPath(fromId, toId, edges) {
+        // BFS to find shortest import path from -> to
+        // fromId imports something that eventually imports toId
+        const queue = [[fromId]];
+        const visited = new Set([fromId]);
+
+        while (queue.length > 0) {
+          const path = queue.shift();
+          const current = path[path.length - 1];
+
+          if (current === toId) return path;
+
+          // Get all files that current imports
+          const imports = edges.filter(e => e.from === current);
+          for (const edge of imports) {
+            if (!visited.has(edge.to)) {
+              visited.add(edge.to);
+              queue.push([...path, edge.to]);
+            }
+          }
+        }
+        return null; // No path found
+      }
+
+      function getExternalDeps(nodes, edges) {
+        // Count which node_modules are imported and by how many files
+        const externalCounts = new Map();
+        for (const n of nodes) {
+          if (n.id.includes('node_modules/')) {
+            // Extract package name
+            const parts = n.id.split('node_modules/')[1]?.split('/') || [];
+            const pkgName = parts[0]?.startsWith('@') ? `${parts[0]}/${parts[1]}` : parts[0];
+            if (pkgName) {
+              externalCounts.set(pkgName, (externalCounts.get(pkgName) || 0) + n.inDegree);
+            }
+          }
+        }
+        return [...externalCounts.entries()]
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 15);
+      }
+
+      function exportToCSV(nodes, edges) {
+        const lines = ['id,depth,depthToLeaf,inDegree,outDegree,scc,isHub,inCycle'];
+        for (const n of nodes) {
+          lines.push(`"${n.id}",${n.depth},${n.depthToLeaf},${n.inDegree},${n.outDegree},${n.scc},${n.inDegree >= 10},${n._inCycle || false}`);
+        }
+        const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'ast-chain-nodes.csv';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      async function main() {
+        const res = await fetch('/api/data');
+        const data = await res.json();
+
+        if (data.error) {
+          el('meta').textContent = `${data.error} (expected: ${data.expected})`;
+          return;
+        }
+
+        const graph = data.graph;
+        const nodes = graph.nodes;
+        const edges = graph.edges;
+
+        el('meta').textContent = `${graph.rootAbsPath}`;
+
+        const maxDepth = graph.stats.maxDepth ?? 0;
+        const latencies = nodes.map((n) => n.latencyMs).filter((x) => typeof x === 'number' && isFinite(x));
+        const p95 = percentile(latencies, 95);
+
+        setKv(el('summary-kv'), [
+          ['Nodes', String(graph.stats.nodeCount)],
+          ['Edges', String(graph.stats.edgeCount)],
+          ['SCCs', String(graph.stats.sccCount)],
+          ['Max depth', String(graph.stats.maxDepth)],
+          ['Max depth-to-leaf', String(graph.stats.maxDepthToLeaf)],
+          ['Total latency', fmtMs(graph.stats.totalLatencyMs)],
+          ['Roots', String(graph.stats.roots.length)],
+          ['Leaves', String(graph.stats.leaves.length)]
+        ]);
+
+        el('pill-depth').textContent = `max depth: ${graph.stats.maxDepth}`;
+        el('pill-lat').textContent = latencies.length ? `p95 latency: ${fmtMs(p95)}` : 'latency: —';
+
+        // Detect cycles, hubs, and orphans
+        const cycles = findCycles(nodes, graph.sccs);
+        const cycleNodeIds = new Set(cycles.flatMap(c => c.members.map(m => m.id)));
+        const hubs = findHubs(nodes, 10);
+        const hubNodeIds = new Set(hubs.map(h => h.id));
+        const orphans = findOrphans(nodes);
+        const orphanNodeIds = new Set(orphans.map(o => o.id));
+
+        el('pill-cycles').textContent = `${cycles.length} cycle${cycles.length !== 1 ? 's' : ''}`;
+        el('pill-hubs').textContent = `${hubs.length} hub${hubs.length !== 1 ? 's' : ''}`;
+        el('pill-orphans').textContent = `${orphans.length} orphan${orphans.length !== 1 ? 's' : ''}`;
+
+        // Populate cycles
+        if (cycles.length > 0) {
+          const cyclesContainer = el('cycles-list');
+          cyclesContainer.innerHTML = '';
+          for (const cycle of cycles.slice(0, 5)) {
+            const div = document.createElement('div');
+            div.style.marginBottom = '6px';
+            div.innerHTML = `<strong>${cycle.members.length} files in cycle:</strong>`;
+            const ul = document.createElement('ul');
+            ul.className = 'sublist';
+            for (const m of cycle.members.slice(0, 5)) {
+              const li = document.createElement('li');
+              li.textContent = m.id;
+              li.className = 'clickable';
+              li.addEventListener('click', () => {
+                network.selectNodes([m.id]);
+                renderSelected(m.id);
+              });
+              ul.appendChild(li);
+            }
+            if (cycle.members.length > 5) {
+              const li = document.createElement('li');
+              li.textContent = `... and ${cycle.members.length - 5} more`;
+              li.style.color = 'var(--muted)';
+              ul.appendChild(li);
+            }
+            div.appendChild(ul);
+            cyclesContainer.appendChild(div);
+          }
+        }
+
+        // Populate hubs
+        setClickableList(el('hubs-list'), hubs.slice(0, 8).map(h => ({
+          text: `${h.id.split('/').slice(-2).join('/')} (${h.inDegree} deps)`,
+          id: h.id
+        })), (id) => {
+          network.selectNodes([id]);
+          renderSelected(id);
+        });
+
+        // Populate orphans
+        setClickableList(el('orphans-list'), orphans.slice(0, 8).map(o => ({
+          text: o.id.split('/').slice(-2).join('/'),
+          id: o.id
+        })), (id) => {
+          network.selectNodes([id]);
+          renderSelected(id);
+        });
+
+        // Populate external dependencies
+        const externalDeps = getExternalDeps(nodes, edges);
+        const externalContainer = el('external-list');
+        externalContainer.innerHTML = '';
+        if (externalDeps.length === 0) {
+          externalContainer.innerHTML = '<div class="hint">No external dependencies detected</div>';
+        } else {
+          for (const [pkg, count] of externalDeps) {
+            const div = document.createElement('div');
+            div.className = 'external-item';
+            div.innerHTML = `<span class="mono">${pkg}</span><span class="external-count">${count} imports</span>`;
+            externalContainer.appendChild(div);
+          }
+        }
+
+        // Populate directory filter
+        const directories = getDirectories(nodes);
+        const dirSelect = el('dir-filter');
+        for (const dir of directories) {
+          const opt = document.createElement('option');
+          opt.value = dir;
+          opt.textContent = dir + '/';
+          dirSelect.appendChild(opt);
+        }
+
+        // Rankings
+        const byDepth = [...nodes].sort((a, b) => (b.depth ?? 0) - (a.depth ?? 0));
+        setList(el('deepest'), byDepth.slice(0, 12).map((n) => `${n.id} (depth ${n.depth})`));
+
+        const byLat = [...nodes]
+          .filter((n) => typeof n.latencyMs === 'number')
+          .sort((a, b) => (b.latencyMs ?? 0) - (a.latencyMs ?? 0));
+        setList(el('slowest'), byLat.slice(0, 12).map((n) => `${n.id} (${fmtMs(n.latencyMs)})`));
+
+        setList(el('chain-list'), (graph.stats.longestChain ?? []).map((id) => id));
+        const chainLatency = (graph.stats.longestChain ?? [])
+          .map((id) => nodes.find((n) => n.id === id)?.latencyMs ?? 0)
+          .reduce((a, b) => a + b, 0);
+        el('chain-hint').textContent = latencies.length
+          ? `Chain cumulative latency (sum of node latencies on this representative chain): ${fmtMs(chainLatency)}`
+          : 'Generate compiler latency via: ast-chain trace-tsc + build-dataset (or ast-chain run --with-tsc-trace).';
+
+        // Determine node colors based on issues
+        function getNodeColor(n) {
+          const isHub = hubNodeIds.has(n.id);
+          const inCycle = cycleNodeIds.has(n.id);
+          const isOrphan = orphanNodeIds.has(n.id);
+          if (isHub) {
+            return { background: '#ff5050', border: '#cc3030' };
+          }
+          if (inCycle) {
+            return { background: '#ff9632', border: '#cc7020' };
+          }
+          if (isOrphan) {
+            return { background: '#b050ff', border: '#8030cc' };
+          }
+          return { background: depthColor(n.depth, maxDepth), border: '#2d3442' };
+        }
+
+        const visNodes = new vis.DataSet(
+          nodes.map((n) => ({
+            id: n.id,
+            label: n.id.split('/').slice(-1)[0],
+            title: n.id,
+            color: getNodeColor(n),
+            value: sizeFromLatency(n.latencyMs, p95),
+            font: { color: '#e7e7e7' },
+            _isHub: hubNodeIds.has(n.id),
+            _inCycle: cycleNodeIds.has(n.id)
+          }))
+        );
+
+        const visEdges = new vis.DataSet(
+          edges.map((e) => ({
+            from: e.from,
+            to: e.to,
+            arrows: 'to',
+            title: `${e.type}: ${e.specifier}`
+          }))
+        );
+
+        const container = el('graph');
+        const nodeCount = nodes.length;
+
+        // Use hierarchical layout for smaller graphs, force-directed for larger ones
+        const layoutOptions = nodeCount > 100
+          ? {
+              improvedLayout: false,
+              randomSeed: 42
+            }
+          : {
+              hierarchical: {
+                enabled: true,
+                direction: 'LR',
+                sortMethod: 'directed',
+                levelSeparation: 150,
+                nodeSpacing: 100
+              }
+            };
+
+        const physicsOptions = nodeCount > 100
+          ? {
+              enabled: true,
+              stabilization: {
+                enabled: true,
+                iterations: 200,
+                updateInterval: 25
+              },
+              barnesHut: {
+                gravitationalConstant: -2000,
+                centralGravity: 0.1,
+                springLength: 150,
+                springConstant: 0.02,
+                damping: 0.3
+              }
+            }
+          : {
+              enabled: false
+            };
+
+        const network = new vis.Network(
+          container,
+          { nodes: visNodes, edges: visEdges },
+          {
+            layout: layoutOptions,
+            interaction: {
+              hover: true,
+              multiselect: false,
+              keyboard: true
+            },
+            physics: physicsOptions,
+            edges: {
+              smooth: {
+                type: nodeCount > 100 ? 'continuous' : 'cubicBezier'
+              },
+              color: { color: '#3a4050', highlight: '#6a7080' }
+            },
+            nodes: {
+              shape: 'dot',
+              scaling: {
+                min: 8,
+                max: 30
+              }
+            }
+          }
+        );
+
+        let selectedNodeId = null;
+
+        function renderSelected(id) {
+          const n = nodes.find((x) => x.id === id);
+          if (!n) return;
+          selectedNodeId = id;
+
+          const incoming = edges.filter((e) => e.to === id).slice(0, 50);
+          const outgoing = edges.filter((e) => e.from === id).slice(0, 50);
+
+          const issues = [];
+          if (hubNodeIds.has(id)) issues.push('⚠️ Hub file');
+          if (cycleNodeIds.has(id)) issues.push('🔄 In cycle');
+          if (orphanNodeIds.has(id)) issues.push('👻 Orphan');
+
+          const kvItems = [
+            ['id', n.id],
+            ['depth', String(n.depth)],
+            ['depthToLeaf', String(n.depthToLeaf)],
+            ['inDegree', `${n.inDegree} files depend on this`],
+            ['outDegree', `imports ${n.outDegree} files`],
+            ['scc', String(n.scc)],
+            ['latency', fmtMs(n.latencyMs)]
+          ];
+          if (issues.length) {
+            kvItems.push(['issues', issues.join(', ')]);
+          }
+
+          setKv(el('selected-kv'), kvItems);
+
+          // Show impact button
+          el('show-impact').style.display = 'inline-block';
+          el('impact-info').style.display = 'none';
+
+          // quick highlight
+          const highlight = new Set([id, ...incoming.map((e) => e.from), ...outgoing.map((e) => e.to)]);
+          visNodes.forEach((node) => {
+            const isOn = highlight.has(node.id);
+            visNodes.update({
+              id: node.id,
+              opacity: isOn ? 1 : 0.18
+            });
+          });
+        }
+
+        // Impact view - show all downstream dependents
+        el('show-impact').addEventListener('click', () => {
+          if (!selectedNodeId) return;
+          const impacted = getDownstreamDependents(selectedNodeId, edges);
+          impacted.delete(selectedNodeId); // Don't count self
+
+          el('impact-info').style.display = 'block';
+          el('impact-info').innerHTML = `<strong>Change impact:</strong> ${impacted.size} file${impacted.size !== 1 ? 's' : ''} would need to rebuild if this file changes.`;
+
+          // Highlight impacted files in a different way
+          visNodes.forEach((node) => {
+            const isImpacted = impacted.has(node.id);
+            const isSource = node.id === selectedNodeId;
+            visNodes.update({
+              id: node.id,
+              opacity: (isImpacted || isSource) ? 1 : 0.1,
+              color: isSource
+                ? { background: '#50ff50', border: '#30cc30' }
+                : isImpacted
+                  ? { background: '#5096ff', border: '#3070cc' }
+                  : getNodeColor(nodes.find(n => n.id === node.id))
+            });
+          });
+        });
+
+        network.on('selectNode', (params) => {
+          if (!params.nodes?.length) return;
+          renderSelected(params.nodes[0]);
+        });
+
+        let currentDirFilter = '';
+        let currentSearchFilter = '';
+
+        function applyFilters() {
+          visNodes.forEach((node) => {
+            const matchDir = !currentDirFilter || node.id.startsWith(currentDirFilter);
+            const matchSearch = !currentSearchFilter || node.id.toLowerCase().includes(currentSearchFilter);
+            visNodes.update({ id: node.id, hidden: !(matchDir && matchSearch) });
+          });
+        }
+
+        el('dir-filter').addEventListener('change', (ev) => {
+          currentDirFilter = ev.target.value;
+          applyFilters();
+          setTimeout(() => network.fit({ animation: true }), 100);
+        });
+
+        el('search').addEventListener('input', (ev) => {
+          currentSearchFilter = ev.target.value?.toLowerCase?.() || '';
+          applyFilters();
+        });
+
+        el('fit').addEventListener('click', () => network.fit({ animation: true }));
+        el('reset').addEventListener('click', () => {
+          // Reset filters
+          currentDirFilter = '';
+          currentSearchFilter = '';
+          el('dir-filter').value = '';
+          el('search').value = '';
+
+          // Reset node visibility, opacity, and colors
+          visNodes.forEach((node) => {
+            const n = nodes.find(x => x.id === node.id);
+            visNodes.update({
+              id: node.id,
+              hidden: false,
+              opacity: 1,
+              color: n ? getNodeColor(n) : { background: '#666', border: '#444' }
+            });
+          });
+
+          // Reset selected panel
+          selectedNodeId = null;
+          setKv(el('selected-kv'), [['Click a node', '']]);
+          el('show-impact').style.display = 'none';
+          el('impact-info').style.display = 'none';
+
+          network.fit({ animation: true });
+        });
+
+        // Populate path finder dropdowns (only non-node_modules files)
+        const srcNodes = nodes.filter(n => !n.id.includes('node_modules')).sort((a, b) => a.id.localeCompare(b.id));
+        const pathFromSelect = el('path-from');
+        const pathToSelect = el('path-to');
+        for (const n of srcNodes) {
+          const opt1 = document.createElement('option');
+          opt1.value = n.id;
+          opt1.textContent = n.id.split('/').slice(-2).join('/');
+          pathFromSelect.appendChild(opt1);
+
+          const opt2 = document.createElement('option');
+          opt2.value = n.id;
+          opt2.textContent = n.id.split('/').slice(-2).join('/');
+          pathToSelect.appendChild(opt2);
+        }
+
+        // Path finder
+        el('find-path').addEventListener('click', () => {
+          const fromId = pathFromSelect.value;
+          const toId = pathToSelect.value;
+          const resultEl = el('path-result');
+
+          if (!fromId || !toId) {
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = '<span style="color: var(--muted)">Select both files</span>';
+            return;
+          }
+
+          if (fromId === toId) {
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = '<span style="color: var(--muted)">Same file selected</span>';
+            return;
+          }
+
+          const path = findPath(fromId, toId, edges);
+          resultEl.style.display = 'block';
+
+          if (!path) {
+            resultEl.innerHTML = '<span style="color: #ff9632">No import path found</span>';
+          } else {
+            const pathHtml = path.map(id => `<span class="clickable" data-id="${id}">${id.split('/').pop()}</span>`).join('<span class="path-arrow">→</span>');
+            resultEl.innerHTML = `<strong>${path.length - 1} hop${path.length > 2 ? 's' : ''}:</strong><br>${pathHtml}`;
+
+            // Highlight path in graph
+            const pathSet = new Set(path);
+            visNodes.forEach((node) => {
+              visNodes.update({
+                id: node.id,
+                opacity: pathSet.has(node.id) ? 1 : 0.1,
+                color: pathSet.has(node.id)
+                  ? { background: '#50ff96', border: '#30cc70' }
+                  : getNodeColor(nodes.find(n => n.id === node.id))
+              });
+            });
+
+            // Add click handlers to path items
+            resultEl.querySelectorAll('.clickable').forEach(span => {
+              span.addEventListener('click', () => {
+                const id = span.dataset.id;
+                network.selectNodes([id]);
+                renderSelected(id);
+              });
+            });
+          }
+        });
+
+        // Show longest chain button
+        el('show-chain').addEventListener('click', () => {
+          const chain = graph.stats.longestChain || [];
+          if (chain.length === 0) return;
+
+          const chainSet = new Set(chain);
+          visNodes.forEach((node) => {
+            const idx = chain.indexOf(node.id);
+            visNodes.update({
+              id: node.id,
+              opacity: chainSet.has(node.id) ? 1 : 0.1,
+              color: chainSet.has(node.id)
+                ? { background: `hsl(${120 + idx * 10}, 70%, 50%)`, border: '#2d3442' }
+                : getNodeColor(nodes.find(n => n.id === node.id))
+            });
+          });
+        });
+
+        // Export PNG
+        el('export-png').addEventListener('click', () => {
+          const canvas = container.querySelector('canvas');
+          if (canvas) {
+            const link = document.createElement('a');
+            link.download = 'ast-chain-graph.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+          }
+        });
+
+        // Export CSV
+        el('export-csv').addEventListener('click', () => {
+          // Add cycle/orphan info to nodes for export
+          const enrichedNodes = nodes.map(n => ({
+            ...n,
+            _inCycle: cycleNodeIds.has(n.id),
+            _isOrphan: orphanNodeIds.has(n.id)
+          }));
+          exportToCSV(enrichedNodes, edges);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+          // Don't trigger if typing in an input
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+            if (e.key === 'Escape') {
+              e.target.blur();
+            }
+            return;
+          }
+
+          if (e.key === '/') {
+            e.preventDefault();
+            el('search').focus();
+          } else if (e.key === 'Escape') {
+            el('reset').click();
+          } else if (e.key === 'c' || e.key === 'C') {
+            el('show-chain').click();
+          }
+        });
+
+        // Start fitted.
+        setTimeout(() => network.fit({ animation: true }), 400);
+      }
+
+      main().catch((err) => {
+        el('meta').textContent = String(err?.message || err);
+      });
+    </script>
+  </body>
+</html>

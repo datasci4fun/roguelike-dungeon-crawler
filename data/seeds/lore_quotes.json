@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {
+      "quote_id": "quote_01",
+      "text": "The Field did not destroy Valdris. It is rewriting it.",
+      "author": "Final Chronicle",
+      "category": "history",
+      "sort_order": 1
+    },
+    {
+      "quote_id": "quote_02",
+      "text": "Last week, your mother called you by a different name. Not as a mistake - like she had never known any other.",
+      "author": "The Wound Beneath",
+      "category": "horror",
+      "sort_order": 2
+    },
+    {
+      "quote_id": "quote_03",
+      "text": "Some return - but without their meaning. They stagger out empty-eyed, wordless.",
+      "author": "A Keeper's Warning",
+      "category": "horror",
+      "sort_order": 3
+    },
+    {
+      "quote_id": "quote_04",
+      "text": "Eight seals. Eight Wardens. One truth buried beneath.",
+      "author": "The Descent Codex",
+      "category": "lore",
+      "sort_order": 4
+    },
+    {
+      "quote_id": "quote_05",
+      "text": "The dungeon recorded you. In another descent, you may be seen again.",
+      "author": "Echo Fragment",
+      "category": "mechanics",
+      "sort_order": 5
+    },
+    {
+      "quote_id": "quote_06",
+      "text": "We are all becoming what the Field remembers us to be.",
+      "author": "Last Words of the Archivist",
+      "category": "horror",
+      "sort_order": 6
+    },
+    {
+      "quote_id": "quote_07",
+      "text": "Victory does not end the threat. It delays it.",
+      "author": "The Last King's Testament",
+      "category": "history",
+      "sort_order": 7
+    },
+    {
+      "quote_id": "quote_08",
+      "text": "The artifacts are not treasures. They are interfaces.",
+      "author": "Forbidden Tome",
+      "category": "lore",
+      "sort_order": 8
+    }
+  ]
+}

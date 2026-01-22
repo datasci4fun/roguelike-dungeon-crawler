@@ -1,0 +1,11 @@
+{
+  "name": "redundancy-audit-skill",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "typescript": "5.5.4"
+  },
+  "scripts": {
+    "analyze": "node ts_analyze.mjs"
+  }
+}

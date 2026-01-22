@@ -1,0 +1,365 @@
+{
+  "version": "1.0.0",
+  "data": [
+    {
+      "lore_id": "journal_adventurer_1",
+      "title": "Tattered Journal",
+      "content": "Day 3: The dungeons are real. I found the entrance just as the old maps described.\n\nThe upper levels seem to be an ancient prison. Who were they keeping down here?\n\nI've found signs of others who came before me. None made it back.",
+      "category": "characters",
+      "level_hint": 1,
+      "item_type": "scroll",
+      "sort_order": 1
+    },
+    {
+      "lore_id": "warning_stone",
+      "title": "Carved Warning",
+      "content": "TURN BACK\n\nTHE DEPTHS HOLD ONLY DEATH\n\nWE SEALED THEM FOR A REASON\n\n- Last Warden of Valdris",
+      "category": "locations",
+      "level_hint": 1,
+      "item_type": "scroll",
+      "sort_order": 2
+    },
+    {
+      "lore_id": "sewer_worker",
+      "title": "Sewer Worker's Note",
+      "content": "The rats have been acting strange. Organized.\n\nI saw them carrying food to the deep tunnels. Thousands of them.\n\nThere's something down there commanding them. Something big.",
+      "category": "characters",
+      "level_hint": 2,
+      "item_type": "scroll",
+      "sort_order": 3
+    },
+    {
+      "lore_id": "plague_warning",
+      "title": "Health Warden's Warning",
+      "content": "SEWERS CONDEMNED BY ORDER OF THE CROWN\n\nThe Rat King has been sighted. All workers evacuated.\n\nDisease spreads from below. Burn anything that emerges.",
+      "category": "locations",
+      "level_hint": 2,
+      "item_type": "scroll",
+      "sort_order": 4
+    },
+    {
+      "lore_id": "druid_log",
+      "title": "Druid's Log",
+      "content": "The forest has grown wild since we abandoned the upper levels.\n\nNature reclaims what was taken. The Spider Queen has made her nest.\n\nWe thought we could contain her. We were wrong.",
+      "category": "creatures",
+      "level_hint": 3,
+      "item_type": "scroll",
+      "sort_order": 5
+    },
+    {
+      "lore_id": "webbed_note",
+      "title": "Note Wrapped in Silk",
+      "content": "If you can read this, run.\n\nThe spiders are everywhere. Their queen watches.\n\nShe was once human. The forest changed her.",
+      "category": "locations",
+      "level_hint": 3,
+      "item_type": "scroll",
+      "sort_order": 6
+    },
+    {
+      "lore_id": "crypt_inscription",
+      "title": "Succession Decree",
+      "content": "By right of blood and the blessing of the Eight Seals,\n\nI, Regent Malachar, do claim the throne of Valdris.\n\nLet none question my legitimacy.\n\nThe decree is signed. But the seal... the seal is wrong.",
+      "category": "history",
+      "level_hint": 4,
+      "item_type": "scroll",
+      "sort_order": 7
+    },
+    {
+      "lore_id": "priest_confession",
+      "title": "Regent's Ledger",
+      "content": "Day 1: The king is dead. Long live... me.\n\nDay 4: The court accepted the coronation. They had no choice.\n\nDay 12: They're starting to notice the inconsistencies.\n\nDay 12: I will make them forget. Again.",
+      "category": "characters",
+      "level_hint": 4,
+      "item_type": "book",
+      "sort_order": 8
+    },
+    {
+      "lore_id": "frozen_explorer",
+      "title": "Frozen Explorer's Journal",
+      "content": "Day 12: The cold is unnatural. My torch barely helps.\n\nI found a giant frozen solid in the ice. Still breathing.\n\nThe Frost Giant was sealed here. Someone is waking it.",
+      "category": "characters",
+      "level_hint": 5,
+      "item_type": "scroll",
+      "sort_order": 9
+    },
+    {
+      "lore_id": "ice_warning",
+      "title": "Warning Carved in Ice",
+      "content": "BEWARE THE THAW\n\nTHE GIANT SLEEPS IN FROZEN SLUMBER\n\nDO NOT MELT THE ICE",
+      "category": "locations",
+      "level_hint": 5,
+      "item_type": "scroll",
+      "sort_order": 10
+    },
+    {
+      "lore_id": "wizard_research",
+      "title": "Arcane Research Notes",
+      "content": "Experiment 47: The artifact responds to blood.\n\nExperiment 52: It grows stronger. It speaks to me in dreams.\n\nExperiment 61: I understand now. It was never a weapon.\n\nIt was a prison. And we have been feeding the prisoner.",
+      "category": "artifacts",
+      "level_hint": 6,
+      "item_type": "book",
+      "sort_order": 11
+    },
+    {
+      "lore_id": "history_valdris",
+      "title": "History of Valdris",
+      "content": "In the Age of Light, Valdris stood as beacon of civilization.\n\nThe kingdom's prosperity came from the mines beneath the city.\n\nBut the miners dug too deep, and found something sleeping.\n\nThe Darkness woke, and Valdris fell in a single night.",
+      "category": "history",
+      "level_hint": 6,
+      "item_type": "book",
+      "sort_order": 12
+    },
+    {
+      "lore_id": "smith_journal",
+      "title": "Master Smith's Journal",
+      "content": "We built our forge above the magma flows. The heat was perfect.\n\nThen the Flame Lord emerged from the depths. Fire given form.\n\nOur greatest weapons could not harm him. He melted them all.",
+      "category": "artifacts",
+      "level_hint": 7,
+      "item_type": "scroll",
+      "sort_order": 13
+    },
+    {
+      "lore_id": "obsidian_tablet",
+      "title": "Obsidian Tablet",
+      "content": "THE FLAME LORD WAS BORN OF VALDRIS' GREED\n\nTHEY DUG TOO DEEP FOR GOLD AND GEMS\n\nAND WOKE THE FIRE THAT NEVER DIES",
+      "category": "artifacts",
+      "level_hint": 7,
+      "item_type": "scroll",
+      "sort_order": 14
+    },
+    {
+      "lore_id": "dragon_pact",
+      "title": "The Dragon's Pact",
+      "content": "To the Last King of Valdris:\n\nI will guard your treasures for eternity.\n\nIn return, you will feed me your enemies.\n\nWhen the enemies run out, our pact is void.\n\nThe enemies ran out long ago. I hunger.",
+      "category": "history",
+      "level_hint": 8,
+      "item_type": "scroll",
+      "sort_order": 15
+    },
+    {
+      "lore_id": "final_entry",
+      "title": "The Last King's Testament",
+      "content": "To whoever reads this: You have come far.\n\nThe dragon guards more than gold. Beneath the vault lies the Darkness itself.\n\nWe could not destroy it. We could only contain it.\n\nIf you slay the dragon, the seal breaks.\n\nIf you flee, it remains. The choice is yours.\n\n- Aldric, Last King of Valdris",
+      "category": "history",
+      "level_hint": 8,
+      "item_type": "book",
+      "sort_order": 16
+    },
+    {
+      "lore_id": "evidence_duplicate_plaques",
+      "title": "Duplicate Plaques",
+      "content": "Two identical bronze plaques hang on opposite walls.\n\nBoth read: 'Cell Block A - Warden Theron, Year 847.'\n\nBut the script differs subtly. One curves left. One curves right.\n\nAs if written by the same hand... in a mirror.",
+      "category": "history",
+      "level_hint": 1,
+      "item_type": "evidence",
+      "sort_order": 17
+    },
+    {
+      "lore_id": "evidence_scratch_tallies",
+      "title": "Scratch Tallies",
+      "content": "Scratch marks cover the cell walls. Prisoner tallies, counting days.\n\nBut the numbers don't add up. Day 1... Day 2... Day 1... Day 2...\n\nThe same sequence, repeated hundreds of times.\n\nSomeone lived the same two days. Over and over.",
+      "category": "history",
+      "level_hint": 1,
+      "item_type": "evidence",
+      "sort_order": 18
+    },
+    {
+      "lore_id": "evidence_wax_seals_nests",
+      "title": "Wax Seals in Rat Nests",
+      "content": "Rat nests line the sewer alcoves, built from debris.\n\nInside each: royal wax seals, gnawed but intact.\n\nThe rats collected them. Hundreds of identical seals.\n\nAll dated the same day. The day Valdris fell.",
+      "category": "history",
+      "level_hint": 2,
+      "item_type": "evidence",
+      "sort_order": 19
+    },
+    {
+      "lore_id": "evidence_decree_fragments",
+      "title": "Decree Fragments",
+      "content": "Torn parchment caught in the grate. A royal decree.\n\n'By order of King Aldric... the prisoner shall be...'\n\nThe rest dissolved in the muck. But there are more fragments.\n\nThe same decree. Torn the same way. In every grate.",
+      "category": "history",
+      "level_hint": 2,
+      "item_type": "evidence",
+      "sort_order": 20
+    },
+    {
+      "lore_id": "evidence_web_sigil_geometry",
+      "title": "Web Sigil Geometry",
+      "content": "The spider webs form patterns. Too regular for instinct.\n\nEach web contains the same sigil, woven in silk.\n\nThe symbol matches nothing in the archives.\n\nYet it feels familiar. Like a word you cannot quite remember.",
+      "category": "history",
+      "level_hint": 3,
+      "item_type": "evidence",
+      "sort_order": 21
+    },
+    {
+      "lore_id": "evidence_roots_avoiding_crown",
+      "title": "Roots Avoiding Crown",
+      "content": "The roots twist through everything. Stone, metal, bone.\n\nBut here, a perfect circle. A clearing in the growth.\n\nAt its center: a faded mosaic. A crown with eight points.\n\nThe forest consumes all. Except the crown. Why?",
+      "category": "history",
+      "level_hint": 3,
+      "item_type": "evidence",
+      "sort_order": 22
+    },
+    {
+      "lore_id": "evidence_two_coronations_bell",
+      "title": "Two Coronations Bell",
+      "content": "A cracked bronze bell hangs in the throne room alcove.\n\nThe inscription reads: 'For the coronation of King Aldric.'\n\nBut there are two dates. Two coronations.\n\nThe same king. Crowned twice. In the same year.",
+      "category": "history",
+      "level_hint": 4,
+      "item_type": "evidence",
+      "sort_order": 23
+    },
+    {
+      "lore_id": "evidence_contradictory_plaques",
+      "title": "Contradictory Door Plaques",
+      "content": "Two doors, side by side. Each bears a plaque.\n\n'Royal Treasury - SEALED by order of King Aldric.'\n\n'Royal Treasury - OPENED by order of King Aldric.'\n\nSame handwriting. Same seal. Same date.",
+      "category": "history",
+      "level_hint": 4,
+      "item_type": "evidence",
+      "sort_order": 24
+    },
+    {
+      "lore_id": "evidence_repeating_day_12",
+      "title": "Repeating 'Day 12'",
+      "content": "Ice-encased expedition logs, preserved perfectly.\n\nEvery single one ends: 'Day 12 of the Seventh Moon.'\n\nDozens of explorers. All stopped writing the same day.\n\nThe ink froze mid-sentence. Every time.",
+      "category": "history",
+      "level_hint": 5,
+      "item_type": "evidence",
+      "sort_order": 25
+    },
+    {
+      "lore_id": "evidence_thaw_never_completes",
+      "title": "Thaw That Never Completes",
+      "content": "Icicles hang from the cavern ceiling, perpetually dripping.\n\nThe same drop falls. Freezes. Falls. Freezes.\n\nYou watch it cycle three times before moving on.\n\nTime stutters here. Catching on something cold.",
+      "category": "history",
+      "level_hint": 5,
+      "item_type": "evidence",
+      "sort_order": 26
+    },
+    {
+      "lore_id": "evidence_self_cataloging_shelves",
+      "title": "Self-Cataloging Index",
+      "content": "The card catalog drawers are meticulously organized.\n\nEach card reads: 'Cataloged by Archivist Thenn.'\n\nBut the handwriting changes mid-entry on some cards.\n\nThe same name. Different hands. Dozens of them.",
+      "category": "history",
+      "level_hint": 6,
+      "item_type": "evidence",
+      "sort_order": 27
+    },
+    {
+      "lore_id": "evidence_final_version_labels",
+      "title": "'Final Version' Labels",
+      "content": "Book spines stamped 'FINAL VERSION - DO NOT COPY.'\n\nInside: histories of Valdris. All slightly different.\n\nEach claims to be the definitive record.\n\nBut the histories contradict each other. And confirm each other.",
+      "category": "history",
+      "level_hint": 6,
+      "item_type": "evidence",
+      "sort_order": 28
+    },
+    {
+      "lore_id": "evidence_melted_crest",
+      "title": "Melted Crest",
+      "content": "A royal crest, cast in iron, hangs above the forge.\n\nHalf-melted, dripping frozen metal tears.\n\nThe heat here should have destroyed it entirely.\n\nYet it hangs. Mid-melt. Refusing to finish.",
+      "category": "history",
+      "level_hint": 7,
+      "item_type": "evidence",
+      "sort_order": 29
+    },
+    {
+      "lore_id": "evidence_rune_plates_stamped",
+      "title": "Rune Plates Stamped",
+      "content": "Forge-pressed rune plates line the passage walls.\n\nEach stamped: 'Verified by Forgemaster Kael.'\n\nBut the verification dates span three centuries.\n\nThe same stamp. The same man. Impossible.",
+      "category": "history",
+      "level_hint": 7,
+      "item_type": "evidence",
+      "sort_order": 30
+    },
+    {
+      "lore_id": "evidence_missing_sigil_segment",
+      "title": "Missing Sigil Segment",
+      "content": "A massive binding circle, carved into the crystal floor.\n\nSeven segments, each inscribed with power words.\n\nThe eighth segment is blank. Scratched clean.\n\nSomeone erased it. Recently. The crystal dust still settles.",
+      "category": "history",
+      "level_hint": 8,
+      "item_type": "evidence",
+      "sort_order": 31
+    },
+    {
+      "lore_id": "evidence_double_shadow_refraction",
+      "title": "Double Shadow Refraction",
+      "content": "Light bends strangely through the crystals here.\n\nYour shadow splits. Two of you, walking in parallel.\n\nBut your other shadow moves... differently.\n\nA half-second ahead. Or behind. You cannot tell which.",
+      "category": "history",
+      "level_hint": 8,
+      "item_type": "evidence",
+      "sort_order": 32
+    },
+    {
+      "lore_id": "evidence_echo_of_fall",
+      "title": "Echo of the Fall",
+      "content": "The Field stirred, and for a moment the walls breathed memory.\n\nYou felt the presence of those who fell before you.\n\nTheir paths through this place, etched in invisible light.\n\nThe dungeon remembers everyone who enters. It never forgets.",
+      "category": "history",
+      "level_hint": 1,
+      "item_type": "evidence",
+      "sort_order": 33
+    },
+    {
+      "lore_id": "evidence_drowned_voices",
+      "title": "Drowned Voices",
+      "content": "Bubbles rose from impossible cracks, carrying whispers.\n\nThe water spoke in voices long silenced.\n\n'We waited here. We wait still.'\n\nThe Flooded Depths hold more than rats and refuse.",
+      "category": "history",
+      "level_hint": 2,
+      "item_type": "evidence",
+      "sort_order": 34
+    },
+    {
+      "lore_id": "evidence_spore_memory",
+      "title": "Spore Memory",
+      "content": "Luminescent spores filled the air like golden snow.\n\nFor a heartbeat, you saw through the colony's eyes.\n\nThousands of perspectives, layered across centuries.\n\nThe fungi remember everything the forest has consumed.",
+      "category": "history",
+      "level_hint": 3,
+      "item_type": "evidence",
+      "sort_order": 35
+    },
+    {
+      "lore_id": "evidence_ember_sigh",
+      "title": "Ember Sigh",
+      "content": "The flames dimmed in unison, as if exhaling.\n\nIn that brief coolness, you sensed relief. Not yours.\n\nSomething here has burned for a very long time.\n\nIt is tired. But it cannot stop.",
+      "category": "history",
+      "level_hint": 4,
+      "item_type": "evidence",
+      "sort_order": 36
+    },
+    {
+      "lore_id": "evidence_glacial_pause",
+      "title": "Glacial Pause",
+      "content": "Time crystallized around you like frost on glass.\n\nIn that frozen moment, you understood stasis.\n\nNot death. Not sleep. Something between.\n\nThe cold holds its breath because it cannot exhale.",
+      "category": "history",
+      "level_hint": 5,
+      "item_type": "evidence",
+      "sort_order": 37
+    },
+    {
+      "lore_id": "evidence_void_glimpse",
+      "title": "Void Glimpse",
+      "content": "The shadows parted like curtains at a play.\n\nBeyond them: the spaces between spaces.\n\nYou saw where deleted knowledge goes.\n\nIt does not disappear. It waits.",
+      "category": "history",
+      "level_hint": 6,
+      "item_type": "evidence",
+      "sort_order": 38
+    },
+    {
+      "lore_id": "evidence_royal_echo",
+      "title": "Royal Echo",
+      "content": "A spectral crown flickered above you, eight points gleaming.\n\nThe ancient king's blessing lingered on your skin.\n\nWarmth where there should be none. Purpose where there was doubt.\n\nEven now, something of Valdris watches over its own.",
+      "category": "history",
+      "level_hint": 7,
+      "item_type": "evidence",
+      "sort_order": 39
+    },
+    {
+      "lore_id": "evidence_the_watching",
+      "title": "The Watching",
+      "content": "Something ancient turned its attention toward you.\n\nNot the dragon. Something older. Something patient.\n\nIt has been watching since the first stone was laid.\n\nIt sees. It knows. And for this moment, it waits.",
+      "category": "history",
+      "level_hint": 8,
+      "item_type": "evidence",
+      "sort_order": 40
+    }
+  ]
+}

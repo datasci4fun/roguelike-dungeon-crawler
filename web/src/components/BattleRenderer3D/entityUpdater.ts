@@ -59,8 +59,13 @@ export function updateEntities(
     for (const enemy of battle.enemies) {
       if (enemy.hp > 0) {
         const enemyEntity = createEntity3D(enemy, false);
-        const ex = (enemy.arena_x - arena_width / 2) * TILE_SIZE;
-        const ez = (enemy.arena_y - arena_height / 2) * TILE_SIZE;
+        // v7.2: Center multi-tile entities on their footprint
+        const sizeW = enemy.size_width ?? 1;
+        const sizeH = enemy.size_height ?? 1;
+        const centerOffsetX = (sizeW - 1) / 2;
+        const centerOffsetZ = (sizeH - 1) / 2;
+        const ex = (enemy.arena_x + centerOffsetX - arena_width / 2) * TILE_SIZE;
+        const ez = (enemy.arena_y + centerOffsetZ - arena_height / 2) * TILE_SIZE;
         enemyEntity.position.set(ex, 0, ez);
         group.add(enemyEntity);
       }
@@ -129,8 +134,13 @@ export function updateEntities(
       const enemyId = enemy.entity_id;
       console.log('[BattleRenderer3D] Processing enemy:', { enemyId, name: enemy.name, existsInAnimMap: animMap.has(enemyId) });
       currentIds.add(enemyId);
-      const ex = (enemy.arena_x - arena_width / 2) * TILE_SIZE;
-      const ez = (enemy.arena_y - arena_height / 2) * TILE_SIZE;
+      // v7.2: Center multi-tile entities on their footprint
+      const sizeW = enemy.size_width ?? 1;
+      const sizeH = enemy.size_height ?? 1;
+      const centerOffsetX = (sizeW - 1) / 2;
+      const centerOffsetZ = (sizeH - 1) / 2;
+      const ex = (enemy.arena_x + centerOffsetX - arena_width / 2) * TILE_SIZE;
+      const ez = (enemy.arena_y + centerOffsetZ - arena_height / 2) * TILE_SIZE;
 
       const existing = animMap.get(enemyId);
       // Check if sprite is still in the group (could be stale from React Strict Mode remount)

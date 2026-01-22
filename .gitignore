@@ -51,6 +51,9 @@ savegame.pkl
 nul
 tmpclaude-*-cwd
 
+# AST Chain skill output
+.ast-chain/
+
 # 3D Pipeline
 tools/3d-pipeline/TripoSR/.venv/
 tools/3d-pipeline/TripoSR/output/

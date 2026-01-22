@@ -6,7 +6,8 @@
 import * as THREE from 'three';
 import type { BattleEntity } from '../../types';
 import { getModelPathForEnemy } from '../../utils/enemyModels';
-import { ENTITY_MODEL_SCALE, ENTITY_MODEL_Y_OFFSET } from './constants';
+import { createProceduralEnemy } from '../../models';
+import { ENTITY_MODEL_SCALE, ENTITY_MODEL_Y_OFFSET, getSizeScaleMultiplier } from './constants';
 import { modelCache } from './modelLoader';
 
 /**
@@ -242,13 +243,37 @@ export function createEntity3D(
     cacheSize: modelCache.size
   });
 
+  // Try GLB model first, then procedural model, then sprite fallback
+  let model: THREE.Group | null = null;
+  let modelSource = 'none';
+
   if (cachedModel) {
-    // Use 3D model
-    const model = cachedModel.clone();
+    // Use cached GLB model
+    model = cachedModel.clone();
+    modelSource = 'glb';
+    console.log('[BattleRenderer3D] Using GLB model for:', entity.name);
+  } else if (entity.name) {
+    // Try procedural model from MODEL_LIBRARY
+    const proceduralModel = createProceduralEnemy(entity.name);
+    if (proceduralModel) {
+      model = proceduralModel;
+      modelSource = 'procedural';
+      console.log('[BattleRenderer3D] Using procedural model for:', entity.name);
+    }
+  }
+
+  // v7.2: Calculate size-based scale multiplier for multi-tile entities
+  const sizeW = entity.size_width ?? 1;
+  const sizeH = entity.size_height ?? 1;
+  const sizeMultiplier = getSizeScaleMultiplier(sizeW, sizeH);
+  const finalScale = ENTITY_MODEL_SCALE * sizeMultiplier;
+
+  if (model) {
+    // Use 3D model (either GLB or procedural)
     model.name = 'entityModel';
 
-    // Apply scale and position offset
-    model.scale.setScalar(ENTITY_MODEL_SCALE);
+    // Apply scale (with size multiplier) and position offset
+    model.scale.setScalar(finalScale);
     model.position.y = ENTITY_MODEL_Y_OFFSET;
 
     // Add a wrapper group so we can position the model correctly
@@ -259,7 +284,7 @@ export function createEntity3D(
     // Add subtle idle animation rotation
     modelWrapper.userData.idleRotation = true;
 
-    console.log('[BattleRenderer3D] 3D model added with scale:', ENTITY_MODEL_SCALE, 'y-offset:', ENTITY_MODEL_Y_OFFSET);
+    console.log('[BattleRenderer3D] 3D model added:', modelSource, 'scale:', finalScale, '(base:', ENTITY_MODEL_SCALE, 'x', sizeMultiplier, ') y-offset:', ENTITY_MODEL_Y_OFFSET);
   } else {
     // Fall back to sprite
     console.log('[BattleRenderer3D] Using sprite fallback for:', entity.name);
@@ -275,19 +300,27 @@ export function createEntity3D(
     return group;
   }
 
+  // v7.2: Scale UI elements based on entity size
+  const uiHeightOffset = finalScale + 0.1;
+  const ringScale = sizeMultiplier;
+
   // Add HP bar above 3D model
   const hpSprite = createHpBar(entity);
-  hpSprite.position.y = ENTITY_MODEL_SCALE + 0.1; // Above model
+  hpSprite.position.y = uiHeightOffset;
+  hpSprite.scale.multiplyScalar(sizeMultiplier); // Scale HP bar for larger entities
   group.add(hpSprite);
 
   // Add name label above HP bar
   const nameLabel = createNameLabel(entity, false);
-  nameLabel.position.y = ENTITY_MODEL_SCALE + 0.45; // Above HP bar
+  nameLabel.position.y = uiHeightOffset + 0.35 * sizeMultiplier;
+  nameLabel.scale.multiplyScalar(sizeMultiplier); // Scale name label for larger entities
   group.add(nameLabel);
 
-  // Add boss ring for boss enemies
+  // Add boss ring for boss enemies (scaled for multi-tile footprint)
   if (entity.is_boss) {
-    const ringGeometry = new THREE.RingGeometry(0.6, 0.75, 32);
+    const baseInner = 0.6 * ringScale;
+    const baseOuter = 0.75 * ringScale;
+    const ringGeometry = new THREE.RingGeometry(baseInner, baseOuter, 32);
     const ringMaterial = new THREE.MeshBasicMaterial({
       color: 0xaa00aa,
       transparent: true,
@@ -303,7 +336,9 @@ export function createEntity3D(
 
   // Add elite glow for elite enemies
   if (entity.is_elite && !entity.is_boss) {
-    const glowGeometry = new THREE.RingGeometry(0.5, 0.65, 32);
+    const baseInner = 0.5 * ringScale;
+    const baseOuter = 0.65 * ringScale;
+    const glowGeometry = new THREE.RingGeometry(baseInner, baseOuter, 32);
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: 0xff8800,
       transparent: true,
@@ -318,7 +353,9 @@ export function createEntity3D(
   }
 
   // v6.9: Add active turn highlight ring (hidden by default, shown during enemy's turn)
-  const turnGlowGeometry = new THREE.RingGeometry(0.7, 0.9, 32);
+  const turnInner = 0.7 * ringScale;
+  const turnOuter = 0.9 * ringScale;
+  const turnGlowGeometry = new THREE.RingGeometry(turnInner, turnOuter, 32);
   const turnGlowMaterial = new THREE.MeshBasicMaterial({
     color: 0xffff00, // Bright yellow
     transparent: true,

@@ -11,6 +11,7 @@ import { useRef, useEffect, useMemo, useCallback } from 'react';
 import * as THREE from 'three';
 import type { FirstPersonView, InteractiveTileData } from '../../hooks/useGameSocket';
 import { getBiome, type BiomeId } from './biomes';
+import { createProceduralEnemy, getProceduralEnemyModel } from '../../models';
 
 // Interactive wall data structure for raycasting
 interface InteractiveWallUserData {
@@ -131,6 +132,38 @@ function createSymbolSprite(symbol: string, bgColor: number): THREE.Sprite {
   const sprite = new THREE.Sprite(material);
   sprite.scale.set(0.8, 0.8, 1);
   return sprite;
+}
+
+/**
+ * v7.2 Enemy model cache - stores cloned models for reuse during render
+ * Maps enemy name -> cloned THREE.Group
+ * Cache is cleared and rebuilt each frame since entities may change
+ */
+const enemyModelCache = new Map<string, THREE.Group>();
+
+/**
+ * Get or create a 3D enemy model
+ * Returns a cloned instance suitable for adding to the scene
+ */
+function getEnemyModel(enemyName: string): THREE.Group | null {
+  // Check if we have this enemy in cache
+  if (enemyModelCache.has(enemyName)) {
+    return enemyModelCache.get(enemyName)!.clone();
+  }
+
+  // Check if a procedural model exists for this enemy
+  if (!getProceduralEnemyModel(enemyName)) {
+    return null;
+  }
+
+  // Create and cache the model
+  const model = createProceduralEnemy(enemyName);
+  if (model) {
+    enemyModelCache.set(enemyName, model);
+    return model.clone();
+  }
+
+  return null;
 }
 
 /**
@@ -1138,19 +1171,62 @@ export function FirstPersonRenderer3D({
         labelColor = '#88ff88';
       }
 
-      // Create symbol sprite (replaces plain sphere)
-      const symbolSprite = createSymbolSprite(entity.symbol || '?', color);
-      symbolSprite.position.set(x, y, z);
-      geometryGroup.add(symbolSprite);
+      // v7.2: Try to use 3D model for enemies, fall back to symbol sprite
+      let entityRendered = false;
+      let labelYOffset = 1.1;  // Default offset for label above entity
+
+      if (entity.type === 'enemy' && entity.name) {
+        const enemyModel = getEnemyModel(entity.name);
+        if (enemyModel) {
+          // Position 3D model - place on ground (y=0), facing the camera
+          enemyModel.position.set(x, 0, z);
+
+          // Scale model appropriately for first-person view
+          // Match battle mode scale (1.4) for consistency
+          const modelScale = 1.4;
+          enemyModel.scale.set(modelScale, modelScale, modelScale);
+
+          // Rotate model to face the player (camera at z=0, looking -z)
+          // Entity is at negative Z, needs to face toward +Z (toward camera)
+          // Models typically face +Z by default, so no rotation needed
+          enemyModel.rotation.y = 0;
+
+          // Apply elite tint if elite enemy (reddish glow effect)
+          if (entity.is_elite) {
+            enemyModel.traverse((child) => {
+              if (child instanceof THREE.Mesh && child.material) {
+                const mat = child.material as THREE.MeshStandardMaterial;
+                if (mat.emissive) {
+                  mat.emissive.setHex(0x440000);
+                  mat.emissiveIntensity = 0.3;
+                }
+              }
+            });
+          }
+
+          geometryGroup.add(enemyModel);
+          entityRendered = true;
+
+          // Adjust label offset for 3D models (taller due to 1.4 scale)
+          labelYOffset = 2.0;
+        }
+      }
+
+      // Fall back to symbol sprite if no 3D model or not an enemy
+      if (!entityRendered) {
+        const symbolSprite = createSymbolSprite(entity.symbol || '?', color);
+        symbolSprite.position.set(x, y, z);
+        geometryGroup.add(symbolSprite);
+      }
 
       // Create name label hovering above the entity (with distance/count limits)
       // Labels are expensive - only render for close entities
       if (entity.name && entity.distance <= LABEL_CULL_DISTANCE && labelsRendered < MAX_LABELS) {
         const nameLabel = createTextSprite(entity.name, labelColor);
-        // Position label well above entity to avoid overlap with sprite
+        // Position label well above entity to avoid overlap with sprite/model
         // Items are lower, so need less offset; enemies/NPCs need more clearance
-        const labelOffset = entity.type === 'item' ? 0.6 : 1.1;
-        nameLabel.position.set(x, y + labelOffset, z);
+        const finalLabelOffset = entity.type === 'item' ? 0.6 : labelYOffset;
+        nameLabel.position.set(x, entityRendered ? finalLabelOffset : y + finalLabelOffset, z);
         geometryGroup.add(nameLabel);
         labelsRendered++;
       }

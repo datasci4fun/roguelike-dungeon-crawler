@@ -43,6 +43,19 @@ from app.models.game_constants import (
     GameConstantsMeta,
 )
 from app.models.asset3d import Asset3D
+from app.models.narrative_data import (
+    BossAbility,
+    Feat,
+    Artifact,
+    Vow,
+    LoreEntry,
+    EncounterMessage,
+    LevelIntroMessage,
+    TutorialHint,
+    MicroEvent,
+    FloorDescription,
+    LoreQuote,
+)
 
 
 # Seed file locations
@@ -108,6 +121,62 @@ SEED_CONFIG = {
         "file": "weapons.json",
         "model": Weapon,
         "id_field": "weapon_id",
+    },
+    # Narrative data tables
+    "boss_abilities": {
+        "file": "boss_abilities.json",
+        "model": BossAbility,
+        "id_field": "ability_id",
+    },
+    "feats": {
+        "file": "feats.json",
+        "model": Feat,
+        "id_field": "feat_id",
+    },
+    "artifacts": {
+        "file": "artifacts.json",
+        "model": Artifact,
+        "id_field": "artifact_id",
+    },
+    "vows": {
+        "file": "vows.json",
+        "model": Vow,
+        "id_field": "vow_id",
+    },
+    "lore_entries": {
+        "file": "lore_entries.json",
+        "model": LoreEntry,
+        "id_field": "lore_id",
+    },
+    "encounter_messages": {
+        "file": "encounter_messages.json",
+        "model": EncounterMessage,
+        "id_field": "enemy_id",
+    },
+    "level_intros": {
+        "file": "level_intros.json",
+        "model": LevelIntroMessage,
+        "id_field": "floor",
+    },
+    "tutorial_hints": {
+        "file": "tutorial_hints.json",
+        "model": TutorialHint,
+        "id_field": "hint_id",
+    },
+    "micro_events": {
+        "file": "micro_events.json",
+        "model": MicroEvent,
+        "id_field": "event_id",
+    },
+    "floor_descriptions": {
+        "file": "floor_descriptions.json",
+        "model": FloorDescription,
+        "id_field": "floor",
+    },
+    "lore_quotes": {
+        "file": "lore_quotes.json",
+        "model": LoreQuote,
+        "id_field": "quote_id",
     },
 }
 
@@ -190,6 +259,13 @@ def map_race_data(data: dict) -> dict:
         "dex_modifier": data.get("dex_modifier", 0),
         "con_modifier": data.get("con_modifier", 0),
         "luck_modifier": data.get("luck_modifier", 0),
+        # Visual/model generation fields
+        "appearance": data.get("appearance"),
+        "lore": data.get("lore"),
+        "base_height": data.get("base_height", 1.8),
+        "skin_color": data.get("skin_color"),
+        "eye_color": data.get("eye_color"),
+        "icon": data.get("icon"),
         "created_at": datetime.utcnow(),
     }
 
@@ -214,6 +290,16 @@ def map_class_data(data: dict) -> dict:
         "hit_die": data.get("hit_die", "d8"),
         "primary_stat": data.get("primary_stat", "STR"),
         "armor_proficiency": data.get("armor_proficiency"),
+        # Visual/model generation fields
+        "playstyle": data.get("playstyle"),
+        "lore": data.get("lore"),
+        "equipment_type": data.get("equipment_type"),
+        "starting_equipment": data.get("starting_equipment"),
+        "primary_color": data.get("primary_color"),
+        "secondary_color": data.get("secondary_color"),
+        "glow_color": data.get("glow_color"),
+        "icon": data.get("icon"),
+        "abilities": data.get("abilities"),
         "created_at": datetime.utcnow(),
     }
 
@@ -349,6 +435,157 @@ def map_weapon_data(data: dict) -> dict:
     }
 
 
+def map_boss_ability_data(data: dict) -> dict:
+    """Map boss ability JSON data to model fields."""
+    return {
+        "ability_id": data["ability_id"],
+        "name": data["name"],
+        "description": data["description"],
+        "ability_type": data["ability_type"],
+        "cooldown": data.get("cooldown", 3),
+        "damage": data.get("damage", 0),
+        "range": data.get("range", 1),
+        "radius": data.get("radius"),
+        "summon_type": data.get("summon_type"),
+        "summon_count": data.get("summon_count"),
+        "buff_stat": data.get("buff_stat"),
+        "buff_amount": data.get("buff_amount"),
+        "buff_duration": data.get("buff_duration"),
+        "status_effect": data.get("status_effect"),
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_feat_data(data: dict) -> dict:
+    """Map feat JSON data to model fields."""
+    return {
+        "feat_id": data["feat_id"],
+        "name": data["name"],
+        "description": data["description"],
+        "category": data["category"],
+        "hp_bonus": data.get("hp_bonus", 0),
+        "atk_bonus": data.get("atk_bonus", 0),
+        "def_bonus": data.get("def_bonus", 0),
+        "damage_bonus": data.get("damage_bonus", 0.0),
+        "crit_chance_bonus": data.get("crit_chance_bonus", 0.0),
+        "dodge_bonus": data.get("dodge_bonus", 0.0),
+        "effects": data.get("effects"),
+        "level_required": data.get("level_required", 1),
+        "prerequisites": data.get("prerequisites"),
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_artifact_data(data: dict) -> dict:
+    """Map artifact JSON data to model fields."""
+    return {
+        "artifact_id": data["artifact_id"],
+        "name": data["name"],
+        "description": data["description"],
+        "lore": data.get("lore"),
+        "effect": data["effect"],
+        "cost": data.get("cost"),
+        "unlock_condition": data.get("unlock_condition"),
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_vow_data(data: dict) -> dict:
+    """Map vow JSON data to model fields."""
+    return {
+        "vow_id": data["vow_id"],
+        "name": data["name"],
+        "description": data["description"],
+        "restriction_type": data["restriction_type"],
+        "xp_multiplier": data.get("xp_multiplier", 1.0),
+        "reward": data.get("reward"),
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_lore_entry_data(data: dict) -> dict:
+    """Map lore entry JSON data to model fields."""
+    return {
+        "lore_id": data["lore_id"],
+        "title": data["title"],
+        "content": data["content"],
+        "category": data["category"],
+        "level_hint": data.get("level_hint"),
+        "item_type": data.get("item_type"),
+        "zone_hint": data.get("zone_hint"),
+        "sort_order": data.get("sort_order", 0),
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_encounter_message_data(data: dict) -> dict:
+    """Map encounter message JSON data to model fields."""
+    return {
+        "enemy_id": data["enemy_id"],
+        "message": data["message"],
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_level_intro_data(data: dict) -> dict:
+    """Map level intro JSON data to model fields."""
+    return {
+        "floor": data["floor"],
+        "message": data["message"],
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_tutorial_hint_data(data: dict) -> dict:
+    """Map tutorial hint JSON data to model fields."""
+    return {
+        "hint_id": data["hint_id"],
+        "message": data["message"],
+        "trigger_condition": data.get("trigger_condition"),
+        "priority": data.get("priority", 0),
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_micro_event_data(data: dict) -> dict:
+    """Map micro event JSON data to model fields."""
+    return {
+        "event_id": data["event_id"],
+        "floor": data["floor"],
+        "title": data["title"],
+        "messages": data["messages"],
+        "effect_type": data["effect_type"],
+        "effect_value": data.get("effect_value", 0),
+        "evidence_id": data.get("evidence_id"),
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_floor_description_data(data: dict) -> dict:
+    """Map floor description JSON data to model fields."""
+    return {
+        "floor": data["floor"],
+        "name": data["name"],
+        "aspect": data["aspect"],
+        "hint": data["hint"],
+        "warden": data["warden"],
+        "warden_symbol": data["warden_symbol"],
+        "created_at": datetime.utcnow(),
+    }
+
+
+def map_lore_quote_data(data: dict) -> dict:
+    """Map lore quote JSON data to model fields."""
+    return {
+        "quote_id": data["quote_id"],
+        "text": data["text"],
+        "author": data["author"],
+        "category": data.get("category"),
+        "sort_order": data.get("sort_order", 0),
+        "created_at": datetime.utcnow(),
+    }
+
+
 # Mapping functions for each table
 DATA_MAPPERS = {
     "enemies": map_enemy_data,
@@ -362,6 +599,18 @@ DATA_MAPPERS = {
     "items": map_item_data,
     "assets3d": map_asset3d_data,
     "weapons": map_weapon_data,
+    # Narrative data mappers
+    "boss_abilities": map_boss_ability_data,
+    "feats": map_feat_data,
+    "artifacts": map_artifact_data,
+    "vows": map_vow_data,
+    "lore_entries": map_lore_entry_data,
+    "encounter_messages": map_encounter_message_data,
+    "level_intros": map_level_intro_data,
+    "tutorial_hints": map_tutorial_hint_data,
+    "micro_events": map_micro_event_data,
+    "floor_descriptions": map_floor_description_data,
+    "lore_quotes": map_lore_quote_data,
 }
 
 

@@ -76,6 +76,11 @@ class Enemy(Entity):
         self.min_level = stats.get('min_level', 1)
         self.max_level = stats.get('max_level', 5)
 
+        # Multi-tile size (v7.2 - large enemies occupy multiple tiles)
+        size = stats.get('size', (1, 1))
+        self.size_width = size[0]
+        self.size_height = size[1]
+
     def tick_element_cycle(self):
         """Tick the element cycle timer and cycle if needed.
 
@@ -164,6 +169,11 @@ class Enemy(Entity):
         self.ability_cooldowns = {a: 0 for a in self.abilities}
         self.is_elite = False  # Bosses aren't elite
         self.enemy_type = None  # Bosses don't use enemy types
+
+        # Multi-tile size for bosses
+        size = stats.get('size', (1, 1))
+        self.size_width = size[0]
+        self.size_height = size[1]
 
     def process_boss_turn(self, player, dungeon, entity_manager):
         """Process boss turn with ability usage.
@@ -306,3 +316,16 @@ class Enemy(Entity):
         """Move the enemy by the given offset."""
         self.x += dx
         self.y += dy
+
+    def occupies_tile(self, x: int, y: int) -> bool:
+        """Check if this enemy occupies a specific tile (multi-tile support)."""
+        return (self.x <= x < self.x + self.size_width and
+                self.y <= y < self.y + self.size_height)
+
+    def get_occupied_tiles(self) -> list:
+        """Get all tiles this enemy occupies (multi-tile support)."""
+        tiles = []
+        for dx in range(self.size_width):
+            for dy in range(self.size_height):
+                tiles.append((self.x + dx, self.y + dy))
+        return tiles

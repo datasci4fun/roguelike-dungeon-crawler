@@ -142,7 +142,7 @@ export const ASSET_QUEUE: Asset3D[] = [
   },
   {
     id: 'skeleton',
-    name: 'Skeleton Warrior',
+    name: 'Skeleton',
     category: 'enemy',
     status: 'queued',
     priority: 'high',
@@ -158,7 +158,7 @@ export const ASSET_QUEUE: Asset3D[] = [
   },
   {
     id: 'rat',
-    name: 'Giant Rat',
+    name: 'Rat',
     category: 'enemy',
     status: 'queued',
     priority: 'high',

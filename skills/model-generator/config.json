@@ -1,0 +1,9 @@
+{
+  "paths": {
+    "models_index": "web/src/models/index.ts",
+    "materials": "web/src/models/materials.ts",
+    "out_dir": ".claude/skills/model-generator/out",
+    "log_file": ".claude/skills/model-generator/out/log.txt",
+    "result_file": ".claude/skills/model-generator/out/result.json"
+  }
+}

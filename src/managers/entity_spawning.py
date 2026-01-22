@@ -1,14 +1,78 @@
 """Enemy spawning logic with zone-aware weight modifiers.
 
 Handles spawning enemies with theme-appropriate types and zone biases.
+Supports multi-tile enemies (2x2, 3x3) by restricting them to rooms.
 """
 import random
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple, Optional
 
 from ..entities import Player, Enemy
 
 if TYPE_CHECKING:
     from ..world import Dungeon
+    from ..world.dungeon_bsp import Room
+
+
+def _get_enemy_size(enemy_type) -> Tuple[int, int]:
+    """Get the size (width, height) for an enemy type. Default is (1, 1)."""
+    from ..core.constants import ENEMY_STATS
+    stats = ENEMY_STATS.get(enemy_type, {})
+    return stats.get('size', (1, 1))
+
+
+def _find_room_spawn_position(
+    dungeon: 'Dungeon',
+    size_w: int,
+    size_h: int,
+    player: Player,
+    max_attempts: int = 50
+) -> Optional[Tuple[int, int]]:
+    """Find a valid spawn position for a multi-tile enemy inside a room.
+
+    Args:
+        dungeon: The dungeon to spawn in
+        size_w, size_h: The enemy's footprint size
+        player: The player (to avoid spawning too close)
+        max_attempts: Maximum random attempts before giving up
+
+    Returns:
+        (x, y) position or None if no valid position found
+    """
+    # Filter rooms that can fit the enemy (need at least size + 1 for walls)
+    valid_rooms = [
+        room for room in dungeon.rooms
+        if room.width >= size_w + 2 and room.height >= size_h + 2
+    ]
+
+    if not valid_rooms:
+        return None
+
+    for _ in range(max_attempts):
+        # Pick a random room that can fit the enemy
+        room = random.choice(valid_rooms)
+
+        # Pick a random position inside the room (leaving 1-tile margin from walls)
+        x = random.randint(room.x + 1, room.x + room.width - size_w - 1)
+        y = random.randint(room.y + 1, room.y + room.height - size_h - 1)
+
+        # Check distance from player
+        if abs(x - player.x) <= 5 and abs(y - player.y) <= 5:
+            continue
+
+        # Verify all tiles in footprint are walkable
+        all_walkable = True
+        for dx in range(size_w):
+            for dy in range(size_h):
+                if not dungeon.is_walkable(x + dx, y + dy):
+                    all_walkable = False
+                    break
+            if not all_walkable:
+                break
+
+        if all_walkable:
+            return (x, y)
+
+    return None
 
 
 def spawn_enemies(enemies: List[Enemy], dungeon: 'Dungeon', player: Player):
@@ -51,37 +115,68 @@ def spawn_enemies(enemies: List[Enemy], dungeon: 'Dungeon', player: Player):
     dragon_spawned = False
 
     for _ in range(num_enemies):
-        pos = dungeon.get_random_floor_position()
-        # Make sure not too close to player
-        if abs(pos[0] - player.x) > 5 or abs(pos[1] - player.y) > 5:
-            # Get zone at spawn position and apply weight modifiers
-            zone = dungeon.get_zone_at(pos[0], pos[1])
-            zone_weights = _apply_zone_weights(
-                base_enemy_types, base_weights.copy(), zone, current_level
-            )
+        # First, select enemy type to determine size requirements
+        # Use a temporary position to get zone weights
+        temp_pos = dungeon.get_random_floor_position()
+        zone = dungeon.get_zone_at(temp_pos[0], temp_pos[1])
+        zone_weights = _apply_zone_weights(
+            base_enemy_types, base_weights.copy(), zone, current_level
+        )
 
-            # Select enemy type using zone-modified weights
-            enemy_type = random.choices(base_enemy_types, weights=zone_weights)[0]
+        # Select enemy type using zone-modified weights
+        enemy_type = random.choices(base_enemy_types, weights=zone_weights)[0]
 
-            # Floor 8: Max 1 dragon constraint (spicy but fair)
-            if current_level == 8 and enemy_type == EnemyType.DRAGON:
-                if dragon_spawned:
-                    # Already have a dragon - reroll once
-                    enemy_type = random.choices(base_enemy_types, weights=zone_weights)[0]
-                    if enemy_type == EnemyType.DRAGON:
-                        # Still dragon - fallback to Crystal Sentinel
-                        enemy_type = EnemyType.CRYSTAL_SENTINEL
+        # Floor 8: Max 1 dragon constraint (spicy but fair)
+        if current_level == 8 and enemy_type == EnemyType.DRAGON:
+            if dragon_spawned:
+                # Already have a dragon - reroll once
+                enemy_type = random.choices(base_enemy_types, weights=zone_weights)[0]
+                if enemy_type == EnemyType.DRAGON:
+                    # Still dragon - fallback to Crystal Sentinel
+                    enemy_type = EnemyType.CRYSTAL_SENTINEL
+            else:
+                dragon_spawned = True
+
+        # Get enemy size and find appropriate spawn position
+        size_w, size_h = _get_enemy_size(enemy_type)
+
+        if size_w > 1 or size_h > 1:
+            # Large enemy: must spawn in a room with enough space
+            pos = _find_room_spawn_position(dungeon, size_w, size_h, player)
+            if pos is None:
+                # Can't fit this enemy, try a smaller enemy type instead
+                # Filter to 1x1 enemies only
+                small_types = [t for t in base_enemy_types if _get_enemy_size(t) == (1, 1)]
+                if small_types:
+                    small_weights = [
+                        zone_weights[i] for i, t in enumerate(base_enemy_types)
+                        if _get_enemy_size(t) == (1, 1)
+                    ]
+                    enemy_type = random.choices(small_types, weights=small_weights)[0]
+                    pos = dungeon.get_random_floor_position()
+                    # Make sure not too close to player
+                    if abs(pos[0] - player.x) <= 5 and abs(pos[1] - player.y) <= 5:
+                        continue
                 else:
-                    dragon_spawned = True
+                    continue
+        else:
+            # Normal 1x1 enemy: can spawn anywhere
+            pos = dungeon.get_random_floor_position()
+            # Make sure not too close to player
+            if abs(pos[0] - player.x) <= 5 and abs(pos[1] - player.y) <= 5:
+                continue
 
-            # 20% chance to spawn elite enemy (0% in intake_hall for Floor 1)
-            elite_rate = ELITE_SPAWN_RATE
-            if zone == "intake_hall":
-                elite_rate = 0.0
-            is_elite = random.random() < elite_rate
+        # Get zone at actual spawn position for elite rate
+        zone = dungeon.get_zone_at(pos[0], pos[1])
 
-            enemy = Enemy(pos[0], pos[1], enemy_type=enemy_type, is_elite=is_elite)
-            enemies.append(enemy)
+        # 20% chance to spawn elite enemy (0% in intake_hall for Floor 1)
+        elite_rate = ELITE_SPAWN_RATE
+        if zone == "intake_hall":
+            elite_rate = 0.0
+        is_elite = random.random() < elite_rate
+
+        enemy = Enemy(pos[0], pos[1], enemy_type=enemy_type, is_elite=is_elite)
+        enemies.append(enemy)
 
 
 def _apply_zone_weights(enemy_types: list, weights: list, zone: str, level: int) -> list:
