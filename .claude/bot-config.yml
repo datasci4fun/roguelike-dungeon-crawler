@@ -11,11 +11,16 @@ bot:
   max_new_issues_per_run: 20
 
   commands:
-    # Cheap checks to run before opening PRs (during fix stage).
-    # Autodetect mode - bot will infer from package.json, pyproject.toml, etc.
-    smoke: []
-    # Full verification checks run in PR CI and optionally on default-branch pushes.
-    verify: []
+    # Cheap checks to run before opening PRs (fast, <30s)
+    smoke:
+      - "python -m py_compile src/**/*.py"
+      - "cd web && npx tsc --noEmit"
+    # Full verification checks run in PR CI (thorough)
+    verify:
+      - "python -m py_compile src/**/*.py"
+      - "python -m pytest tests/ -v --tb=short"
+      - "cd web && npm run lint"
+      - "cd web && npm run build"
 
   labels:
     reported: "bot:reported"
