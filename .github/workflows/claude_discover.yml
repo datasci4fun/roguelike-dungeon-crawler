@@ -1,0 +1,37 @@
+name: Claude Bot - Discover (Manual)
+
+# NOTE: This workflow requires ANTHROPIC_API_KEY secret to run in CI.
+# Preferred usage: Run locally with your CLI auth instead:
+#   python scripts/claude-bot/bot.py discover
+
+on:
+  workflow_dispatch:  # Manual trigger only
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Python deps
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install -r scripts/claude-bot/requirements.txt
+
+      - name: Install Claude Code
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+
+      - name: Discover issues
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/claude-bot/bot.py discover

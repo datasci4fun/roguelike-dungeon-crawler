@@ -1,0 +1,50 @@
+bot:
+  default_branch: develop
+
+  # Directories the bot is allowed to analyze and modify.
+  scan_paths:
+    - src
+    - web/src
+    - server
+    - scripts
+
+  max_new_issues_per_run: 20
+
+  commands:
+    # Cheap checks to run before opening PRs (during fix stage).
+    # Autodetect mode - bot will infer from package.json, pyproject.toml, etc.
+    smoke: []
+    # Full verification checks run in PR CI and optionally on default-branch pushes.
+    verify: []
+
+  labels:
+    reported: "bot:reported"
+    queued: "bot:queued"
+    in_progress: "bot:in-progress"
+    pr_open: "bot:pr-open"
+    ready_to_merge: "bot:ready-to-merge"
+    verified: "bot:verified"
+    blocked: "bot:blocked"
+    automerge: "bot:automerge"
+
+  safety:
+    # Hard cap (adds+deletes) per PR to reduce risky changes.
+    max_changed_lines: 400
+
+    # Disallowed globs: bot will refuse to open a PR if diff touches these.
+    disallowed_globs:
+      - ".github/**"
+      - ".claude/**"
+      - "scripts/claude-bot/**"
+
+  pr:
+    enabled: true
+
+    # Auto-merge disabled - PRs require manual merge approval
+    auto_merge_on_ci: false
+    require_automerge_label: true
+
+    # merge|rebase|rebase-merge|squash
+    merge_style: squash
+
+    delete_branch_after_merge: true
