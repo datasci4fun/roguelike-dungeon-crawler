@@ -1,9 +1,11 @@
-name: Claude Bot - Nightly Discover
+name: Claude Bot - Discover (Manual)
+
+# NOTE: This workflow requires ANTHROPIC_API_KEY secret to run in CI.
+# Preferred usage: Run locally with your CLI auth instead:
+#   python scripts/claude-bot/bot.py discover
 
 on:
-  schedule:
-    - cron: "5 23 * * *"   # 23:05 UTC (adjust as needed)
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger only
 
 permissions:
   contents: read

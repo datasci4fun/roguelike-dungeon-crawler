@@ -1,9 +1,11 @@
-name: Claude Bot - Nightly Fix (Open PRs)
+name: Claude Bot - Fix PRs (Manual)
+
+# NOTE: This workflow requires ANTHROPIC_API_KEY secret to run in CI.
+# Preferred usage: Run locally with your CLI auth instead:
+#   python scripts/claude-bot/bot.py fix all
 
 on:
-  schedule:
-    - cron: "10 0 * * *"   # 00:10 UTC (about 1h after discover)
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger only
 
 permissions:
   contents: write
