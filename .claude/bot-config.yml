@@ -13,11 +13,11 @@ bot:
   commands:
     # Cheap checks to run before opening PRs (fast, <30s)
     smoke:
-      - "python -m py_compile src/**/*.py"
+      - "python -m compileall -q src/"
       - "cd web && npx tsc --noEmit"
     # Full verification checks run in PR CI (thorough)
     verify:
-      - "python -m py_compile src/**/*.py"
+      - "python -m compileall -q src/"
       - "python -m pytest tests/ -v --tb=short"
       - "cd web && npm run lint"
       - "cd web && npm run build"
