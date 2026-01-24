@@ -39,7 +39,7 @@ import { createNecromancer, NECROMANCER_META } from './necromancer';
 import { createOathboundGuard, OATHBOUND_GUARD_META } from './oathboundGuard';
 import { createOrc, ORC_META } from './orc';
 import { createOrcV2, ORC_V2_META } from './orcV2';
-import { createPillar, PILLAR_META, COLLAPSED_PILLAR_META } from './pillar';
+import { createPillar, PILLAR_META } from './pillar';
 import { createPlagueRat, PLAGUE_RAT_META } from './plagueRat';
 import { createDwarfCleric, DWARF_CLERIC_META } from './playerDwarfCleric';
 import { createPrismWatcher, PRISM_WATCHER_META } from './prismWatcher';
@@ -63,20 +63,10 @@ import { createWebweaver, WEBWEAVER_META } from './webweaver';
 import { createWraith, WRAITH_META } from './wraith';
 // @model-generator:imports:end
 
-// Player character model (manual import - not auto-generated)
+// Player character model (manual import - only import what's used locally)
 import {
   createPlayerCharacter,
   PLAYER_CHARACTER_META,
-  RACE_CONFIG,
-  CLASS_CONFIG,
-  PLAYER_RACES,
-  PLAYER_CLASSES,
-  getRaceDisplayName,
-  getClassDisplayName,
-  getRaceHeight,
-  getClassGlowColor,
-  type RaceConfig,
-  type ClassConfig,
   type PlayerModelOptions,
 } from './playerCharacter';
 
@@ -140,6 +130,7 @@ export { createWraith, WRAITH_META } from './wraith';
 // @model-generator:exports:end
 
 // Player character exports (manual - not auto-generated)
+// Re-export directly to avoid unused import warnings
 export {
   createPlayerCharacter,
   PLAYER_CHARACTER_META,
